@@ -1,0 +1,54 @@
+[project]
+name = "findingmodel"
+version = "0.1.0"
+description = "Definition and tools for Open Imaging Finding Models"
+authors = [
+    { name = "Tarik Alkasab", email = "tarik@alkasab.org" },
+    { name = "Vijay Dawal", email = "vijaydawal@microsoft.com" },
+]
+requires-python = ">=3.11"
+readme = "README.md"
+
+dependencies = [
+    "instructor>=1.6.4",
+    "jinja2>=3.1.4",
+    "motor>=3.6.0",
+    "openai>=1.54.4",
+    "pydantic-settings>=2.6.1",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13.0",
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.7.2",
+    "jupyter>=1.1.1",
+    "commitizen>=3.30.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/openimagingdata/findingmodel"
+Issues = "https://github.com/openimagingdata/findingmodel/issues"
+
+[project.scripts]
+findingmodel = "findingmodel:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+# Add type checking linting to the extend-select
+extend-select = ["B", "C4", "E", "F", "Q", "SIM", "T"]
+fix = true
+preview = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "needs_db: Marks tests as needing a database connection",
+    "asyncio: Marks tests as needing asyncio",
+]
