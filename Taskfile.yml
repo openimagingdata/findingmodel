@@ -1,0 +1,42 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  default: 
+    cmds:
+      - task -l
+    silent: true
+
+  test:
+    desc: "Test the findingmodel library"
+    cmds:
+      - echo "Testing library..."
+      - uv run pytest
+    silent: true
+
+  check:
+    desc: "Check the findingmodel library"
+    cmds:
+      - echo "Checking library..."
+      - uv run ruff format
+      - uv run ruff check --fix
+      - uv run mypy src
+    silent: true
+
+  build:
+    desc: "Build the findingmodel library"
+    cmds:
+      - echo "Building library..."
+      - uv build
+    silent: true
+
+  quiet:
+    desc: "Run checks quietly"
+    cmds:
+      - uv run ruff format --quiet
+      - uv run ruff check --fix --quiet
+      - uv run mypy src --no-error-summary --no-pretty
+      - uv run pytest -q
+    silent: true
+  
