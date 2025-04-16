@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Annotated, Literal, Sequence
+from typing import Annotated, Any, Literal, Sequence
 
 from jinja2 import Template
 from pydantic import BaseModel, Field, model_validator
@@ -85,6 +85,17 @@ MaxSelectedInt = Annotated[
 ]
 
 
+def fix_max_selected_validator(cls, data: dict[str, Any]) -> dict[str, Any]:  # type: ignore # noqa: ANN001
+    """Fix the max_selected value to be an integer if it is set to "all"
+    or greater than the number of actual choices
+    """
+    if not data.get("max_selected"):
+        data["max_selected"] = 1
+    if data.get("max_selected") == "all" or data.get("max_selected") > len(data["values"]):  # type: ignore
+        data["max_selected"] = len(data["values"])
+    return data
+
+
 class ChoiceAttribute(BaseModel):
     """An attribute of a radiology finding where the radiologist would choose from a list of options. For example,
     the severity of a finding (mild, moderate, or severe), or the shape of a finding (round, oval, or
@@ -100,15 +111,8 @@ class ChoiceAttribute(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def fix_max_selected(cls, data):  # type: ignore # noqa: ANN001, ANN206
-        """Fix the max_selected value to be an integer if it is set to "all"
-        or greater than the number of actual choices
-        """
-        if not data.get("max_selected"):
-            data["max_selected"] = 1
-        if data.get("max_selected") == "all" or data.get("max_selected") > len(data["values"]):
-            data["max_selected"] = len(data["values"])
-        return data
+    def fix_max_selected(cls, data):  # type: ignore  # noqa: ANN001, ANN206
+        return fix_max_selected_validator(cls, data)
 
 
 class ChoiceAttributeIded(BaseModel):
@@ -119,6 +123,11 @@ class ChoiceAttributeIded(BaseModel):
     values: Annotated[list[ChoiceValueIded], Field(..., min_length=2)]
     required: RequiredBool = False
     max_selected: MaxSelectedInt = 1
+
+    @model_validator(mode="before")
+    @classmethod
+    def fix_max_selected(cls, data):  # type: ignore  # noqa: ANN001, ANN206
+        return fix_max_selected_validator(cls, data)
 
     @model_validator(mode="before")
     @classmethod
