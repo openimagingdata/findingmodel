@@ -8,6 +8,19 @@ authors = [
 ]
 requires-python = ">=3.11"
 readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+keywords = [
+    "finding model",
+    "common data element",
+    "medical imaging",
+    "data model",
+    "radiology"
+]
 
 dependencies = [
     "instructor>=1.6.4",
@@ -16,6 +29,10 @@ dependencies = [
     "openai>=1.54.4",
     "pydantic-settings>=2.6.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/openimagingdata/findingmodel"
+Issues = "https://github.com/openimagingdata/findingmodel/issues"
 
 [dependency-groups]
 dev = [
@@ -26,16 +43,12 @@ dev = [
     "jupyter>=1.1.1",
 ]
 
-[project.urls]
-Homepage = "https://github.com/openimagingdata/findingmodel"
-Issues = "https://github.com/openimagingdata/findingmodel/issues"
-
 [project.scripts]
 findingmodel = "findingmodel:main"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build"]
+build-backend = "uv_build"
 
 [tool.ruff]
 line-length = 120
