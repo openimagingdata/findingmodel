@@ -220,8 +220,11 @@ AttributeIded = Annotated[
 ]
 # The template for the markdown representation of the finding model
 
-BASE_MARKDOWN_TEMPLATE_TEXT = """
-# {{ name | capitalize }}
+# Can we make sure there's a newline between the title and the synonyms/tags/description?
+
+UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
+# {{ name | capitalize }}{% if show_ids and oifm_id %}—`{{ oifm_id }}`{% endif %}
+
 {% if synonyms %}
 
 **Synonyms:** {{ synonyms | join(", ") }}
@@ -230,13 +233,15 @@ BASE_MARKDOWN_TEMPLATE_TEXT = """
 
 **Tags:** {{ tags | join(", ") }}
 {% endif %}
+{% if description %}
 
 {{ description }}
+{% endif %}
 
 ## Attributes
 
 {% for attribute in attributes %}
-### {{ attribute.name | capitalize }}
+### {{ attribute.name | capitalize }}{% if show_ids and attribute.oifma_id is defined %}—`{{ attribute.oifma_id }}`{% endif %}
 {% if attribute.description %}
 
 {{ attribute.description }}  
@@ -251,9 +256,9 @@ BASE_MARKDOWN_TEMPLATE_TEXT = """
 {% for value in attribute.values %}
 - **{{ value.name }}**: {{ value.description }}
 {% endfor %}
-
 {% elif attribute.type == "numeric" %}
-{% if attribute.minimum %}
+
+{% if attribute.minimum is defined %}
 Mininum: {{ attribute.minimum }}
 {% endif %}
 {% if attribute.maximum %}
@@ -263,10 +268,12 @@ Maximum: {{ attribute.maximum }}
 Unit: {{ attribute.unit }}
 {% endif %}
 {% endif %}
+
 {% endfor %}
 """
 
-BASE_MARKDOWN_TEMPLATE = Template(BASE_MARKDOWN_TEMPLATE_TEXT, trim_blocks=True, lstrip_blocks=True)
+UNIFIED_MARKDOWN_TEMPLATE = Template(UNIFIED_MARKDOWN_TEMPLATE_TEXT, trim_blocks=True, lstrip_blocks=True)
+
 
 NameString = Annotated[
     str,
@@ -322,7 +329,9 @@ class FindingModelBase(BaseModel):
     ]
 
     def as_markdown(self) -> str:
-        return BASE_MARKDOWN_TEMPLATE.render(
+        return UNIFIED_MARKDOWN_TEMPLATE.render(
+            oifm_id=None,
+            show_ids=False,
             name=self.name,
             synonyms=self.synonyms,
             tags=self.tags,
@@ -339,57 +348,6 @@ OifmIdStr = Annotated[
     ),
 ]
 
-FULL_MARKDOWN_TEMPLATE_TEXT = """
-# {{ name | capitalize }}—`{{ oifm_id }}`
-{% if synonyms %}
-
-**Synonyms:** {{ synonyms | join(", ") }}
-{% endif %}
-{% if tags %}
-
-**Tags:** {{ tags | join(", ") }}
-{% endif %}
-{% if description %}
-
-{{ description }}
-{% endif %}
-
-## Attributes
-
-{% for attribute in attributes %}
-### {{ attribute.name | capitalize }}—`{{ attribute.oifma_id }}`
-{% if attribute.description %}
-
-{{ attribute.description }}  
-{%- endif -%}
-{%- if attribute.type == "choice" -%}
-{%- if attribute.max_selected and attribute.max_selected > 1 -%}
- *(Select up to {{ attribute.max_selected }})*
-{%- else %}
- *(Select one)*
-{% endif %}
-
-{% for value in attribute.values %}
-- **{{ value.name }}**: {{ value.description }}
-{% endfor %}
-{% elif attribute.type == "numeric" %}
-
-{% if attribute.minimum is defined %}
-Mininum: {{ attribute.minimum }}
-{% endif %}
-{% if attribute.maximum %}
-Maximum: {{ attribute.maximum }}
-{% endif %}
-{% if attribute.unit %}
-Unit: {{ attribute.unit }}
-{% endif %}
-{% endif %}
-
-{% endfor %}
-"""
-
-FULL_MARKDOWN_TEMPLATE = Template(FULL_MARKDOWN_TEMPLATE_TEXT, trim_blocks=True, lstrip_blocks=True)
-
 
 class FindingModelFull(BaseModel):
     oifm_id: OifmIdStr
@@ -402,9 +360,10 @@ class FindingModelFull(BaseModel):
         Field(min_length=1, description=ATTRIBUTES_FIELD_DESCRIPTION),
     ]
 
-    def as_markdown(self) -> str:
-        return FULL_MARKDOWN_TEMPLATE.render(
+    def as_markdown(self, hide_ids: bool = False) -> str:
+        return UNIFIED_MARKDOWN_TEMPLATE.render(
             oifm_id=self.oifm_id,
+            show_ids=not hide_ids,
             name=self.name,
             synonyms=self.synonyms,
             tags=self.tags,
