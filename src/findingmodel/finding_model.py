@@ -221,13 +221,13 @@ AttributeIded = Annotated[
 # The template for the markdown representation of the finding model
 
 BASE_MARKDOWN_TEMPLATE_TEXT = """
-# {{ name }}
-
+# {{ name | capitalize }}
 {% if synonyms %}
+
 **Synonyms:** {{ synonyms | join(", ") }}
 {% endif %}
-
 {% if tags %}
+
 **Tags:** {{ tags | join(", ") }}
 {% endif %}
 
@@ -236,16 +236,16 @@ BASE_MARKDOWN_TEMPLATE_TEXT = """
 ## Attributes
 
 {% for attribute in attributes %}
-### {{ attribute.name }}
+### {{ attribute.name | capitalize }}
+{% if attribute.description %}
 
 {{ attribute.description }}  
-
-
-{% if attribute.type == "choice" %}
-{% if attribute_type.max_selected and attribute.max_selected > 1 %}
-*Select up to {{ attribute.max_selected }}:*
-{% else %}
-*Select one:*
+{%- endif -%}
+{%- if attribute.type == "choice" -%}
+{%- if attribute.max_selected and attribute.max_selected > 1 -%}
+ *(Select up to {{ attribute.max_selected }})*
+{%- else %}
+ *(Select one)*
 {% endif %}
 
 {% for value in attribute.values %}
@@ -266,7 +266,7 @@ Unit: {{ attribute.unit }}
 {% endfor %}
 """
 
-BASE_MARKDOWN_TEMPLATE = Template(BASE_MARKDOWN_TEMPLATE_TEXT)
+BASE_MARKDOWN_TEMPLATE = Template(BASE_MARKDOWN_TEMPLATE_TEXT, trim_blocks=True, lstrip_blocks=True)
 
 NameString = Annotated[
     str,
@@ -340,46 +340,41 @@ OifmIdStr = Annotated[
 ]
 
 FULL_MARKDOWN_TEMPLATE_TEXT = """
-# {{ name }} 
-
-*{{ oifm_id }}*
-
+# {{ name | capitalize }}—`{{ oifm_id }}`
 {% if synonyms %}
+
 **Synonyms:** {{ synonyms | join(", ") }}
 {% endif %}
-
 {% if tags %}
+
 **Tags:** {{ tags | join(", ") }}
 {% endif %}
-
 {% if description %}
+
 {{ description }}
 {% endif %}
-
 
 ## Attributes
 
 {% for attribute in attributes %}
-### {{ attribute.name }}
-*{{ attribute.oifma_id }}*
-
+### {{ attribute.name | capitalize }}—`{{ attribute.oifma_id }}`
 {% if attribute.description %}
-{{ attribute.description }}  
-{% endif %}
 
-{% if attribute.type == "choice" %}
-{% if attribute.max_selected and attribute.max_selected > 1 %}
-*Select up to {{ attribute.max_selected }}:*
-{% else %}
-*Select one:*
+{{ attribute.description }}  
+{%- endif -%}
+{%- if attribute.type == "choice" -%}
+{%- if attribute.max_selected and attribute.max_selected > 1 -%}
+ *(Select up to {{ attribute.max_selected }})*
+{%- else %}
+ *(Select one)*
 {% endif %}
 
 {% for value in attribute.values %}
 - **{{ value.name }}**: {{ value.description }}
 {% endfor %}
-
 {% elif attribute.type == "numeric" %}
-{% if attribute.minimum %}
+
+{% if attribute.minimum is defined %}
 Mininum: {{ attribute.minimum }}
 {% endif %}
 {% if attribute.maximum %}
@@ -389,10 +384,11 @@ Maximum: {{ attribute.maximum }}
 Unit: {{ attribute.unit }}
 {% endif %}
 {% endif %}
+
 {% endfor %}
 """
 
-FULL_MARKDOWN_TEMPLATE = Template(FULL_MARKDOWN_TEMPLATE_TEXT)
+FULL_MARKDOWN_TEMPLATE = Template(FULL_MARKDOWN_TEMPLATE_TEXT, trim_blocks=True, lstrip_blocks=True)
 
 
 class FindingModelFull(BaseModel):
@@ -414,7 +410,7 @@ class FindingModelFull(BaseModel):
             tags=self.tags,
             description=self.description,
             attributes=self.attributes,
-        )
+        ).strip()
 
 
 FindingModelFull.__doc__ = FindingModelBase.__doc__
