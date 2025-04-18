@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from findingmodel.finding_model import (
@@ -72,6 +74,21 @@ def full_model() -> FindingModelFull:
     )
 
 
+@pytest.fixture
+def real_model() -> FindingModelFull:
+    # Get the path to the data directory
+    data_dir = Path(__file__).parent / "data"
+    data = (data_dir / "pulmonary_embolism.fm.json").read_text()
+    return FindingModelFull.model_validate_json(data)
+
+
+@pytest.fixture
+def real_model_markdown() -> str:
+    data_dir = Path(__file__).parent / "data"
+    data = (data_dir / "pulmonary_embolism.md").read_text()
+    return data.strip()
+
+
 BASE_MODEL_MARKDOWN = """
 # Test model
 
@@ -84,12 +101,14 @@ A simple test finding model.
 ## Attributes
 
 ### Severity
+
 How severe is the finding? *(Select one)*
 
 - **Mild**: None
 - **Severe**: None
 
 ### Size
+
 Size of the finding.
 Mininum: 1
 Maximum: 10
@@ -98,6 +117,7 @@ Unit: cm""".strip()
 
 def test_base_model_markdown(base_model: FindingModelBase) -> None:
     md = base_model.as_markdown()
+    print(md)
     assert md.strip() == BASE_MODEL_MARKDOWN
     # Spacing: no double blank lines between sections
     assert "\n\n\n" not in md
@@ -115,12 +135,14 @@ A simple test finding model.
 ## Attributes
 
 ### Severity—`OIFMA_TEST_123456`
+
 How severe is the finding? *(Select one)*
 
 - **Mild**: None
 - **Severe**: None
 
 ### Size—`OIFMA_TEST_654321`
+
 Size of the finding.
 Mininum: 1
 Maximum: 10
@@ -129,6 +151,7 @@ Unit: cm""".strip()
 
 def test_full_model_markdown_with_ids(full_model: FindingModelFull) -> None:
     md = full_model.as_markdown()
+    print(md)
     assert md.strip() == FULL_MODEL_MARKDOWN
     # Spacing: no double blank lines between sections
     assert "\n\n\n" not in md
@@ -142,3 +165,10 @@ def test_full_model_markdown_hide_ids(full_model: FindingModelFull) -> None:
     assert "OIFMA_TEST_654321" not in md
     # Spacing: no double blank lines between sections
     assert "\n\n\n" not in md
+
+
+def test_real_model_markdown(real_model: FindingModelFull, real_model_markdown: str) -> None:
+    md = real_model.as_markdown()
+    print(md)
+    for generated_line, expected_line in zip(md.splitlines(), real_model_markdown.splitlines(), strict=True):
+        assert generated_line.strip() == expected_line.strip()

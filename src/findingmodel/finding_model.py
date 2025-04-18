@@ -242,7 +242,7 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 
 {% for attribute in attributes %}
 ### {{ attribute.name | capitalize }}{% if show_ids and attribute.oifma_id is defined %}—`{{ attribute.oifma_id }}`{% endif %}
-{% if attribute.description %}
+{%+ if attribute.description +%}
 
 {{ attribute.description }}  
 {%- endif -%}
