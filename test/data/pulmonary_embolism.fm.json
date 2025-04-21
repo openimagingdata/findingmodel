@@ -94,6 +94,15 @@
         }
       ],
       "required": false
+    },
+    {
+      "oifma_id": "OIFMA_MSFT_592865",
+      "name": "size",
+      "description": "Size of the pulmonary embolism",
+      "type": "numeric",
+      "unit": "cm",
+      "minimum": 0,
+      "maximum": 10
     }
   ]
 }
