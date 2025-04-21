@@ -244,14 +244,12 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 ### {{ attribute.name | capitalize }}
 {%- if show_ids and attribute.oifma_id is defined -%}—`{{ attribute.oifma_id }}`{%+ endif +%}
 
-{% if attribute.description %}
-{{ attribute.description }}  
-{%- endif -%}
+{% if attribute.description %}{{ attribute.description }}  {%+ endif -%}
 {%- if attribute.type == "choice" -%}
 {%- if attribute.max_selected and attribute.max_selected > 1 -%}
- *(Select up to {{ attribute.max_selected }})*
+*(Select up to {{ attribute.max_selected }})*
 {%- else %}
- *(Select one)*
+*(Select one)*
 {% endif %}
 
 {% for value in attribute.values %}
@@ -260,10 +258,10 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 {% elif attribute.type == "numeric" %}
 
 {% if attribute.minimum is defined %}
-Mininum: {{ attribute.minimum }}
+Mininum: {{ attribute.minimum }}  
 {% endif %}
 {% if attribute.maximum %}
-Maximum: {{ attribute.maximum }}
+Maximum: {{ attribute.maximum }}  
 {% endif %}
 {% if attribute.unit %}
 Unit: {{ attribute.unit }}

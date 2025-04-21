@@ -8,7 +8,7 @@ Pulmonary embolism is the occlusion of a pulmonary artery or one of its branches
 
 ### Presence—`OIFMA_MSFT_463871`
 
-Presence or absence of pulmonary embolism *(Select one)*
+Presence or absence of pulmonary embolism  *(Select one)*
 
 - **absent**: Pulmonary embolism is absent
 - **present**: Pulmonary embolism is present
@@ -17,7 +17,7 @@ Presence or absence of pulmonary embolism *(Select one)*
 
 ### Change from prior—`OIFMA_MSFT_592864`
 
-Whether and how a pulmonary embolism has changed over time *(Select one)*
+Whether and how a pulmonary embolism has changed over time  *(Select one)*
 
 - **unchanged**: Pulmonary embolism is unchanged
 - **stable**: Pulmonary embolism is stable
@@ -33,3 +33,10 @@ Whether and how a pulmonary embolism has changed over time *(Select one)*
 - **present**
 - **indeterminate**
 - **unknown**
+
+### Size—`OIFMA_MSFT_592865`
+
+Size of the pulmonary embolism  
+Mininum: 0  
+Maximum: 10  
+Unit: cm

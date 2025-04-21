@@ -102,16 +102,16 @@ A simple test finding model.
 
 ### Severity
 
-How severe is the finding? *(Select one)*
+How severe is the finding?  *(Select one)*
 
 - **Mild**
 - **Severe**
 
 ### Size
 
-Size of the finding.
-Mininum: 1
-Maximum: 10
+Size of the finding.  
+Mininum: 1  
+Maximum: 10  
 Unit: cm""".strip()
 
 
@@ -135,16 +135,16 @@ A simple test finding model.
 
 ### Severity—`OIFMA_TEST_123456`
 
-How severe is the finding? *(Select one)*
+How severe is the finding?  *(Select one)*
 
 - **Mild**
 - **Severe**
 
 ### Size—`OIFMA_TEST_654321`
 
-Size of the finding.
-Mininum: 1
-Maximum: 10
+Size of the finding.  
+Mininum: 1  
+Maximum: 10  
 Unit: cm""".strip()
 
 
@@ -167,6 +167,5 @@ def test_full_model_markdown_hide_ids(full_model: FindingModelFull) -> None:
 
 def test_real_model_markdown(real_model: FindingModelFull, real_model_markdown: str) -> None:
     md = real_model.as_markdown()
-    print(md)
     for generated_line, expected_line in zip(md.splitlines(), real_model_markdown.splitlines(), strict=True):
         assert generated_line.strip() == expected_line.strip()
