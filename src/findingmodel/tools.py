@@ -5,7 +5,7 @@ from instructor import AsyncInstructor, from_openai
 from openai import AsyncOpenAI
 
 from .config import settings
-from .finding_info import BaseFindingInfo, DetailedFindingInfo
+from .finding_info import FindingInfo
 from .finding_model import (
     ID_LENGTH,
     ChoiceAttribute,
@@ -28,22 +28,34 @@ def get_async_perplexity_client() -> AsyncOpenAI:
     )
 
 
-async def describe_finding_name(finding_name: str, model_name: str = settings.openai_default_model) -> BaseFindingInfo:
+async def describe_finding_name(finding_name: str, model_name: str = settings.openai_default_model) -> FindingInfo:
+    """
+    Get a description of a finding name using the OpenAI API.
+    :param finding_name: The name of the finding to describe.
+    :param model_name: The OpenAI model to use for the description.
+    :return: A BaseFindingInfo object containing the finding name, synonyms, and description.
+    """
     client = get_async_instructor_client()
     prompt_template = load_prompt_template("get_finding_description")
     messages = create_prompt_messages(prompt_template, finding_name=finding_name)
     result = await client.chat.completions.create(
         messages=messages,
         model=model_name,
-        response_model=BaseFindingInfo,
+        response_model=FindingInfo,
     )
-    assert isinstance(result, BaseFindingInfo), "Finding description not returned."
+    assert isinstance(result, FindingInfo), "Finding description not returned."
     return result
 
 
 async def get_detail_on_finding(
-    finding: BaseFindingInfo, model_name: str = settings.perplexity_default_model
-) -> DetailedFindingInfo | None:
+    finding: FindingInfo, model_name: str = settings.perplexity_default_model
+) -> FindingInfo | None:
+    """
+    Get a detailed description of a finding using the Perplexity API.
+    :param finding: The finding to describe.
+    :param model_name: The Perplexity model to use for the description.
+    :return: A FindingInfo object containing the finding name, synonyms, description, detail, and citations.
+    """
     client = get_async_perplexity_client()
     prompt_template = load_prompt_template("get_finding_detail")
     prompt_messages = create_prompt_messages(prompt_template, finding=finding)
@@ -54,7 +66,7 @@ async def get_detail_on_finding(
     if not response.choices or not response.choices[0].message or not response.choices[0].message.content:
         return None
 
-    out = DetailedFindingInfo(
+    out = FindingInfo(
         name=finding.name,
         synonyms=finding.synonyms,
         description=finding.description,
@@ -73,12 +85,26 @@ async def get_detail_on_finding(
 
 
 async def create_finding_model_from_markdown(
-    finding_info: BaseFindingInfo,
+    finding: FindingInfo | str,
     /,
     markdown_path: str | Path | None = None,
     markdown_text: str | None = None,
     openai_model: str = settings.openai_default_model,
 ) -> FindingModelBase:
+    """
+    Create a finding model from a markdown file or text using the OpenAI API.
+    :param finding: The finding information or name to use for the model.
+    :param markdown_path: The path to the markdown file containing the outline.
+    :param markdown_text: The markdown text containing the outline.
+    :param openai_model: The OpenAI model to use for the finding model.
+    :return: A FindingModelBase object containing the finding model.
+    """
+    if isinstance(finding, str):
+        finding_info = await describe_finding_name(finding)
+    elif isinstance(finding, FindingInfo):
+        finding_info = finding
+    else:
+        raise TypeError("Must get either a finding name or a FindingInfo object")
     if not markdown_path and not markdown_text:
         raise ValueError("Either markdown_path or markdown_text must be provided")
     if markdown_path and markdown_text:
@@ -106,8 +132,14 @@ async def create_finding_model_from_markdown(
 
 
 def create_finding_model_stub_from_finding_info(
-    finding_info: BaseFindingInfo, tags: list[str] | None = None
+    finding_info: FindingInfo, tags: list[str] | None = None
 ) -> FindingModelBase:
+    """
+    Create a finding model stub from a FindingInfo object.
+    :param finding_info: The FindingInfo object to use for the model.
+    :param tags: Optional tags to add to the finding model.
+    :return: A FindingModelBase object containing the finding model stub.
+    """
     finding_name = finding_info.name.lower()
 
     def create_presence_element(finding_name: str) -> ChoiceAttribute:
@@ -132,6 +164,9 @@ def create_finding_model_stub_from_finding_info(
                 ChoiceValue(name="increased", description=f"{finding_name.capitalize()} has increased"),
                 ChoiceValue(name="decreased", description=f"{finding_name.capitalize()} has decreased"),
                 ChoiceValue(name="new", description=f"{finding_name.capitalize()} is new"),
+                ChoiceValue(
+                    name="resolved", description=f"{finding_name.capitalize()} seen on a prior exam has resolved"
+                ),
             ],
         )
 
@@ -289,6 +324,9 @@ def add_ids_to_finding_model(
 ) -> FindingModelFull:
     """
     Generate and add OIFM IDs to the ID-less finding models with a source code.
+    :param finding_model: The finding model to add IDs to.
+    :param source: 3-4 letter code for the originating organization.
+    :return: The finding model with IDs added.
     """
 
     def random_digits(length: int) -> str:
