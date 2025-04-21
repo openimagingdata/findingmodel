@@ -104,8 +104,8 @@ A simple test finding model.
 
 How severe is the finding? *(Select one)*
 
-- **Mild**: None
-- **Severe**: None
+- **Mild**
+- **Severe**
 
 ### Size
 
@@ -117,7 +117,6 @@ Unit: cm""".strip()
 
 def test_base_model_markdown(base_model: FindingModelBase) -> None:
     md = base_model.as_markdown()
-    print(md)
     assert md.strip() == BASE_MODEL_MARKDOWN
     # Spacing: no double blank lines between sections
     assert "\n\n\n" not in md
@@ -138,8 +137,8 @@ A simple test finding model.
 
 How severe is the finding? *(Select one)*
 
-- **Mild**: None
-- **Severe**: None
+- **Mild**
+- **Severe**
 
 ### Size—`OIFMA_TEST_654321`
 
@@ -151,7 +150,6 @@ Unit: cm""".strip()
 
 def test_full_model_markdown_with_ids(full_model: FindingModelFull) -> None:
     md = full_model.as_markdown()
-    print(md)
     assert md.strip() == FULL_MODEL_MARKDOWN
     # Spacing: no double blank lines between sections
     assert "\n\n\n" not in md

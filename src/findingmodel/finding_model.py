@@ -241,9 +241,10 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 ## Attributes
 
 {% for attribute in attributes %}
-### {{ attribute.name | capitalize }}{% if show_ids and attribute.oifma_id is defined %}—`{{ attribute.oifma_id }}`{% endif %}
-{%+ if attribute.description +%}
+### {{ attribute.name | capitalize }}
+{%- if show_ids and attribute.oifma_id is defined -%}—`{{ attribute.oifma_id }}`{%+ endif +%}
 
+{% if attribute.description %}
 {{ attribute.description }}  
 {%- endif -%}
 {%- if attribute.type == "choice" -%}
@@ -254,7 +255,7 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 {% endif %}
 
 {% for value in attribute.values %}
-- **{{ value.name }}**: {{ value.description }}
+- **{{ value.name }}**{% if value.description %}: {{ value.description }}{%+ endif +%}
 {% endfor %}
 {% elif attribute.type == "numeric" %}
 

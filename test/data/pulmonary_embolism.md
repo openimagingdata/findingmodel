@@ -24,3 +24,12 @@ Whether and how a pulmonary embolism has changed over time *(Select one)*
 - **increased**: Pulmonary embolism has increased
 - **decreased**: Pulmonary embolism has decreased
 - **new**: Pulmonary embolism is new
+
+### Other presence—`OIFMA_MSFT_463872`
+
+*(Select one)*
+
+- **absent**
+- **present**
+- **indeterminate**
+- **unknown**

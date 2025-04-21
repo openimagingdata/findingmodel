@@ -66,6 +66,34 @@
         }
       ],
       "required": false
+    },
+    {
+      "oifma_id": "OIFMA_MSFT_463872",
+      "name": "other presence",
+      "type": "choice",
+      "values": [
+        {
+          "value_code": "OIFMA_MSFT_463872.0",
+          "name": "absent",
+          "description": null
+        },
+        {
+          "value_code": "OIFMA_MSFT_463872.1",
+          "name": "present",
+          "description": null
+        },
+        {
+          "value_code": "OIFMA_MSFT_463872.2",
+          "name": "indeterminate",
+          "description": null
+        },
+        {
+          "value_code": "OIFMA_MSFT_463872.3",
+          "name": "unknown",
+          "description": null
+        }
+      ],
+      "required": false
     }
   ]
 }
