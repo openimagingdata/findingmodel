@@ -2,10 +2,10 @@
   "editor.detectIndentation": true,
   "python.analysis.typeCheckingMode": "standard",
 
-  "python.testing.pytestArgs": ["test"],
+  // "python.testing.pytestArgs": ["test"],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
-  "python.testing.cwd": "${workspaceFolder}/test",
+  // "python.testing.cwd": "${workspaceFolder}/test",
   "python.testing.pytestPath": ".venv/bin/pytest",
 
   "python.analysis.extraPaths": ["src"],

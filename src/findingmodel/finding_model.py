@@ -1,8 +1,11 @@
+import random
 from enum import Enum
 from typing import Annotated, Any, Literal, Sequence
 
-from jinja2 import Template
 from pydantic import BaseModel, Field, model_validator
+
+from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
+from .index_code import IndexCode
 
 
 class AttributeType(str, Enum):
@@ -22,6 +25,14 @@ AttributeId = Annotated[
 ]
 
 
+def _random_digits(length: int) -> str:
+    return "".join([str(random.randint(0, 9)) for _ in range(length)])
+
+
+def generate_oifma_id(source: str) -> str:
+    return f"OIFMA_{source.upper()}_{_random_digits(ID_LENGTH)}"
+
+
 class ChoiceValue(BaseModel):
     """A value that a radiologist might choose for a choice attribute. For example, the severity of a finding might be
     severe, or the shape of a finding might be oval."""
@@ -38,6 +49,15 @@ AttributeValueCode = Annotated[
     ),
 ]
 
+IndexCodeList = Annotated[
+    list[IndexCode],
+    Field(
+        default=None,
+        description="References to concepts in standad ontologies to facilitate interoperability between systems.",
+        min_length=1,
+    ),
+]
+
 
 class ChoiceValueIded(BaseModel):
     """A value that a radiologist might choose for a choice attribute. For example, the severity of a finding might be
@@ -46,6 +66,7 @@ class ChoiceValueIded(BaseModel):
     value_code: AttributeValueCode
     name: str
     description: str | None = None
+    index_codes: IndexCodeList | None = None
 
 
 AttributeNameStr = Annotated[
@@ -123,6 +144,7 @@ class ChoiceAttributeIded(BaseModel):
     values: Annotated[list[ChoiceValueIded], Field(..., min_length=2)]
     required: RequiredBool = False
     max_selected: MaxSelectedInt = 1
+    index_codes: IndexCodeList | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -199,6 +221,7 @@ class NumericAttributeIded(BaseModel):
     maximum: MaximumNumeric = None
     unit: UnitStr = None
     required: RequiredBool = False
+    index_codes: IndexCodeList | None = None
 
 
 NumericAttributeIded.__doc__ = NumericAttribute.__doc__
@@ -218,61 +241,6 @@ AttributeIded = Annotated[
     ChoiceAttributeIded | NumericAttributeIded,
     Field(discriminator="type", description=ATTRIBUTE_FIELD_DESCRIPTION),
 ]
-# The template for the markdown representation of the finding model
-
-# Can we make sure there's a newline between the title and the synonyms/tags/description?
-
-UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
-# {{ name | capitalize }}{% if show_ids and oifm_id %}—`{{ oifm_id }}`{% endif %}
-
-{% if synonyms %}
-
-**Synonyms:** {{ synonyms | join(", ") }}
-{% endif %}
-{% if tags %}
-
-**Tags:** {{ tags | join(", ") }}
-{% endif %}
-{% if description %}
-
-{{ description }}
-{% endif %}
-
-## Attributes
-
-{% for attribute in attributes %}
-### {{ attribute.name | capitalize }}
-{%- if show_ids and attribute.oifma_id is defined -%}—`{{ attribute.oifma_id }}`{%+ endif +%}
-
-{% if attribute.description %}{{ attribute.description }}  {%+ endif -%}
-{%- if attribute.type == "choice" -%}
-{%- if attribute.max_selected and attribute.max_selected > 1 -%}
-*(Select up to {{ attribute.max_selected }})*
-{%- else %}
-*(Select one)*
-{% endif %}
-
-{% for value in attribute.values %}
-- **{{ value.name }}**{% if value.description %}: {{ value.description }}{%+ endif +%}
-{% endfor %}
-{% elif attribute.type == "numeric" %}
-
-{% if attribute.minimum is defined %}
-Mininum: {{ attribute.minimum }}  
-{% endif %}
-{% if attribute.maximum %}
-Maximum: {{ attribute.maximum }}  
-{% endif %}
-{% if attribute.unit %}
-Unit: {{ attribute.unit }}
-{% endif %}
-{% endif %}
-
-{% endfor %}
-"""
-
-UNIFIED_MARKDOWN_TEMPLATE = Template(UNIFIED_MARKDOWN_TEMPLATE_TEXT, trim_blocks=True, lstrip_blocks=True)
-
 
 NameString = Annotated[
     str,
@@ -348,6 +316,10 @@ OifmIdStr = Annotated[
 ]
 
 
+def generate_oifm_id(source: str) -> str:
+    return f"OIFM_{source.upper()}_{_random_digits(ID_LENGTH)}"
+
+
 class FindingModelFull(BaseModel):
     oifm_id: OifmIdStr
     name: NameString
@@ -358,6 +330,7 @@ class FindingModelFull(BaseModel):
         Sequence[AttributeIded],
         Field(min_length=1, description=ATTRIBUTES_FIELD_DESCRIPTION),
     ]
+    index_codes: IndexCodeList | None = None
 
     def as_markdown(self, hide_ids: bool = False) -> str:
         return UNIFIED_MARKDOWN_TEMPLATE.render(

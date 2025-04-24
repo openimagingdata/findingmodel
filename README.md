@@ -92,3 +92,8 @@ Given even a basic `FindingInfo`, turn it into a `FindingModelBase` object with 
 ### `add_ids_to_finding_model()`
 
 Generates and adds OIFM IDs to a `FindingModelBase` object and returns it as a `FindingModelFull` object. Note that the `source` parameter refers to the source component of the OIFM ID, which describes the originating organization of the model (e.g., `MGB` for Mass General Brigham and `MSFT` for Microsoft).
+
+### `add_standard_codes_to_finding_model()`
+
+Edits a `FindingModelFull` in place to include some Radlex and SNOMED-CT codes
+that correspond to some typical situations.
