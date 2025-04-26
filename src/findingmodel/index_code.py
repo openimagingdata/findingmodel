@@ -15,6 +15,12 @@ class IndexCode(BaseModel):
         min_length=3,
     )
 
+    def __str__(self) -> str:
+        out = f"{self.system} {self.code}"
+        if self.display:
+            out += f" {self.display}"
+        return out
+
 
 STANDARD_CODES = {
     "presence": [IndexCode(system="SNOMED", code="705057003", display="Presence (property) (qualifier value)")],
@@ -87,5 +93,16 @@ STANDARD_CODES = {
         IndexCode(system="RADLEX", code="RID39038", display="location"),
         IndexCode(system="SNOMED", code="758637006", display="Anatomic location (property) (qualifier value)"),
     ],
-    "size": [IndexCode(system="SNOMED", code="246115007", display="Size (attribute)")],
+    "size": [
+        IndexCode(system="SNOMED", code="246115007", display="Size (attribute)"),
+        IndexCode(system="RADLEX", code="RID5772", display="size descriptor"),
+    ],
+    "larger": [
+        IndexCode(system="RADLEX", code="RID5791", display="enlarged"),
+        IndexCode(system="SNOMED", code="263768009", display="Greater (qualifier value)"),
+    ],
+    "smaller": [
+        IndexCode(system="RADLEX", code="RID38669", display="diminished"),
+        IndexCode(system="SNOMED", code="263796003", display="Lesser (qualifier value)"),
+    ],
 }

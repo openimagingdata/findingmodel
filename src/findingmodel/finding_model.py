@@ -1,8 +1,8 @@
 import random
 from enum import Enum
-from typing import Annotated, Any, Literal, Sequence
+from typing import Annotated, Any, Iterable, Literal, Sequence
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
 from .index_code import IndexCode
@@ -59,6 +59,10 @@ IndexCodeList = Annotated[
 ]
 
 
+def _index_codes_str(index_codes: Iterable[IndexCode] | None) -> str | None:
+    return "; ".join([str(code) for code in index_codes]) if index_codes else None
+
+
 class ChoiceValueIded(BaseModel):
     """A value that a radiologist might choose for a choice attribute. For example, the severity of a finding might be
     severe, or the shape of a finding might be oval."""
@@ -67,6 +71,11 @@ class ChoiceValueIded(BaseModel):
     name: str
     description: str | None = None
     index_codes: IndexCodeList | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def index_codes_str(self) -> str | None:
+        return _index_codes_str(self.index_codes)
 
 
 AttributeNameStr = Annotated[
@@ -171,6 +180,11 @@ class ChoiceAttributeIded(BaseModel):
         data["values"] = new_values
         return data
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def index_codes_str(self) -> str | None:
+        return _index_codes_str(self.index_codes)
+
 
 ChoiceAttributeIded.__doc__ = ChoiceAttribute.__doc__
 
@@ -222,6 +236,11 @@ class NumericAttributeIded(BaseModel):
     unit: UnitStr = None
     required: RequiredBool = False
     index_codes: IndexCodeList | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def index_codes_str(self) -> str | None:
+        return _index_codes_str(self.index_codes)
 
 
 NumericAttributeIded.__doc__ = NumericAttribute.__doc__
@@ -304,6 +323,7 @@ class FindingModelBase(BaseModel):
             tags=self.tags,
             description=self.description,
             attributes=self.attributes,
+            index_code_str=None,
         )
 
 
@@ -341,7 +361,13 @@ class FindingModelFull(BaseModel):
             tags=self.tags,
             description=self.description,
             attributes=self.attributes,
+            index_codes_str=self.index_codes_str,
         ).strip()
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def index_codes_str(self) -> str | None:
+        return _index_codes_str(self.index_codes)
 
 
 FindingModelFull.__doc__ = FindingModelBase.__doc__
