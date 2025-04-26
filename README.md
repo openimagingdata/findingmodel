@@ -4,6 +4,23 @@ Contains library code for managing `FindingModel` objects.
 
 Look in the [demo notebook](notebooks/findingmodel_tools.ipynb).
 
+## CLI
+
+```shell
+$ python -m findingmodel
+Usage: python -m findingmodel [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  config           Show the currently active configuration.
+  fm-to-markdown   Convert finding model JSON file to Markdown format.
+  make-info        Generate description/synonyms and more...
+  make-stub-model  Generate a simple finding model object (presence and...
+  markdown-to-fm   Convert markdown file to finding model format.
+```
+
 ## Models
 
 ### `FindingModelBase`
