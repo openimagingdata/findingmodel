@@ -9,6 +9,7 @@ from .finding_info import FindingInfo
 from .finding_model import FindingModelBase, FindingModelFull
 from .tools import (
     add_ids_to_finding_model,
+    add_standard_codes_to_finding_model,
     create_finding_model_from_markdown,
     create_finding_model_stub_from_finding_info,
     describe_finding_name,
@@ -71,19 +72,22 @@ def make_info(finding_name: str, detailed: bool, output: Path | None) -> None:
 @cli.command()
 @click.argument("finding_name", default="Pneumothorax")
 @click.option("--tags", "-t", multiple=True, help="Tags to add to the model.")
+@click.option("--with-codes", "-c", is_flag=True, help="Include standard index codes in the model.")
 @click.option("--with-ids", "-i", is_flag=True, help="Include OIFM IDs in the model.")
 @click.option("--source", "-s", help="Three/four letter code of originating organization (required for IDs).")
 @click.option(
     "--output", "-o", type=click.Path(exists=False, dir_okay=True), help="Output file to save the finding model."
 )
 def make_stub_model(
-    finding_name: str, tags: list[str], with_ids: bool, source: str | None, output: Path | None
+    finding_name: str, tags: list[str], with_codes: bool, with_ids: bool, source: str | None, output: Path | None
 ) -> None:
     """Generate a simple finding model object (presence and change elements only) from a finding name."""
 
     console = Console()
 
-    async def _do_make_stub_model(finding_name: str, tags: list[str], with_ids: bool, output: Path | None) -> None:
+    async def _do_make_stub_model(
+        finding_name: str, tags: list[str], with_codes: bool, with_ids: bool, source: str | None, output: Path | None
+    ) -> None:
         console.print(f"[gray] Getting stub model for [yellow bold]{finding_name}")
         # Get it from the database if it's already there
         with console.status("[bold green]Getting description and synonyms..."):
@@ -95,6 +99,10 @@ def make_stub_model(
                 stub = add_ids_to_finding_model(stub, source.upper())  # type: ignore
             else:
                 console.print("[red]Error: --source is required to generate IDs")
+            if with_codes:
+                add_standard_codes_to_finding_model(stub)  # type: ignore
+        if with_codes and not with_ids:
+            console.print("[red]Error: --with-codes requires --with-ids to be set")
         if output:
             with open(output, "w") as f:
                 f.write(stub.model_dump_json(indent=2, exclude_none=True))
@@ -102,7 +110,7 @@ def make_stub_model(
         else:
             console.print_json(stub.model_dump_json(indent=2, exclude_none=True))
 
-    asyncio.run(_do_make_stub_model(finding_name, tags, with_ids, output))
+    asyncio.run(_do_make_stub_model(finding_name, tags, with_codes, with_ids, source, output))
 
 
 @cli.command()
@@ -111,12 +119,14 @@ def make_stub_model(
 @click.option(
     "--output", "-o", type=click.Path(exists=False, dir_okay=True), help="Output file to save the finding info."
 )
-def markdown_to_fm(finding_path: Path, output: Path | None) -> None:
+@click.option("--with-ids", "-i", is_flag=True, help="Include OIFM IDs in the model.")
+@click.option("--source", "-s", help="Three/four letter code of originating organization (required for IDs).")
+def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, output: Path | None) -> None:
     """Convert markdown file to finding model format."""
 
     console = Console()
 
-    async def _do_markdown_to_fm(finding_path: Path, output: Path | None) -> None:
+    async def _do_markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, output: Path | None) -> None:
         finding_name = finding_path.stem.replace("_", " ").replace("-", " ")
         with console.status("[bold green]Getting description..."):
             described_finding = await describe_finding_name(finding_name)
@@ -124,7 +134,15 @@ def markdown_to_fm(finding_path: Path, output: Path | None) -> None:
         assert isinstance(described_finding, FindingInfo), "Finding info not returned."
 
         with console.status("Creating model from Markdown description..."):
-            model = await create_finding_model_from_markdown(described_finding, markdown_path=finding_path)
+            model: FindingModelBase | FindingModelFull = await create_finding_model_from_markdown(
+                described_finding, markdown_path=finding_path
+            )
+        if with_ids:
+            if source and len(source) in [3, 4]:
+                assert isinstance(model, FindingModelBase)
+                model = add_ids_to_finding_model(model, source.upper())
+            else:
+                console.print("[red]Error: --source is required to generate IDs")
         if output:
             with open(output, "w") as f:
                 f.write(model.model_dump_json(indent=2, exclude_none=True))
@@ -132,7 +150,7 @@ def markdown_to_fm(finding_path: Path, output: Path | None) -> None:
         else:
             console.print_json(model.model_dump_json(indent=2, exclude_none=True))
 
-    asyncio.run(_do_markdown_to_fm(finding_path, output))
+    asyncio.run(_do_markdown_to_fm(finding_path, with_ids, source, output))
 
 
 @cli.command()

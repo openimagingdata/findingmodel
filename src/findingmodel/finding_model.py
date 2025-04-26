@@ -2,7 +2,7 @@ import random
 from enum import Enum
 from typing import Annotated, Any, Iterable, Literal, Sequence
 
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
 from .index_code import IndexCode
@@ -72,7 +72,7 @@ class ChoiceValueIded(BaseModel):
     description: str | None = None
     index_codes: IndexCodeList | None = None
 
-    @computed_field  # type: ignore[prop-decorator]
+    # @computed_field  # type: ignore[prop-decorator]
     @property
     def index_codes_str(self) -> str | None:
         return _index_codes_str(self.index_codes)
@@ -180,7 +180,7 @@ class ChoiceAttributeIded(BaseModel):
         data["values"] = new_values
         return data
 
-    @computed_field  # type: ignore[prop-decorator]
+    # @computed_field  # type: ignore[prop-decorator]
     @property
     def index_codes_str(self) -> str | None:
         return _index_codes_str(self.index_codes)
@@ -237,7 +237,7 @@ class NumericAttributeIded(BaseModel):
     required: RequiredBool = False
     index_codes: IndexCodeList | None = None
 
-    @computed_field  # type: ignore[prop-decorator]
+    # @computed_field  # type: ignore[prop-decorator]
     @property
     def index_codes_str(self) -> str | None:
         return _index_codes_str(self.index_codes)
@@ -364,7 +364,7 @@ class FindingModelFull(BaseModel):
             index_codes_str=self.index_codes_str,
         ).strip()
 
-    @computed_field  # type: ignore[prop-decorator]
+    # @computed_field  # type: ignore[prop-decorator]
     @property
     def index_codes_str(self) -> str | None:
         return _index_codes_str(self.index_codes)
