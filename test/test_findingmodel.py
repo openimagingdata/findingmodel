@@ -3,6 +3,7 @@ from findingmodel.finding_model import (
     ChoiceAttribute,
     ChoiceValue,
     FindingModelBase,
+    FindingModelFull,
     NumericAttribute,
 )
 
@@ -96,3 +97,36 @@ def test_load_finding_model(pe_fm_json: str) -> None:
     assert loaded_model.attributes[1].name == "change from prior"
     assert loaded_model.attributes[2].name == "other presence"
     assert loaded_model.attributes[3].name == "size"
+
+
+def test_load_finding_model_with_codes(tn_fm_json: str) -> None:
+    # Test loading a finding model with codes
+    loaded_model = FindingModelFull.model_validate_json(tn_fm_json)
+    assert loaded_model.name == "thyroid nodule"
+    assert loaded_model.index_codes is not None
+    assert len(loaded_model.index_codes) == 4
+    radlex_code, snomed_code, loinc_code, icd10_code = loaded_model.index_codes
+    assert radlex_code.system == "RADLEX"
+    assert radlex_code.code.startswith("RID")
+    assert snomed_code.system == "SNOMED"
+    assert snomed_code.code == "237495005"
+    assert loinc_code.system == "LOINC"
+    assert loinc_code.code.startswith("LA")
+    assert icd10_code.system == "ICD10CM"
+    assert icd10_code.code == "E04.1"
+    assert len(loaded_model.attributes) == 3
+    presence_attribute, *_ = loaded_model.attributes
+    assert presence_attribute.index_codes is not None
+    assert len(presence_attribute.index_codes) == 1
+    code = presence_attribute.index_codes[0]
+    assert code.system == "SNOMED"
+    assert code.code == "705057003"
+    assert presence_attribute.type == AttributeType.CHOICE
+    assert len(presence_attribute.values) == 4
+    absent_value, *_ = presence_attribute.values
+    assert absent_value.index_codes is not None
+    assert len(absent_value.index_codes) == 2
+    assert absent_value.index_codes[0].system == "RADLEX"
+    assert absent_value.index_codes[0].code == "RID28473"
+    assert absent_value.index_codes[1].system == "SNOMED"
+    assert absent_value.index_codes[1].code == "2667000"

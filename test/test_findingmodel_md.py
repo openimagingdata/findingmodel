@@ -13,10 +13,11 @@ A simple test finding model.
 
 ### Severity
 
-How severe is the finding?  *(Select one)*
+How severe is the finding?  
+*(Select one)*
 
-- **Mild**
-- **Severe**
+- **Mild**  
+- **Severe**  
 
 ### Size
 
@@ -46,10 +47,11 @@ A simple test finding model.
 
 ### Severity—`OIFMA_TEST_123456`
 
-How severe is the finding?  *(Select one)*
+How severe is the finding?  
+*(Select one)*
 
-- **Mild**
-- **Severe**
+- **Mild**  
+- **Severe**  
 
 ### Size—`OIFMA_TEST_654321`
 
@@ -79,4 +81,11 @@ def test_full_model_markdown_hide_ids(full_model: FindingModelFull) -> None:
 def test_real_model_markdown(real_model: FindingModelFull, real_model_markdown: str) -> None:
     md = real_model.as_markdown()
     for generated_line, expected_line in zip(md.splitlines(), real_model_markdown.splitlines(), strict=True):
+        assert generated_line.strip() == expected_line.strip()
+
+
+def test_real_model_markdown_with_codes(tn_fm_json: str, tn_markdown: str) -> None:
+    tn_model = FindingModelFull.model_validate_json(tn_fm_json)
+    md = tn_model.as_markdown()
+    for generated_line, expected_line in zip(md.splitlines(), tn_markdown.splitlines(), strict=True):
         assert generated_line.strip() == expected_line.strip()

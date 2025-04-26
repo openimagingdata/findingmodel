@@ -98,6 +98,20 @@ def pe_fm_json() -> str:
 
 
 @pytest.fixture
+def tn_fm_json() -> str:
+    test_data_dir = Path(__file__).parent / "data"
+    json = (test_data_dir / "thyroid_nodule_codes.fm.json").read_text()
+    return json.strip()
+
+
+@pytest.fixture
+def tn_markdown() -> str:
+    test_data_dir = Path(__file__).parent / "data"
+    md = (test_data_dir / "thyroid_nodule_codes.md").read_text()
+    return md.strip()
+
+
+@pytest.fixture
 def finding_info() -> FindingInfo:
     return FindingInfo(
         name="test finding",

@@ -15,6 +15,10 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 
 {{ description }}
 {% endif %}
+{% if index_codes_str %}
+
+**Codes:** {{ index_codes_str }}
+{% endif %}
 
 ## Attributes
 
@@ -23,6 +27,11 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 {%- if show_ids and attribute.oifma_id is defined -%}—`{{ attribute.oifma_id }}`{%+ endif +%}
 
 {% if attribute.description %}{{ attribute.description }}  {%+ endif -%}
+{% if attribute.index_codes_str +%}
+**Codes**: {{ attribute.index_codes_str }}  
+{% else %}
+
+{%+ endif -%}
 {%- if attribute.type == "choice" -%}
 {%- if attribute.max_selected and attribute.max_selected > 1 -%}
 *(Select up to {{ attribute.max_selected }})*
@@ -31,10 +40,12 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 {% endif %}
 
 {% for value in attribute.values %}
-- **{{ value.name }}**{% if value.description %}: {{ value.description }}{%+ endif +%}
+- **{{ value.name }}**{% if value.description %}: {{ value.description }}{%+ endif +%}  
+{% if value.index_codes_str %}
+_{{ value.index_codes_str }}_
+{% endif %}
 {% endfor %}
 {% elif attribute.type == "numeric" %}
-
 {% if attribute.minimum is defined %}
 Mininum: {{ attribute.minimum }}  
 {% endif %}
