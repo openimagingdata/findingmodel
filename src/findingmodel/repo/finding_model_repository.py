@@ -19,7 +19,7 @@ class IndexEntry(BaseModel):
     description: str | None = Field(default=None, description="Description of the finding model")
     synonyms: list[str] | None = Field(default=None, description="Synonyms of the finding model")
     tags: list[str] | None = Field(default=None, description="Tags of the finding model")
-    attributes_names: list[str] = Field(..., description="List of attribute names")
+    attribute_names: list[str] = Field(..., description="List of attribute names")
     attribute_ids: list[str] = Field(..., description="List of attribute IDs")
 
     @classmethod
@@ -34,9 +34,21 @@ class IndexEntry(BaseModel):
             id=finding_model.oifm_id,
             name=finding_model.name,
             description=finding_model.description,
-            attributes_names=attributes_names,
+            attribute_names=attributes_names,
             attribute_ids=attributes_ids,
         )
+
+    def index_text(self) -> str:
+        """Return a string representation of the index entry."""
+        out = [self.name]
+        if self.description:
+            out.append(self.description)
+        if self.synonyms:
+            out.append("; ".join(self.synonyms))
+        if self.tags:
+            out.append("; ".join(self.tags))
+        out.append("; ".join(self.attribute_names))
+        return "\n".join(out)
 
 
 def _normalize_name(name: str) -> str:
@@ -117,13 +129,14 @@ class FindingModelRepository:
         self._attribute_ids.clear()
         self._build_index()
 
-    def get_new_model_files(self) -> None:
+    def get_new_model_files(self) -> int:
         """Check for new models in the repository."""
         if not self._models_path.exists():
             raise FileNotFoundError(f"Models path {self._models_path} does not exist.")
         if not self._models_path.is_dir():
             raise NotADirectoryError(f"Models path {self._models_path} is not a directory.")
 
+        new_model_files = 0
         for model_file in self._models_path.glob("**/*.json"):
             if not model_file.is_file():
                 continue
@@ -132,6 +145,10 @@ class FindingModelRepository:
             json_data = model_file.read_text()
             finding_model = fm.FindingModelFull.model_validate_json(json_data)
             self._add_model_to_indices(model_file, finding_model)
+            new_model_files += 1
+        if new_model_files > 0:
+            self._write_index()
+        return new_model_files
 
     def _load_index(self) -> None:
         """Load the index of finding models."""

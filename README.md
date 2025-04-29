@@ -55,6 +55,26 @@ Information on a finding, including description and synonyms, can add detailed d
 * `detail`: A more detailed description of the finding. *Optional*.
 * `citations`: A list of citations or references related to the finding. *Optional*.
 
+## Repository
+
+For a directory structured with a `defs` sub-directory containing definitions files (e.g.,
+in a clone of the [Open Imaging Finding Model repository](https://github.com/openimagingdata/findingmodels), load and save models with indexing to ease use.
+
+```python
+import findingmodel as fm
+
+repo = fm.FindingModelRepository("data") # Model JSON files stored in defs sub-directory
+
+aaa_model = repo.get_model("abdominal aortic aneurysm")
+
+new_model = fm.FindingModelBase(...)
+saved_model = repo.save_model(new_model)
+
+repo.remove_model(aaa_model.oifm_id)
+```
+
+See [example usage in notebook](notebooks/findingmodel_repo.ipynb).
+
 ## Tools
 
 ### `describe_finding_name()`
