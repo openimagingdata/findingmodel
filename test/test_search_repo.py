@@ -3,26 +3,31 @@ from pathlib import Path
 
 import pytest
 
-from findingmodel.finding_model import FindingModelBase, FindingModelFull
-from findingmodel.repo import FindingModelRepository
+from findingmodel import FindingModelBase, FindingModelFull
+
+try:
+    from findingmodel.search_repository import LANCEDB_FILE_NAME, SearchRepository
+except ImportError:
+    pytest.skip("Skipping repository tests: findingmodel.search_repository not available", allow_module_level=True)
 
 
 @pytest.fixture
 def repo_path_with_index(tmp_path: Path) -> Path:
-    # Copy the defs directory and index.jsonl to a temp location
+    # Copy the defs directory and index.lancedb to a temp location
     data_dir = Path(__file__).parent / "data"
     defs_src = data_dir / "defs"
     defs_dst = tmp_path / "defs"
     shutil.copytree(defs_src, defs_dst)
-    index_src = data_dir / "index.jsonl"
-    index_dst = tmp_path / "index.jsonl"
-    shutil.copy(index_src, index_dst)
+    index_src = data_dir / "index.tar.gz"
+    shutil.unpack_archive(index_src, tmp_path, "gztar")
+    index_dir_path = tmp_path / LANCEDB_FILE_NAME
+    assert index_dir_path.exists() and index_dir_path.is_dir()
     return tmp_path
 
 
 @pytest.fixture
 def repo_path_no_index(tmp_path: Path) -> Path:
-    # Copy the defs directory and index.jsonl to a temp location
+    # Copy the defs directory to a temp location
     data_dir = Path(__file__).parent / "data"
     defs_src = data_dir / "defs"
     defs_dst = tmp_path / "defs"
@@ -50,7 +55,7 @@ EXPECTED_IDS = [
 
 
 def test_finding_models_sorted(repo_path_with_index: Path) -> None:
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     assert len(repo) == len(EXPECTED_NAMES)
     assert repo.model_names == EXPECTED_NAMES
     assert repo.model_ids == EXPECTED_IDS
@@ -62,24 +67,23 @@ def test_finding_models_sorted(repo_path_with_index: Path) -> None:
 
 def test_get_model_by_id(repo_path_with_index: Path) -> None:
     # Get all IDs from the index
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     for model_id in EXPECTED_IDS:
         model = repo.get_model(model_id)
         assert isinstance(model, FindingModelFull)
         assert model.oifm_id == model_id
 
 
+@pytest.mark.callout
 def test_index_building(repo_path_no_index: Path) -> None:
     # Copy only defs, not index, to test index building
-    repo = FindingModelRepository(repo_path_no_index)
+    repo = SearchRepository(repo_path_no_index)
     assert len(repo) == len(EXPECTED_NAMES)
-    assert repo._index_file == repo_path_no_index / "index.jsonl"
-    assert repo._index_file.exists()
 
 
 def test_repo_contains(repo_path_with_index: Path) -> None:
     # Test the contains method
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     for model_id in EXPECTED_IDS:
         assert model_id in repo
     assert "non_existent_id" not in repo
@@ -87,9 +91,10 @@ def test_repo_contains(repo_path_with_index: Path) -> None:
         assert model_name in repo
 
 
+@pytest.mark.callout
 def test_save_base_model(repo_path_with_index: Path, base_model: FindingModelBase) -> None:
     # Test saving a model to the repository
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     initial_len = len(repo)
     full_model = repo.save_model(base_model, source="TEST")
 
@@ -107,14 +112,9 @@ def test_save_base_model(repo_path_with_index: Path, base_model: FindingModelBas
     expected_def_path = repo_path_with_index / "defs" / "test_model.fm.json"
     assert expected_def_path.exists()
 
-    # Check if the index file on disk contains the new entry
-    found_in_index_file = False
-    with open(repo._index_file, "r") as f:
-        for line in f:
-            if full_model.oifm_id in line and base_model.name in line:
-                found_in_index_file = True
-                break
-    assert found_in_index_file, f"Model {full_model.oifm_id} not found in index file {repo._index_file}"
+    # Check if the index contains the new entry
+    count = repo._table.count_rows(f"id = '{full_model.oifm_id}'")
+    assert count > 0, f"Model {full_model.oifm_id} not found in index search"
 
     # Test retrieving the saved model
     retrieved_model = repo.get_model(base_model.name)
@@ -123,9 +123,10 @@ def test_save_base_model(repo_path_with_index: Path, base_model: FindingModelBas
     assert retrieved_model.name == base_model.name
 
 
+@pytest.mark.callout
 def test_save_full_model(repo_path_with_index: Path, full_model: FindingModelFull) -> None:
     # Test saving a model to the repository
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     initial_len = len(repo)
     initial_id = full_model.oifm_id
     full_model = repo.save_model(full_model, source="TEST")
@@ -143,14 +144,9 @@ def test_save_full_model(repo_path_with_index: Path, full_model: FindingModelFul
     expected_def_path = repo_path_with_index / "defs" / "test_model.fm.json"
     assert expected_def_path.exists()
 
-    # Check if the index file on disk contains the new entry
-    found_in_index_file = False
-    with open(repo._index_file, "r") as f:
-        for line in f:
-            if full_model.oifm_id in line and full_model.name in line:
-                found_in_index_file = True
-                break
-    assert found_in_index_file, f"Model {full_model.oifm_id} not found in index file {repo._index_file}"
+    # Check if the index contains the new entry
+    count = repo._table.count_rows(f"id = '{full_model.oifm_id}'")
+    assert count > 0, f"Model {full_model.oifm_id} not found in index search"
 
     # Test retrieving the saved model
     retrieved_model = repo.get_model(full_model.name)
@@ -161,20 +157,20 @@ def test_save_full_model(repo_path_with_index: Path, full_model: FindingModelFul
 
 def test_duplicate_id_check(repo_path_with_index: Path) -> None:
     # Test saving a model with an existing ID
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     EXISTING_MODEL_ID = "OIFM_MSFT_134126"  # Set to an existing ID
     error = repo.check_existing_id(EXISTING_MODEL_ID)
-    assert error is not None
-    assert error.name == "abdominal aortic aneurysm"
+    assert error is not None and len(error) == 1
+    assert error[0].name == "abdominal aortic aneurysm"
     EXISTING_ATTRIBUTE_ID = "OIFMA_MSFT_898601"  # Set to an existing attribute ID
     error = repo.check_existing_id(EXISTING_ATTRIBUTE_ID)
-    assert error is not None
-    assert error.name == "abdominal aortic aneurysm"
+    assert error is not None and len(error) == 1
+    assert error[0].name == "abdominal aortic aneurysm"
 
 
 def test_duplicate_model_id_check(repo_path_with_index: Path, full_model: FindingModelFull) -> None:
     # Test saving a model with an existing ID
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     EXISTING_ID = "OIFM_MSFT_134126"  # Set to an existing ID
     full_model.oifm_id = EXISTING_ID
     errors = repo.check_model_for_duplicate_ids(full_model)
@@ -185,7 +181,7 @@ def test_duplicate_model_id_check(repo_path_with_index: Path, full_model: Findin
 
 def test_duplicate_attribute_id_check(repo_path_with_index: Path, full_model: FindingModelFull) -> None:
     # Test saving a model with an existing attribute ID
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     EXISTING_ID = "OIFMA_MSFT_898601"  # Set to an existing ID
     full_model.attributes[0].oifma_id = EXISTING_ID
     errors = repo.check_model_for_duplicate_ids(full_model)
@@ -196,7 +192,7 @@ def test_duplicate_attribute_id_check(repo_path_with_index: Path, full_model: Fi
 
 def test_save_model_with_duplicate_id(repo_path_with_index: Path, full_model: FindingModelFull) -> None:
     # Test saving a model with an existing ID
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     EXISTING_ID = "OIFM_MSFT_134126"  # Set to an existing ID
     full_model.oifm_id = EXISTING_ID
     with pytest.raises(ValueError) as excinfo:
@@ -206,10 +202,10 @@ def test_save_model_with_duplicate_id(repo_path_with_index: Path, full_model: Fi
 
 def test_remove_model(repo_path_with_index: Path) -> None:
     # Test removing a model from the repository
-    repo = FindingModelRepository(repo_path_with_index)
+    repo = SearchRepository(repo_path_with_index)
     initial_len = len(repo)
     model_id = "OIFM_MSFT_134126"  # Set to an existing ID
-    index_entry = repo._id_index[model_id]
+    index_entry = repo._get_index_entry(model_id)
     assert index_entry is not None
     model_path = repo_path_with_index / "defs" / index_entry.file
     assert model_path.exists()
@@ -217,3 +213,23 @@ def test_remove_model(repo_path_with_index: Path) -> None:
     assert len(repo) == initial_len - 1
     assert model_id not in repo
     assert not model_path.exists()
+
+
+@pytest.mark.callout
+def test_search(repo_path_with_index: Path) -> None:
+    # Test searching for a model by name
+    repo = SearchRepository(repo_path_with_index)
+    EXPECTED_NAME = "ventricular diameters"
+    search_results = list(repo.search_models("heart", limit=1))
+    assert len(search_results) == 1
+    top_result, score = search_results[0]
+    assert isinstance(top_result, FindingModelFull)
+    assert top_result.name.lower() == EXPECTED_NAME
+    assert score > 0
+    search_results = list(repo.search_models("breast"))
+    assert len(search_results) > 1
+    assert all(isinstance(result[0], FindingModelFull) for result in search_results)
+    EXPECTED_NAME = "breast density"
+    top_result, score = search_results[0]
+    assert top_result.name.lower() == EXPECTED_NAME
+    assert score > 0

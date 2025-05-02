@@ -7,6 +7,11 @@ from pydantic import BaseModel, Field, model_validator
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
 from .index_code import IndexCode
 
+# TODO: Pull in the tools in common.py
+# TODO: Move random digits and ID generation to common.py
+# TODO: Add `slug_name` properties to the models, attributes, and choice values
+# TODO: Add `contributors` field to the models
+
 
 class AttributeType(str, Enum):
     CHOICE = "choice"
