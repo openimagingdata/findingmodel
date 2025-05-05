@@ -29,6 +29,7 @@ dependencies = [
     "openai>=1.76",
     "pydantic>=2.11.3",
     "pydantic-settings>=2.9.1",
+    "rapidfuzz>=3.13.0",
     "rich>=13.9.4",
 ]
 
