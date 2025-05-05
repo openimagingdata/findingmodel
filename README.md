@@ -55,10 +55,56 @@ Information on a finding, including description and synonyms, can add detailed d
 * `detail`: A more detailed description of the finding. *Optional*.
 * `citations`: A list of citations or references related to the finding. *Optional*.
 
+## Index
+
+For a directory structured with a `defs` sub-directory containing definitions files (e.g., in a clone of the [Open Imaging Finding Model repository](https://github.com/openimagingdata/findingmodels)), creates/maintains an index as a JSONL file `index.jsonl` in the base directory (alongside the `defs` directory).
+
+```python
+from findingmodel.index import Index
+
+index = Index("data") # Initialize with base directory; will find existing JSONL
+len(index)
+
+print([entry.name for entry in index.entries])
+# > ['Ventricular diameters',
+# >  'Mammographic malignancy assessment',
+# >  'pulmonary embolism',
+# >  'abdominal aortic aneurysm',
+# >  'Breast density',
+# >  'aortic dissection']
+
+metadata = index["abdominal aortic aneurysm"] # Lookup by ID, name, synonym
+print(metadata.model_dump())
+# > {'attributes': [{'attribute_id': 'OIFMA_MSFT_898601',
+# >                  'name': 'presence',
+# >                  'type': 'choice'},
+# >                 {'attribute_id': 'OIFMA_MSFT_783072',
+# >                  'name': 'change from prior',
+# >                  'type': 'choice'}],
+# >  'description': 'An abdominal aortic aneurysm (AAA) is a localized dilation of '
+# >                 'the abdominal aorta, typically defined as a diameter greater '
+# >                 'than 3 cm, which can lead to rupture and significant '
+# >                 'morbidity or mortality.',
+# >  'filename': 'abdominal_aortic_aneurysm.fm.json',
+# >  'name': 'abdominal aortic aneurysm',
+# >  'oifm_id': 'OIFM_MSFT_134126',
+# >  'synonyms': ['AAA'],
+# >  'tags': None}
+
+model = index.load_model("abdominal aortic aneurysm")
+# Loads the full FindingModelFull from the associated *.fm.json file in defs directory
+
+results = index.find_similar_names("abdomen") # Returns matching names or synonyms
+# > [('abdominal aortic aneurysm', 77.14285714285715),
+# >  ('Breast density', 51.42857142857142),
+# >  ('Mammographic density', 51.300000000000004)]
+```
+
+See [example usage in notebook](notebooks/findingmodel_index.ipynb).
+
 ## Search Repository
 
-For a directory structured with a `defs` sub-directory containing definitions files (e.g.,
-in a clone of the [Open Imaging Finding Model repository](https://github.com/openimagingdata/findingmodels)), load and save models with indexing to ease use. 
+Also assumes a base directory with a `defs` subdirectory.
 
 > Requires installing with `search` optional dependencies—use `uv add findingmode[search]`
 
