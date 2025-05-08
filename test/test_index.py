@@ -123,6 +123,22 @@ def test_contains(index_from_defs: Index) -> None:
     assert "NonExistentModel" not in index_from_defs
 
 
+def test_has_contributors(index_from_defs: Index) -> None:
+    """Test the has_contributors method."""
+    # Test with a model that has contributors
+    entry = index_from_defs["Pulmonary Embolism"]
+    assert entry is not None
+    assert entry.contributors is None
+
+    # Test with a model that does not have contributors
+    entry = index_from_defs["abdominal aortic aneurysm"]
+    assert entry is not None
+    assert entry.contributors is not None
+    assert len(entry.contributors) == 2
+    assert entry.contributors[0] == "HeatherChase"
+    assert entry.contributors[1] == "MSFT"
+
+
 def test_getitem(index_from_defs: Index) -> None:
     """Test the __getitem__ method."""
     # Test with name
@@ -276,10 +292,13 @@ def test_export_to_jsonl(index_from_defs: Index, tmp_path: Path) -> None:
         lines = f.readlines()
     assert len(lines) == len(index_from_defs)
     # Check if the first line is valid JSON and looks like an IndexEntry
-    first_entry_data = json.loads(lines[0])
-    assert "oifm_id" in first_entry_data
-    assert "filename" in first_entry_data
-    assert "name" in first_entry_data
+    entry_data = json.loads(lines[3])  # Should be AAA
+    assert "oifm_id" in entry_data
+    assert "filename" in entry_data
+    assert "name" in entry_data
+    assert "contributors" in entry_data
+    assert len(entry_data["contributors"]) == 2
+    assert entry_data["contributors"][1] == "MSFT"
 
 
 def test_id_exists(index_from_defs: Index) -> None:

@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from rapidfuzz import fuzz, process, utils
 
 from findingmodel.common import model_file_name
+from findingmodel.contributor import Person
 from findingmodel.finding_model import FindingModelFull
 
 
@@ -24,6 +25,7 @@ class IndexEntry(BaseModel):
     description: str | None = None
     synonyms: list[str] | None = None
     tags: list[str] | None = None
+    contributors: list[str] | None = None
     attributes: list[AttributeInfo] = Field(default_factory=list)
 
     def match(self, name_or_id_or_synonym: str) -> bool:
@@ -88,6 +90,12 @@ class Index:
             )
             for attr in model.attributes
         ]
+        contributors: list[str] | None = None
+        if model.contributors:
+            contributors = [
+                contributor.github_username if isinstance(contributor, Person) else contributor.code
+                for contributor in model.contributors
+            ]
         filename = filename.name if isinstance(filename, Path) else Path(filename).name
         if not filename.endswith(".fm.json"):
             raise ValueError("Expect filename to end with '.fm.json'")
@@ -98,6 +106,7 @@ class Index:
             filename=filename,
             synonyms=(list(model.synonyms) if model.synonyms else None),
             tags=(list(model.tags) if model.tags else None),
+            contributors=contributors,
             attributes=attributes,
         )
         return entry

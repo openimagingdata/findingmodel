@@ -1,8 +1,11 @@
 import random
+import re
 from enum import Enum
 from typing import Annotated, Any, Iterable, Literal, Sequence
 
 from pydantic import BaseModel, Field, model_validator
+
+from findingmodel.contributor import Organization, Person
 
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
 from .index_code import IndexCode
@@ -10,7 +13,8 @@ from .index_code import IndexCode
 # TODO: Pull in the tools in common.py
 # TODO: Move random digits and ID generation to common.py
 # TODO: Add `slug_name` properties to the models, attributes, and choice values
-# TODO: Add `contributors` field to the models
+# TODO: Add `index_codes` field to the base model class as well
+# TODO: Move all the Markdown code to the markdown module
 
 
 class AttributeType(str, Enum):
@@ -345,12 +349,18 @@ def generate_oifm_id(source: str) -> str:
     return f"OIFM_{source.upper()}_{_random_digits(ID_LENGTH)}"
 
 
+Contributor = Person | Organization
+
+
 class FindingModelFull(BaseModel):
     oifm_id: OifmIdStr
     name: NameString
     description: DescriptionString
     synonyms: SynonymSequence = None
     tags: TagSequence = None
+    contributors: list[Contributor] | None = Field(
+        default=None, description="The contributing users and organizations to the finding model"
+    )
     attributes: Annotated[
         Sequence[AttributeIded],
         Field(min_length=1, description=ATTRIBUTES_FIELD_DESCRIPTION),
@@ -358,7 +368,28 @@ class FindingModelFull(BaseModel):
     index_codes: IndexCodeList | None = None
 
     def as_markdown(self, hide_ids: bool = False) -> str:
-        return UNIFIED_MARKDOWN_TEMPLATE.render(
+        footer: str | None = None
+        if self.contributors:
+            footer_lines = []
+            for contributor in self.contributors:
+                match contributor:
+                    case Organization():
+                        line = (
+                            f"- [{contributor.name}]({contributor.url}) ({contributor.code})"
+                            if contributor.url
+                            else f"- {contributor.name} ({contributor.code})"
+                        )
+                        footer_lines.append(line)
+                    case Person():
+                        line = f"- {contributor.name} ({contributor.organization_code}) — [Email](mailto:{contributor.email})"
+                        if contributor.url:
+                            line += f" — [Link]({contributor.url})"
+                        footer_lines.append(line)
+                    case _:
+                        raise ValueError("Invalid contributor type")
+            footer = "\n\n---\n\n**Contributors**\n\n" + "\n".join(footer_lines)
+
+        result = UNIFIED_MARKDOWN_TEMPLATE.render(
             oifm_id=self.oifm_id,
             show_ids=not hide_ids,
             name=self.name,
@@ -367,9 +398,11 @@ class FindingModelFull(BaseModel):
             description=self.description,
             attributes=self.attributes,
             index_codes_str=self.index_codes_str,
+            footer=footer,
         ).strip()
+        result = re.sub(r"\n{3,}", "\n\n", result)
+        return result
 
-    # @computed_field  # type: ignore[prop-decorator]
     @property
     def index_codes_str(self) -> str | None:
         return _index_codes_str(self.index_codes)

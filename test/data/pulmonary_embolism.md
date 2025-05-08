@@ -29,7 +29,6 @@ Whether and how a pulmonary embolism has changed over time
 
 ### Other presence—`OIFMA_MSFT_463872`
 
-
 *(Select one)*
 
 - **absent**

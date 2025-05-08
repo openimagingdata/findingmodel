@@ -1,3 +1,4 @@
+from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import (
     AttributeType,
     ChoiceAttribute,
@@ -130,3 +131,22 @@ def test_load_finding_model_with_codes(tn_fm_json: str) -> None:
     assert absent_value.index_codes[0].code == "RID28473"
     assert absent_value.index_codes[1].system == "SNOMED"
     assert absent_value.index_codes[1].code == "2667000"
+
+
+def test_load_finding_model_with_contributors(tn_fm_json: str) -> None:
+    # Test loading a finding model with contributors
+    Organization.model_validate({"code": "ACR", "name": "American College of Radiology"})
+    Organization.model_validate({"code": "OIDM", "name": "Open Imaging Data Model"})
+    loaded_model = FindingModelFull.model_validate_json(tn_fm_json)
+    assert loaded_model.name == "thyroid nodule"
+    assert loaded_model.contributors is not None
+    assert len(loaded_model.contributors) == 3
+    john, jane, oidm = loaded_model.contributors
+    assert isinstance(john, Person)
+    assert john.github_username == "johndoe"
+    assert john.organization_code == "OIDM"
+    assert isinstance(jane, Person)
+    assert jane.github_username == "janedoe"
+    assert jane.organization_code == "ACR"
+    assert isinstance(oidm, Organization)
+    assert oidm.code == "OIDM"
