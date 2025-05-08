@@ -52,3 +52,11 @@ _RADLEX RID36044 decreased; SNOMED 1250004 Decreased (qualifier value)_
 _SNOMED 263768009 Greater (qualifier value); RADLEX RID5791 enlarged_
 - **smaller**: Thyroid nodule is smaller  
 _SNOMED 263796003 Lesser (qualifier value); RADLEX RID38669 diminished_
+
+---
+
+**Contributors**
+
+- John Doe (OIDM) — [Email](mailto:john.doe@example.com)
+- Jane Doe (ACR) — [Email](mailto:jane.doe@example.com) — [Link](https://janedoe.example.com/)
+- [Open Imaging Data Model Project](https://openimagingdata.org/) (OIDM)

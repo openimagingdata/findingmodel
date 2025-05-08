@@ -41,7 +41,11 @@ Basics of a finding model, including name, description, and attributes.
 
 ### `FindingModelFull`
 
-Uses `FindingModelBase`, but adds contains more detailed metadata, especially requiring IDs on models and attributes and allows index codes on multiple levels.
+Uses `FindingModelBase`, but adds contains more detailed metadata:
+
+* Requiring IDs on models and attributes (with enumerated codes for values on choice attributes)
+* Allows index codes on multiple levels (model, attribute, value)
+* Allows contributors (people and organization)
 
 ### `FindingInfo`
 

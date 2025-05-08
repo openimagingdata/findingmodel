@@ -3,6 +3,26 @@
   "name": "thyroid nodule",
   "description": "A thyroid nodule is a discrete lesion within the thyroid gland, which can be solid, cystic, or complex in nature, and may be benign or malignant.",
   "synonyms": ["Thyroid Mass", "Thyroid Tumor"],
+  "contributors": [
+    {
+      "github_username": "johndoe",
+      "email": "john.doe@example.com",
+      "name": "John Doe",
+      "organization_code": "OIDM"
+    },
+    {
+      "github_username": "janedoe",
+      "email": "jane.doe@example.com",
+      "name": "Jane Doe",
+      "organization_code": "ACR",
+      "url": "https://janedoe.example.com"
+    },
+    {
+      "name": "Open Imaging Data Model Project",
+      "code": "OIDM",
+      "url": "https://openimagingdata.org"
+    }
+  ],
   "attributes": [
     {
       "oifma_id": "OIFMA_MGB_771712",

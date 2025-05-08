@@ -57,7 +57,7 @@ Unit: {{ attribute.unit }}
 {% endif %}
 {% endif %}
 
-{% endfor %}
+{% endfor %}{%- if footer -%}{{ footer }}{% endif -%}
 """
 
 UNIFIED_MARKDOWN_TEMPLATE = Template(UNIFIED_MARKDOWN_TEMPLATE_TEXT, trim_blocks=True, lstrip_blocks=True)
