@@ -6,11 +6,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Next (presumed 0.1.4)
+## [0.1.4] – 2025-05-08
 
 ### Added
 
+- Added new `Person` and `Organization` classes to represent contributors to a finding model, and added
+  a (non-required—yet) list of them to `FindingModelFull` as the `contributors` field.
+- Added an `Index` object that can maintain an in-memory database of the metadata of finding models
+  saved as `*.fm.json` in a given directory.
+- Added a `SearchRepo` object that has a LanceDB-based hybrid search facility allowing for more 
+  sophisticated analysis of finding models for potential similarity.
+- Lots of tests and test data to prevent regressions, and updating docs and notebooks.
+
 ### Changed
+
+- Changed the way the `tools` module is imported; probably want to use `import findingmodel.tools as fmtools` or something similar.
 
 <!-- ### Removed -->
 
