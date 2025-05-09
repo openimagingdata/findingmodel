@@ -291,11 +291,12 @@ def test_export_to_jsonl(index_from_defs: Index, tmp_path: Path) -> None:
     with open(output_file, "r") as f:
         lines = f.readlines()
     assert len(lines) == len(index_from_defs)
-    # Check if the first line is valid JSON and looks like an IndexEntry
-    entry_data = json.loads(lines[3])  # Should be AAA
+    aaa_line = next((line for line in lines if "abdominal aortic aneurysm" in line), None)
+    assert aaa_line is not None  # Find the line for AAA
+    entry_data = json.loads(aaa_line)  # Should be AAA
     assert "oifm_id" in entry_data
     assert "filename" in entry_data
-    assert "name" in entry_data
+    assert "name" in entry_data and entry_data["name"] == "abdominal aortic aneurysm"
     assert "contributors" in entry_data
     assert len(entry_data["contributors"]) == 2
     assert entry_data["contributors"][1] == "MSFT"
