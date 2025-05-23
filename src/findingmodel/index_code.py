@@ -8,7 +8,7 @@ class IndexCode(BaseModel):
     """
 
     system: str = Field(description="The system that the code is from, e.g., SNOMED or RadLex.", min_length=3)
-    code: str = Field(description="The code representing the entry in the standard ontology.", min_length=3)
+    code: str = Field(description="The code representing the entry in the standard ontology.", min_length=2)
     display: str | None = Field(
         default=None,
         description="The display name of the code in the standard ontology.",
