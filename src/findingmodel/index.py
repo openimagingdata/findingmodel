@@ -155,7 +155,9 @@ class Index:
         if model.name in self:
             raise ValueError(f"Model name {model.name} already exists in the index.")
         if any(self.attribute_id_exists(attr.oifma_id) for attr in model.attributes):
-            raise ValueError("One or more attribute IDs already exist in the index.")
+            # Get the offending attribute IDs
+            offending_ids = [attr.oifma_id for attr in model.attributes if self.attribute_id_exists(attr.oifma_id)]
+            raise ValueError("One or more attribute IDs already exist in the index: " + ", ".join(offending_ids))
         if not allow_duplicate_synonyms and model.synonyms:
             for synonym in model.synonyms:
                 if synonym in self:
@@ -226,3 +228,20 @@ class Index:
             name, names_and_synonyms, processor=utils.default_process, scorer=fuzz.WRatio, limit=limit
         )
         return [(match, score) for match, score, _ in results if score >= threshold]
+
+    def to_markdown(self) -> str:
+        """Converts the index to a Markdown table."""
+        header = f"""
+# Finding Model Index
+
+{self.__len__()} entries
+
+| ID | Name | Synonyms | Tags | Contributors | Attributes |\n"""
+        separator = "|----|------|----------|------|--------------|------------|\n"
+        rows = []
+        for entry in sorted(self.entries, key=lambda e: e.name.casefold()):
+            md_filename = entry.filename.replace(".fm.json", ".md")
+            entry_name_with_links = f"[{entry.name}](text/{md_filename}) [JSON](defs/{entry.filename})"
+            row = f"| {entry.oifm_id} | {entry_name_with_links} | {', '.join(entry.synonyms or [])} | {', '.join(entry.tags or [])} | {', '.join(entry.contributors or [])} | {', '.join(attr.name for attr in entry.attributes)} |\n"
+            rows.append(row)
+        return header + separator + "".join(rows)
