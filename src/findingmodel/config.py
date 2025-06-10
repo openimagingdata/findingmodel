@@ -35,6 +35,11 @@ class FindingModelConfig(BaseSettings):
     perplexity_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
     perplexity_default_model: str = Field(default="sonar-pro")
 
+    # Mongo DB
+    mongodb_uri: QuoteStrippedSecretStr = Field(default=SecretStr("mongodb://localhost:27017"))
+    mongodb_db: str = Field(default="findingmodel")
+    mongodb_collection: str = Field(default="finding_models")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     def check_ready_for_openai(self) -> Literal[True]:
