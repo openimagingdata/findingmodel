@@ -66,18 +66,10 @@ For a directory structured with a `defs` sub-directory containing definitions fi
 ```python
 from findingmodel.index import Index
 
-index = Index("data") # Initialize with base directory; will find existing JSONL
-len(index)
+index = Index() # Initialize with base directory; will find existing JSONL
+print(await index.count())
 
-print([entry.name for entry in index.entries])
-# > ['Ventricular diameters',
-# >  'Mammographic malignancy assessment',
-# >  'pulmonary embolism',
-# >  'abdominal aortic aneurysm',
-# >  'Breast density',
-# >  'aortic dissection']
-
-metadata = index["abdominal aortic aneurysm"] # Lookup by ID, name, synonym
+metadata = index.get("abdominal aortic aneurysm") # Lookup by ID, name, synonym
 print(metadata.model_dump())
 # > {'attributes': [{'attribute_id': 'OIFMA_MSFT_898601',
 # >                  'name': 'presence',
@@ -95,13 +87,7 @@ print(metadata.model_dump())
 # >  'synonyms': ['AAA'],
 # >  'tags': None}
 
-model = index.load_model("abdominal aortic aneurysm")
-# Loads the full FindingModelFull from the associated *.fm.json file in defs directory
-
-results = index.find_similar_names("abdomen") # Returns matching names or synonyms
-# > [('abdominal aortic aneurysm', 77.14285714285715),
-# >  ('Breast density', 51.42857142857142),
-# >  ('Mammographic density', 51.300000000000004)]
+results = index.search("abdominal") # Returns matching names or synonyms
 ```
 
 See [example usage in notebook](notebooks/findingmodel_index.ipynb).

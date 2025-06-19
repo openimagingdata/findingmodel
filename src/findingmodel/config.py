@@ -37,8 +37,10 @@ class FindingModelConfig(BaseSettings):
 
     # Mongo DB
     mongodb_uri: QuoteStrippedSecretStr = Field(default=SecretStr("mongodb://localhost:27017"))
-    mongodb_db: str = Field(default="findingmodel")
-    mongodb_collection: str = Field(default="finding_models")
+    mongodb_db: str = Field(default="findingmodels")
+    mongodb_index_collection_base: str = Field(default="index_entries")
+    mongodb_organizations_collection_base: str = Field(default="organizations")
+    mongodb_people_collection_base: str = Field(default="people")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
