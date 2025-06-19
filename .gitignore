@@ -82,3 +82,9 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Logging
+**/*.log
+
+# Project-specific stuff
+notebooks/test_model.fm.json

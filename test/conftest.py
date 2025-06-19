@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from findingmodel import logger
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import (
     ChoiceAttribute,
@@ -13,6 +14,15 @@ from findingmodel.finding_model import (
     NumericAttribute,
     NumericAttributeIded,
 )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_test_logging() -> None:
+    """Configure logging for test session - runs once at start of session."""
+    # Enable logging for the findingmodel module
+    logger.enable("findingmodel")
+    # Add a file handler to the findingmodel logger
+    logger.add("test.log", level="INFO", rotation="10 MB")
 
 
 @pytest.fixture
