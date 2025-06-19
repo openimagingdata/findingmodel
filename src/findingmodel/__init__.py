@@ -1,3 +1,5 @@
+from loguru import logger as logger
+
 from .config import settings as settings
 from .finding_info import FindingInfo as FindingInfo
 from .finding_model import ChoiceAttribute as ChoiceAttribute
@@ -9,4 +11,6 @@ from .finding_model import FindingModelFull as FindingModelFull
 from .finding_model import NumericAttribute as NumericAttribute
 from .finding_model import NumericAttributeIded as NumericAttributeIded
 
-all = ["FindingInfo", "FindingModelBase", "FindingModelFull", "settings", "tools"]
+all = ["FindingInfo", "FindingModelBase", "FindingModelFull", "settings", "tools", logger]
+
+logger.disable("findingmodel")

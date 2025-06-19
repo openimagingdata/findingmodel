@@ -12,14 +12,14 @@ tasks:
     desc: "Test the findingmodel library"
     cmds:
       - echo "Testing library without callout test..."
-      - uv run pytest -m "not callout" {{.CLI_ARGS}}
+      - uv run pytest -rs -m "not callout" {{.CLI_ARGS}}
     silent: true
 
   test-full:
     desc: "Test the findingmodel library"
     cmds:
       - echo "Testing library (including call-outs)..."
-      - uv run pytest {{.CLI_ARGS}}
+      - uv run pytest -rs {{.CLI_ARGS}}
     silent: true
 
   check:
