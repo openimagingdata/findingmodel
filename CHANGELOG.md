@@ -6,11 +6,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Next] – Presumed 0.1.5
+## [Next] – Presumed 0.2.0
 
 ### Added
 
+- Added facility to check on online `ids.json` structure (e.g., from a GitHub repo) to help avoid
+  duplicate IDs as much as possible.
+- Started doing logging with `loguru`
+
 ### Changed
+
+- Refactored `tools` to be its own sub-module, making it easier to pull in tools
+- Redid `Index` to now use a MongoDB backend, which can be either local or remote
+- Fixed code field length minimum to be 2 characters
 
 <!-- ### Removed -->
 
