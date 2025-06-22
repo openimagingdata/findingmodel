@@ -1,6 +1,6 @@
 [project]
 name = "findingmodel"
-version = "0.1.5"
+version = "0.2.0"
 description = "Definition and tools for Open Imaging Finding Models"
 authors = [
     { name = "Tarik Alkasab", email = "tarik@alkasab.org" },
@@ -33,7 +33,7 @@ dependencies = [
     "rich>=13.9.4",
     "motor>=3.7.1",
     "loguru>=0.7.3",
-    "pydantic-ai[openai,slim]>=0.3.1",
+    "pydantic-ai-slim[cohere,openai,tavily]>=0.3.2",
 ]
 
 [project.optional-dependencies]
