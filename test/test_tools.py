@@ -6,6 +6,7 @@ import findingmodel.tools
 from findingmodel import FindingInfo, FindingModelBase, FindingModelFull
 from findingmodel.finding_model import AttributeType, ChoiceAttributeIded
 from findingmodel.index_code import IndexCode
+from findingmodel.tools.add_ids import IdManager
 
 
 def test_create_stub(finding_info: FindingInfo) -> None:
@@ -52,8 +53,8 @@ def test_add_ids_with_empty_cache(base_model: FindingModelBase) -> None:
         mock_client.return_value.__enter__.return_value.get.return_value = mock_response
 
         # Clear the cache before testing
-        findingmodel.tools.OIFM_IDS.clear()
-        findingmodel.tools.ATTRIBUTE_IDS.clear()
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
 
         updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
 
@@ -83,8 +84,8 @@ def test_add_ids_with_populated_cache(base_model: FindingModelBase) -> None:
         mock_client.return_value.__enter__.return_value.get.return_value = mock_response
 
         # Clear and populate cache
-        findingmodel.tools.OIFM_IDS.clear()
-        findingmodel.tools.ATTRIBUTE_IDS.clear()
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
 
         updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
 
@@ -105,8 +106,8 @@ def test_add_ids_uses_cache_on_second_call(base_model: FindingModelBase) -> None
         mock_client.return_value.__enter__.return_value.get.return_value = mock_response
 
         # Clear cache first
-        findingmodel.tools.OIFM_IDS.clear()
-        findingmodel.tools.ATTRIBUTE_IDS.clear()
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
 
         # First call - should make HTTP request
         findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
@@ -123,8 +124,8 @@ def test_add_ids_handles_http_timeout(base_model: FindingModelBase) -> None:
         mock_client.return_value.__enter__.return_value.get.side_effect = httpx.TimeoutException("Timeout")
 
         # Clear cache
-        findingmodel.tools.OIFM_IDS.clear()
-        findingmodel.tools.ATTRIBUTE_IDS.clear()
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
 
         # Should still work with empty cache when HTTP fails
         updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
@@ -139,8 +140,8 @@ def test_add_ids_handles_http_error(base_model: FindingModelBase) -> None:
         mock_client.return_value.__enter__.return_value.get.side_effect = httpx.HTTPError("HTTP Error")
 
         # Clear cache
-        findingmodel.tools.OIFM_IDS.clear()
-        findingmodel.tools.ATTRIBUTE_IDS.clear()
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
 
         # Should still work with empty cache when HTTP fails
         updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
@@ -160,13 +161,14 @@ def test_add_ids_refresh_cache(base_model: FindingModelBase) -> None:
         mock_client.return_value.__enter__.return_value.get.return_value = mock_response
 
         # Populate cache first
-        findingmodel.tools.OIFM_IDS = {"existing": "model"}
-        findingmodel.tools.ATTRIBUTE_IDS = {"existing": ("oifm", "attr")}
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.oifm_ids.update({"existing": "model"})
+        findingmodel.tools.id_manager.attribute_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.update({"existing": ("oifm", "attr")})
 
-        # Force refresh
-        with patch("findingmodel.tools.load_used_ids_from_github") as mock_load:
-            findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
-            mock_load.assert_called_once()
+        # Force refresh by calling load_used_ids_from_github with refresh_cache=True
+        findingmodel.tools.id_manager.load_used_ids_from_github(refresh_cache=True)
+        assert "OIFM_REFRESH_TEST" in findingmodel.tools.id_manager.oifm_ids
 
 
 def test_load_used_ids_from_github_directly() -> None:
@@ -183,14 +185,14 @@ def test_load_used_ids_from_github_directly() -> None:
         mock_client.return_value.__enter__.return_value.get.return_value = mock_response
 
         # Clear cache
-        findingmodel.tools.OIFM_IDS.clear()
-        findingmodel.tools.ATTRIBUTE_IDS.clear()
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
 
-        findingmodel.tools.load_used_ids_from_github()
+        findingmodel.tools.id_manager.load_used_ids_from_github(refresh_cache=True)
 
-        assert "OIFM_TEST_123" in findingmodel.tools.OIFM_IDS
-        assert "OIFMA_TEST_456" in findingmodel.tools.ATTRIBUTE_IDS
-        assert findingmodel.tools.ATTRIBUTE_IDS["OIFMA_TEST_456"] == ("OIFM_TEST_123", "test_attr")
+        assert "OIFM_TEST_123" in findingmodel.tools.id_manager.oifm_ids
+        assert "OIFMA_TEST_456" in findingmodel.tools.id_manager.attribute_ids
+        assert findingmodel.tools.id_manager.attribute_ids["OIFMA_TEST_456"] == ("OIFM_TEST_123", "test_attr")
 
 
 def test_load_used_ids_with_custom_url() -> None:
@@ -198,21 +200,17 @@ def test_load_used_ids_with_custom_url() -> None:
     custom_url = "https://example.com/custom-ids.json"
     mock_data: IdsJsonType = {"oifm_ids": {}, "attribute_ids": {}}
 
-    original_oifm_ids = findingmodel.tools.OIFM_IDS.copy()
-    original_attribute_ids = findingmodel.tools.ATTRIBUTE_IDS.copy()
-    findingmodel.tools.OIFM_IDS.clear()
-    findingmodel.tools.ATTRIBUTE_IDS.clear()
+    custom_id_manager = IdManager(url=custom_url)
+
     with patch("httpx.Client") as mock_client:
         mock_response = MagicMock()
         mock_response.json.return_value = mock_data
         mock_response.raise_for_status.return_value = None
         mock_client.return_value.__enter__.return_value.get.return_value = mock_response
 
-        findingmodel.tools.load_used_ids_from_github(url=custom_url)
+        custom_id_manager.load_used_ids_from_github(refresh_cache=True)
 
         mock_client.return_value.__enter__.return_value.get.assert_called_with(custom_url, timeout=5.0)
-    findingmodel.tools.OIFM_IDS = original_oifm_ids
-    findingmodel.tools.ATTRIBUTE_IDS = original_attribute_ids
 
 
 def test_add_index_codes_to_finding_model(full_model: FindingModelFull) -> None:
