@@ -92,37 +92,6 @@ results = index.search("abdominal") # Returns matching names or synonyms
 
 See [example usage in notebook](notebooks/findingmodel_index.ipynb).
 
-## Search Repository
-
-Also assumes a base directory with a `defs` subdirectory.
-
-> Requires installing with `search` optional dependencies—use `uv add findingmode[search]`
-
-```python
-import findingmodel as fm
-from findingmodel.search_repository import SearchRepository
-repo = fm.FindingModelRepository("data") # Model JSON files stored in defs sub-directory
-
-aaa_model = repo.get_model("abdominal aortic aneurysm")
-# Finds the file containing the AAA model, loads it, returns as FindingModelFull object
-
-new_model = fm.FindingModelBase(...)
-saved_model = repo.save_model(new_model)
-# Assigns IDs to the new finding model and saves it to the directory
-
-repo.remove_model(aaa_model.oifm_id)
-# Deletes the file associated with the model and deletes the file
-
-for summary in repo.search_summary("heart"):
-  print(f"{summary.name} - {summary.id} - {summary.score:.3f}")
-# Does hybrid full-text/vector search and returns sorted results
-# >  Ventricular diameters - OIFM_MSFT_367670 - 0.016
-# >  aortic dissection - OIFM_MSFT_573630 - 0.016
-# >  pulmonary embolism - OIFM_MSFT_932618 - 0.016
-```
-
-See [example usage in notebook](notebooks/findingmodel_search_repo.ipynb).
-
 ## Tools
 
 ### `describe_finding_name()`

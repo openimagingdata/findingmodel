@@ -36,13 +36,6 @@ dependencies = [
     "pydantic-ai-slim[cohere,openai,tavily]>=0.3.2",
 ]
 
-[project.optional-dependencies]
-search = [
-    "lancedb>=0.22.0",
-    "pylance>=0.26.1",
-    "tantivy>=0.22.2",
-]
-
 [project.urls]
 Homepage = "https://github.com/openimagingdata/findingmodel"
 Issues = "https://github.com/openimagingdata/findingmodel/issues"
