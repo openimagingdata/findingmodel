@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redid `Index` to now use a MongoDB backend, which can be either local or remote
 - Fixed code field length minimum to be 2 characters
 
-<!-- ### Removed -->
+### Removed
+
+- 🔴 Removed `SearchRepository`—this is going to be delivered directly via `Index`.
 
 ## [0.1.4] – 2025-05-08
 
