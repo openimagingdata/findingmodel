@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a (non-required—yet) list of them to `FindingModelFull` as the `contributors` field.
 - Added an `Index` object that can maintain an in-memory database of the metadata of finding models
   saved as `*.fm.json` in a given directory.
-- Added a `SearchRepo` object that has a LanceDB-based hybrid search facility allowing for more 
+- Added a `SearchRepo` object that has a LanceDB-based hybrid search facility allowing for more
   sophisticated analysis of finding models for potential similarity.
 - Lots of tests and test data to prevent regressions, and updating docs and notebooks.
 
