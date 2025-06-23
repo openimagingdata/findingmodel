@@ -60,15 +60,27 @@ class IndexReturnType(StrEnum):
 class Index:
     """An Index for managing and querying FindingModelFull objects."""
 
-    def __init__(self, *, mongodb_uri: str | None = None, db_name: str | None = None, branch: str = "main") -> None:
+    def __init__(
+        self,
+        *,
+        mongodb_uri: str | None = None,
+        db_name: str | None = None,
+        client: AsyncIOMotorClient[Any] | None = None,
+        branch: str = "main",
+    ) -> None:
         """
         Initializes the Index.
-        - If a JSON-L file is present in the base directory, loads the index from it.
-        - Otherwise, scans the `defs` directory for definition files and populates the index.
+        - Can be initialized with a mongodb_uri or an existing AsyncIOMotorClient.
+        - If a client is not provided, a new one will be created using the mongodb_uri.
+        - If mongodb_uri is not provided, it will be taken from settings.
         """
-        mongodb_uri = mongodb_uri or settings.mongodb_uri.get_secret_value()
+        if client:
+            self.client: AsyncIOMotorClient[Any] = client
+        else:
+            mongodb_uri = mongodb_uri or settings.mongodb_uri.get_secret_value()
+            self.client = AsyncIOMotorClient(mongodb_uri)
+
         db_name = db_name or settings.mongodb_db
-        self.client: AsyncIOMotorClient[Any] = AsyncIOMotorClient(mongodb_uri)
         self.db = self.client.get_database(db_name)
         self.index_collection = self.db.get_collection(settings.mongodb_index_collection_base + f"_{branch}")
         self.people_collection = self.db.get_collection(settings.mongodb_people_collection_base + f"_{branch}")
