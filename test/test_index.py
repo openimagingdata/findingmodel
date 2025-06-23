@@ -365,3 +365,13 @@ async def test_update_from_directory_nonexistent_directory(populated_index: Inde
 
     with pytest.raises(ValueError, match="is not a valid directory"):
         await populated_index.update_from_directory(nonexistent_dir)
+
+
+def test_index_initialization_with_client(mongo_client: AsyncIOMotorClient[Any]) -> None:
+    """Test that the Index can be initialized with an existing client."""
+    index = Index(client=mongo_client, db_name=TEST_MONGODB_DB)
+    assert index.client is mongo_client
+    assert index.db.name == TEST_MONGODB_DB
+    assert index.index_collection.name == "index_entries_main"
+    assert index.people_collection.name == "people_main"
+    assert index.organizations_collection.name == "organizations_main"
