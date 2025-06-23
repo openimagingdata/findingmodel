@@ -38,7 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed the way the `tools` module is imported; probably want to use `import findingmodel.tools as fmtools` or something similar.
 
-<!-- ### Removed -->
+### Removed
+
+- Removed `SearchRepository` and associated testing/test files.
 
 ## [0.1.3] – 2025-04-26
 
