@@ -6,6 +6,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added tests for new function names to ensure complete API coverage
+- Added comprehensive examples to README.md for all tool functions
+
+### Changed
+
+- Renamed tool functions to remove redundant "finding" prefix for cleaner API
+- Reorganized tools module into specialized files for better maintainability
+- Updated README.md with new function names and complete usage examples
+
+### Deprecated
+
+Function names have been updated to be more concise by removing the redundant "finding" prefix. The old function names are still available but will show deprecation warnings.
+
+| Deprecated Function | New Function | Notes |
+|-------------------|-------------|-------|
+| `describe_finding_name()` | `create_info_from_name()` | Creates FindingInfo from name |
+| `get_detail_on_finding()` | `add_details_to_info()` | Adds details to existing FindingInfo |
+| `create_finding_info_from_name()` | `create_info_from_name()` | Intermediate name, also deprecated |
+| `add_details_to_finding_info()` | `add_details_to_info()` | Intermediate name, also deprecated |
+| `create_finding_model_from_markdown()` | `create_model_from_markdown()` | Creates model from markdown |
+| `create_finding_model_stub_from_finding_info()` | `create_model_stub_from_info()` | Creates basic model stub |
+| `add_ids_to_finding_model()` | `add_ids_to_model()` | Adds OIFM IDs to model |
+| `add_standard_codes_to_finding_model()` | `add_standard_codes_to_model()` | Adds standard medical codes |
+
+### Removed
+
+- Removed direct exposure of `load_used_ids_from_github()` from tools module (still available via `id_manager`)
+
 ## [0.2.0] – 2025-06-23
 
 ### Added

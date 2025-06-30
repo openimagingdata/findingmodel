@@ -94,45 +94,73 @@ See [example usage in notebook](notebooks/findingmodel_index.ipynb).
 
 ## Tools
 
-### `describe_finding_name()`
+All tools are available through `findingmodel.tools`. Import them like:
+
+```python
+from findingmodel.tools import create_info_from_name, add_details_to_info
+# Or import the entire tools module
+import findingmodel.tools as tools
+```
+
+> **Note**: Previous function names (e.g., `describe_finding_name`, `create_finding_model_from_markdown`) are still available but deprecated. They will show deprecation warnings and point to the new names.
+
+### `create_info_from_name()`
 
 Takes a finding name and generates a usable description and possibly synonyms (`FindingInfo`) using OpenAI models (requires `OPENAI_API_KEY` to be set to a valid value).
 
 ```python
-from findingmodel.tools import describe_finding_name
+from findingmodel.tools import create_info_from_name
 
-await describe_finding_name("Pneumothorax")
+await create_info_from_name("Pneumothorax")
 
->>> FindingInfo(finding_name="pneumothorax", synonyms=["PTX"], 
+>>> FindingInfo(name="pneumothorax", synonyms=["PTX"], 
   description="Pneumothorax is the...")
 ```
 
-### `get_detail_on_finding()`
+### `add_details_to_info()`
 
 Takes a described finding as above and uses Perplexity to get a lot of possible reference information, possibly including citations (requires `PERPLEXITY_API_KEY` to be set to a valid value).
 
 ```python
-from findingmodel.tools import get_detail_on_finding
+from findingmodel.tools import add_details_to_info
 
-finding = FindingInfo(finding_name="pneumothorax", synonyms=['PTX'],
+finding = FindingInfo(name="pneumothorax", synonyms=['PTX'],
     description='Pneumothorax is the presence...')
 
-await get_detail_on_finding(finding)
+await add_details_to_info(finding)
 
->>> FindingInfo(finding_name='pneumothorax', synonyms=['PTX'], 
+>>> FindingInfo(name='pneumothorax', synonyms=['PTX'], 
  description='Pneumothorax is the...'
  detail='## Pneumothorax\n\n### Appearance on Imaging Studies\n\nA pneumothorax...',
  citations=['https://pubs.rsna.org/doi/full/10.1148/rg.2020200020', 
   'https://ajronline.org/doi/full/10.2214/AJR.17.18721', ...])
 ```
 
-### `create_finding_model_from_markdown()`
+### `create_model_from_markdown()`
 
 Creates a `FindingModel` from a markdown file or text using OpenAI API.
 
-<!-- TODO: Insert code example  -->
+```python
+from findingmodel.tools import create_model_from_markdown, create_info_from_name
 
-### `create_finding_model_stub_from_finding_info()`
+# First create basic info about the finding
+finding_info = await create_info_from_name("pneumothorax")
+
+# Then create a model from markdown outline
+markdown_outline = """
+# Pneumothorax Attributes
+- Size: small, moderate, large
+- Location: apical, basilar, complete
+- Tension: present, absent
+"""
+
+model = await create_model_from_markdown(
+    finding_info, 
+    markdown_text=markdown_outline
+)
+```
+
+### `create_model_stub_from_info()`
 
 Given even a basic `FindingInfo`, turn it into a `FindingModelBase` object with at least two attributes:
 
@@ -141,13 +169,41 @@ Given even a basic `FindingInfo`, turn it into a `FindingModelBase` object with 
 * **change from prior**: How the finding has changed from prior exams  
 (unchanged, stable, increased, decreased, new, resolved, no prior)
 
-<!-- TODO: Insert code example -->
+```python
+from findingmodel.tools import create_info_from_name, create_model_stub_from_info
 
-### `add_ids_to_finding_model()`
+# Create finding info
+finding_info = await create_info_from_name("pneumothorax")
+
+# Create a basic model stub with standard presence/change attributes
+stub_model = create_model_stub_from_info(finding_info)
+print(f"Created model with {len(stub_model.attributes)} attributes")
+```
+
+### `add_ids_to_model()`
 
 Generates and adds OIFM IDs to a `FindingModelBase` object and returns it as a `FindingModelFull` object. Note that the `source` parameter refers to the source component of the OIFM ID, which describes the originating organization of the model (e.g., `MGB` for Mass General Brigham and `MSFT` for Microsoft).
 
-### `add_standard_codes_to_finding_model()`
+```python
+from findingmodel.tools import add_ids_to_model, create_model_stub_from_info
+
+# Create a basic model (without IDs)
+stub_model = create_model_stub_from_info(finding_info)
+
+# Add OIFM IDs for tracking and standardization
+full_model = add_ids_to_model(stub_model, source="MSFT")
+print(f"Model ID: {full_model.oifm_id}")
+```
+
+### `add_standard_codes_to_model()`
 
 Edits a `FindingModelFull` in place to include some Radlex and SNOMED-CT codes
 that correspond to some typical situations.
+
+```python
+from findingmodel.tools import add_standard_codes_to_model
+
+# Add standard medical vocabulary codes
+add_standard_codes_to_model(full_model)
+print("Added standard RadLex and SNOMED-CT codes")
+```
