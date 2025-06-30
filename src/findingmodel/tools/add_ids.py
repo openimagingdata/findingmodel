@@ -57,7 +57,7 @@ class IdManager:
         logger.info(f"Loaded OIFM IDs and attribute IDs from GitHub in {elapsed_time:.2f} seconds.")
         logger.info(f"OIFM IDs {len(self.oifm_ids)} and attribute IDs {len(self.attribute_ids)} loaded from GitHub.")
 
-    def add_ids_to_finding_model(
+    def add_ids_to_model(
         self,
         finding_model: FindingModelBase,
         source: str,
@@ -85,6 +85,23 @@ class IdManager:
                 attribute["oifma_id"] = new_id
         logger.debug(f"Adding IDs to finding model {finding_model.name} from source {source}")
         return FindingModelFull.model_validate(finding_model_dict)
+
+    # Deprecated alias for backward compatibility
+    def add_ids_to_finding_model(
+        self,
+        finding_model: FindingModelBase,
+        source: str,
+    ) -> FindingModelFull:
+        """
+        DEPRECATED: Use add_ids_to_model instead.
+        Generate and add OIFM IDs to the ID-less finding models with a source code.
+        """
+        import warnings
+
+        warnings.warn(
+            "add_ids_to_finding_model is deprecated, use add_ids_to_model instead", DeprecationWarning, stacklevel=2
+        )
+        return self.add_ids_to_model(finding_model, source)
 
 
 # Create a singleton instance of the IdManager
