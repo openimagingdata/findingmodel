@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-The `findingmodel` package defines and provides tools for Open Imaging Finding Models - structured data models for medical imaging findings. This is a Python 3.11+ package for radiology/medical imaging domain, focusing on standardized finding definitions with attributes and metadata.
+The `findingmodel` package defines and provides tools for Open Imaging Finding Models - structured data models 
+for medical imaging findings. This is a Python 3.11+ package for radiology/medical imaging domain, focusing on 
+standardized finding definitions with attributes and metadata.
 
 ## Core Commands
 
@@ -43,7 +45,7 @@ python -m findingmodel markdown-to-fm      # Convert Markdown to JSON
 ### Core Components
 - **`finding_model.py`**: Main data models (`FindingModelBase`, `FindingModelFull`)
 - **`finding_info.py`**: Metadata wrapper (`FindingInfo`)
-- **`index.py`**: JSONL-based finding model index system
+- **`index.py`**: MongoDB-based finding model index system
 - **`cli.py`**: Click-based command-line interface
 - **`tools/`**: AI-powered generation tools using OpenAI/Perplexity APIs
 - **`config.py`**: Pydantic settings with environment variable support
@@ -52,24 +54,21 @@ python -m findingmodel markdown-to-fm      # Convert Markdown to JSON
 - **`FindingModelBase`**: Basic finding with name, description, attributes
 - **`FindingModelFull`**: Extended model with IDs, contributors, metadata
 - **Attributes**: `ChoiceAttribute`, `NumericAttribute` (with ID variants)
-- **Index**: JSONL-based metadata search for finding model repositories
+- **Index**: MongoDB-based metadata search for finding model repositories
 
 ### External Dependencies
 - **OpenAI API**: For description generation and model creation (`OPENAI_API_KEY`)
 - **Perplexity API**: For detailed finding research (`PERPLEXITY_API_KEY`)
+- **MongoDB**: For finding model indexing and metadata storage (`MONGODB_URI`)
 - **Pydantic AI**: LLM interactions with structured outputs
 
 ## Style & Conventions
 
 ### Code Formatting
 - **Line length**: 120 characters
-- **Formatter**: Ruff with preview features enabled
-- **Target**: Python 3.11+
-
-### Import Organization
-- Use Ruff isort configuration
-- Group imports: stdlib, third-party, local
-- Prefer explicit imports over wildcards
+- **Formatter**: Ruff with preview features enabled (config in `pyproject.toml`)
+- **Import organization**: Also organize imports with Ruff isort (configuration in `pyproject.toml`)
+- **Target**: Python 3.11+, but expected to be used in Python 3.12+ environments
 
 ### Type Annotations
 - **Strict typing**: MyPy strict mode enabled
@@ -82,7 +81,7 @@ python -m findingmodel markdown-to-fm      # Convert Markdown to JSON
 - **Classes**: `PascalCase`
 - **Constants**: `UPPER_SNAKE_CASE`
 - **Private members**: Leading underscore `_private`
-- **OIFM IDs**: Format `OIFM_{SOURCE}_{6_DIGITS}` (e.g., `OIFM_MSFT_134126`)
+- **OIFM IDs**: Format `OIFM_{SOURCE}_{6_DIGITS}`; SOURCE is 3-4 uppercase letters (e.g., `OIFM_MSFT_134126`)
 
 ### Error Handling
 - Use custom exception types (e.g., `ConfigurationError`)
