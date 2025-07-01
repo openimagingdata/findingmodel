@@ -29,7 +29,6 @@ dependencies = [
     "openai>=1.76",
     "pydantic[email]>=2.11.3",
     "pydantic-settings>=2.9.1",
-    "rapidfuzz>=3.13.0",
     "rich>=13.9.4",
     "motor>=3.7.1",
     "loguru>=0.7.3",
@@ -81,6 +80,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
     "callout: Marks test as calling on non-local services",
+]
+filterwarnings = [
+    # Filter out our own deprecation warnings from the tools module
+    "ignore:.*is deprecated, use.*instead:DeprecationWarning",
 ]
 
 [tool.mypy]
