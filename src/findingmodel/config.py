@@ -28,7 +28,8 @@ QuoteStrippedSecretStr = Annotated[SecretStr, BeforeValidator(strip_quotes_secre
 class FindingModelConfig(BaseSettings):
     # OpenAI API
     openai_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-    openai_default_model: str = Field(default="gpt-4o-mini")
+    openai_default_model: str = Field(default="gpt-4o")
+    openai_default_model_small: str = Field(default="gpt-4o-mini")
 
     # Perplexity API
     perplexity_base_url: HttpUrl = Field(default=HttpUrl("https://api.perplexity.ai"))

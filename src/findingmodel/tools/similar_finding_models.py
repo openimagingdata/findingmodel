@@ -172,7 +172,7 @@ async def find_similar_models(
     description: str | None = None,
     synonyms: list[str] | None = None,
     index: Index | None = None,
-    openai_model: str = settings.openai_default_model,
+    openai_model: str = settings.openai_default_model_small,
 ) -> SimilarModelAnalysis:
     """
     Find existing finding models that are similar enough to the proposed model
