@@ -36,5 +36,15 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true
+  },
+  "chat.mcp.serverSampling": {
+    "findingmodel/.vscode/mcp.json: Context7": {
+      "allowedModels": [
+        "github.copilot-chat/gpt-4.1",
+        "github.copilot-chat/claude-3.5-sonnet",
+        "github.copilot-chat/claude-sonnet-4",
+        "github.copilot-chat/gemini-2.5-pro"
+      ]
+    }
   }
 }
