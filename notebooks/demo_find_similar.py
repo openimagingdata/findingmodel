@@ -14,7 +14,7 @@ async def main() -> SimilarModelAnalysis:
     index = Index()
     assert await index.count() > 1900, "Index should have more than 1900 entries"
     similar_models = await find_similar_models(
-        finding_name, finding_info.description, finding_info.synonyms, index=index, openai_model="openai:gpt-4o-mini"
+        finding_name, finding_info.description, finding_info.synonyms, index=index, openai_model="gpt-4o-mini"
     )
     return similar_models
 
