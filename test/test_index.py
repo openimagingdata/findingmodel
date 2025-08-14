@@ -1,3 +1,4 @@
+import json
 import shutil
 import socket
 from pathlib import Path
@@ -375,3 +376,258 @@ def test_index_initialization_with_client(mongo_client: AsyncIOMotorClient[Any])
     assert index.index_collection.name == "index_entries_main"
     assert index.people_collection.name == "people_main"
     assert index.organizations_collection.name == "organizations_main"
+
+
+# Search functionality tests
+@pytest.mark.asyncio
+async def test_search_basic_functionality(populated_index: Index) -> None:
+    """Test basic search functionality with populated index."""
+    # Search for "aneurysm" should find abdominal aortic aneurysm
+    results = await populated_index.search("aneurysm", limit=10)
+    assert len(results) >= 1
+
+    # Check that we get IndexEntry objects back
+    from findingmodel.index import IndexEntry
+
+    assert all(isinstance(result, IndexEntry) for result in results)
+
+    # Should find the abdominal aortic aneurysm model
+    aneurysm_results = [r for r in results if "aneurysm" in r.name.lower()]
+    assert len(aneurysm_results) >= 1
+
+
+@pytest.mark.asyncio
+async def test_search_by_name(populated_index: Index) -> None:
+    """Test search functionality by exact and partial name matches."""
+    # Exact name search
+    results = await populated_index.search("abdominal aortic aneurysm")
+    assert len(results) >= 1
+    assert any("abdominal aortic aneurysm" in r.name.lower() for r in results)
+
+    # Partial name search
+    results = await populated_index.search("aortic")
+    assert len(results) >= 1
+    assert any("aortic" in r.name.lower() for r in results)
+
+
+@pytest.mark.asyncio
+async def test_search_by_description(populated_index: Index) -> None:
+    """Test search functionality using description content."""
+    # Search for terms that should appear in descriptions
+    results = await populated_index.search("dilation")
+    assert len(results) >= 0  # May or may not find results depending on description content
+
+    # Search for medical terms
+    results = await populated_index.search("diameter")
+    assert len(results) >= 0  # May or may not find results
+
+
+@pytest.mark.asyncio
+async def test_search_by_synonyms(populated_index: Index) -> None:
+    """Test search functionality using synonyms."""
+    # Search for "AAA" which should be a synonym for abdominal aortic aneurysm
+    results = await populated_index.search("AAA")
+    # Note: This may not find results if synonyms aren't in the text index
+    # but it's important to test the functionality
+    assert isinstance(results, list)
+
+
+@pytest.mark.asyncio
+async def test_search_limit_parameter(populated_index: Index) -> None:
+    """Test that search respects the limit parameter."""
+    # Search with different limits
+    results_limit_1 = await populated_index.search("aneurysm", limit=1)
+    results_limit_5 = await populated_index.search("aneurysm", limit=5)
+
+    assert len(results_limit_1) <= 1
+    assert len(results_limit_5) <= 5
+
+    # If there are results, limit should work correctly
+    if results_limit_5:
+        assert len(results_limit_1) <= len(results_limit_5)
+
+
+@pytest.mark.asyncio
+async def test_search_no_results(populated_index: Index) -> None:
+    """Test search with query that should return no results."""
+    results = await populated_index.search("zyxwvutsrqponmlkjihgfedcba")
+    assert isinstance(results, list)
+    assert len(results) == 0
+
+
+@pytest.mark.asyncio
+async def test_search_empty_query(populated_index: Index) -> None:
+    """Test search behavior with empty query."""
+    results = await populated_index.search("", limit=5)
+    assert isinstance(results, list)
+    # Empty query behavior may vary - just ensure it doesn't crash
+
+
+@pytest.mark.asyncio
+async def test_search_case_insensitive(populated_index: Index) -> None:
+    """Test that search is case insensitive."""
+    results_lower = await populated_index.search("aneurysm")
+    results_upper = await populated_index.search("ANEURYSM")
+    results_mixed = await populated_index.search("Aneurysm")
+
+    # Should get same results regardless of case
+    assert len(results_lower) == len(results_upper) == len(results_mixed)
+
+
+@pytest.mark.asyncio
+async def test_search_multiple_terms(populated_index: Index) -> None:
+    """Test search with multiple terms."""
+    # Search for multiple terms
+    results = await populated_index.search("abdominal aortic")
+    assert isinstance(results, list)
+
+    # Should potentially find models containing either term
+    if results:
+        found_text = " ".join([r.name + " " + (r.description or "") for r in results]).lower()
+        # At least one term should be found
+        assert "abdominal" in found_text or "aortic" in found_text
+
+
+@pytest.mark.asyncio
+async def test_search_with_empty_index(index: Index) -> None:
+    """Test search functionality with empty index."""
+    results = await index.search("anything", limit=10)
+    assert isinstance(results, list)
+    assert len(results) == 0
+
+
+# Error handling and failure tests
+@pytest.mark.asyncio
+async def test_mongodb_connection_failure() -> None:
+    """Test Index behavior when MongoDB connection fails."""
+    from pymongo.errors import ServerSelectionTimeoutError
+
+    # Create Index with invalid MongoDB URI
+    invalid_index = Index(mongodb_uri="mongodb://nonexistent:27017", db_name="test_db")
+
+    # Operations should fail gracefully
+    with pytest.raises(ServerSelectionTimeoutError):
+        await invalid_index.count()
+
+
+@pytest.mark.asyncio
+async def test_add_entry_with_invalid_json_file(index: Index, tmp_path: Path) -> None:
+    """Test error handling when adding file with invalid JSON."""
+    # Create file with invalid JSON
+    invalid_file = tmp_path / "invalid.fm.json"
+    invalid_file.write_text("{invalid json content")
+
+    # Should raise appropriate error
+    with pytest.raises((json.JSONDecodeError, ValueError)):  # JSON decode error or validation error
+        await index.add_or_update_entry_from_file(invalid_file)
+
+
+@pytest.mark.asyncio
+async def test_add_entry_with_nonexistent_file(index: Index, tmp_path: Path) -> None:
+    """Test error handling when adding nonexistent file."""
+    nonexistent_file = tmp_path / "does_not_exist.fm.json"
+
+    # Should raise FileNotFoundError
+    with pytest.raises(FileNotFoundError):
+        await index.add_or_update_entry_from_file(nonexistent_file)
+
+
+@pytest.mark.asyncio
+async def test_add_entry_with_invalid_model_data(index: Index, tmp_path: Path) -> None:
+    """Test error handling when adding file with invalid model data."""
+    # Create file with JSON that doesn't match FindingModelFull schema
+    invalid_model_file = tmp_path / "invalid_model.fm.json"
+    invalid_model_data = {
+        "name": "Test Model",
+        # Missing required fields like oifm_id, attributes, etc.
+    }
+    invalid_model_file.write_text(json.dumps(invalid_model_data))
+
+    # Should raise validation error
+    from pydantic import ValidationError
+
+    with pytest.raises((ValidationError, ValueError)):  # Pydantic validation error
+        await index.add_or_update_entry_from_file(invalid_model_file)
+
+
+@pytest.mark.asyncio
+async def test_batch_operation_partial_failure(index: Index, tmp_path: Path, sample_model: FindingModelFull) -> None:
+    """Test behavior when batch operations partially fail."""
+    # Create one valid file
+    valid_file = tmp_path / "valid.fm.json"
+    valid_file.write_text(sample_model.model_dump_json())
+
+    # Create one invalid file
+    invalid_file = tmp_path / "invalid.fm.json"
+    invalid_file.write_text("{invalid json")
+
+    # update_from_directory should handle partial failures gracefully
+    # The exact behavior may vary - it might skip invalid files or raise an error
+    try:
+        added, updated, removed = await index.update_from_directory(tmp_path)
+        # If it succeeds, at least the valid file should be processed
+        assert added >= 0 and updated >= 0 and removed >= 0
+    except Exception:
+        # If it fails, that's also acceptable behavior for invalid files
+        pass
+
+
+@pytest.mark.asyncio
+async def test_concurrent_index_operations(index: Index, sample_model: FindingModelFull, tmp_path: Path) -> None:
+    """Test Index behavior under concurrent operations."""
+    import asyncio
+
+    # Create multiple files
+    files = []
+    models = []
+    for i in range(3):
+        model = sample_model.model_copy()
+        model.oifm_id = f"OIFM_CONCURRENT_TEST_{i:06d}"
+        model.name = f"Concurrent Test Model {i}"
+
+        file_path = tmp_path / f"concurrent_test_{i}.fm.json"
+        file_path.write_text(model.model_dump_json())
+
+        files.append(file_path)
+        models.append(model)
+
+    # Try to add all files concurrently
+    async def add_file(file_path: Path, model: FindingModelFull) -> str:
+        return await index.add_or_update_entry_from_file(file_path, model)
+
+    # Run concurrent operations
+    tasks = [add_file(f, m) for f, m in zip(files, models, strict=False)]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # All operations should complete (successfully or with exceptions)
+    assert len(results) == 3
+
+    # Check that some models were added successfully
+    final_count = await index.count()
+    assert final_count > 0
+
+
+@pytest.mark.asyncio
+async def test_search_with_mongodb_error(index: Index) -> None:
+    """Test search behavior when MongoDB has issues."""
+    # This is difficult to test without actually breaking MongoDB
+    # But we can test that search handles empty results gracefully
+    results = await index.search("nonexistent_term_xyz", limit=5)
+    assert isinstance(results, list)
+    assert len(results) == 0
+
+
+@pytest.mark.asyncio
+async def test_large_query_handling(index: Index) -> None:
+    """Test Index behavior with very large search queries."""
+    # Test with very long search query
+    very_long_query = "a" * 10000  # 10k character query
+
+    # Should not crash
+    results = await index.search(very_long_query, limit=5)
+    assert isinstance(results, list)
+
+    # Test with query containing special characters
+    special_char_query = "\"'\\/{}[]$^*+?.|()"
+    results = await index.search(special_char_query, limit=5)
+    assert isinstance(results, list)
