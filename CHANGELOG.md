@@ -6,6 +6,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased: 0.4.0?] — 2025–07–??
+
+### Added
+
+- Added comprehensive test coverage for previously untested functionality:
+  - 11 tests for `Index.search()` functionality including limit, case sensitivity, and multiple terms
+  - 7 integration tests for AI tools with `@pytest.mark.callout` decorator
+  - 3 tests for `find_similar_models()` function including edge cases
+  - 15 error handling tests for network failures, MongoDB issues, and invalid data
+- Updated test documentation to reflect actual MongoDB implementation of Index
+- Fixed all linting issues for clean CI/CD pipeline
+
+### Changed
+
+- Corrected `Index` documentation in README.md and CLAUDE.md from JSONL to MongoDB implementation
+- Fixed `find_similar_models()` documentation to accurately describe its purpose and signature
+- Updated type annotations in test functions to satisfy ruff linting requirements
+- Replaced generic Exception catches with specific exception types (JSONDecodeError, ValidationError)
+
+### Fixed
+
+- Fixed test validation errors by using proper 3-character source codes (TST, TES, TEX)
+- Added missing pytest import in test_tools.py
+- Corrected find_similar_models test signature to match actual implementation
+
+### Removed
+
 ## [0.3.1] — 2025–07–06
 
 ### Fixed
