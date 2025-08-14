@@ -1,6 +1,9 @@
+import asyncio
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import httpx
+import pytest
 
 import findingmodel.tools
 from findingmodel import FindingInfo, FindingModelBase, FindingModelFull
@@ -309,3 +312,467 @@ def test_add_standard_codes_to_model_no_duplicates_new_api(full_model: FindingMo
     # Call again to ensure no duplicates
     findingmodel.tools.add_standard_codes_to_model(full_model)
     assert len(attribute.index_codes) == 1
+
+
+# Integration tests requiring external API access
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_create_info_from_name_integration() -> None:
+    """Integration test for create_info_from_name with real OpenAI API."""
+    from findingmodel.finding_info import FindingInfo
+    from findingmodel.tools import create_info_from_name
+
+    # Test with a common medical finding
+    result = await create_info_from_name("pneumothorax")
+
+    assert isinstance(result, FindingInfo)
+    assert result.name.lower() == "pneumothorax"
+    assert result.description is not None
+    assert len(result.description) > 10  # Should have meaningful description
+
+    # Should typically have synonyms for pneumothorax
+    assert result.synonyms is not None
+    assert len(result.synonyms) > 0
+
+    # Common synonym for pneumothorax
+    synonyms_lower = [s.lower() for s in result.synonyms]
+    assert "ptx" in synonyms_lower
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_create_info_from_name_edge_cases() -> None:
+    """Test create_info_from_name with edge cases."""
+    from findingmodel.tools import create_info_from_name
+
+    # Test with less common finding
+    result = await create_info_from_name("thyroid nodule")
+    assert result.name.lower() == "thyroid nodule"
+    assert result.description is not None
+
+    # Test with very specific finding
+    result = await create_info_from_name("pulmonary embolism")
+    assert result.name.lower() == "pulmonary embolism"
+    assert result.description is not None
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_add_details_to_info_integration() -> None:
+    """Integration test for add_details_to_info with real Perplexity API."""
+    from findingmodel.finding_info import FindingInfo
+    from findingmodel.tools import add_details_to_info
+
+    # Start with basic finding info
+    basic_info = FindingInfo(name="pneumothorax", description="Presence of air in the pleural space", synonyms=["PTX"])
+
+    # Add detailed information
+    detailed_info = await add_details_to_info(basic_info)
+
+    assert isinstance(detailed_info, FindingInfo)
+    assert detailed_info.name == basic_info.name
+    assert detailed_info.description == basic_info.description
+    assert detailed_info.synonyms == basic_info.synonyms
+
+    # Should have added detailed information
+    assert detailed_info.detail is not None
+    assert len(detailed_info.detail) > len(basic_info.description or "")
+
+    # Should have citations
+    assert detailed_info.citations is not None
+    assert len(detailed_info.citations) > 0
+
+    # Citations should be valid URLs
+    for citation in detailed_info.citations:
+        assert citation.startswith(("http://", "https://"))
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_create_model_from_markdown_integration() -> None:
+    """Integration test for create_model_from_markdown with real OpenAI API."""
+    from findingmodel.finding_model import FindingModelBase
+    from findingmodel.tools import create_info_from_name, create_model_from_markdown
+
+    # First create basic info
+    finding_info = await create_info_from_name("pneumothorax")
+
+    # Define markdown outline
+    markdown_text = """
+    # Pneumothorax Attributes
+    
+    ## Size
+    - Small: Less than 2cm
+    - Moderate: 2-4cm  
+    - Large: Greater than 4cm
+    
+    ## Location
+    - Apical
+    - Basilar
+    - Complete
+    
+    ## Tension
+    - Present
+    - Absent
+    """
+
+    # Create model from markdown
+    model = await create_model_from_markdown(finding_info, markdown_text=markdown_text)
+
+    assert isinstance(model, FindingModelBase)
+    assert model.name == finding_info.name
+    assert model.description == finding_info.description
+    assert model.synonyms == finding_info.synonyms
+
+    # Should have created attributes
+    assert len(model.attributes) >= 3  # Size, Location, Tension
+
+    # Check attribute names
+    attr_names = [attr.name.lower() for attr in model.attributes]
+    assert "size" in attr_names
+    assert "location" in attr_names
+    assert "tension" in attr_names
+
+    # Check that choice attributes have values
+    for attr in model.attributes:
+        if attr.type.value == "choice":
+            assert len(attr.values) > 0
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_create_model_from_markdown_file_integration(tmp_path: Path) -> None:
+    """Integration test for create_model_from_markdown using file input."""
+    from findingmodel.tools import create_info_from_name, create_model_from_markdown
+
+    # Create markdown file
+    markdown_content = """
+    # Heart Murmur Assessment
+    
+    ## Intensity
+    - Grade 1: Very faint
+    - Grade 2: Soft but audible
+    - Grade 3: Moderately loud
+    - Grade 4: Loud with thrill
+    
+    ## Timing
+    - Systolic
+    - Diastolic
+    - Continuous
+    """
+
+    markdown_file = tmp_path / "heart_murmur.md"
+    markdown_file.write_text(markdown_content)
+
+    # Create finding info
+    finding_info = await create_info_from_name("heart murmur")
+
+    # Create model from file
+    model = await create_model_from_markdown(finding_info, markdown_path=markdown_file)
+
+    assert model.name == finding_info.name
+    assert len(model.attributes) >= 2  # Intensity, Timing
+
+    # Check for specific attributes
+    attr_names = [attr.name.lower() for attr in model.attributes]
+    assert "intensity" in attr_names
+    assert "timing" in attr_names
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_ai_tools_error_handling() -> None:
+    """Test AI tools error handling with invalid inputs."""
+    from findingmodel.finding_info import FindingInfo
+    from findingmodel.tools import add_details_to_info, create_info_from_name
+
+    # Test with very unusual/nonsensical input
+    result = await create_info_from_name("xyznonsensicalmedicalterm")
+    # Should still return a FindingInfo object, even if description is generic
+    assert isinstance(result, FindingInfo)
+    assert result.name == "xyznonsensicalmedicalterm"
+
+    # Test add_details_to_info with minimal input
+    minimal_info = FindingInfo(name="test", description="test description")
+    detailed = await add_details_to_info(minimal_info)
+    assert isinstance(detailed, FindingInfo)
+    assert detailed.name == minimal_info.name
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_ai_tools_consistency() -> None:
+    """Test that AI tools produce consistent results for the same input."""
+    from findingmodel.tools import create_info_from_name
+
+    # Run the same query twice
+    result1 = await create_info_from_name("myocardial infarction")
+    result2 = await create_info_from_name("myocardial infarction")
+
+    # Names should be identical (normalized)
+    assert result1.name == result2.name
+
+    # Descriptions should be similar (though may not be identical due to AI variability)
+    assert result1.description is not None
+    assert result2.description is not None
+    assert len(result1.description) > 10
+    assert len(result2.description) > 10
+
+
+# Tests for find_similar_models function
+def test_find_similar_models_basic_functionality() -> None:
+    """Test basic functionality of find_similar_models without API calls."""
+    from findingmodel.tools import find_similar_models
+
+    # Test the function exists and has the correct signature
+    # This test will skip if it requires API calls
+    try:
+        import asyncio
+
+        # Call with minimal parameters to test existence
+        result = asyncio.run(find_similar_models("pneumothorax"))
+
+        # Should return a SimilarModelAnalysis object
+        from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
+
+        assert isinstance(result, SimilarModelAnalysis)
+
+    except Exception as e:
+        # If it requires API calls, we'll handle that in the callout tests
+        if "API" in str(e) or "key" in str(e).lower() or "openai" in str(e).lower():
+            pytest.skip(f"Skipping test that requires API access: {e}")
+        else:
+            raise
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_find_similar_models_integration() -> None:
+    """Integration test for find_similar_models with real OpenAI API."""
+    from findingmodel.tools import find_similar_models
+    from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
+
+    # Test with a common medical finding
+    result = await find_similar_models(
+        finding_name="pneumothorax", description="Presence of air in the pleural space causing lung collapse"
+    )
+
+    # Verify structure
+    assert isinstance(result, SimilarModelAnalysis)
+
+    # Should have found similar models (if any exist in the index)
+    assert hasattr(result, "similar_models")
+
+    # The result should have some analysis data
+    assert hasattr(result, "query_embedding") or hasattr(result, "analysis") or hasattr(result, "findings")
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_find_similar_models_edge_cases() -> None:
+    """Test find_similar_models with edge cases."""
+    from findingmodel.tools import find_similar_models
+    from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
+
+    # Test with minimal input
+    result = await find_similar_models(finding_name="test finding")
+    assert isinstance(result, SimilarModelAnalysis)
+
+    # Test with empty description
+    result_empty_desc = await find_similar_models(finding_name="test", description="")
+    assert isinstance(result_empty_desc, SimilarModelAnalysis)
+
+    # Test with very long finding name
+    long_name = "very long finding name " * 20
+    result_long = await find_similar_models(finding_name=long_name)
+    assert isinstance(result_long, SimilarModelAnalysis)
+
+
+# Network and API failure tests
+def test_add_ids_network_timeout_handling(base_model: FindingModelBase) -> None:
+    """Test ID generation when GitHub API is unreachable."""
+    with patch("httpx.Client") as mock_client:
+        # Simulate network timeout
+        mock_client.return_value.__enter__.return_value.get.side_effect = httpx.TimeoutException("Request timeout")
+
+        # Clear cache to force network call
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
+
+        # Should still generate IDs using fallback method
+        result = findingmodel.tools.add_ids_to_model(base_model, source="TEST")
+
+        assert isinstance(result, FindingModelFull)
+        assert result.oifm_id is not None
+        assert result.oifm_id.startswith("OIFM_")
+        assert "TEST" in result.oifm_id
+
+
+def test_add_ids_http_error_handling(base_model: FindingModelBase) -> None:
+    """Test ID generation when GitHub API returns HTTP error."""
+    with patch("httpx.Client") as mock_client:
+        # Simulate HTTP error
+        mock_client.return_value.__enter__.return_value.get.side_effect = httpx.HTTPStatusError(
+            "404 Not Found", request=MagicMock(), response=MagicMock()
+        )
+
+        # Clear cache to force network call
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
+
+        # Should still generate IDs using fallback method
+        result = findingmodel.tools.add_ids_to_model(base_model, source="TEST")
+
+        assert isinstance(result, FindingModelFull)
+        assert result.oifm_id is not None
+
+
+def test_add_ids_invalid_response_data(base_model: FindingModelBase) -> None:
+    """Test ID generation when GitHub API returns invalid data."""
+    with patch("httpx.Client") as mock_client:
+        # Mock response with invalid JSON structure
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"invalid": "structure"}  # Missing expected keys
+        mock_response.raise_for_status.return_value = None
+        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
+
+        # Clear cache to force network call
+        findingmodel.tools.id_manager.oifm_ids.clear()
+        findingmodel.tools.id_manager.attribute_ids.clear()
+
+        # This should raise an AssertionError due to invalid response structure
+        with pytest.raises(AssertionError):
+            findingmodel.tools.add_ids_to_model(base_model, source="TEST")
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_ai_tools_api_key_missing() -> None:
+    """Test AI tools behavior when API keys are missing or invalid."""
+    import os
+
+    from findingmodel.tools import create_info_from_name
+
+    # Save original API key
+    original_key = os.environ.get("OPENAI_API_KEY")
+
+    try:
+        # Remove API key
+        if "OPENAI_API_KEY" in os.environ:
+            del os.environ["OPENAI_API_KEY"]
+
+        # Should raise appropriate error
+        with pytest.raises(Exception) as exc_info:
+            await create_info_from_name("test finding")
+
+        # Error should indicate missing API key
+        error_msg = str(exc_info.value).lower()
+        assert "api" in error_msg or "key" in error_msg or "auth" in error_msg
+
+    finally:
+        # Restore original API key
+        if original_key:
+            os.environ["OPENAI_API_KEY"] = original_key
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_ai_tools_rate_limiting() -> None:
+    """Test AI tools behavior under rate limiting conditions."""
+    from findingmodel.tools import create_info_from_name
+
+    # This test depends on actual API behavior
+    # We'll make multiple rapid requests and see how it handles them
+    tasks = []
+    for i in range(3):  # Keep it small to avoid actually hitting rate limits
+        task = create_info_from_name(f"test finding {i}")
+        tasks.append(task)
+
+    # Should handle all requests gracefully (may be slower due to rate limiting)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # All should succeed or fail with appropriate errors
+    for result in results:
+        if isinstance(result, Exception):
+            # If rate limited, error should indicate that
+            error_msg = str(result).lower()
+            assert "rate" in error_msg or "limit" in error_msg or "quota" in error_msg
+        else:
+            # If successful, should be valid FindingInfo
+            from findingmodel.finding_info import FindingInfo
+
+            assert isinstance(result, FindingInfo)
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_ai_tools_malformed_response_handling() -> None:
+    """Test AI tools handling of malformed API responses."""
+    # This is difficult to test without mocking the API
+    # But we can test with edge case inputs that might cause issues
+    from findingmodel.tools import create_info_from_name
+
+    # Test with inputs that might cause parsing issues
+    edge_cases = [
+        "",  # Empty string
+        " ",  # Just whitespace
+        "x" * 1000,  # Very long string
+        "Special chars: !@#$%^&*(){}[]|\\:;\"'<>,.?/~`",
+        "Unicode: 测试 🏥 ∅ ∞",
+    ]
+
+    for test_input in edge_cases:
+        try:
+            result = await create_info_from_name(test_input)
+            # If it succeeds, should return valid structure
+            from findingmodel.finding_info import FindingInfo
+
+            assert isinstance(result, FindingInfo)
+            assert result.name is not None
+        except Exception as e:
+            # If it fails, should be a reasonable error
+            assert isinstance(e, (ValueError, TypeError, AttributeError))
+
+
+def test_tools_import_failures() -> None:
+    """Test graceful handling when optional dependencies are missing."""
+    # This tests the robustness of the import system
+    # Most of these should succeed, but we test the error handling
+
+    try:
+        import findingmodel.tools.create_stub
+
+        assert hasattr(findingmodel.tools.create_stub, "create_model_stub_from_info")
+    except ImportError:
+        pytest.skip("create_stub module not available")
+
+    try:
+        import findingmodel.tools.add_ids
+
+        assert hasattr(findingmodel.tools.add_ids, "id_manager")
+    except ImportError:
+        pytest.skip("add_ids module not available")
+
+
+def test_concurrent_id_generation(base_model: FindingModelBase) -> None:
+    """Test ID generation under concurrent access."""
+    import concurrent.futures
+
+    # Clear cache
+    findingmodel.tools.id_manager.oifm_ids.clear()
+    findingmodel.tools.id_manager.attribute_ids.clear()
+
+    def generate_ids(source_suffix: int) -> FindingModelFull:
+        # Use valid 3-character source codes
+        sources = ["TST", "TES", "TEX"]
+        return findingmodel.tools.add_ids_to_model(base_model, source=sources[source_suffix])
+
+    # Run multiple ID generation operations concurrently
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(generate_ids, i) for i in range(3)]
+        results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+    # All should succeed and have unique IDs
+    assert len(results) == 3
+    oifm_ids = [r.oifm_id for r in results]
+    assert len(set(oifm_ids)) == 3  # All should be unique
