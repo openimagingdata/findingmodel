@@ -53,4 +53,24 @@ tasks:
       - echo "Publishing library..."
       - uv publish {{.CLI_ARGS}}
     silent: true
+
+  release:
+    desc: "Interactive release process"
+    cmds:
+      - uv run python scripts/release.py {{.CLI_ARGS}}
+
+  release:check:
+    desc: "Validate release readiness"
+    cmds:
+      - uv run python scripts/release.py --check-only {{.CLI_ARGS}}
+
+  release:dry:
+    desc: "Dry run of release process"
+    cmds:
+      - uv run python scripts/release.py --dry-run {{.CLI_ARGS}}
+
+  release:version:
+    desc: "Release specific version (use: task release:version -- --version X.Y.Z)"
+    cmds:
+      - uv run python scripts/release.py {{.CLI_ARGS}}
   

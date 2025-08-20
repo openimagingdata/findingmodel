@@ -502,8 +502,9 @@ async def test_mongodb_connection_failure() -> None:
     """Test Index behavior when MongoDB connection fails."""
     from pymongo.errors import ServerSelectionTimeoutError
 
-    # Create Index with invalid MongoDB URI
-    invalid_index = Index(mongodb_uri="mongodb://nonexistent:27017", db_name="test_db")
+    # Create Index with invalid MongoDB URI and short timeout (1 second instead of 30+)
+    invalid_uri = "mongodb://nonexistent:27017/?serverSelectionTimeoutMS=1000"
+    invalid_index = Index(mongodb_uri=invalid_uri, db_name="test_db")
 
     # Operations should fail gracefully
     with pytest.raises(ServerSelectionTimeoutError):
