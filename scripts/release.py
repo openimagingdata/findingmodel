@@ -96,7 +96,18 @@ class ReleaseManager:
         """Execute a shell command with logging and optional dry-run."""
         logger.debug(f"Executing: {cmd}")
 
-        if self.dry_run:
+        # Commands that should run even in dry-run mode (read-only operations)
+        readonly_commands = [
+            "git branch --show-current",
+            "git status --porcelain", 
+            "git rev-list",
+            "git tag -l",
+            "git fetch origin"
+        ]
+        
+        should_run_readonly = any(cmd.startswith(readonly_cmd) for readonly_cmd in readonly_commands)
+
+        if self.dry_run and not should_run_readonly:
             logger.info(f"[DRY RUN] Would execute: {cmd}")
             # Return a mock successful result for dry run
             return subprocess.CompletedProcess(cmd, 0, "", "")
@@ -354,6 +365,13 @@ class ReleaseManager:
     def commit_changes(self) -> None:
         """Commit version and changelog changes."""
         logger.info("Committing version and changelog changes...")
+
+        # Check if there are any changes to commit
+        status_result = self.run_command("git status --porcelain")
+        if not status_result.stdout.strip():
+            logger.info("No changes to commit - version and changelog already up to date")
+            logger.success("✅ Repository already clean, skipping commit")
+            return
 
         self.run_command("git add pyproject.toml")
         if self.changelog_path.exists():
