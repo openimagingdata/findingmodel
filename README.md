@@ -61,16 +61,29 @@ Information on a finding, including description and synonyms, can add detailed d
 
 ## Index
 
-For a directory structured with a `defs` sub-directory containing definitions files (e.g., in a clone of the [Open Imaging Finding Model repository](https://github.com/openimagingdata/findingmodels)), creates/maintains an index as a JSONL file `index.jsonl` in the base directory (alongside the `defs` directory).
+The `Index` class provides MongoDB-based indexing and management of finding model definitions stored as `.fm.json` files in a `defs/` directory structure (e.g., in a clone of the [Open Imaging Finding Model repository](https://github.com/openimagingdata/findingmodels)). It enables fast lookup by ID, name, or synonym and manages collections for finding models, people, and organizations.
+
+### Basic Usage
 
 ```python
+import asyncio
 from findingmodel.index import Index
 
-index = Index() # Initialize with base directory; will find existing JSONL
-print(await index.count())
-
-metadata = index.get("abdominal aortic aneurysm") # Lookup by ID, name, synonym
-print(metadata.model_dump())
+async def main():
+    # Initialize with MongoDB connection from settings
+    index = Index()
+    
+    # Set up indexes for first-time use
+    await index.setup_indexes()
+    
+    # Get count of indexed models
+    count = await index.count()
+    print(f"Total models indexed: {count}")
+    
+    # Lookup by ID, name, or synonym (async method)
+    metadata = await index.get("abdominal aortic aneurysm")
+    if metadata:
+        print(metadata.model_dump())
 # > {'attributes': [{'attribute_id': 'OIFMA_MSFT_898601',
 # >                  'name': 'presence',
 # >                  'type': 'choice'},
@@ -87,7 +100,60 @@ print(metadata.model_dump())
 # >  'synonyms': ['AAA'],
 # >  'tags': None}
 
-results = index.search("abdominal") # Returns matching names or synonyms
+    # Search for models (returns list of IndexEntry objects)
+    results = await index.search("abdominal", limit=5)
+    for result in results:
+        print(f"- {result.name}: {result.oifm_id}")
+    
+    # Check if a model exists
+    exists = await index.contains("pneumothorax")
+    print(f"Pneumothorax exists: {exists}")
+
+asyncio.run(main())
+```
+
+### Directory Synchronization
+
+```python
+async def sync_directory():
+    index = Index()
+    
+    # Update index from a directory of .fm.json files
+    # Returns (added, updated, removed) counts
+    added, updated, removed = await index.update_from_directory("path/to/defs")
+    print(f"Sync complete: {added} added, {updated} updated, {removed} removed")
+    
+    # Add or update a single file
+    from findingmodel import FindingModelFull
+    model = FindingModelFull.model_validate_json(open("model.fm.json").read())
+    result = await index.add_or_update_entry_from_file("model.fm.json", model)
+    print(f"File update result: {result}")
+
+asyncio.run(sync_directory())
+```
+
+### Working with Contributors
+
+```python
+async def get_contributors():
+    index = Index()
+    
+    # Get a person by GitHub username
+    person = await index.get_person("johndoe")
+    if person:
+        print(f"Name: {person.name}, Email: {person.email}")
+    
+    # Get an organization by code
+    org = await index.get_organization("MSFT")
+    if org:
+        print(f"Organization: {org.name}")
+    
+    # Count contributors
+    people_count = await index.count_people()
+    org_count = await index.count_organizations()
+    print(f"People: {people_count}, Organizations: {org_count}")
+
+asyncio.run(get_contributors())
 ```
 
 See [example usage in notebook](notebooks/findingmodel_index.ipynb).
@@ -109,12 +175,22 @@ import findingmodel.tools as tools
 Takes a finding name and generates a usable description and possibly synonyms (`FindingInfo`) using OpenAI models (requires `OPENAI_API_KEY` to be set to a valid value).
 
 ```python
+import asyncio
 from findingmodel.tools import create_info_from_name
 
-await create_info_from_name("Pneumothorax")
+async def describe_finding():
+    # Generate basic finding information
+    info = await create_info_from_name("Pneumothorax")
+    print(f"Name: {info.name}")
+    print(f"Synonyms: {info.synonyms}")
+    print(f"Description: {info.description[:100]}...")
+    return info
 
->>> FindingInfo(name="pneumothorax", synonyms=["PTX"], 
-  description="Pneumothorax is the...")
+info = asyncio.run(describe_finding())
+# Output:
+# Name: pneumothorax
+# Synonyms: ['PTX']
+# Description: Pneumothorax is the presence of air in the pleural space...
 ```
 
 ### `add_details_to_info()`
@@ -122,18 +198,37 @@ await create_info_from_name("Pneumothorax")
 Takes a described finding as above and uses Perplexity to get a lot of possible reference information, possibly including citations (requires `PERPLEXITY_API_KEY` to be set to a valid value).
 
 ```python
+import asyncio
 from findingmodel.tools import add_details_to_info
+from findingmodel import FindingInfo
 
-finding = FindingInfo(name="pneumothorax", synonyms=['PTX'],
-    description='Pneumothorax is the presence...')
+async def enhance_finding():
+    # Start with basic finding info
+    finding = FindingInfo(
+        name="pneumothorax", 
+        synonyms=['PTX'],
+        description='Pneumothorax is the presence of air in the pleural space'
+    )
+    
+    # Add detailed information and citations
+    enhanced = await add_details_to_info(finding)
+    
+    print(f"Detail length: {len(enhanced.detail)} characters")
+    print(f"Citations found: {len(enhanced.citations)}")
+    
+    # Show first few citations
+    for i, citation in enumerate(enhanced.citations[:3], 1):
+        print(f"  {i}. {citation}")
+    
+    return enhanced
 
-await add_details_to_info(finding)
-
->>> FindingInfo(name='pneumothorax', synonyms=['PTX'], 
- description='Pneumothorax is the...'
- detail='## Pneumothorax\n\n### Appearance on Imaging Studies\n\nA pneumothorax...',
- citations=['https://pubs.rsna.org/doi/full/10.1148/rg.2020200020', 
-  'https://ajronline.org/doi/full/10.2214/AJR.17.18721', ...])
+enhanced_info = asyncio.run(enhance_finding())
+# Output:
+# Detail length: 2547 characters  
+# Citations found: 8
+#   1. https://pubs.rsna.org/doi/full/10.1148/rg.2020200020
+#   2. https://ajronline.org/doi/full/10.2214/AJR.17.18721
+#   3. https://radiopaedia.org/articles/pneumothorax
 ```
 
 ### `create_model_from_markdown()`
@@ -141,23 +236,57 @@ await add_details_to_info(finding)
 Creates a `FindingModel` from a markdown file or text using OpenAI API.
 
 ```python
+import asyncio
+from pathlib import Path
 from findingmodel.tools import create_model_from_markdown, create_info_from_name
 
-# First create basic info about the finding
-finding_info = await create_info_from_name("pneumothorax")
+async def create_from_markdown():
+    # First create basic info about the finding
+    finding_info = await create_info_from_name("pneumothorax")
+    
+    # Option 1: Create from markdown text
+    markdown_outline = """
+    # Pneumothorax Attributes
+    - Size: small (<2cm), moderate (2-4cm), large (>4cm)
+    - Location: apical, basilar, lateral, complete
+    - Tension: present, absent, indeterminate
+    - Cause: spontaneous, traumatic, iatrogenic
+    """
+    
+    model = await create_model_from_markdown(
+        finding_info, 
+        markdown_text=markdown_outline
+    )
+    print(f"Created model with {len(model.attributes)} attributes")
+    
+    # Option 2: Create from markdown file
+    # Save markdown to file first
+    Path("pneumothorax.md").write_text(markdown_outline)
+    
+    model_from_file = await create_model_from_markdown(
+        finding_info,
+        markdown_path="pneumothorax.md"
+    )
+    
+    # Display the attributes
+    for attr in model.attributes:
+        print(f"- {attr.name}: {attr.type}")
+        if hasattr(attr, 'values'):
+            print(f"  Values: {[v.name for v in attr.values]}")
+    
+    return model
 
-# Then create a model from markdown outline
-markdown_outline = """
-# Pneumothorax Attributes
-- Size: small, moderate, large
-- Location: apical, basilar, complete
-- Tension: present, absent
-"""
-
-model = await create_model_from_markdown(
-    finding_info, 
-    markdown_text=markdown_outline
-)
+model = asyncio.run(create_from_markdown())
+# Output:
+# Created model with 4 attributes
+# - size: choice
+#   Values: ['small (<2cm)', 'moderate (2-4cm)', 'large (>4cm)']
+# - location: choice  
+#   Values: ['apical', 'basilar', 'lateral', 'complete']
+# - tension: choice
+#   Values: ['present', 'absent', 'indeterminate']
+# - cause: choice
+#   Values: ['spontaneous', 'traumatic', 'iatrogenic']
 ```
 
 ### `create_model_stub_from_info()`
@@ -170,14 +299,55 @@ Given even a basic `FindingInfo`, turn it into a `FindingModelBase` object with 
 (unchanged, stable, increased, decreased, new, resolved, no prior)
 
 ```python
+import asyncio
 from findingmodel.tools import create_info_from_name, create_model_stub_from_info
 
-# Create finding info
-finding_info = await create_info_from_name("pneumothorax")
+async def create_stub():
+    # Create finding info
+    finding_info = await create_info_from_name("pneumothorax")
+    
+    # Create a basic model stub with standard presence/change attributes
+    stub_model = create_model_stub_from_info(finding_info)
+    
+    print(f"Model name: {stub_model.name}")
+    print(f"Created model with {len(stub_model.attributes)} attributes:")
+    
+    for attr in stub_model.attributes:
+        print(f"\n- {attr.name} ({attr.type}):")
+        if hasattr(attr, 'values'):
+            for value in attr.values:
+                print(f"  • {value.name}")
+    
+    # You can also add tags
+    stub_with_tags = create_model_stub_from_info(
+        finding_info, 
+        tags=["chest", "emergency", "trauma"]
+    )
+    print(f"\nTags: {stub_with_tags.tags}")
+    
+    return stub_model
 
-# Create a basic model stub with standard presence/change attributes
-stub_model = create_model_stub_from_info(finding_info)
-print(f"Created model with {len(stub_model.attributes)} attributes")
+stub = asyncio.run(create_stub())
+# Output:
+# Model name: pneumothorax
+# Created model with 2 attributes:
+# 
+# - presence (choice):
+#   • present
+#   • absent  
+#   • indeterminate
+#   • unknown
+# 
+# - change from prior (choice):
+#   • unchanged
+#   • stable
+#   • increased
+#   • decreased
+#   • new
+#   • resolved
+#   • no prior
+# 
+# Tags: ['chest', 'emergency', 'trauma']
 ```
 
 ### `add_ids_to_model()`
@@ -185,25 +355,160 @@ print(f"Created model with {len(stub_model.attributes)} attributes")
 Generates and adds OIFM IDs to a `FindingModelBase` object and returns it as a `FindingModelFull` object. Note that the `source` parameter refers to the source component of the OIFM ID, which describes the originating organization of the model (e.g., `MGB` for Mass General Brigham and `MSFT` for Microsoft).
 
 ```python
-from findingmodel.tools import add_ids_to_model, create_model_stub_from_info
+import asyncio
+from findingmodel.tools import (
+    add_ids_to_model, 
+    create_model_stub_from_info,
+    create_info_from_name
+)
 
-# Create a basic model (without IDs)
-stub_model = create_model_stub_from_info(finding_info)
+async def add_identifiers():
+    # Create a basic model (without IDs)
+    finding_info = await create_info_from_name("pneumothorax")
+    stub_model = create_model_stub_from_info(finding_info)
+    
+    # Add OIFM IDs for tracking and standardization
+    # Source can be 3 or 4 letters (e.g., "MGB", "MSFT")
+    full_model = add_ids_to_model(stub_model, source="MSFT")
+    
+    print(f"Model ID: {full_model.oifm_id}")
+    print(f"Attribute IDs:")
+    for attr in full_model.attributes:
+        print(f"  - {attr.name}: {attr.oifma_id}")
+        if hasattr(attr, 'values'):
+            for value in attr.values:
+                print(f"    • {value.name}: {value.oifmv_id}")
+    
+    return full_model
 
-# Add OIFM IDs for tracking and standardization
-full_model = add_ids_to_model(stub_model, source="MSFT")
-print(f"Model ID: {full_model.oifm_id}")
+full_model = asyncio.run(add_identifiers())
+# Output:
+# Model ID: OIFM_MSFT_123456
+# Attribute IDs:
+#   - presence: OIFMA_MSFT_789012
+#     • present: OIFMV_MSFT_345678
+#     • absent: OIFMV_MSFT_901234
+#     • indeterminate: OIFMV_MSFT_567890
+#     • unknown: OIFMV_MSFT_123456
+#   - change from prior: OIFMA_MSFT_789013
+#     • unchanged: OIFMV_MSFT_345679
+#     • stable: OIFMV_MSFT_901235
+#     ...
 ```
 
 ### `add_standard_codes_to_model()`
 
-Edits a `FindingModelFull` in place to include some Radlex and SNOMED-CT codes
-that correspond to some typical situations.
+Edits a `FindingModelFull` in place to include some RadLex and SNOMED-CT codes that correspond to some typical situations.
 
 ```python
-from findingmodel.tools import add_standard_codes_to_model
+import asyncio
+from findingmodel.tools import (
+    add_standard_codes_to_model,
+    add_ids_to_model,
+    create_model_stub_from_info,
+    create_info_from_name
+)
 
-# Add standard medical vocabulary codes
-add_standard_codes_to_model(full_model)
-print("Added standard RadLex and SNOMED-CT codes")
+async def add_medical_codes():
+    # Create a full model with IDs
+    finding_info = await create_info_from_name("pneumothorax")
+    stub_model = create_model_stub_from_info(finding_info)
+    full_model = add_ids_to_model(stub_model, source="MSFT")
+    
+    # Add standard medical vocabulary codes
+    add_standard_codes_to_model(full_model)
+    
+    print("Added standard codes:")
+    
+    # Check model-level codes
+    if full_model.index_codes:
+        print(f"\nModel codes:")
+        for code in full_model.index_codes:
+            print(f"  - {code.system}: {code.code} ({code.display})")
+    
+    # Check attribute-level codes
+    for attr in full_model.attributes:
+        if attr.index_codes:
+            print(f"\n{attr.name} attribute codes:")
+            for code in attr.index_codes:
+                print(f"  - {code.system}: {code.code}")
+        
+        # Check value-level codes
+        if hasattr(attr, 'values'):
+            for value in attr.values:
+                if value.index_codes:
+                    print(f"  {value.name} value codes:")
+                    for code in value.index_codes:
+                        print(f"    - {code.system}: {code.code}")
+    
+    return full_model
+
+model_with_codes = asyncio.run(add_medical_codes())
+# Output:
+# Added standard codes:
+# 
+# Model codes:
+#   - RadLex: RID5352 (pneumothorax)
+#   - SNOMED-CT: 36118008 (Pneumothorax)
+# 
+# presence attribute codes:
+#   - RadLex: RID39039
+#   present value codes:
+#     - RadLex: RID28472
+#   absent value codes:
+#     - RadLex: RID28473
+# ...
 ```
+
+### `find_similar_models()`
+
+Searches for existing finding models in the database that are similar to a proposed new finding. This helps avoid creating duplicate models by identifying existing models that could be edited instead. Uses AI agents to perform intelligent search and analysis.
+
+```python
+import asyncio
+from findingmodel.tools import find_similar_models
+from findingmodel.index import Index
+
+async def check_for_similar_models():
+    # Initialize index (connects to MongoDB)
+    index = Index()
+    
+    # Search for models similar to a proposed finding
+    analysis = await find_similar_models(
+        finding_name="pneumothorax",
+        description="Presence of air in the pleural space causing lung collapse",
+        synonyms=["PTX", "collapsed lung"],
+        index=index  # Optional, will create one if not provided
+    )
+    
+    print(f"Recommendation: {analysis.recommendation}")
+    print(f"Confidence: {analysis.confidence:.2f}")
+    
+    if analysis.similar_models:
+        print("
+Similar existing models found:")
+        for model in analysis.similar_models:
+            print(f"  - {model.name} (ID: {model.oifm_id})")
+    
+    # The recommendation will be one of:
+    # - "edit_existing": Very similar model found, edit it instead
+    # - "create_new": No similar models, safe to create new one
+    # - "review_needed": Some similarity found, manual review recommended
+    
+    return analysis
+
+result = asyncio.run(check_for_similar_models())
+# Output:
+# Recommendation: edit_existing
+# Confidence: 0.90
+# 
+# Similar existing models found:
+#   - pneumothorax (ID: OIFM_MSFT_123456)
+```
+
+**Key Features:**
+- **Intelligent search**: Uses AI agents to search with various terms and strategies
+- **Duplicate prevention**: Identifies if a model already exists for the finding
+- **Smart recommendations**: Provides guidance on whether to create new or edit existing
+- **Synonym matching**: Checks both names and synonyms for matches
+- **Confidence scoring**: Indicates how confident the system is in its recommendation
