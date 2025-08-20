@@ -99,12 +99,12 @@ class ReleaseManager:
         # Commands that should run even in dry-run mode (read-only operations)
         readonly_commands = [
             "git branch --show-current",
-            "git status --porcelain", 
+            "git status --porcelain",
             "git rev-list",
             "git tag -l",
-            "git fetch origin"
+            "git fetch origin",
         ]
-        
+
         should_run_readonly = any(cmd.startswith(readonly_cmd) for readonly_cmd in readonly_commands)
 
         if self.dry_run and not should_run_readonly:
