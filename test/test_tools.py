@@ -7,7 +7,7 @@ import pytest
 
 import findingmodel.tools
 from findingmodel import FindingInfo, FindingModelBase, FindingModelFull
-from findingmodel.finding_model import AttributeType, ChoiceAttributeIded
+from findingmodel.finding_model import AttributeType, ChoiceAttribute, ChoiceAttributeIded
 from findingmodel.index_code import IndexCode
 from findingmodel.tools.add_ids import IdManager
 
@@ -443,7 +443,7 @@ async def test_create_model_from_markdown_integration() -> None:
     # Check that choice attributes have values
     for attr in model.attributes:
         if attr.type.value == "choice":
-            assert isinstance(attr, ChoiceAttributeIded)
+            assert isinstance(attr, ChoiceAttribute)
             assert len(attr.values) > 0
 
 
