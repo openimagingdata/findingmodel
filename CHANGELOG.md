@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 0.4.0?] — 2025–07–??
+## [0.3.2] - 2025-08-20
 
 ### Added
 
@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 15 error handling tests for network failures, MongoDB issues, and invalid data
 - Updated test documentation to reflect actual MongoDB implementation of Index
 - Fixed all linting issues for clean CI/CD pipeline
+- **Performance Optimization**: Optimized `similar_finding_models` tool for significantly faster execution:
+  - Reduced runtime from 15-20 seconds to 4-9 seconds (up to 75% improvement)
+  - Added smart model selection with fallback mechanisms
+  - Implemented batch MongoDB queries to reduce round trips
+  - Added lightweight term generation with intelligent fallback to full models
+- **Release Automation**: Created comprehensive release automation system:
+  - Added `scripts/release.py` with full release pipeline automation
+  - Integrated loguru logging with version-specific log files
+  - Added Taskfile commands: `task release`, `task release:check`, `task release:dry`
+  - Supports dry-run mode, pre-flight checks, and automatic PyPI publishing
 
 ### Changed
 
