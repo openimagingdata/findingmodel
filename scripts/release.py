@@ -235,8 +235,11 @@ class ReleaseManager:
 
         logger.success("✅ Regular tests passed")
 
-        # Ask about full tests
-        if not self.yes and not self.confirm("Run full test suite including API tests? (recommended)"):
+        # Ask about full tests (skip prompt in check-only mode)
+        if self.check_only:
+            logger.info("Skipping full test suite in check-only mode")
+            return
+        elif not self.yes and not self.confirm("Run full test suite including API tests? (recommended)"):
             logger.warning("Skipping full test suite")
             return
 
