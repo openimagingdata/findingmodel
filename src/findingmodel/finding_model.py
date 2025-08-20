@@ -10,11 +10,10 @@ from findingmodel.contributor import Organization, Person
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
 from .index_code import IndexCode
 
-# TODO: Pull in the tools in common.py
 # TODO: Move random digits and ID generation to common.py
 # TODO: Add `slug_name` properties to the models, attributes, and choice values
-# TODO: Add `index_codes` field to the base model class as well
-# TODO: Move all the Markdown code to the markdown module
+# TODO: Move all the Markdown code to a markdown_out tool sub-module
+# TODO: Add a "anatomic locations" structure to the finding model
 
 
 class AttributeType(str, Enum):

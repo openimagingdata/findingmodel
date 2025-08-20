@@ -499,6 +499,93 @@ class Index:
         logger.info(f"Search completed. Found {len(results)} entries (limit {limit}) matching query '{query}'.")
         return results
 
+    async def search_batch(self, queries: list[str], limit_per_query: int = 10) -> dict[str, list[IndexEntry]]:
+        """
+        Searches the index for entries matching multiple queries efficiently.
+        Falls back to individual searches if batch query fails.
+
+        :param queries: List of search query strings
+        :param limit_per_query: Maximum number of results per query
+        :return: Dictionary mapping each query to its results
+        """
+        if not queries:
+            return {}
+
+        # Try batch approach first (may fail with too many text expressions)
+        try:
+            return await self._search_batch_combined(queries, limit_per_query)
+        except Exception as e:
+            if "Too many text expressions" in str(e):
+                logger.info(f"Batch search failed due to MongoDB limit, falling back to individual searches: {e}")
+                return await self._search_batch_individual(queries, limit_per_query)
+            else:
+                raise
+
+    async def _search_batch_combined(self, queries: list[str], limit_per_query: int) -> dict[str, list[IndexEntry]]:
+        """Attempt to search all queries in a single MongoDB call using $or."""
+        results = {}
+
+        # Use MongoDB's $or operator to combine all queries into one database call
+        or_conditions = []
+        for query in queries:
+            or_conditions.append({"$text": {"$search": query}})
+
+        combined_query = {"$or": or_conditions}
+
+        # Get all results and then group by original query
+        cursor = self.index_collection.find(combined_query).limit(limit_per_query * len(queries))
+        all_entries = []
+        async for entry_data in cursor:
+            entry = IndexEntry.model_validate(entry_data)
+            all_entries.append(entry)
+
+        # Group results by which query they match
+        for query in queries:
+            query_results = []
+            for entry in all_entries:
+                if self._entry_matches_query(entry, query):
+                    query_results.append(entry)
+                    if len(query_results) >= limit_per_query:
+                        break
+            results[query] = query_results
+
+        total_found = sum(len(results) for results in results.values())
+        logger.info(f"Batch search completed. Found {total_found} total entries across {len(queries)} queries.")
+
+        return results
+
+    async def _search_batch_individual(self, queries: list[str], limit_per_query: int) -> dict[str, list[IndexEntry]]:
+        """Fallback: perform individual searches for each query."""
+        results = {}
+
+        for query in queries:
+            query_results = await self.search(query, limit=limit_per_query)
+            results[query] = query_results
+
+        total_found = sum(len(results) for results in results.values())
+        logger.info(f"Individual searches completed. Found {total_found} total entries across {len(queries)} queries.")
+
+        return results
+
+    def _entry_matches_query(self, entry: IndexEntry, query: str) -> bool:
+        """
+        Simple text matching to determine if an entry matches a specific query.
+        This is a heuristic since MongoDB's $text search score isn't directly accessible.
+        """
+        query_lower = query.lower()
+        text_fields = [
+            entry.name.lower(),
+            entry.description.lower() if entry.description else "",
+        ]
+
+        # Add synonyms if they exist
+        if entry.synonyms:
+            text_fields.extend([syn.lower() for syn in entry.synonyms])
+
+        # Check if any query terms appear in the entry
+        query_terms = query_lower.split()
+        return any(any(term in field_text for term in query_terms) for field_text in text_fields)
+
     async def _get_existing_file_info(self) -> dict[str, dict[str, str]]:
         """Get all existing filename/hash/oifm_id pairs from the database."""
         existing_entries = {}
