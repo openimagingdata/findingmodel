@@ -86,6 +86,8 @@ markers = [
 filterwarnings = [
     # Filter out our own deprecation warnings from the tools module
     "ignore:.*is deprecated, use.*instead:DeprecationWarning",
+    # Ignore pydantic-ai OpenAIModel deprecation warning
+    "ignore:`OpenAIModel` was renamed to `OpenAIChatModel`:DeprecationWarning",
 ]
 
 [tool.mypy]
