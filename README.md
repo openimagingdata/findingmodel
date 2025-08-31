@@ -512,3 +512,59 @@ result = asyncio.run(check_for_similar_models())
 - **Smart recommendations**: Provides guidance on whether to create new or edit existing
 - **Synonym matching**: Checks both names and synonyms for matches
 - **Confidence scoring**: Indicates how confident the system is in its recommendation
+
+### `find_anatomic_locations()`
+
+Finds relevant anatomic locations for a finding using a two-agent workflow. The search agent generates diverse queries to search medical ontology databases (anatomic_locations, radlex, snomedct), while the matching agent selects the best primary and alternate locations based on clinical relevance and specificity.
+
+```python
+import asyncio
+from findingmodel.tools import find_anatomic_locations
+
+async def find_locations():
+    # Find anatomic locations for a finding
+    result = await find_anatomic_locations(
+        finding_name="PCL tear",
+        description="Tear of the posterior cruciate ligament",
+        search_model="gpt-4o-mini",  # Optional, defaults to small model
+        matching_model="gpt-4o"      # Optional, defaults to main model
+    )
+    
+    print(f"Primary location: {result.primary_location.concept_text}")
+    print(f"  ID: {result.primary_location.concept_id}")
+    print(f"  Table: {result.primary_location.table_name}")
+    
+    if result.alternate_locations:
+        print("\nAlternate locations:")
+        for alt in result.alternate_locations:
+            print(f"  - {alt.concept_text} ({alt.table_name})")
+    
+    print(f"\nReasoning: {result.reasoning}")
+    
+    # Convert to IndexCode for use in finding models
+    index_code = result.primary_location.as_index_code()
+    print(f"\nAs IndexCode: {index_code.system}:{index_code.code}")
+    
+    return result
+
+result = asyncio.run(find_locations())
+# Output:
+# Primary location: Posterior cruciate ligament
+#   ID: RID2905
+#   Table: radlex
+# 
+# Alternate locations:
+#   - Knee joint (anatomic_locations)
+#   - Cruciate ligament structure (snomedct)
+# 
+# Reasoning: Selected "Posterior cruciate ligament" as the primary location because...
+# 
+# As IndexCode: RADLEX:RID2905
+```
+
+**Key Features:**
+- **Two-agent architecture**: Search agent finds candidates, matching agent selects best options
+- **Multiple ontology sources**: Searches across anatomic_locations, RadLex, and SNOMED-CT
+- **Intelligent selection**: Finds the "sweet spot" of specificity - specific enough to be accurate but general enough to be useful
+- **Reusable components**: `OntologySearchClient` can be used for other ontology searches
+- **Production ready**: Proper error handling, logging, and connection lifecycle management

@@ -6,6 +6,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Added `anatomic_locations` to `FindingModelFull`**: Can now specify a list of index codes that 
+specifically refer to anatomy to indicate where the finding is likely to occur.
+- **Anatomic Location Search Tool**: New two-agent Pydantic AI tool for finding anatomic locations
+  - Reusable `OntologySearchClient` for LanceDB medical terminology search
+  - `OntologySearchResult` model for standardized ontology search responses
+  - Two-agent architecture: search agent (generates queries) + matching agent (selects best locations)
+  - Hybrid search across multiple ontology tables (anatomic_locations, radlex, snomedct)
+  - Production-ready with proper error handling, logging, and connection lifecycle management
+  - Demo script in `notebooks/demo_anatomic_location_search.py`
+- **Testing Improvements**: Enhanced testing infrastructure following Pydantic AI best practices
+  - Added API call prevention guards (`models.ALLOW_MODEL_REQUESTS = False`) to prevent accidental API calls during testing
+  - Implemented proper Pydantic AI testing patterns using `TestModel` and `FunctionModel`
+  - Consolidated related component tests (merged ontology_search tests into anatomic_location_search tests)
+  - Fixed pytest collection issues by moving demo scripts to `notebooks/` directory
+  - Added `testpaths = ["test"]` to pyproject.toml to restrict pytest scope
+
+### Changed
+
+- **Refactored `get_openai_model()`**: Moved from `similar_finding_models.py` to `common.py` for reusability
+- **Test Philosophy**: Shifted from testing library functionality to testing actual code behavior and workflow logic
+- **Project Conventions**: Established convention for demo scripts in `notebooks/` with `demo_*.py` naming
+
+### Fixed
+
+- Fixed integration test API blocking issue where `models.ALLOW_MODEL_REQUESTS = False` was preventing integration tests from running
+- Resolved all linting errors in test files (import order, nested with statements, unused variables)
+
 ## [0.3.2] - 2025-08-20
 
 ### Added

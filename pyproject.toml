@@ -33,6 +33,7 @@ dependencies = [
     "motor>=3.7.1",
     "loguru>=0.7.3",
     "pydantic-ai-slim[cohere,openai,tavily]>=0.3.2",
+    "lancedb>=0.24.3",
 ]
 
 [project.urls]
@@ -78,6 +79,7 @@ unfixable = []
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+testpaths = ["test"]
 markers = [
     "callout: Marks test as calling on non-local services",
 ]

@@ -1,3 +1,4 @@
+import os
 from typing import Annotated, Literal
 
 import openai
@@ -44,6 +45,10 @@ class FindingModelConfig(BaseSettings):
     mongodb_organizations_collection_base: str = Field(default="organizations")
     mongodb_people_collection_base: str = Field(default="people")
 
+    # LanceDB settings
+    lancedb_uri: str | None = Field(default=None, description="LanceDB connection URI")
+    lancedb_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="LanceDB API key for cloud")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     def check_ready_for_openai(self) -> Literal[True]:
@@ -59,3 +64,7 @@ class FindingModelConfig(BaseSettings):
 
 settings = FindingModelConfig()
 openai.api_key = settings.openai_api_key.get_secret_value()
+
+# Ensure OpenAI API key is available in environment for LanceDB
+if settings.openai_api_key and not os.getenv("OPENAI_API_KEY"):
+    os.environ["OPENAI_API_KEY"] = settings.openai_api_key.get_secret_value()

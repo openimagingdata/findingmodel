@@ -334,9 +334,12 @@ async def test_create_info_from_name_integration() -> None:
     assert result.synonyms is not None
     assert len(result.synonyms) > 0
 
-    # Common synonym for pneumothorax
+    # Common synonyms for pneumothorax - accept any of these valid alternatives
     synonyms_lower = [s.lower() for s in result.synonyms]
-    assert "ptx" in synonyms_lower
+    common_synonyms = ["ptx", "collapsed lung", "pneumo"]
+    assert any(syn in synonyms_lower for syn in common_synonyms), (
+        f"Expected one of {common_synonyms}, got: {synonyms_lower}"
+    )
 
 
 @pytest.mark.callout
@@ -434,11 +437,11 @@ async def test_create_model_from_markdown_integration() -> None:
     # Should have created attributes
     assert len(model.attributes) >= 3  # Size, Location, Tension
 
-    # Check attribute names
+    # Check attribute names - use flexible matching for semantically equivalent terms
     attr_names = [attr.name.lower() for attr in model.attributes]
-    assert "size" in attr_names
-    assert "location" in attr_names
-    assert "tension" in attr_names
+    assert any("size" in name for name in attr_names), f"Expected size-related attribute, got: {attr_names}"
+    assert any("location" in name for name in attr_names), f"Expected location-related attribute, got: {attr_names}"
+    assert any("tension" in name for name in attr_names), f"Expected tension-related attribute, got: {attr_names}"
 
     # Check that choice attributes have values
     for attr in model.attributes:

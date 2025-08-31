@@ -357,6 +357,7 @@ class FindingModelFull(BaseModel):
     description: DescriptionString
     synonyms: SynonymSequence = None
     tags: TagSequence = None
+    anatomic_locations: IndexCodeList | None = None
     contributors: list[Contributor] | None = Field(
         default=None, description="The contributing users and organizations to the finding model"
     )

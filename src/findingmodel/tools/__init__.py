@@ -1,4 +1,5 @@
 from .add_ids import id_manager
+from .anatomic_location_search import find_anatomic_locations
 from .create_stub import create_finding_model_stub_from_finding_info, create_model_stub_from_info  # deprecated alias
 from .finding_description import (
     # Deprecated aliases
@@ -30,6 +31,7 @@ __all__ = [
     "create_model_from_markdown",
     "create_model_stub_from_info",
     "describe_finding_name",
+    "find_anatomic_locations",
     "find_similar_models",
     "get_detail_on_finding",
     "id_manager",

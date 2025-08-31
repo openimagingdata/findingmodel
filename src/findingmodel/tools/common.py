@@ -4,6 +4,8 @@ from pathlib import Path
 
 from instructor import AsyncInstructor, from_openai
 from openai import AsyncOpenAI
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from findingmodel.config import settings
 
@@ -17,6 +19,14 @@ def get_async_perplexity_client() -> AsyncOpenAI:
     settings.check_ready_for_perplexity()
     return AsyncOpenAI(
         api_key=str(settings.perplexity_api_key.get_secret_value()), base_url=str(settings.perplexity_base_url)
+    )
+
+
+def get_openai_model(model_name: str) -> OpenAIModel:
+    """Helper function to get OpenAI model instance - moved from similar_finding_models.py"""
+    return OpenAIModel(
+        model_name=model_name,
+        provider=OpenAIProvider(api_key=settings.openai_api_key.get_secret_value()),
     )
 
 
