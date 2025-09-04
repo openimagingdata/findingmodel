@@ -1,5 +1,7 @@
 """Unit tests for anatomic location search functionality and supporting ontology search components."""
 
+import asyncio
+import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -21,6 +23,7 @@ from findingmodel.tools.ontology_search import (
     TABLE_TO_INDEX_CODE_SYSTEM,
     OntologySearchClient,
     OntologySearchResult,
+    normalize_concept,
 )
 
 # Prevent accidental API calls during testing
@@ -92,7 +95,7 @@ class TestOntologySearchResult:
             concept_id="RID789",
             concept_text="Posterior cruciate ligament\nKnee joint structure\nAdditional info",
             score=0.90,
-            table_name="radlex"
+            table_name="radlex",
         )
 
         index_code = result.as_index_code()
@@ -104,10 +107,7 @@ class TestOntologySearchResult:
     def test_as_index_code_strips_parenthetical_content(self) -> None:
         """Test as_index_code strips parenthetical content at end."""
         result = OntologySearchResult(
-            concept_id="123456",
-            concept_text="Knee joint (body structure)",
-            score=0.85,
-            table_name="snomedct"
+            concept_id="123456", concept_text="Knee joint (body structure)", score=0.85, table_name="snomedct"
         )
 
         index_code = result.as_index_code()
@@ -122,7 +122,7 @@ class TestOntologySearchResult:
             concept_id="A999",
             concept_text="Heart chamber (anatomical structure)\nCardiac anatomy\nMore details",
             score=0.88,
-            table_name="anatomic_locations"
+            table_name="anatomic_locations",
         )
 
         index_code = result.as_index_code()
@@ -180,6 +180,331 @@ class TestOntologySearchClient:
         # We can't test the exact value without importing settings
         # but we can verify the attribute exists
         assert hasattr(client, "_api_key")
+
+
+class TestOntologySearchClientEnhancements(unittest.TestCase):
+    """Test the new methods added to OntologySearchClient in Phase 1."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        self.client = OntologySearchClient()
+
+    def test_normalize_concept(self) -> None:
+        """Test concept text normalization."""
+        # Test removing parenthetical content (preserves case)
+        result = normalize_concept("Liver (organ)")
+        self.assertEqual(result, "Liver")
+
+        # Test multi-line handling - should take only first line (preserves case)
+        result = normalize_concept("Heart\nCardiac organ")
+        self.assertEqual(result, "Heart")
+
+        # Test whitespace normalization (preserves case)
+        result = normalize_concept("  Kidney   structure  ")
+        self.assertEqual(result, "Kidney structure")
+
+        # Test combination - multi-line with parenthetical (preserves case)
+        result = normalize_concept("Lung (body structure)\nRespiratory organ")
+        self.assertEqual(result, "Lung")
+
+        # Test empty string
+        result = normalize_concept("")
+        self.assertEqual(result, "")
+
+        # Test string with no parentheses (preserves case)
+        result = normalize_concept("Simple text")
+        self.assertEqual(result, "Simple text")
+
+        # Test parentheses in middle (should not be removed, preserves case)
+        result = normalize_concept("Text (middle) more text")
+        self.assertEqual(result, "Text (middle) more text")
+
+        # Test RadLex format with colon and description
+        result = normalize_concept("berry aneurysm: anatomically and angiographically has well-defined neck")
+        self.assertEqual(result, "berry aneurysm")
+
+        # Test RadLex format with colon, newline, and description
+        result = normalize_concept("berry aneurysm\n: anatomically and angiographically has well-defined neck")
+        self.assertEqual(result, "berry aneurysm")
+
+    def test_is_anatomical_concept(self) -> None:
+        """Test anatomical concept identification."""
+        # Test SNOMED-CT body structure WITHOUT pathology - should return True
+        result = OntologySearchResult(
+            concept_id="123", concept_text="Liver (body structure)", score=0.9, table_name="snomedct"
+        )
+        self.assertTrue(self.client._is_anatomical_concept(result))
+
+        # Test SNOMED-CT body structure WITH pathology - should return False
+        pathological_examples = [
+            "Liver tumor (body structure)",
+            "Hepatic metastasis (body structure)",
+            "Lung cancer (body structure)",
+            "Heart lesion (body structure)",
+            "Kidney cyst (body structure)",
+            "Brain neoplasm (body structure)",
+            "Bone malignant tumor (body structure)",
+            "Liver benign mass (body structure)",
+            "Abnormal heart structure (body structure)",
+        ]
+
+        for text in pathological_examples:
+            result = OntologySearchResult(concept_id="123", concept_text=text, score=0.9, table_name="snomedct")
+            self.assertFalse(
+                self.client._is_anatomical_concept(result), f"Should not filter pathological concept: {text}"
+            )
+
+        # Test non-SNOMED-CT tables - should always return False
+        non_snomedct_examples = [
+            ("Liver", "radlex"),
+            ("Heart", "anatomic_locations"),
+            ("Brain structure", "custom_table"),
+        ]
+
+        for text, table in non_snomedct_examples:
+            result = OntologySearchResult(concept_id="123", concept_text=text, score=0.9, table_name=table)
+            self.assertFalse(self.client._is_anatomical_concept(result))
+
+        # Test SNOMED-CT without body structure tag - should return False
+        result = OntologySearchResult(concept_id="123", concept_text="Liver disorder", score=0.9, table_name="snomedct")
+        self.assertFalse(self.client._is_anatomical_concept(result))
+
+        # Test case insensitive pathology detection
+        result = OntologySearchResult(
+            concept_id="123", concept_text="Liver TUMOR (body structure)", score=0.9, table_name="snomedct"
+        )
+        self.assertFalse(self.client._is_anatomical_concept(result))
+
+    def test_deduplicate_results(self) -> None:
+        """Test deduplication of search results."""
+        # Test exact duplicates removal
+        results = [
+            OntologySearchResult(concept_id="A1", concept_text="Heart", score=0.9, table_name="anatomic_locations"),
+            OntologySearchResult(concept_id="A1", concept_text="Heart", score=0.9, table_name="anatomic_locations"),
+        ]
+
+        deduplicated = self.client._deduplicate_results(results)
+        self.assertEqual(len(deduplicated), 1)
+        self.assertEqual(deduplicated[0].concept_text, "Heart")
+
+        # Test keeping highest score when duplicates exist
+        results = [
+            OntologySearchResult(concept_id="A1", concept_text="Heart", score=0.7, table_name="anatomic_locations"),
+            OntologySearchResult(concept_id="A2", concept_text="Heart", score=0.9, table_name="radlex"),
+        ]
+
+        deduplicated = self.client._deduplicate_results(results)
+        self.assertEqual(len(deduplicated), 1)
+        self.assertEqual(deduplicated[0].score, 0.9)
+        self.assertEqual(deduplicated[0].table_name, "radlex")
+
+        # Test normalization-based deduplication (parenthetical removal)
+        results = [
+            OntologySearchResult(concept_id="A1", concept_text="Liver", score=0.8, table_name="anatomic_locations"),
+            OntologySearchResult(concept_id="A2", concept_text="Liver (organ)", score=0.9, table_name="radlex"),
+            OntologySearchResult(concept_id="A3", concept_text="Liver", score=0.7, table_name="snomedct"),
+        ]
+
+        deduplicated = self.client._deduplicate_results(results)
+        self.assertEqual(len(deduplicated), 1)
+        self.assertEqual(deduplicated[0].score, 0.9)  # Should keep highest score
+
+        # Test that different cases are NOT deduplicated (case is preserved)
+        results_case = [
+            OntologySearchResult(concept_id="A1", concept_text="liver", score=0.8, table_name="anatomic_locations"),
+            OntologySearchResult(concept_id="A2", concept_text="Liver", score=0.9, table_name="radlex"),
+            OntologySearchResult(concept_id="A3", concept_text="LIVER", score=0.7, table_name="snomedct"),
+        ]
+
+        deduplicated_case = self.client._deduplicate_results(results_case)
+        self.assertEqual(len(deduplicated_case), 3)  # Different cases remain separate
+
+        # Test empty list handling
+        deduplicated = self.client._deduplicate_results([])
+        self.assertEqual(len(deduplicated), 0)
+
+        # Test that results are sorted by score descending
+        results = [
+            OntologySearchResult(concept_id="A1", concept_text="Heart", score=0.5, table_name="anatomic_locations"),
+            OntologySearchResult(concept_id="A2", concept_text="Lung", score=0.9, table_name="anatomic_locations"),
+            OntologySearchResult(concept_id="A3", concept_text="Kidney", score=0.7, table_name="anatomic_locations"),
+        ]
+
+        deduplicated = self.client._deduplicate_results(results)
+        self.assertEqual(len(deduplicated), 3)
+        self.assertEqual(deduplicated[0].score, 0.9)  # Lung
+        self.assertEqual(deduplicated[1].score, 0.7)  # Kidney
+        self.assertEqual(deduplicated[2].score, 0.5)  # Heart
+
+        # Test multi-line normalization in deduplication
+        results = [
+            OntologySearchResult(
+                concept_id="A1", concept_text="Heart\nCardiac muscle", score=0.8, table_name="anatomic_locations"
+            ),
+            OntologySearchResult(concept_id="A2", concept_text="Heart", score=0.9, table_name="radlex"),
+        ]
+
+        deduplicated = self.client._deduplicate_results(results)
+        self.assertEqual(len(deduplicated), 1)
+        self.assertEqual(deduplicated[0].score, 0.9)  # Should keep higher score
+
+    def test_search_parallel_with_async_run(self) -> None:
+        """Test parallel search with mocked database connection."""
+
+        async def run_test() -> None:
+            # Mock the database connection and methods
+            self.client._db_conn = MagicMock()  # Mock connection to make connected=True
+            self.client._tables = {"anatomic_locations": MagicMock(), "radlex": MagicMock()}
+
+            # Create mock results for search_tables method
+            mock_search_results = {
+                "anatomic_locations": [
+                    OntologySearchResult(
+                        concept_id="A1", concept_text="Heart", score=0.9, table_name="anatomic_locations"
+                    )
+                ],
+                "radlex": [
+                    OntologySearchResult(concept_id="R1", concept_text="Cardiac muscle", score=0.8, table_name="radlex")
+                ],
+            }
+
+            # Mock the search_tables method
+            async def mock_search_tables(
+                query: str, tables: list[str] | None = None, limit_per_table: int = 10
+            ) -> dict[str, list[OntologySearchResult]]:
+                await asyncio.sleep(0)  # Minimal async operation to satisfy linter
+                return mock_search_results
+
+            self.client.search_tables = mock_search_tables
+
+            # Test that multiple queries are processed
+            results = await self.client.search_parallel(
+                queries=["heart", "cardiac"], tables=["anatomic_locations", "radlex"], limit_per_query=10
+            )
+
+            # Should have results from both queries (but deduplicated)
+            self.assertGreater(len(results), 0)
+            self.assertLessEqual(len(results), 4)  # Max possible from 2 queries x 2 tables
+
+            # Verify results are sorted by score
+            if len(results) > 1:
+                for i in range(len(results) - 1):
+                    self.assertGreaterEqual(results[i].score, results[i + 1].score)
+
+            # Test empty query list returns empty results
+            results = await self.client.search_parallel(queries=[])
+            self.assertEqual(len(results), 0)
+
+            # Test anatomical filtering
+            # Create results with anatomical concepts
+            anatomical_result = OntologySearchResult(
+                concept_id="S1", concept_text="Liver (body structure)", score=0.9, table_name="snomedct"
+            )
+            pathological_result = OntologySearchResult(
+                concept_id="S2", concept_text="Liver tumor (body structure)", score=0.8, table_name="snomedct"
+            )
+
+            mock_anatomical_results = {"snomedct": [anatomical_result, pathological_result]}
+
+            async def mock_search_anatomical(
+                query: str, tables: list[str] | None = None, limit_per_table: int = 10
+            ) -> dict[str, list[OntologySearchResult]]:
+                await asyncio.sleep(0)  # Minimal async operation to satisfy linter
+                return mock_anatomical_results
+
+            self.client.search_tables = mock_search_anatomical
+
+            # Test without anatomical filtering
+            results_unfiltered = await self.client.search_parallel(queries=["liver"], filter_anatomical=False)
+            self.assertEqual(len(results_unfiltered), 2)
+
+            # Test with anatomical filtering - should remove pure anatomical concept
+            results_filtered = await self.client.search_parallel(queries=["liver"], filter_anatomical=True)
+            self.assertEqual(len(results_filtered), 1)
+            self.assertEqual(results_filtered[0].concept_text, "Liver tumor (body structure)")
+
+        asyncio.run(run_test())
+
+
+class TestOntologySearchClientEnhancementsSync(unittest.TestCase):
+    """Test search_parallel method using sync test pattern with asyncio.run."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        self.client = OntologySearchClient()
+
+    def test_search_parallel_not_connected_raises_error(self) -> None:
+        """Test that search_parallel raises error when not connected."""
+
+        async def run_test() -> None:
+            with self.assertRaises(RuntimeError, msg="Must be connected to LanceDB before searching"):
+                await self.client.search_parallel(queries=["test"])
+
+        asyncio.run(run_test())
+
+    def test_search_parallel_with_mock_connection(self) -> None:
+        """Test search_parallel with full mock setup."""
+
+        async def run_test() -> None:
+            # Set up mock connection state
+            self.client._db_conn = MagicMock()
+            self.client._tables = {"anatomic_locations": MagicMock(), "radlex": MagicMock()}
+
+            # Mock search_tables method to return controlled results
+            mock_results_1 = {
+                "anatomic_locations": [
+                    OntologySearchResult(
+                        concept_id="A1", concept_text="Heart", score=0.95, table_name="anatomic_locations"
+                    ),
+                    OntologySearchResult(
+                        concept_id="A2", concept_text="Lung", score=0.85, table_name="anatomic_locations"
+                    ),
+                ]
+            }
+
+            mock_results_2 = {
+                "anatomic_locations": [
+                    OntologySearchResult(
+                        concept_id="A3", concept_text="Cardiac muscle", score=0.90, table_name="anatomic_locations"
+                    ),
+                    OntologySearchResult(
+                        concept_id="A1",
+                        concept_text="Heart",
+                        score=0.93,
+                        table_name="anatomic_locations",  # Duplicate with different score
+                    ),
+                ]
+            }
+
+            call_count = 0
+
+            async def mock_search_tables(
+                query: str, tables: list[str] | None = None, limit_per_table: int = 10
+            ) -> dict[str, list[OntologySearchResult]]:
+                await asyncio.sleep(0)  # Minimal async operation to satisfy linter
+                nonlocal call_count
+                call_count += 1
+                return mock_results_1 if call_count == 1 else mock_results_2
+
+            self.client.search_tables = mock_search_tables
+
+            # Test parallel search with multiple queries
+            results = await self.client.search_parallel(queries=["heart", "cardiac"], limit_per_query=10)
+
+            # Verify deduplication worked (should keep higher scoring Heart)
+            heart_results = [r for r in results if "heart" in r.concept_text.lower()]
+            self.assertEqual(len(heart_results), 1)
+            self.assertEqual(heart_results[0].score, 0.95)  # Should keep original higher score
+
+            # Verify results are sorted by score descending
+            scores = [r.score for r in results]
+            self.assertEqual(scores, sorted(scores, reverse=True))
+
+            # Verify we have expected number of unique results
+            self.assertGreater(len(results), 0)
+            self.assertLessEqual(len(results), 3)  # Heart (deduplicated), Lung, Cardiac muscle
+
+        asyncio.run(run_test())
 
 
 class TestOntologyConstants:

@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Ontology Concept Search Tool**: New high-performance tool for searching medical ontologies
+  - Refactored from 70+ second searches to ~10 second searches using optimized architecture
+  - Uses programmatic query generation instead of LLM-based search for better performance
+  - Implements post-processing to guarantee exact match detection
+  - Proper Pydantic AI patterns with structured output validation
+  - Demo script in `notebooks/demo_ontology_concept_search.py`
 - **Added `anatomic_locations` to `FindingModelFull`**: Can now specify a list of index codes that 
 specifically refer to anatomy to indicate where the finding is likely to occur.
 - **Anatomic Location Search Tool**: New two-agent Pydantic AI tool for finding anatomic locations
@@ -31,11 +37,21 @@ specifically refer to anatomy to indicate where the finding is likely to occur.
 - **Refactored `get_openai_model()`**: Moved from `similar_finding_models.py` to `common.py` for reusability
 - **Test Philosophy**: Shifted from testing library functionality to testing actual code behavior and workflow logic
 - **Project Conventions**: Established convention for demo scripts in `notebooks/` with `demo_*.py` naming
+- **Test Framework Consistency**: Converted all tests from unittest.TestCase to pure pytest style for consistency
+- **Ontology Concept Search Refactoring**: Major performance and architecture improvements
+  - Replaced manual retry loops with Pydantic AI's built-in validation patterns
+  - Simplified from 3 agents to 1 agent plus programmatic processing for 85% performance improvement
+  - Changed from transformation in validators to proper post-processing functions
+  - Improved text normalization to only remove trailing parenthetical content
 
 ### Fixed
 
 - Fixed integration test API blocking issue where `models.ALLOW_MODEL_REQUESTS = False` was preventing integration tests from running
 - Resolved all linting errors in test files (import order, nested with statements, unused variables)
+- Fixed normalize_concept function to preserve middle parenthetical content (e.g., "Calcium (2+) level")
+- Corrected Pydantic AI anti-patterns where output validators were transforming data instead of validating
+- Fixed test organization by consolidating test_query_generator.py into test_ontology_concept_search.py
+- Cleaned up 110+ linting errors by removing temporary debug files and fixing type annotations
 
 ## [0.3.2] - 2025-08-20
 

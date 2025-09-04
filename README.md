@@ -568,3 +568,59 @@ result = asyncio.run(find_locations())
 - **Intelligent selection**: Finds the "sweet spot" of specificity - specific enough to be accurate but general enough to be useful
 - **Reusable components**: `OntologySearchClient` can be used for other ontology searches
 - **Production ready**: Proper error handling, logging, and connection lifecycle management
+
+### `search_ontology_concepts()`
+
+High-performance search for relevant medical concepts across ontology databases. Uses programmatic query generation for speed and post-processing to ensure exact matches are never missed.
+
+```python
+import asyncio
+from findingmodel.tools.ontology_concept_search import search_ontology_concepts
+
+async def search_concepts():
+    # Search for relevant concepts for a finding
+    result = await search_ontology_concepts(
+        finding_name="pneumonia",
+        finding_description="Inflammation of lung parenchyma",  # Optional
+        exclude_anatomical=True  # Exclude anatomical structures (default: True)
+    )
+    
+    print(f"Exact matches ({len(result.exact_matches)}):")
+    for concept in result.exact_matches:
+        print(f"  - {concept.code}: {concept.text}")
+    
+    print(f"\nShould include ({len(result.should_include)}):")
+    for concept in result.should_include:
+        print(f"  - {concept.code}: {concept.text}")
+    
+    print(f"\nMarginal relevance ({len(result.marginal)}):")
+    for concept in result.marginal:
+        print(f"  - {concept.code}: {concept.text}")
+    
+    return result
+
+result = asyncio.run(search_concepts())
+# Output:
+# Exact matches (5):
+#   - RID5350: pneumonia
+#   - 233604007: Pneumonia
+#   - RID34769: viral pneumonia
+#   - 53084003: Bacterial pneumonia
+#   - RID3541: pneumonitis
+# 
+# Should include (3):
+#   - RID5351: lobar pneumonia
+#   - RID5352: bronchopneumonia
+#   - 233607000: Atypical pneumonia
+# 
+# Marginal relevance (2):
+#   - RID4866: pulmonary edema
+#   - RID34637: bronchitis
+```
+
+**Key Features:**
+- **High performance**: ~10 second searches (vs 70+ seconds with full LLM approach)
+- **Guaranteed exact matches**: Post-processing ensures exact name matches are never missed
+- **Smart categorization**: Three tiers - exact matches, should include, marginal
+- **Excludes anatomy**: Focuses on diseases/conditions (use `find_anatomic_locations()` for anatomy)
+- **Normalized results**: Cleans up RadLex formatting issues automatically
