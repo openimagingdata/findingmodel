@@ -8,6 +8,7 @@ Agent 1: Search Strategy - Generates diverse search queries and gathers comprehe
 Agent 2: Categorization - Analyzes results and categorizes into relevance tiers
 """
 
+import asyncio
 import json
 from dataclasses import dataclass
 
@@ -17,54 +18,13 @@ from pydantic_ai import Agent
 from findingmodel import logger
 from findingmodel.config import settings
 from findingmodel.tools.common import get_openai_model
-from findingmodel.tools.ontology_search import OntologySearchClient, OntologySearchResult, normalize_concept
-
-
-class RawSearchResults(BaseModel):
-    """Output from search agent."""
-
-    search_terms_used: list[str] = Field(description="List of search terms that were actually used")
-    all_results: list[OntologySearchResult] = Field(description="All unique search results found across tables")
-    anatomical_filtered: list[str] = Field(
-        default_factory=list, description="Anatomical concepts that were filtered out"
-    )
-
-
-class QueryTerms(BaseModel):
-    """Structured query terms for comprehensive medical concept search."""
-
-    primary_term: str = Field(description="The main medical finding name as provided")
-    synonyms: list[str] = Field(
-        default_factory=list,
-        max_length=10,
-        description="Medical synonyms and alternative names for the finding (max 10)",
-    )
-    related_terms: list[str] = Field(
-        default_factory=list, max_length=5, description="Related medical conditions or findings (max 5)"
-    )
-
-    @property
-    def all_terms(self) -> list[str]:
-        """Return all unique terms in priority order: primary, synonyms, then related."""
-        terms = [self.primary_term]
-
-        # Add synonyms that aren't duplicates of primary
-        for synonym in self.synonyms:
-            if synonym.lower() != self.primary_term.lower() and synonym not in terms:
-                terms.append(synonym)
-
-        # Add related terms that aren't duplicates
-        for related in self.related_terms:
-            if related.lower() not in [t.lower() for t in terms] and related not in terms:
-                terms.append(related)
-
-        return terms
-
-
-class SearchQueries(BaseModel):
-    """Search queries for medical concept search."""
-
-    queries: list[str] = Field(description="List of medical search terms, synonyms, and related conditions")
+from findingmodel.tools.ontology_search import (
+    BioOntologySearchClient,
+    LanceDBOntologySearchClient,
+    OntologySearchProtocol,
+    OntologySearchResult,
+    normalize_concept,
+)
 
 
 class CategorizedConcepts(BaseModel):
@@ -73,15 +33,6 @@ class CategorizedConcepts(BaseModel):
     exact_matches: list[str] = Field(description="Concept IDs that exactly match the finding", max_length=5)
     should_include: list[str] = Field(description="Concept IDs that should be included", max_length=10)
     marginal: list[str] = Field(description="Concept IDs that are marginally relevant", max_length=10)
-    rationale: str = Field(description="Brief categorization rationale")
-
-
-class SimpleCategorizedConcepts(BaseModel):
-    """Simple categorized concepts for fast processing."""
-
-    exact_matches: list[str] = Field(description="Concept IDs that exactly match the finding")
-    should_include: list[str] = Field(description="Concept IDs that should be included")
-    marginal_concepts: list[str] = Field(description="Concept IDs that are marginally relevant")
     rationale: str = Field(description="Brief categorization rationale")
 
 
@@ -106,61 +57,17 @@ class CategorizedOntologyConcepts(BaseModel):
 
 
 @dataclass
-class SearchContext:
-    """Context for search operations."""
-
-    search_client: OntologySearchClient
-    finding_name: str
-    finding_description: str | None
-    exclude_anatomical: bool
-
-
-@dataclass
 class CategorizationContext:
     """Context for categorization agent with dependencies."""
 
     finding_name: str
     search_results: list[OntologySearchResult]
-    query_terms: QueryTerms
-
-
-async def generate_search_queries(finding_name: str, finding_description: str | None = None) -> list[str]:
-    """Generate search queries using the query generator agent.
-
-    Args:
-        finding_name: The name of the medical finding
-        finding_description: Optional detailed description of the finding
-
-    Returns:
-        List of search queries in priority order
-    """
-    query_agent = create_query_generator_agent()
-
-    # Create structured prompt
-    prompt = f"Medical finding: {finding_name}"
-    if finding_description:
-        prompt += f"\nDescription: {finding_description}"
-    prompt += "\n\nGenerate comprehensive search terms for ontology database queries."
-
-    try:
-        result = await query_agent.run(prompt)
-
-        # Get all terms from the structured output
-        # The QueryTerms model already handles deduplication and priority ordering
-        queries = result.output.all_terms
-
-        # Limit to a reasonable number for search performance
-        return queries[:15]  # Increased limit since we have better structured output
-
-    except Exception as e:
-        logger.warning(f"Failed to generate query terms via agent: {e}, using fallback")
-        # Simple fallback - just the original term
-        return [finding_name]
+    query_terms: list[str]
 
 
 async def execute_ontology_search(
-    query_terms: QueryTerms,
-    client: OntologySearchClient,
+    query_terms: list[str],
+    client: OntologySearchProtocol,
     exclude_anatomical: bool = True,
     base_limit: int = 30,
     max_results: int = 12,
@@ -172,16 +79,16 @@ async def execute_ontology_search(
     are included in the final result set.
 
     Strategy:
-    1. Execute parallel search with all query terms (primary, synonyms, related)
+    1. Execute parallel search with all query terms
     2. Sort all results by score in descending order
     3. Take the top N results by score
-    4. Check remaining results for exact matches of the primary term
+    4. Check remaining results for exact matches of any query term
     5. Add any missing exact matches (important for cases like RID5350 for "pneumonia")
     6. Apply concept text normalization to all results
 
     Args:
-        query_terms: Structured query terms containing primary term, synonyms, and related terms
-        client: OntologySearchClient instance for database access
+        query_terms: List of search terms to query the ontology databases
+        client: OntologySearchProtocol instance for database access
         exclude_anatomical: Whether to filter out anatomical structure concepts (default: True)
         base_limit: Initial limit per query for casting a wider net (default: 30)
         max_results: Maximum number of results to return after selection (default: 12)
@@ -194,15 +101,12 @@ async def execute_ontology_search(
         Exception: If the search operation fails
     """
     try:
-        # Get all search terms from the QueryTerms object
-        search_queries = query_terms.all_terms
-        logger.info(f"Executing ontology search with {len(search_queries)} terms")
+        logger.info(f"Executing ontology search with {len(query_terms)} terms")
 
-        # Execute parallel search across all ontology tables
-        search_results = await client.search_parallel(
-            queries=search_queries,
-            tables=None,  # Search all available tables
-            limit_per_query=base_limit,  # Cast wider net initially
+        # Execute search across all ontology tables using Protocol interface
+        search_results = await client.search(
+            queries=query_terms,
+            max_results=base_limit * len(query_terms) if query_terms else base_limit,  # Approximate total results
             filter_anatomical=exclude_anatomical,
         )
 
@@ -219,22 +123,23 @@ async def execute_ontology_search(
         top_results = sorted_results[:max_results]
         selected_ids = {r.concept_id for r in top_results}
 
-        # Check remaining results for exact matches of the primary term
+        # Check remaining results for exact matches of any query term
         # This ensures critical exact matches aren't missed due to lower scores
-        primary_term_lower = query_terms.primary_term.lower()
+        query_terms_lower = [term.lower() for term in query_terms]
         exact_matches_added = 0
 
         for result in sorted_results[max_results:]:
             # Normalize the concept text for comparison
             normalized_text = normalize_concept(result.concept_text).lower()
 
-            # Check if this is an exact match for the primary term
-            if normalized_text == primary_term_lower and result.concept_id not in selected_ids:
+            # Check if this is an exact match for any query term
+            if normalized_text in query_terms_lower and result.concept_id not in selected_ids:
                 top_results.append(result)
                 selected_ids.add(result.concept_id)
                 exact_matches_added += 1
+                matched_term = query_terms[query_terms_lower.index(normalized_text)]
                 logger.info(
-                    f"Added exact match for primary term '{query_terms.primary_term}': "
+                    f"Added exact match for term '{matched_term}': "
                     f"{result.concept_id} ({result.concept_text}) [score: {result.score:.3f}]"
                 )
 
@@ -257,32 +162,6 @@ async def execute_ontology_search(
         raise
 
 
-# Search agent no longer needed - using programmatic query generation
-
-
-def create_old_categorization_agent() -> Agent[SearchContext, CategorizedOntologyConcepts]:
-    """Create the categorization agent optimized for speed.
-
-    DEPRECATED: Use create_categorization_agent() for better validation.
-    """
-
-    model = get_openai_model(settings.openai_default_model)
-
-    return Agent[SearchContext, CategorizedOntologyConcepts](
-        model=model,
-        output_type=CategorizedOntologyConcepts,
-        deps_type=SearchContext,
-        system_prompt="""Medical ontology categorization. Analyze concepts for finding relevance.
-
-Categories:
-1. **exact_matches**: Direct matches to finding name
-2. **should_include**: Highly relevant concepts  
-3. **marginal_concepts**: Peripherally relevant
-
-Prioritize exact name matches. Be concise in rationale.""",
-    )
-
-
 def create_categorization_agent() -> Agent[CategorizationContext, CategorizedConcepts]:
     """Create categorization agent following proper Pydantic AI patterns.
 
@@ -298,55 +177,64 @@ def create_categorization_agent() -> Agent[CategorizationContext, CategorizedCon
         model=model,
         output_type=CategorizedConcepts,
         deps_type=CategorizationContext,
-        system_prompt="""You are a medical ontology categorization expert.
+        system_prompt="""You are a medical ontology expert.
 
-Analyze the provided ontology concepts and categorize them by relevance to the medical finding.
+A series of search results against a medical ontology has returned a batch of possibly related
+concepts. Your task is to analyze these concepts and categorize them by relevance to the main finding.
+
+The goal is to find the most relevant concepts that accurately represent the finding, even if they 
+use slightly different wording. Obviously, prioritize exact matches above all else.
 
 Categories:
-1. **exact_matches** (max 5): Concepts that directly match the finding name (case-insensitive)
+1. **exact_matches** (max 3): Concepts that exactly match the name--that is, they refer to the
+     exact same idea (or very nearly so), even if they use slightly different wording.
    - CRITICAL: Any concept with text that exactly equals the finding name MUST go here
    - Include concepts whose normalized text exactly matches the finding name or its synonyms
    - These are the most important - never miss an exact match!
    
 2. **should_include** (max 10): Highly relevant related concepts
-   - Closely related medical conditions
-   - Specific subtypes or variants
-   - Concepts that medical professionals would strongly associate
+   - Closely related medical conditions--for example, subtypes or variants of the finding
+   - Concepts that medical professionals would strongly associate or expect to see together
    
 3. **marginal** (max 10): Peripherally related concepts
    - Broader categories or parent conditions
    - Related but distinct conditions
    - Concepts with weaker associations
 
+Do NOT include terms that are unrelated or do not refer to things that could be imaging findings
+or diagnoses, like drug names, procedures, or anatomical structures.
+
 IMPORTANT: 
+- Return ONLY relevant concepts--concepts that might have the same words but which refer to
+  unrelated ideas should NOT be included in ANY category.
 - Return only the concept IDs in each category
+- A concept can only appear in one category
 - Prioritize exact name matches above all else
-- Be concise in your rationale
-- A concept can only appear in one category""",
+- Make your rationale CONCISE (1-2 sentences max)""",
     )
 
 
 def ensure_exact_matches_post_process(
     output: CategorizedConcepts,
     search_results: list[OntologySearchResult],
-    query_terms: QueryTerms,
+    query_terms: list[str],
 ) -> CategorizedConcepts:
     """Post-process categorization output to ensure exact matches are properly identified.
 
     This function ensures that any concept whose normalized text exactly
-    matches the finding name or its query terms is included in exact_matches.
+    matches any of the query terms is included in exact_matches.
     If any are missing, it automatically corrects the categorization.
 
     Args:
         output: The categorization output from the agent
         search_results: List of search results to check for exact matches
-        query_terms: Original query terms used for searching
+        query_terms: List of search terms used for querying
 
     Returns:
         CategorizedConcepts with exact matches properly identified and corrected
     """
-    # Get the context data
-    query_terms_lower = [term.lower() for term in query_terms.all_terms]
+    # Get lowercase versions of query terms for comparison
+    query_terms_lower = [term.lower() for term in query_terms]
 
     # Find concepts that should be exact matches
     missing_exact_matches = []
@@ -356,17 +244,8 @@ def ensure_exact_matches_post_process(
         normalized_text = result.concept_text.lower()
 
         # Check if this is an exact match for any query term
-        is_exact_match = False
-        matched_term = None
-
-        for query_term in query_terms_lower:
-            if normalized_text == query_term:
-                is_exact_match = True
-                matched_term = query_term
-                break
-
-        # If it's an exact match but not in the exact_matches list, track it
-        if is_exact_match and result.concept_id not in output.exact_matches:
+        if normalized_text in query_terms_lower and result.concept_id not in output.exact_matches:
+            matched_term = query_terms[query_terms_lower.index(normalized_text)]
             missing_exact_matches.append((result.concept_id, result.concept_text, matched_term))
 
     # If we found missing exact matches, auto-correct by adding them
@@ -408,133 +287,76 @@ def ensure_exact_matches_post_process(
     return output
 
 
-def create_fast_categorization_agent() -> Agent[SearchContext, SimpleCategorizedConcepts]:
-    """Create a fast categorization agent with simple output model.
+def create_query_generator_agent() -> Agent[None, list[str]]:
+    """Create agent for generating alternative medical terms for ontology matching.
 
-    DEPRECATED: Use create_categorization_agent() for better validation.
+    Returns an agent that generates different ways to express the same medical finding
+    to help match against formal medical ontologies.
     """
+    model = get_openai_model(settings.openai_default_model_small)  # Use small/fast model
 
-    model = get_openai_model(settings.openai_default_model)
-
-    return Agent[SearchContext, SimpleCategorizedConcepts](
+    return Agent[None, list[str]](
         model=model,
-        output_type=SimpleCategorizedConcepts,
-        deps_type=SearchContext,
-        system_prompt="""Categorize medical concepts by relevance to finding.
-Return concept IDs only in each category. Be fast and accurate.""",
+        output_type=list[str],
+        system_prompt="""We need to find terms that might match a radiology finding name in official medical ontologies that use formal medical terminology.
+
+Our finding name might be expressed in different ways, which would prevent an exact match. For example, our finding might be named "quadriceps tendon rupture", but the ontology we're searching doesn't have that exact term, but it DOES have "quadriceps tendon tear". 
+
+Generate a list of alternative terms that express the same medical concept. Include:
+- Alternative medical terms (e.g., "tear" vs "rupture")
+- Common abbreviations (e.g., "PE" for "pulmonary embolism")
+- More general or specific variations
+- Parent/broader terms that might categorize this finding
+
+Example for "quadriceps tendon rupture":
+["quadriceps tendon tear", "quad tendon rupture", "quadriceps tendon disruption", "torn quadriceps tendon", "quadriceps tendon injury", "quadriceps tendinopathy", "quadriceps tendon abnormality"]
+
+Return 2-5 terms that would appear in formal medical ontologies. Keep it simple and practical.""",
     )
 
 
-def create_query_generator_agent() -> Agent[None, QueryTerms]:
-    """Create agent for generating comprehensive medical query terms.
-
-    Returns an agent that generates structured query terms for ontology search,
-    focusing on terms that would appear in medical ontologies like SNOMED-CT,
-    RadLex, ICD-10, and LOINC.
-    """
-    model = get_openai_model("gpt-4o-mini")  # Using mini model for efficiency
-
-    return Agent[None, QueryTerms](
-        model=model,
-        output_type=QueryTerms,
-        system_prompt="""You are a medical terminology expert specializing in ontology search.
-
-Your task is to generate comprehensive search terms for medical findings that will be used 
-to query medical ontology databases (SNOMED-CT, RadLex, ICD-10, LOINC).
-
-Given a medical finding name and optional description, generate:
-
-1. **Primary Term**: Keep the original finding name exactly as provided
-
-2. **Synonyms** (up to 10): Generate medical synonyms focusing on:
-   - Standard medical terminology variants
-   - Common clinical abbreviations (e.g., "PE" for "pulmonary embolism")
-   - Alternative spellings (British vs American medical terms)
-   - Formal/informal medical terms
-   - Historical or legacy terminology still in use
-   - Plural/singular variations if clinically relevant
-   
-3. **Related Terms** (up to 5): Include closely related medical concepts:
-   - Parent conditions (e.g., "pneumonia" for "lobar pneumonia")
-   - Subtypes or specific variants
-   - Associated pathological processes
-   - Differential diagnoses commonly grouped together
-
-IMPORTANT GUIDELINES:
-- Focus on terms that would actually appear in medical ontologies
-- Avoid overly specific anatomical qualifiers unless inherent to the finding
-- Include both abbreviated and full forms when applicable
-- Prioritize commonly used clinical terminology
-- Ensure terms are medically accurate and clinically relevant
-- Do not include treatment or procedure terms unless they are part of the finding name
-
-Example:
-For "pulmonary embolism":
-- Synonyms: ["PE", "pulmonary thromboembolism", "lung embolism", "pulmonary embolus", ...]
-- Related: ["venous thromboembolism", "thromboembolism", "embolism", ...]
-""",
-    )
-
-
-def create_synonym_generation_agent() -> Agent[None, SearchQueries]:
-    """Create agent for generating medical synonyms and related terms.
-
-    DEPRECATED: Use create_query_generator_agent() instead for better structured output.
-    """
-    model = get_openai_model(settings.openai_default_model)
-
-    return Agent[None, SearchQueries](
-        model=model,
-        output_type=SearchQueries,
-        system_prompt="""Generate medical synonyms and related search terms.
-
-For a given medical finding, provide 5-8 relevant search terms including:
-- Direct synonyms
-- Alternative medical terminology  
-- Related conditions
-- Common abbreviations
-- Anatomically specific variants
-
-Always include the original term first.""",
-    )
-
-
-async def generate_query_terms(finding_name: str, finding_description: str | None = None) -> QueryTerms:
-    """Generate comprehensive search terms for ontology queries.
+async def generate_finding_query_terms(finding_name: str, finding_description: str | None = None) -> list[str]:
+    """Generate alternative search terms for matching a finding in medical ontologies.
 
     Stage 1 of the ontology concept search pipeline.
-    Uses AI to generate synonyms, abbreviations, and related medical terms.
+    Uses AI to generate different ways of expressing the same medical finding
+    to improve matching against formal medical ontology databases.
 
     Args:
-        finding_name: Name of the medical finding
-        finding_description: Optional detailed description
+        finding_name: Name of the imaging finding
+        finding_description: Optional detailed description (currently used for context if provided)
 
     Returns:
-        QueryTerms object with primary term, synonyms, and related terms
+        List of search terms including the original finding name and alternatives
     """
     query_agent = create_query_generator_agent()
 
-    # Build prompt
-    prompt = f"Medical finding: {finding_name}"
+    # Build prompt - keep it simple and focused
+    prompt = f"Imaging finding: {finding_name}"
     if finding_description:
-        prompt += f"\nDescription: {finding_description}"
-    prompt += "\n\nGenerate comprehensive search terms for ontology database queries."
+        prompt += f"\n(Additional context: {finding_description})"
+    prompt += "\n\nGenerate alternative terms to help match this finding in medical ontologies."
 
     try:
         result = await query_agent.run(prompt)
         query_terms = result.output
-        logger.info(f"Generated {len(query_terms.all_terms)} search queries for '{finding_name}'")
+
+        # Always include the original finding name as the first term
+        if finding_name not in query_terms:
+            query_terms = [finding_name, *query_terms]
+
+        logger.info(f"Generated {len(query_terms)} search queries for '{finding_name}'")
         return query_terms
     except Exception as e:
         logger.warning(f"Failed to generate query terms via agent: {e}, using fallback")
-        # Fallback to simple QueryTerms with just the finding name
-        return QueryTerms(primary_term=finding_name, synonyms=[], related_terms=[])
+        # Fallback to just the finding name
+        return [finding_name]
 
 
 async def categorize_with_validation(
     finding_name: str,
     search_results: list[OntologySearchResult],
-    query_terms: QueryTerms,
+    query_terms: list[str],
 ) -> CategorizedConcepts:
     """Categorize search results with automatic validation.
 
@@ -543,9 +365,9 @@ async def categorize_with_validation(
     post-processing to ensure exact matches are never missed.
 
     Args:
-        finding_name: Name of the medical finding
+        finding_name: Name of the imaging finding
         search_results: List of ontology search results to categorize
-        query_terms: Original query terms used for searching
+        query_terms: List of search terms used for querying
 
     Returns:
         CategorizedConcepts with concept IDs in each relevance tier
@@ -559,12 +381,12 @@ async def categorize_with_validation(
     categorization_agent = create_categorization_agent()
 
     # Create a compact representation of results for the prompt
-    compact_results = [{"id": r.concept_id, "text": r.concept_text, "score": round(r.score, 3)} for r in search_results]
+    compact_results = [{"id": r.concept_id, "text": r.concept_text} for r in search_results]
 
     categorize_prompt = (
-        f"Categorize these ontology concepts for the medical finding '{finding_name}':\n\n"
+        f"Categorize these ontology concepts for the imaging finding '{finding_name}':\n\n"
         f"{json.dumps(compact_results, indent=2)}\n\n"
-        f"Return concept IDs in appropriate categories based on medical relevance."
+        f"Return concept IDs in appropriate categories based on relevance."
     )
 
     # Run categorization
@@ -655,26 +477,28 @@ def build_final_output(
     )
 
 
-async def search_ontology_concepts(
+async def match_ontology_concepts(  # noqa: C901
     finding_name: str,
     finding_description: str | None = None,
+    search_clients: OntologySearchProtocol | list[OntologySearchProtocol] | None = None,
     exclude_anatomical: bool = True,
     max_exact_matches: int = 5,
     max_should_include: int = 10,
     max_marginal: int = 10,
 ) -> CategorizedOntologyConcepts:
     """
-    Search for relevant ontology concepts across all tables.
+    Match finding to relevant ontology concepts across multiple search backends.
 
     This is the main orchestration function that coordinates a 4-stage pipeline:
     1. Generate comprehensive query terms using AI
-    2. Execute smart search with exact match guarantee
-    3. Categorize results with automatic validation
+    2. Execute parallel searches across all provided backends
+    3. Categorize merged results with automatic validation
     4. Transform to final output format with limits
 
     Args:
         finding_name: Name of the finding model
         finding_description: Optional detailed description
+        search_clients: Single client, list of clients, or None (auto-detect)
         exclude_anatomical: Whether to filter out anatomical concepts
         max_exact_matches: Maximum exact match concepts to return
         max_should_include: Maximum should-include concepts
@@ -683,28 +507,88 @@ async def search_ontology_concepts(
     Returns:
         Categorized ontology concepts with rationale
     """
-    logger.info(f"Starting ontology concept search for: {finding_name}")
+    logger.info(f"Starting ontology concept matching for: {finding_name}")
 
-    # Initialize search client
-    client = OntologySearchClient(
-        lancedb_uri=settings.lancedb_uri,
-        api_key=settings.lancedb_api_key.get_secret_value() if settings.lancedb_api_key else None,
-    )
+    # Determine which search clients to use
+    clients_to_use: list[OntologySearchProtocol] = []
+
+    if search_clients is None:
+        # Auto-detect available backends based on configuration
+        if settings.lancedb_uri and settings.lancedb_api_key:
+            logger.info("Using LanceDB backend (credentials found)")
+            lance_client = LanceDBOntologySearchClient(
+                lancedb_uri=settings.lancedb_uri,
+                api_key=settings.lancedb_api_key.get_secret_value() if settings.lancedb_api_key else None,
+            )
+            clients_to_use.append(lance_client)
+
+        if hasattr(settings, "bioontology_api_key") and settings.bioontology_api_key:
+            logger.info("Using BioOntology backend (API key found)")
+            # Let BioOntologySearchClient handle getting the API key from settings
+            bio_client = BioOntologySearchClient()
+            clients_to_use.append(bio_client)
+
+        if not clients_to_use:
+            raise ValueError(
+                "No ontology search backends configured. Please configure LanceDB or BioOntology credentials."
+            )
+
+    elif isinstance(search_clients, list):
+        clients_to_use = search_clients
+    else:
+        # Single client provided
+        clients_to_use = [search_clients]
+
+    logger.info(f"Using {len(clients_to_use)} search backend(s)")
+
+    # Use context managers for all clients
+    async def search_with_client(client: OntologySearchProtocol, query_terms: list[str]) -> list[OntologySearchResult]:
+        """Execute search with a single client."""
+        async with client:
+            return await execute_ontology_search(
+                query_terms=query_terms,
+                client=client,
+                exclude_anatomical=exclude_anatomical,
+                base_limit=30,  # Cast wider net initially
+                max_results=7,  # Focus on top results (plus exact matches)
+            )
 
     try:
-        await client.connect()
-
         # Stage 1: Generate comprehensive search terms
-        query_terms = await generate_query_terms(finding_name, finding_description)
+        query_terms = await generate_finding_query_terms(finding_name, finding_description)
 
-        # Stage 2: Execute smart search with exact match guarantee
-        search_results = await execute_ontology_search(
-            query_terms=query_terms,
-            client=client,
-            exclude_anatomical=exclude_anatomical,
-            base_limit=30,  # Cast wider net initially
-            max_results=7,  # Focus on top results (plus exact matches)
-        )
+        # Stage 2: Execute parallel searches across all backends
+        if len(clients_to_use) == 1:
+            # Single client - no need for gather
+            search_results = await search_with_client(clients_to_use[0], query_terms)
+        else:
+            # Multiple clients - use asyncio.gather for parallel execution
+            logger.info(f"Executing parallel searches across {len(clients_to_use)} backends")
+            search_tasks = [search_with_client(client, query_terms) for client in clients_to_use]
+
+            # Use return_exceptions=True to handle partial failures gracefully
+            results_lists = await asyncio.gather(*search_tasks, return_exceptions=True)
+
+            # Merge results from all backends, handling exceptions
+            all_results = []
+            for i, results in enumerate(results_lists):
+                if isinstance(results, Exception):
+                    logger.warning(f"Search backend {i + 1} failed: {results}")
+                elif isinstance(results, list):
+                    all_results.extend(results)
+
+            # Deduplicate merged results by concept_id
+            seen_ids = set()
+            search_results = []
+            for result in all_results:
+                if result.concept_id not in seen_ids:
+                    seen_ids.add(result.concept_id)
+                    search_results.append(result)
+
+            # Sort by score descending
+            search_results.sort(key=lambda x: x.score, reverse=True)
+
+            logger.info(f"Merged and deduplicated to {len(search_results)} unique results")
 
         # Stage 3: Categorize with automatic validation
         categorized = await categorize_with_validation(
@@ -720,21 +604,21 @@ async def search_ontology_concepts(
             max_marginal=max_marginal,
         )
 
-    finally:
-        client.disconnect()
+    except Exception as e:
+        logger.error(f"Error in ontology concept matching: {e}")
+        raise
 
 
 __all__ = [
     "CategorizationContext",
     "CategorizedConcepts",
     "CategorizedOntologyConcepts",
-    "QueryTerms",
     "build_final_output",
     "categorize_with_validation",
     "create_categorization_agent",
     "create_query_generator_agent",
     "ensure_exact_matches_post_process",
     "execute_ontology_search",
-    "generate_query_terms",
-    "search_ontology_concepts",
+    "generate_finding_query_terms",
+    "match_ontology_concepts",
 ]

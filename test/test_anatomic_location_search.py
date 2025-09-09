@@ -21,7 +21,7 @@ from findingmodel.tools.anatomic_location_search import (
 from findingmodel.tools.ontology_search import (
     ONTOLOGY_TABLES,
     TABLE_TO_INDEX_CODE_SYSTEM,
-    OntologySearchClient,
+    LanceDBOntologySearchClient,
     OntologySearchResult,
     normalize_concept,
 )
@@ -30,7 +30,7 @@ from findingmodel.tools.ontology_search import (
 models.ALLOW_MODEL_REQUESTS = False
 
 # ===== ONTOLOGY SEARCH TESTS =====
-# Tests for the OntologySearchResult and OntologySearchClient classes
+# Tests for the OntologySearchResult and LanceDBOntologySearchClient classes
 # which are supporting components for the anatomic location search functionality.
 
 
@@ -132,12 +132,12 @@ class TestOntologySearchResult:
         assert index_code.display == "Heart chamber"  # Both newline and parenthetical stripped
 
 
-class TestOntologySearchClient:
-    """Tests for OntologySearchClient class."""
+class TestLanceDBOntologySearchClient:
+    """Tests for LanceDBOntologySearchClient class."""
 
     def test_initialization_with_defaults(self) -> None:
         """Test basic initialization with default parameters."""
-        client = OntologySearchClient()
+        client = LanceDBOntologySearchClient()
 
         assert client._db_conn is None
         assert client._tables == {}
@@ -146,26 +146,26 @@ class TestOntologySearchClient:
     def test_initialization_with_custom_uri(self) -> None:
         """Test initialization with custom URI."""
         custom_uri = "lancedb://custom-uri"
-        client = OntologySearchClient(lancedb_uri=custom_uri)
+        client = LanceDBOntologySearchClient(lancedb_uri=custom_uri)
 
         assert client._uri == custom_uri
 
     def test_initialization_with_custom_api_key(self) -> None:
         """Test initialization with custom API key."""
         custom_key = "custom-api-key-123"
-        client = OntologySearchClient(api_key=custom_key)
+        client = LanceDBOntologySearchClient(api_key=custom_key)
 
         assert client._api_key == custom_key
 
     def test_connected_property_initially_false(self) -> None:
         """Test that connected property returns False initially."""
-        client = OntologySearchClient()
+        client = LanceDBOntologySearchClient()
 
         assert client.connected is False
 
     def test_uri_fallback_behavior(self) -> None:
         """Test URI fallback behavior when None is provided."""
-        client = OntologySearchClient(lancedb_uri=None)
+        client = LanceDBOntologySearchClient(lancedb_uri=None)
 
         # Should use settings.lancedb_uri when None is provided
         # We can't test the exact value without importing settings
@@ -174,7 +174,7 @@ class TestOntologySearchClient:
 
     def test_api_key_fallback_behavior(self) -> None:
         """Test API key fallback behavior when None is provided."""
-        client = OntologySearchClient(api_key=None)
+        client = LanceDBOntologySearchClient(api_key=None)
 
         # Should use settings.lancedb_api_key when None is provided
         # We can't test the exact value without importing settings
@@ -182,12 +182,12 @@ class TestOntologySearchClient:
         assert hasattr(client, "_api_key")
 
 
-class TestOntologySearchClientEnhancements(unittest.TestCase):
-    """Test the new methods added to OntologySearchClient in Phase 1."""
+class TestLanceDBOntologySearchClientEnhancements(unittest.TestCase):
+    """Test the new methods added to LanceDBOntologySearchClient in Phase 1."""
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        self.client = OntologySearchClient()
+        self.client = LanceDBOntologySearchClient()
 
     def test_normalize_concept(self) -> None:
         """Test concept text normalization."""
@@ -426,12 +426,12 @@ class TestOntologySearchClientEnhancements(unittest.TestCase):
         asyncio.run(run_test())
 
 
-class TestOntologySearchClientEnhancementsSync(unittest.TestCase):
+class TestLanceDBOntologySearchClientEnhancementsSync(unittest.TestCase):
     """Test search_parallel method using sync test pattern with asyncio.run."""
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        self.client = OntologySearchClient()
+        self.client = LanceDBOntologySearchClient()
 
     def test_search_parallel_not_connected_raises_error(self) -> None:
         """Test that search_parallel raises error when not connected."""
@@ -711,7 +711,7 @@ class TestFindAnatomicLocations:
         )
 
         # Mock the search client to avoid database connections
-        with patch("findingmodel.tools.anatomic_location_search.OntologySearchClient") as mock_client_class:
+        with patch("findingmodel.tools.anatomic_location_search.LanceDBOntologySearchClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.connect = AsyncMock()
             mock_client.connected = True
@@ -745,7 +745,7 @@ class TestFindAnatomicLocations:
     @pytest.mark.asyncio
     async def test_workflow_handles_connection_errors(self) -> None:
         """Test that our workflow properly handles database connection failures."""
-        with patch("findingmodel.tools.anatomic_location_search.OntologySearchClient") as mock_client_class:
+        with patch("findingmodel.tools.anatomic_location_search.LanceDBOntologySearchClient") as mock_client_class:
             # Setup mock client that fails to connect - tests our error handling logic
             mock_client = MagicMock()
             mock_client.connect = AsyncMock(side_effect=Exception("Connection failed"))
@@ -778,7 +778,7 @@ class TestFindAnatomicLocations:
             reasoning="No specific locations found, using generic location.",
         )
 
-        with patch("findingmodel.tools.anatomic_location_search.OntologySearchClient") as mock_client_class:
+        with patch("findingmodel.tools.anatomic_location_search.LanceDBOntologySearchClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.connect = AsyncMock()
             mock_client.connected = True
@@ -805,7 +805,7 @@ class TestFindAnatomicLocations:
     @pytest.mark.asyncio
     async def test_workflow_cleanup_on_exceptions(self) -> None:
         """Test that our workflow always performs cleanup even when exceptions occur."""
-        with patch("findingmodel.tools.anatomic_location_search.OntologySearchClient") as mock_client_class:
+        with patch("findingmodel.tools.anatomic_location_search.LanceDBOntologySearchClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.connect = AsyncMock()
             mock_client.connected = True
@@ -842,7 +842,7 @@ class TestFindAnatomicLocations:
         )
 
         with (
-            patch("findingmodel.tools.anatomic_location_search.OntologySearchClient") as mock_client_class,
+            patch("findingmodel.tools.anatomic_location_search.LanceDBOntologySearchClient") as mock_client_class,
             patch("findingmodel.tools.anatomic_location_search.create_search_agent") as mock_create_search,
             patch("findingmodel.tools.anatomic_location_search.create_matching_agent") as mock_create_matching,
         ):
@@ -939,7 +939,7 @@ class TestEdgeCases:
             primary_location=primary, alternate_locations=[], reasoning="No specific location found."
         )
 
-        with patch("findingmodel.tools.anatomic_location_search.OntologySearchClient") as mock_client_class:
+        with patch("findingmodel.tools.anatomic_location_search.LanceDBOntologySearchClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.connect = AsyncMock()
             mock_client.connected = True
@@ -975,7 +975,7 @@ class TestEdgeCases:
             primary_location=primary, alternate_locations=[], reasoning="Handled long input."
         )
 
-        with patch("findingmodel.tools.anatomic_location_search.OntologySearchClient") as mock_client_class:
+        with patch("findingmodel.tools.anatomic_location_search.LanceDBOntologySearchClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.connect = AsyncMock()
             mock_client.connected = True

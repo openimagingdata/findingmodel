@@ -18,7 +18,7 @@ from pydantic_ai import Agent, RunContext
 from findingmodel import logger
 from findingmodel.config import settings
 from findingmodel.tools.common import get_openai_model
-from findingmodel.tools.ontology_search import OntologySearchClient, OntologySearchResult
+from findingmodel.tools.ontology_search import LanceDBOntologySearchClient, OntologySearchResult
 
 
 class RawSearchResults(BaseModel):
@@ -40,7 +40,7 @@ class LocationSearchResponse(BaseModel):
 class SearchContext:
     """Context class for dependency injection."""
 
-    search_client: OntologySearchClient
+    search_client: LanceDBOntologySearchClient
 
 
 async def ontology_search_tool(ctx: RunContext[SearchContext], query: str, limit: int = 10) -> dict[str, Any]:
@@ -133,7 +133,7 @@ async def find_anatomic_locations(
         matching_model = settings.openai_default_model
 
     # Create search client
-    search_client = OntologySearchClient()
+    search_client = LanceDBOntologySearchClient()
     await search_client.connect()
 
     try:

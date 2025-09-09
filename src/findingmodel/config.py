@@ -49,6 +49,9 @@ class FindingModelConfig(BaseSettings):
     lancedb_uri: str | None = Field(default=None, description="LanceDB connection URI")
     lancedb_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="LanceDB API key for cloud")
 
+    # BioOntology API
+    bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     def check_ready_for_openai(self) -> Literal[True]:

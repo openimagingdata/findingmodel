@@ -1,8 +1,39 @@
 # `findingmodel` Package
 
-Contains library code for managing `FindingModel` objects.
+A Python library for managing Open Imaging Finding Models - structured data models used to describe medical imaging findings in radiology reports. The library provides tools for creating, converting, and managing these finding models with AI-powered features for medical ontology integration.
 
-Look in the [demo notebook](notebooks/findingmodel_tools.ipynb).
+## Features
+
+- **Finding Model Management**: Create and manage structured medical finding models with attributes
+- **AI-Powered Tools**: Generate finding descriptions, synonyms, and detailed information using OpenAI and Perplexity
+- **Medical Ontology Integration**: Search and match concepts across RadLex, SNOMED-CT, and BioOntology (800+ medical ontologies)
+- **MongoDB Indexing**: Full-text search and efficient storage of finding model definitions
+- **Anatomic Location Discovery**: Two-agent AI system for finding relevant anatomic locations
+- **Protocol-Based Architecture**: Flexible backend support for multiple ontology search providers
+
+## Installation
+
+```bash
+pip install findingmodel
+```
+
+### Required API Keys
+
+Create a `.env` file with your API keys:
+
+```bash
+# Required for AI features
+OPENAI_API_KEY=your_key_here
+PERPLEXITY_API_KEY=your_key_here
+
+# Optional for enhanced ontology search
+LANCEDB_URI=your_lancedb_uri  # For vector search
+LANCEDB_API_KEY=your_key_here
+BIOONTOLOGY_API_KEY=your_key_here  # For BioOntology.org access
+
+# Optional for MongoDB indexing
+MONGODB_URI=mongodb://localhost:27017
+```
 
 ## CLI
 
@@ -566,20 +597,20 @@ result = asyncio.run(find_locations())
 - **Two-agent architecture**: Search agent finds candidates, matching agent selects best options
 - **Multiple ontology sources**: Searches across anatomic_locations, RadLex, and SNOMED-CT
 - **Intelligent selection**: Finds the "sweet spot" of specificity - specific enough to be accurate but general enough to be useful
-- **Reusable components**: `OntologySearchClient` can be used for other ontology searches
+- **Reusable components**: `LanceDBOntologySearchClient` can be used for other ontology searches
 - **Production ready**: Proper error handling, logging, and connection lifecycle management
 
-### `search_ontology_concepts()`
+### `match_ontology_concepts()`
 
-High-performance search for relevant medical concepts across ontology databases. Uses programmatic query generation for speed and post-processing to ensure exact matches are never missed.
+High-performance search for relevant medical concepts across multiple ontology databases. Supports both LanceDB vector search and BioOntology REST API through a flexible Protocol-based architecture.
 
 ```python
 import asyncio
-from findingmodel.tools.ontology_concept_search import search_ontology_concepts
+from findingmodel.tools.ontology_concept_match import match_ontology_concepts
 
 async def search_concepts():
-    # Search for relevant concepts for a finding
-    result = await search_ontology_concepts(
+    # Automatically uses all configured backends (LanceDB and/or BioOntology)
+    result = await match_ontology_concepts(
         finding_name="pneumonia",
         finding_description="Inflammation of lung parenchyma",  # Optional
         exclude_anatomical=True  # Exclude anatomical structures (default: True)
@@ -619,8 +650,9 @@ result = asyncio.run(search_concepts())
 ```
 
 **Key Features:**
-- **High performance**: ~10 second searches (vs 70+ seconds with full LLM approach)
+- **Multi-backend support**: Automatically uses LanceDB and/or BioOntology based on configuration
+- **Protocol-based architecture**: Clean abstraction allows easy addition of new search providers
+- **High performance**: ~10 second searches with parallel backend execution
 - **Guaranteed exact matches**: Post-processing ensures exact name matches are never missed
 - **Smart categorization**: Three tiers - exact matches, should include, marginal
 - **Excludes anatomy**: Focuses on diseases/conditions (use `find_anatomic_locations()` for anatomy)
-- **Normalized results**: Cleans up RadLex formatting issues automatically

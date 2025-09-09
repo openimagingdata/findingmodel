@@ -15,9 +15,9 @@ import time
 from typing import Optional
 
 from findingmodel.config import settings
-from findingmodel.tools.ontology_concept_search import (
+from findingmodel.tools.ontology_concept_match import (
     CategorizedOntologyConcepts,
-    search_ontology_concepts,
+    match_ontology_concepts,
 )
 
 
@@ -90,7 +90,7 @@ async def demo_single_finding(
         print("   ⏱️  Starting search...")
 
         start_time = time.time()
-        results = await search_ontology_concepts(
+        results = await match_ontology_concepts(
             finding_name=finding_name,
             finding_description=finding_description,
             exclude_anatomical=exclude_anatomical,
@@ -104,7 +104,7 @@ async def demo_single_finding(
         return elapsed_time
 
     except Exception as e:
-        elapsed_time = time.time() - start_time if "start_time" in locals() else 0
+        elapsed_time = time.time() - start_time if "start_time" in locals() else 0  # pyright: ignore[reportPossiblyUnboundVariable]
         print(f"❌ Error searching for {finding_name} (after {elapsed_time:.1f}s): {e}")
         import traceback
 

@@ -73,14 +73,33 @@ AI-powered tools for working with finding models:
 - `find_anatomic_locations()`: Two-agent workflow for finding anatomic locations for findings
   - **Search Agent**: Generates diverse search queries and gathers results from ontology databases
   - **Matching Agent**: Selects best primary and alternate locations based on specificity
-- `OntologySearchClient`: Reusable LanceDB client for medical terminology hybrid search
-- `OntologySearchResult`: Standardized model for ontology search results with conversion to IndexCode
+- `OntologySearchResult`: Standardized model for ontology search results
 
-#### Ontology Concept Search Tool
-- `search_ontology_concepts()`: High-performance search for relevant medical concepts
-  - Generates query terms programmatically for efficiency (~10s vs 70s with LLM)
-  - Searches across RadLex and SNOMED-CT ontologies
-  - Categorizes results into exact matches, should include, and marginal
+#### Ontology Search Module (`ontology_search.py`)
+- **Protocol-based Architecture**: Uses Python Protocol for polymorphic backend support
+- `OntologySearchProtocol`: Common interface for all search backends
+- `LanceDBOntologySearchClient`: Vector database search implementation
+  - Searches across anatomic_locations, radlex, and snomedct tables
+  - Supports hybrid search with embeddings + keyword matching
+  - Handles parallel query execution with asyncio
+- `BioOntologySearchClient`: REST API search implementation
+  - Searches BioOntology.org database with 800+ medical ontologies
+  - Supports semantic type filtering and pagination
+  - Async/await with connection pooling via httpx
+- Both clients implement async context managers for resource management
+
+#### Ontology Concept Match Tool (`ontology_concept_match.py`)
+- `match_ontology_concepts()`: High-performance search for relevant medical concepts
+  - Supports multiple backends simultaneously via asyncio.gather
+  - Auto-detects available backends based on configuration
+  - Can use LanceDB, BioOntology, or both in parallel
+- `generate_finding_query_terms()`: Generates search query variations
+  - Uses small/fast model for efficiency
+  - Creates 2-5 alternative terms for better matching
+- Categorization pipeline:
+  - Executes parallel searches across all configured backends
+  - Deduplicates results across backends
+  - Uses AI to categorize into exact matches, should include, and marginal
   - Post-processing ensures exact matches are never missed
   - Excludes anatomical concepts (use anatomic location search instead)
 
@@ -92,7 +111,8 @@ Configuration is managed through `src/findingmodel/config.py`:
 - Reads from `.env` file or environment variables
 - Required for AI features: `OPENAI_API_KEY`, `PERPLEXITY_API_KEY`
 - Optional MongoDB configuration for index functionality
-- Optional LanceDB configuration for anatomic location search: `LANCEDB_URI`, `LANCEDB_API_KEY`
+- Optional LanceDB configuration for vector search: `LANCEDB_URI`, `LANCEDB_API_KEY`
+- Optional BioOntology API for REST search: `BIOONTOLOGY_API_KEY`
 
 ### Index System
 The `Index` class (index.py) provides MongoDB-based indexing of finding model definitions stored as `.fm.json` files in a `defs/` directory structure. It manages:
@@ -129,6 +149,15 @@ When building complex AI tools, consider using a two-agent pattern:
 
 This pattern is used in both `find_similar_models()` and `find_anatomic_locations()`.
 
+### Protocol-Based Backend Pattern
+When supporting multiple backend implementations:
+1. **Define Protocol Interface**: Use Python's `Protocol` class for structural subtyping
+2. **Implement Backends**: Each backend implements the Protocol interface
+3. **Support Multiple Backends**: Use `asyncio.gather` for parallel execution
+4. **Auto-detection**: Detect available backends based on configuration
+
+This pattern is used in `ontology_search.py` with `OntologySearchProtocol`.
+
 ### Pydantic AI Patterns (IMPORTANT)
 Follow these patterns when using Pydantic AI:
 1. **Output Validators are for VALIDATION only**: Never transform data in validators
@@ -139,7 +168,7 @@ Follow these patterns when using Pydantic AI:
 4. **Agent simplicity**: Keep agents focused on judgment tasks, not data manipulation
 
 ### Reusable Components
-- Extract common functionality into shared modules (e.g., `OntologySearchClient`)
+- Extract common functionality into shared modules (e.g., `LanceDBOntologySearchClient`)
 - Centralize model creation logic (e.g., `get_openai_model()` in `common.py`)
 - Use dependency injection for testability (e.g., `SearchContext` dataclasses)
 
@@ -155,6 +184,36 @@ Follow these patterns when using Pydantic AI:
 - Log important workflow steps for debugging production issues
 - Provide graceful fallbacks when external services are unavailable
 
+### API Key and Secret Handling
+- Use Pydantic's `SecretStr` type for sensitive configuration values
+- Never use `str(SecretStr)` - it doesn't extract the actual value
+- Let classes handle SecretStr extraction internally (e.g., `BioOntologySearchClient()`)
+- Example pattern:
+  ```python
+  # ❌ BAD - str() doesn't extract secret value
+  client = BioOntologySearchClient(api_key=str(settings.bioontology_api_key))
+  
+  # ✅ GOOD - let class handle SecretStr internally
+  client = BioOntologySearchClient()  # Uses settings.bioontology_api_key internally
+  ```
+
+### Linting and Code Quality
+- Configure per-file ignores for test-specific patterns:
+  ```toml
+  [tool.ruff.lint.per-file-ignores]
+  "test/**/*.py" = ["ANN401"]  # Allow Any type in test mocks
+  ```
+- Combine nested `with` statements using parenthesized form:
+  ```python
+  # ✅ Preferred
+  with (
+      patch("module.function1") as mock1,
+      patch("module.function2") as mock2,
+  ):
+      # code
+  ```
+- Remove `async` from functions that don't use `await` (RUF029)
+
 ## API Keys and Environment
 
 Create a `.env` file for API keys:
@@ -166,6 +225,7 @@ PERPLEXITY_API_KEY=your_key_here
 # Optional for ontology search features
 LANCEDB_URI=your_lancedb_uri_here
 LANCEDB_API_KEY=your_lancedb_api_key_here
+BIOONTOLOGY_API_KEY=your_bioontology_api_key_here
 
 # Optional for MongoDB index
 MONGODB_URI=your_mongodb_uri_here

@@ -76,6 +76,9 @@ extend-select = [
 fixable = ["ALL"]
 unfixable = []
 
+[tool.ruff.lint.per-file-ignores]
+"test/**/*.py" = ["ANN401"]  # Allow Any type in test files for mock functions
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
