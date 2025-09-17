@@ -1,19 +1,35 @@
 # src/findingmodel/tools/ontology_search.py
+"""
+Ontology search tools with Protocol-based architecture for multiple backends.
+
+This module provides:
+- OntologySearchProtocol: Common interface for all search backends
+- BioOntologySearchClient: REST API search implementation for BioOntology.org
+- Utility functions for concept normalization and reranking
+"""
 
 import asyncio
-from typing import Any, ClassVar, Optional, Protocol
+from typing import Any, ClassVar, Optional, Protocol, cast
 
+import cohere
 import httpx
-import lancedb
 from pydantic import BaseModel, Field
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from findingmodel import logger
 from findingmodel.config import settings
 from findingmodel.index_code import IndexCode
 
-# Table constants
-ONTOLOGY_TABLES = ["anatomic_locations", "radlex", "snomedct"]
-TABLE_TO_INDEX_CODE_SYSTEM = {"anatomic_locations": "ANATOMICLOCATIONS", "radlex": "RADLEX", "snomedct": "SNOMEDCT"}
+# Table name to index code system mapping
+TABLE_TO_INDEX_CODE_SYSTEM = {
+    "anatomic_locations": "ANATOMICLOCATIONS",
+    "radlex": "RADLEX",
+    "snomedct": "SNOMEDCT",
+    "loinc": "LOINC",
+    "icd10cm": "ICD10CM",
+    "gamuts": "GAMUTS",
+    "cpt": "CPT",
+}
 
 
 def normalize_concept(text: str) -> str:
@@ -74,7 +90,7 @@ class OntologySearchProtocol(Protocol):
 
     This protocol establishes a common interface that all ontology search
     implementations must follow, enabling polymorphic usage of different
-    search backends (LanceDB, BioOntology, etc.).
+    search backends (BioOntology, DuckDB, etc.).
     """
 
     async def search(
@@ -101,16 +117,40 @@ class OntologySearchProtocol(Protocol):
 
     async def __aexit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: Any,  # noqa: ANN401
+        _exc_type: type[BaseException] | None,
+        _exc_val: BaseException | None,
+        _exc_tb: Any,  # noqa: ANN401
     ) -> None:
         """Async context manager exit."""
         ...
 
+    async def search_parallel(
+        self,
+        queries: list[str],
+        tables: list[str] | None = None,
+        limit_per_query: int = 30,
+        filter_anatomical: bool = False,
+    ) -> list["OntologySearchResult"]:
+        """Search multiple queries in parallel.
+
+        Args:
+            queries: List of search queries
+            tables: List of tables to search (optional)
+            limit_per_query: Maximum results per query
+            filter_anatomical: Whether to filter anatomical concepts
+
+        Returns:
+            Combined list of OntologySearchResult objects
+        """
+        ...
+
 
 class OntologySearchResult(BaseModel):
-    """Search result from LanceDB"""
+    """Standard ontology search result model.
+
+    This is the common format used across all search backends to represent
+    ontology concept search results.
+    """
 
     concept_id: str
     concept_text: str
@@ -124,270 +164,6 @@ class OntologySearchResult(BaseModel):
             code=self.concept_id,
             display=normalize_concept(self.concept_text),
         )
-
-
-class LanceDBOntologySearchClient:
-    """Production-ready LanceDB client for medical terminology search"""
-
-    def __init__(self, lancedb_uri: str | None = None, api_key: str | None = None) -> None:
-        self._db_conn: lancedb.AsyncConnection | None = None
-        self._tables: dict[str, lancedb.AsyncTable] = {}
-        self._uri = lancedb_uri or settings.lancedb_uri
-        self._api_key = api_key or (settings.lancedb_api_key.get_secret_value() if settings.lancedb_api_key else None)
-
-    @property
-    def connected(self) -> bool:
-        """Check if connected to LanceDB."""
-        return self._db_conn is not None
-
-    async def connect(self) -> None:
-        """Connect to LanceDB and cache table references."""
-        if self._db_conn:
-            return  # Already connected
-
-        try:
-            assert self._uri is not None, "LanceDB URI must be provided"
-
-            self._db_conn = await lancedb.connect_async(
-                uri=self._uri,
-                api_key=self._api_key,
-            )
-
-            # Load and cache all available tables
-            table_names = list(await self._db_conn.table_names())
-            for table_name in table_names:
-                self._tables[table_name] = await self._db_conn.open_table(table_name)
-
-            logger.info(f"Connected to LanceDB with {len(self._tables)} tables: {list(self._tables.keys())}")
-
-        except Exception as e:
-            logger.error(f"Failed to connect to LanceDB: {e}")
-            # Ensure connection status is clean on failure
-            self._db_conn = None
-            self._tables.clear()
-            raise
-
-    def disconnect(self) -> None:
-        """Disconnect from LanceDB (synchronous)."""
-        if self.connected and self._db_conn is not None:
-            self._db_conn.close()
-            self._db_conn = None
-            self._tables.clear()
-            logger.info("Disconnected from LanceDB")
-
-    async def search_tables(
-        self, query: str, tables: list[str] | None = None, limit_per_table: int = 10
-    ) -> dict[str, list[OntologySearchResult]]:
-        """Search across specified tables using hybrid search."""
-        if not self.connected:
-            raise RuntimeError("Must be connected to LanceDB before searching")
-
-        # Use specified tables or search all available tables
-        search_tables = tables if tables is not None else list(self._tables.keys())
-
-        results: dict[str, list[OntologySearchResult]] = {}
-
-        for table_name in search_tables:
-            if table_name not in self._tables:
-                logger.warning(f"Table '{table_name}' not found, skipping")
-                continue
-
-            try:
-                table = self._tables[table_name]
-                cursor = await table.search(query=query, query_type="hybrid")
-                search_results = await cursor.limit(limit_per_table).to_list()
-
-                # Convert to OntologySearchResult objects
-                ontology_results = []
-                for row in search_results:
-                    result = OntologySearchResult(
-                        concept_id=row["concept_id"],
-                        concept_text=row["concept_text"],
-                        score=row.get("_relevance_score", 0.0),
-                        table_name=table_name,
-                    )
-                    ontology_results.append(result)
-
-                results[table_name] = ontology_results
-                logger.info(f"Found {len(ontology_results)} results in table '{table_name}' for query: '{query}'")
-
-            except Exception as e:
-                logger.error(f"Search failed for table '{table_name}': {e}")
-                # Continue with other tables
-                continue
-
-        return results
-
-    async def search_parallel(
-        self,
-        queries: list[str],
-        tables: list[str] | None = None,
-        limit_per_query: int = 10,
-        filter_anatomical: bool = False,
-    ) -> list[OntologySearchResult]:
-        """
-        Execute multiple search queries in parallel and return merged results.
-
-        Args:
-            queries: List of search queries to execute
-            tables: Optional list of table names to search. If None, searches all available tables
-            limit_per_query: Maximum number of results per query (distributed across tables)
-            filter_anatomical: If True, filters out purely anatomical concepts
-
-        Returns:
-            Deduplicated list of search results sorted by score
-        """
-        if not self.connected:
-            raise RuntimeError("Must be connected to LanceDB before searching")
-
-        if not queries:
-            return []
-
-        # Calculate limit per table to distribute the per-query limit across tables
-        search_tables = tables if tables is not None else list(self._tables.keys())
-        limit_per_table = max(1, limit_per_query // len(search_tables)) if search_tables else limit_per_query
-
-        # Execute all queries in parallel
-        search_tasks = [self.search_tables(query, tables=tables, limit_per_table=limit_per_table) for query in queries]
-
-        try:
-            results_per_query = await asyncio.gather(*search_tasks)
-            logger.info(f"Completed {len(queries)} parallel searches")
-        except Exception as e:
-            logger.error(f"Parallel search failed: {e}")
-            raise
-
-        # Flatten results from all queries and tables
-        all_results = []
-        for query_results in results_per_query:
-            for table_results in query_results.values():
-                all_results.extend(table_results)
-
-        # Deduplicate results
-        deduplicated_results = self._deduplicate_results(all_results)
-
-        # Apply anatomical filtering if requested
-        if filter_anatomical:
-            filtered_results = [result for result in deduplicated_results if not self._is_anatomical_concept(result)]
-            logger.info(f"Filtered {len(deduplicated_results) - len(filtered_results)} anatomical concepts")
-            return filtered_results
-
-        return deduplicated_results
-
-    async def search(
-        self,
-        queries: list[str],
-        max_results: int = 30,
-        filter_anatomical: bool = True,
-    ) -> list[OntologySearchResult]:
-        """Execute ontology search implementing the OntologySearchProtocol interface.
-
-        This method provides a Protocol-compliant interface by wrapping the
-        search_parallel() method with appropriate parameter mapping.
-
-        Args:
-            queries: List of search terms to query
-            max_results: Maximum number of results to return total
-            filter_anatomical: Whether to filter out anatomical concepts
-
-        Returns:
-            List of OntologySearchResult objects, deduplicated and sorted by score
-        """
-        # Use search_parallel with appropriate parameter mapping
-        # Note: max_results is divided by number of queries to get limit_per_query
-        # This is an approximation; we may get fewer results if there are duplicates
-        limit_per_query = max(max_results // len(queries), 5) if queries else 5
-
-        return await self.search_parallel(
-            queries=queries,
-            tables=None,  # Search all available tables
-            limit_per_query=limit_per_query,
-            filter_anatomical=filter_anatomical,
-        )
-
-    async def __aenter__(self) -> "LanceDBOntologySearchClient":
-        """Async context manager entry."""
-        await self.connect()
-        return self
-
-    async def __aexit__(
-        self,
-        _exc_type: type[BaseException] | None,
-        _exc_val: BaseException | None,
-        _exc_tb: Any,  # noqa: ANN401
-    ) -> None:
-        """Async context manager exit."""
-        self.disconnect()
-
-    def _deduplicate_results(self, results: list[OntologySearchResult]) -> list[OntologySearchResult]:
-        """
-        Remove duplicate results based on normalized concept text.
-
-        Args:
-            results: List of search results to deduplicate
-
-        Returns:
-            Deduplicated list sorted by score (highest first)
-        """
-        if not results:
-            return []
-
-        # Group results by normalized concept text
-        concept_groups: dict[str, list[OntologySearchResult]] = {}
-
-        for result in results:
-            normalized = normalize_concept(result.concept_text)
-            if normalized not in concept_groups:
-                concept_groups[normalized] = []
-            concept_groups[normalized].append(result)
-
-        # Keep the highest scoring version of each concept
-        deduplicated = []
-        for group in concept_groups.values():
-            # Sort by score descending and take the best one
-            best_result = max(group, key=lambda x: x.score)
-            deduplicated.append(best_result)
-
-        # Sort final results by score descending
-        deduplicated.sort(key=lambda x: x.score, reverse=True)
-
-        logger.info(f"Deduplicated {len(results)} results to {len(deduplicated)} unique concepts")
-        return deduplicated
-
-    def _is_anatomical_concept(self, result: OntologySearchResult) -> bool:
-        """
-        Determine if a concept is purely anatomical and should be filtered.
-
-        Args:
-            result: Search result to check
-
-        Returns:
-            True if the concept is purely anatomical
-        """
-        concept_text = result.concept_text.lower()
-
-        # For SNOMED-CT, check for body structure tag
-        if result.table_name == "snomedct" and "(body structure)" in concept_text:
-            # Preserve pathological anatomy with these keywords
-            pathological_keywords = [
-                "metastasis",
-                "tumor",
-                "cancer",
-                "lesion",
-                "abnormal",
-                "malignant",
-                "benign",
-                "cyst",
-                "mass",
-                "neoplasm",
-            ]
-
-            # If it contains pathological keywords, don't filter it out
-            # Pure anatomical structure should be filtered unless it has pathological keywords
-            return all(keyword not in concept_text for keyword in pathological_keywords)
-
-        # For other tables, we don't filter anatomical concepts
-        return False
 
 
 # BioOntology API Integration
@@ -480,7 +256,7 @@ class BioOntologySearchResults(BaseModel):
 class BioOntologySearchClient:
     """Async client for searching medical concepts via BioOntology REST API."""
 
-    DEFAULT_ONTOLOGIES: ClassVar[list[str]] = ["SNOMEDCT", "RADLEX", "LOINC", "ICD10CM", "GAMUTS", "CPT"]
+    DEFAULT_ONTOLOGIES: ClassVar[list[str]] = ["SNOMEDCT", "RADLEX", "LOINC"]
     DEFAULT_INCLUDE_FIELDS: ClassVar[str] = "prefLabel,synonym,definition,semanticType"
     API_BASE_URL: ClassVar[str] = "https://data.bioontology.org"
 
@@ -513,8 +289,15 @@ class BioOntologySearchClient:
             self._client = httpx.AsyncClient(timeout=30.0)
         return self
 
-    async def __aexit__(self, _exc_type: Any, _exc_val: Any, _exc_tb: Any) -> None:  # noqa: ANN401
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,  # noqa: ANN401
+    ) -> None:
         """Async context manager exit."""
+        # Parameters are required by protocol but not used
+        _ = (exc_type, exc_val, exc_tb)
         if self._owns_client and self._client:
             await self._client.aclose()
             self._client = None
@@ -755,3 +538,128 @@ class BioOntologySearchClient:
             return filtered_results
 
         return results
+
+    async def search_parallel(
+        self,
+        queries: list[str],
+        tables: list[str] | None = None,
+        limit_per_query: int = 30,
+        filter_anatomical: bool = False,
+    ) -> list[OntologySearchResult]:
+        """Execute multiple search queries in parallel.
+
+        This method implements the OntologySearchProtocol.search_parallel interface
+        for BioOntology. Since BioOntology doesn't have the concept of tables,
+        the tables parameter is ignored.
+
+        Args:
+            queries: List of search queries to execute
+            tables: Ignored - BioOntology doesn't use table separation
+            limit_per_query: Maximum results per individual query
+            filter_anatomical: Whether to filter out anatomical concepts
+
+        Returns:
+            Combined list of OntologySearchResult objects from all queries
+        """
+        # Tables parameter is required by protocol but not used by BioOntology
+        _ = tables
+        if not queries:
+            return []
+
+        # Execute each query in parallel using asyncio.gather
+        tasks = [
+            self.search(queries=[query], max_results=limit_per_query, filter_anatomical=filter_anatomical)
+            for query in queries
+        ]
+
+        # Execute all queries in parallel
+        results_lists = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Combine results, handling any exceptions
+        all_results = []
+        seen_ids = set()
+
+        for i, results_or_error in enumerate(results_lists):
+            if isinstance(results_or_error, Exception):
+                logger.warning(f"BioOntology search failed for query '{queries[i]}': {results_or_error}")
+                continue
+
+            # Type narrowing: after isinstance check, this must be list[OntologySearchResult]
+            results = cast(list[OntologySearchResult], results_or_error)
+            for result in results:
+                # Deduplicate by concept_id
+                if result.concept_id not in seen_ids:
+                    seen_ids.add(result.concept_id)
+                    all_results.append(result)
+
+        # Sort by score (descending)
+        all_results.sort(key=lambda x: x.score, reverse=True)
+
+        return all_results
+
+
+async def rerank_with_cohere(
+    query: str,
+    documents: list[OntologySearchResult],
+    client: cohere.AsyncClientV2 | None = None,
+    model: str = "rerank-v3.5",
+    top_n: int | None = None,
+    retry_attempts: int = 1,
+) -> list[OntologySearchResult]:
+    """
+    Rerank search results using Cohere's rerank API.
+
+    Args:
+        query: The search query for reranking context
+        documents: List of search results to rerank
+        client: Optional pre-configured Cohere async client (creates one if not provided)
+        model: Cohere rerank model to use (default: rerank-v3.5)
+        top_n: Return only top N results (None = all)
+        retry_attempts: Number of retry attempts (default 1)
+
+    Returns:
+        Reranked list of OntologySearchResult objects
+    """
+    # Return original if no documents
+    if not documents:
+        return documents
+
+    # Create client if not provided
+    if client is None:
+        # Check if Cohere API key is configured
+        if not settings.cohere_api_key:
+            logger.debug("Cohere API key not configured, returning original order")
+            return documents
+
+        # Initialize new Cohere async client
+        client = cohere.AsyncClientV2(api_key=settings.cohere_api_key.get_secret_value())
+
+    # Prepare documents for reranking
+    doc_texts = [f"{doc.concept_id}: {doc.concept_text}" for doc in documents]
+
+    # Create retry-decorated function
+    @retry(
+        stop=stop_after_attempt(retry_attempts + 1),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(Exception),  # Cohere SDK exceptions
+        reraise=False,
+    )
+    async def _rerank() -> Any:  # noqa: ANN401
+        response = await client.rerank(model=model, query=query, documents=doc_texts, top_n=top_n)
+        return response
+
+    try:
+        # Execute reranking with retry logic
+        response = await _rerank()
+
+        # Reorder documents based on response
+        reranked_docs = []
+        for result in response.results:
+            reranked_docs.append(documents[result.index])
+
+        logger.info(f"Successfully reranked {len(reranked_docs)} documents with Cohere")
+        return reranked_docs
+
+    except Exception as e:
+        logger.warning(f"Cohere reranking failed after retries: {e}")
+        return documents  # Fallback to original order

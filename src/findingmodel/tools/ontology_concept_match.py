@@ -2,13 +2,12 @@
 Ontology Concept Search Tool
 
 Uses two specialized Pydantic AI agents to find and categorize relevant medical concepts
-from ontology databases, excluding anatomical structures.
+from BioOntology API, excluding anatomical structures.
 
 Agent 1: Search Strategy - Generates diverse search queries and gathers comprehensive results
 Agent 2: Categorization - Analyzes results and categorizes into relevance tiers
 """
 
-import asyncio
 import json
 from dataclasses import dataclass
 
@@ -20,10 +19,9 @@ from findingmodel.config import settings
 from findingmodel.tools.common import get_openai_model
 from findingmodel.tools.ontology_search import (
     BioOntologySearchClient,
-    LanceDBOntologySearchClient,
-    OntologySearchProtocol,
     OntologySearchResult,
     normalize_concept,
+    rerank_with_cohere,
 )
 
 
@@ -65,21 +63,105 @@ class CategorizationContext:
     query_terms: list[str]
 
 
+def _filter_anatomical_concepts(search_results: list[OntologySearchResult]) -> list[OntologySearchResult]:
+    """Filter out anatomical concepts from search results."""
+    anatomical_terms = [
+        "anatomy",
+        "anatomical",
+        "body part",
+        "organ",
+        "tissue",
+        "structure",
+        "region",
+        "location",
+        "site",
+    ]
+
+    filtered_results = []
+    for result in search_results:
+        lower_text = result.concept_text.lower()
+        is_anatomical = any(term in lower_text for term in anatomical_terms)
+        if not is_anatomical:
+            filtered_results.append(result)
+
+    return filtered_results
+
+
+def _add_exact_matches(
+    sorted_results: list[OntologySearchResult], query_terms: list[str], max_results: int, selected_ids: set[str]
+) -> tuple[list[OntologySearchResult], int]:
+    """Add exact matches that were ranked lower to the top results."""
+    query_terms_lower = [term.lower() for term in query_terms]
+    exact_matches_added = 0
+    top_results = sorted_results[:max_results].copy()
+
+    for result in sorted_results[max_results:]:
+        # Normalize the concept text for comparison
+        normalized_text = normalize_concept(result.concept_text).lower()
+
+        # Check if this is an exact match for any query term
+        if normalized_text in query_terms_lower and result.concept_id not in selected_ids:
+            top_results.append(result)
+            selected_ids.add(result.concept_id)
+            exact_matches_added += 1
+            matched_term = query_terms[query_terms_lower.index(normalized_text)]
+            logger.info(
+                f"Added exact match for term '{matched_term}': "
+                f"{result.concept_id} ({result.concept_text}) [score: {result.score:.3f}]"
+            )
+
+    return top_results, exact_matches_added
+
+
+async def _apply_cohere_reranking(
+    top_results: list[OntologySearchResult], query_terms: list[str]
+) -> list[OntologySearchResult]:
+    """Apply Cohere reranking if configured."""
+    if not (settings.cohere_api_key and settings.use_cohere_with_ontology_concept_match):
+        logger.debug(
+            "Skipping Cohere reranking (enabled=%s, has_key=%s)",
+            settings.use_cohere_with_ontology_concept_match,
+            bool(settings.cohere_api_key),
+        )
+        return top_results
+
+    logger.info("Applying Cohere reranking to ontology concept results")
+
+    # Build a focused query for Cohere
+    primary_term = query_terms[0] if query_terms else "medical finding"
+    alternate_terms = query_terms[1:] if len(query_terms) > 1 else []
+
+    if alternate_terms:
+        cohere_query = f"What is the correct medical ontology term to represent '{primary_term}' (alternates: {', '.join(alternate_terms)})?"
+    else:
+        cohere_query = f"What is the correct medical ontology term to represent '{primary_term}'?"
+
+    logger.info(f"Cohere reranking query: {cohere_query}")
+
+    reranked_results = await rerank_with_cohere(
+        query=cohere_query,
+        documents=top_results,
+        retry_attempts=1,
+    )
+    logger.info("Cohere reranking complete")
+    return reranked_results
+
+
 async def execute_ontology_search(
     query_terms: list[str],
-    client: OntologySearchProtocol,
     exclude_anatomical: bool = True,
     base_limit: int = 30,
     max_results: int = 12,
+    ontologies: list[str] | None = None,
 ) -> list[OntologySearchResult]:
-    """Execute ontology search with smart result selection strategy.
+    """Execute ontology search using BioOntology API.
 
-    This function executes a parallel search across ontology databases and applies
+    This function executes a search against the BioOntology API and applies
     a smart selection strategy to ensure both high-scoring results and exact matches
     are included in the final result set.
 
     Strategy:
-    1. Execute parallel search with all query terms
+    1. Execute search with all query terms using BioOntology API
     2. Sort all results by score in descending order
     3. Take the top N results by score
     4. Check remaining results for exact matches of any query term
@@ -88,27 +170,40 @@ async def execute_ontology_search(
 
     Args:
         query_terms: List of search terms to query the ontology databases
-        client: OntologySearchProtocol instance for database access
         exclude_anatomical: Whether to filter out anatomical structure concepts (default: True)
         base_limit: Initial limit per query for casting a wider net (default: 30)
         max_results: Maximum number of results to return after selection (default: 12)
+        ontologies: Optional list of ontology acronyms to search (default: SNOMEDCT, RADLEX, LOINC)
 
     Returns:
         List of OntologySearchResult objects with normalized concept text,
         sorted by relevance score with exact matches guaranteed to be included.
 
     Raises:
+        ValueError: If BioOntology API key is not configured
         Exception: If the search operation fails
     """
+    if not settings.bioontology_api_key:
+        raise ValueError(
+            "BioOntology API key is required for ontology concept matching. "
+            "Please set BIOONTOLOGY_API_KEY in your environment."
+        )
+
     try:
         logger.info(f"Executing ontology search with {len(query_terms)} terms")
 
-        # Execute search across all ontology tables using Protocol interface
-        search_results = await client.search(
-            queries=query_terms,
-            max_results=base_limit * len(query_terms) if query_terms else base_limit,  # Approximate total results
-            filter_anatomical=exclude_anatomical,
-        )
+        # Execute search using BioOntology API
+        async with BioOntologySearchClient() as client:
+            combined_query = " OR ".join(query_terms)
+            search_results = await client.search_as_ontology_results(
+                query=combined_query,
+                ontologies=ontologies,
+                max_results=base_limit * len(query_terms) if query_terms else base_limit,
+            )
+
+            # Apply anatomical filtering if requested
+            if exclude_anatomical:
+                search_results = _filter_anatomical_concepts(search_results)
 
         logger.info(f"Search returned {len(search_results)} total results")
 
@@ -119,29 +214,9 @@ async def execute_ontology_search(
         # Sort all results by score (descending)
         sorted_results = sorted(search_results, key=lambda x: x.score, reverse=True)
 
-        # Take the top N results by score
-        top_results = sorted_results[:max_results]
-        selected_ids = {r.concept_id for r in top_results}
-
-        # Check remaining results for exact matches of any query term
-        # This ensures critical exact matches aren't missed due to lower scores
-        query_terms_lower = [term.lower() for term in query_terms]
-        exact_matches_added = 0
-
-        for result in sorted_results[max_results:]:
-            # Normalize the concept text for comparison
-            normalized_text = normalize_concept(result.concept_text).lower()
-
-            # Check if this is an exact match for any query term
-            if normalized_text in query_terms_lower and result.concept_id not in selected_ids:
-                top_results.append(result)
-                selected_ids.add(result.concept_id)
-                exact_matches_added += 1
-                matched_term = query_terms[query_terms_lower.index(normalized_text)]
-                logger.info(
-                    f"Added exact match for term '{matched_term}': "
-                    f"{result.concept_id} ({result.concept_text}) [score: {result.score:.3f}]"
-                )
+        # Take the top N results by score and add exact matches
+        selected_ids = {r.concept_id for r in sorted_results[:max_results]}
+        top_results, exact_matches_added = _add_exact_matches(sorted_results, query_terms, max_results, selected_ids)
 
         if exact_matches_added > 0:
             logger.info(f"Added {exact_matches_added} exact match(es) that were ranked lower")
@@ -154,6 +229,9 @@ async def execute_ontology_search(
             f"Selected {len(top_results)} results for categorization "
             f"({max_results} top-scored + {exact_matches_added} exact matches)"
         )
+
+        # Apply optional Cohere reranking
+        top_results = await _apply_cohere_reranking(top_results, query_terms)
 
         return top_results
 
@@ -190,6 +268,7 @@ Categories:
      exact same idea (or very nearly so), even if they use slightly different wording.
    - CRITICAL: Any concept with text that exactly equals the finding name MUST go here
    - Include concepts whose normalized text exactly matches the finding name or its synonyms
+   - **PRIORITIZE SNOMEDCT**: If multiple exact matches exist, include the SNOMEDCT version
    - These are the most important - never miss an exact match!
    
 2. **should_include** (max 10): Highly relevant related concepts
@@ -477,118 +556,53 @@ def build_final_output(
     )
 
 
-async def match_ontology_concepts(  # noqa: C901
+async def match_ontology_concepts(
     finding_name: str,
     finding_description: str | None = None,
-    search_clients: OntologySearchProtocol | list[OntologySearchProtocol] | None = None,
     exclude_anatomical: bool = True,
     max_exact_matches: int = 5,
     max_should_include: int = 10,
     max_marginal: int = 10,
+    ontologies: list[str] | None = None,
 ) -> CategorizedOntologyConcepts:
     """
-    Match finding to relevant ontology concepts across multiple search backends.
+    Match finding to relevant ontology concepts using BioOntology API.
 
     This is the main orchestration function that coordinates a 4-stage pipeline:
     1. Generate comprehensive query terms using AI
-    2. Execute parallel searches across all provided backends
-    3. Categorize merged results with automatic validation
+    2. Execute search using BioOntology API
+    3. Categorize results with automatic validation
     4. Transform to final output format with limits
 
     Args:
         finding_name: Name of the finding model
         finding_description: Optional detailed description
-        search_clients: Single client, list of clients, or None (auto-detect)
         exclude_anatomical: Whether to filter out anatomical concepts
         max_exact_matches: Maximum exact match concepts to return
         max_should_include: Maximum should-include concepts
         max_marginal: Maximum marginal concepts to consider
+        ontologies: Optional list of ontology acronyms to search (default: SNOMEDCT, RADLEX, LOINC)
 
     Returns:
         Categorized ontology concepts with rationale
+
+    Raises:
+        ValueError: If BioOntology API key is not configured
     """
     logger.info(f"Starting ontology concept matching for: {finding_name}")
-
-    # Determine which search clients to use
-    clients_to_use: list[OntologySearchProtocol] = []
-
-    if search_clients is None:
-        # Auto-detect available backends based on configuration
-        if settings.lancedb_uri and settings.lancedb_api_key:
-            logger.info("Using LanceDB backend (credentials found)")
-            lance_client = LanceDBOntologySearchClient(
-                lancedb_uri=settings.lancedb_uri,
-                api_key=settings.lancedb_api_key.get_secret_value() if settings.lancedb_api_key else None,
-            )
-            clients_to_use.append(lance_client)
-
-        if hasattr(settings, "bioontology_api_key") and settings.bioontology_api_key:
-            logger.info("Using BioOntology backend (API key found)")
-            # Let BioOntologySearchClient handle getting the API key from settings
-            bio_client = BioOntologySearchClient()
-            clients_to_use.append(bio_client)
-
-        if not clients_to_use:
-            raise ValueError(
-                "No ontology search backends configured. Please configure LanceDB or BioOntology credentials."
-            )
-
-    elif isinstance(search_clients, list):
-        clients_to_use = search_clients
-    else:
-        # Single client provided
-        clients_to_use = [search_clients]
-
-    logger.info(f"Using {len(clients_to_use)} search backend(s)")
-
-    # Use context managers for all clients
-    async def search_with_client(client: OntologySearchProtocol, query_terms: list[str]) -> list[OntologySearchResult]:
-        """Execute search with a single client."""
-        async with client:
-            return await execute_ontology_search(
-                query_terms=query_terms,
-                client=client,
-                exclude_anatomical=exclude_anatomical,
-                base_limit=30,  # Cast wider net initially
-                max_results=7,  # Focus on top results (plus exact matches)
-            )
 
     try:
         # Stage 1: Generate comprehensive search terms
         query_terms = await generate_finding_query_terms(finding_name, finding_description)
 
-        # Stage 2: Execute parallel searches across all backends
-        if len(clients_to_use) == 1:
-            # Single client - no need for gather
-            search_results = await search_with_client(clients_to_use[0], query_terms)
-        else:
-            # Multiple clients - use asyncio.gather for parallel execution
-            logger.info(f"Executing parallel searches across {len(clients_to_use)} backends")
-            search_tasks = [search_with_client(client, query_terms) for client in clients_to_use]
-
-            # Use return_exceptions=True to handle partial failures gracefully
-            results_lists = await asyncio.gather(*search_tasks, return_exceptions=True)
-
-            # Merge results from all backends, handling exceptions
-            all_results = []
-            for i, results in enumerate(results_lists):
-                if isinstance(results, Exception):
-                    logger.warning(f"Search backend {i + 1} failed: {results}")
-                elif isinstance(results, list):
-                    all_results.extend(results)
-
-            # Deduplicate merged results by concept_id
-            seen_ids = set()
-            search_results = []
-            for result in all_results:
-                if result.concept_id not in seen_ids:
-                    seen_ids.add(result.concept_id)
-                    search_results.append(result)
-
-            # Sort by score descending
-            search_results.sort(key=lambda x: x.score, reverse=True)
-
-            logger.info(f"Merged and deduplicated to {len(search_results)} unique results")
+        # Stage 2: Execute search using BioOntology API
+        search_results = await execute_ontology_search(
+            query_terms=query_terms,
+            exclude_anatomical=exclude_anatomical,
+            base_limit=30,  # Cast wider net initially
+            max_results=7,  # Focus on top results (plus exact matches)
+            ontologies=ontologies,  # Pass through ontologies parameter
+        )
 
         # Stage 3: Categorize with automatic validation
         categorized = await categorize_with_validation(

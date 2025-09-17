@@ -1,4 +1,3 @@
-import os
 from typing import Annotated, Literal
 
 import openai
@@ -45,12 +44,25 @@ class FindingModelConfig(BaseSettings):
     mongodb_organizations_collection_base: str = Field(default="organizations")
     mongodb_people_collection_base: str = Field(default="people")
 
-    # LanceDB settings
-    lancedb_uri: str | None = Field(default=None, description="LanceDB connection URI")
-    lancedb_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="LanceDB API key for cloud")
-
     # BioOntology API
     bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
+
+    # Cohere API
+    cohere_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="Cohere API key for reranking")
+    use_cohere_in_anatomic_location_search: bool = Field(
+        default=False, description="Enable Cohere reranking for anatomic location search (may not improve results)"
+    )
+    use_cohere_with_ontology_concept_match: bool = Field(
+        default=False, description="Enable Cohere reranking for ontology concept matching (disabled by default)"
+    )
+
+    # DuckDB configuration
+    duckdb_anatomic_path: str = Field(
+        default="data/anatomic_locations.duckdb", description="Path to DuckDB database for anatomic locations"
+    )
+    openai_embedding_model: str = Field(
+        default="text-embedding-3-small", description="OpenAI model for generating embeddings"
+    )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -67,7 +79,3 @@ class FindingModelConfig(BaseSettings):
 
 settings = FindingModelConfig()
 openai.api_key = settings.openai_api_key.get_secret_value()
-
-# Ensure OpenAI API key is available in environment for LanceDB
-if settings.openai_api_key and not os.getenv("OPENAI_API_KEY"):
-    os.environ["OPENAI_API_KEY"] = settings.openai_api_key.get_secret_value()

@@ -8,42 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-09-15
+
 ### Added
 
-- **BioOntology API Integration**: Added support for BioOntology.org REST API search
-  - Access to 800+ medical ontologies including SNOMED-CT, ICD-10, LOINC, and more
-  - Semantic type filtering for targeted searches
-  - Pagination support for comprehensive results
-  - Async/await implementation with connection pooling via httpx
-- **Protocol-Based Ontology Search Architecture**: Flexible backend support system
-  - `OntologySearchProtocol` defines standard interface for search providers
-  - Auto-detection of available backends based on configuration
-  - Parallel execution of multiple backends using `asyncio.gather`
-  - Clean abstraction allows easy addition of new search providers
+- **BioOntology.org API support**: Access 800+ medical ontologies via REST API (requires `BIOONTOLOGY_API_KEY`)
+- **DuckDB backend**: High-performance local search with HNSW vector indexing for anatomic locations
+- **Protocol-based search architecture**: `OntologySearchProtocol` allows pluggable search backends
+- **Cohere reranking**: Optional semantic reranking for improved relevance (disabled by default)
 
 ### Changed
 
-- **Renamed `search_ontology_concepts()` to `match_ontology_concepts()`**: Better reflects the matching/categorization functionality
-- **Multi-Backend Support**: Function now automatically uses all configured backends
-  - Searches LanceDB and/or BioOntology in parallel based on configuration
-  - Merges and deduplicates results from multiple sources
-  - Maintains high performance with parallel execution
-- **Improved Test Infrastructure**: Enhanced test patterns and organization
-  - Added `test_ontology_search.py` for Protocol compliance testing
-  - Proper SecretStr handling in tests
-  - Fixed all linting errors with proper type annotations
-  - Configured per-file ignores for test-specific patterns (ANN401 for mock functions)
+- Renamed `search_ontology_concepts()` to `match_ontology_concepts()` to better reflect its purpose
+- Ontology searches now limited to SNOMEDCT, RADLEX, and LOINC by default (configurable via `ontologies` parameter)
+- AI categorization now prioritizes SNOMEDCT matches for standards compliance
 
 ### Fixed
 
-- **SecretStr Handling**: Fixed improper use of `str(SecretStr)` which doesn't extract the actual secret value
-  - BioOntologySearchClient now handles SecretStr extraction internally
-  - Tests properly mock SecretStr values
-- **Linting Compliance**: Fixed 33 linting errors to achieve clean `task check`
-  - Combined nested `with` statements using parenthesized form (SIM117)
-  - Added proper type annotations throughout test files
-  - Removed `async` from functions that don't use `await` (RUF029)
-  - Fixed indentation issues in test files
+- Fixed `SecretStr` handling in BioOntologySearchClient
+- Resolved all linting errors and reduced code complexity
+
+### Removed
+
+- LanceDB dependency (replaced by DuckDB for better performance)
 
 ## [0.3.3] - 2025-09-04
 

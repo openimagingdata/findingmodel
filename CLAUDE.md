@@ -71,37 +71,45 @@ AI-powered tools for working with finding models:
 
 #### Anatomic Location Search Tool
 - `find_anatomic_locations()`: Two-agent workflow for finding anatomic locations for findings
-  - **Search Agent**: Generates diverse search queries and gathers results from ontology databases
+  - **Search Agent**: Generates diverse search queries and gathers results from DuckDB (anatomic locations)
   - **Matching Agent**: Selects best primary and alternate locations based on specificity
 - `OntologySearchResult`: Standardized model for ontology search results
 
 #### Ontology Search Module (`ontology_search.py`)
 - **Protocol-based Architecture**: Uses Python Protocol for polymorphic backend support
 - `OntologySearchProtocol`: Common interface for all search backends
-- `LanceDBOntologySearchClient`: Vector database search implementation
-  - Searches across anatomic_locations, radlex, and snomedct tables
-  - Supports hybrid search with embeddings + keyword matching
-  - Handles parallel query execution with asyncio
 - `BioOntologySearchClient`: REST API search implementation
   - Searches BioOntology.org database with 800+ medical ontologies
+  - Default ontologies limited to SNOMEDCT, RADLEX, LOINC for performance
   - Supports semantic type filtering and pagination
   - Async/await with connection pooling via httpx
-- Both clients implement async context managers for resource management
+  - Configurable ontology list via `ontologies` parameter
+- `DuckDBOntologySearchClient`: High-performance local database search
+  - HNSW vector index for similarity search
+  - Full-text search capabilities
+  - Region and laterality filtering for anatomic locations
+  - Optimized for anatomic location queries
+- All clients implement async context managers for resource management
 
 #### Ontology Concept Match Tool (`ontology_concept_match.py`)
 - `match_ontology_concepts()`: High-performance search for relevant medical concepts
-  - Supports multiple backends simultaneously via asyncio.gather
   - Auto-detects available backends based on configuration
-  - Can use LanceDB, BioOntology, or both in parallel
+  - Uses BioOntology backend by default (configurable)
+  - Optional Cohere reranking for improved relevance (disabled by default)
+  - Configurable ontology list (defaults to SNOMEDCT, RADLEX, LOINC)
 - `generate_finding_query_terms()`: Generates search query variations
   - Uses small/fast model for efficiency
   - Creates 2-5 alternative terms for better matching
 - Categorization pipeline:
-  - Executes parallel searches across all configured backends
-  - Deduplicates results across backends
-  - Uses AI to categorize into exact matches, should include, and marginal
+  - Executes searches with configurable ontology filters
+  - Optional Cohere semantic reranking (when enabled)
+  - AI categorization prioritizes SNOMEDCT matches for standards compliance
   - Post-processing ensures exact matches are never missed
   - Excludes anatomical concepts (use anatomic location search instead)
+- Performance optimizations:
+  - Reduced default ontology set from 6 to 3 core medical ontologies
+  - Cohere disabled by default (can be enabled via config)
+  - Helper function extraction to reduce code complexity
 
 #### Common Utilities (`common.py`)
 - `get_openai_model()`: Centralized OpenAI model instance creation (used by all AI tools)
@@ -111,8 +119,11 @@ Configuration is managed through `src/findingmodel/config.py`:
 - Reads from `.env` file or environment variables
 - Required for AI features: `OPENAI_API_KEY`, `PERPLEXITY_API_KEY`
 - Optional MongoDB configuration for index functionality
-- Optional LanceDB configuration for vector search: `LANCEDB_URI`, `LANCEDB_API_KEY`
 - Optional BioOntology API for REST search: `BIOONTOLOGY_API_KEY`
+- Optional Cohere API for reranking: `COHERE_API_KEY`
+- Configuration flags:
+  - `use_cohere_with_ontology_concept_match`: Enable/disable Cohere for concept matching (default: False)
+  - Default ontologies can be overridden via function parameters
 
 ### Index System
 The `Index` class (index.py) provides MongoDB-based indexing of finding model definitions stored as `.fm.json` files in a `defs/` directory structure. It manages:
@@ -130,7 +141,8 @@ Tests are organized in `test/` directory using **pure pytest** (not unittest):
 - Use `task test-full` to include API integration tests
 - Test data fixtures are in `test/data/`
 - Demo/proving scripts go in `notebooks/` with `demo_*.py` naming convention
-- Tests should be organized by module (e.g., all ontology_concept_search tests in one file)
+- Tests should be organized by module (e.g., all ontology_concept_match tests in one file)
+- Keep development/debugging scripts out of the main test directory
 
 ### Pydantic AI Testing Patterns
 When testing Pydantic AI agents:
@@ -168,7 +180,7 @@ Follow these patterns when using Pydantic AI:
 4. **Agent simplicity**: Keep agents focused on judgment tasks, not data manipulation
 
 ### Reusable Components
-- Extract common functionality into shared modules (e.g., `LanceDBOntologySearchClient`)
+- Extract common functionality into shared modules (e.g., `BioOntologySearchClient`)
 - Centralize model creation logic (e.g., `get_openai_model()` in `common.py`)
 - Use dependency injection for testability (e.g., `SearchContext` dataclasses)
 
@@ -178,6 +190,9 @@ Follow these patterns when using Pydantic AI:
 - Use programmatic query generation instead of LLM-based when possible
 - Batch database queries to reduce round trips
 - Consider smaller models for simple tasks (gpt-4o-mini vs gpt-4)
+- Limit ontology searches to relevant sources (e.g., SNOMEDCT, RADLEX, LOINC)
+- Disable optional features by default (e.g., Cohere reranking)
+- Extract helper functions to reduce code complexity below threshold (C901)
 
 ### Error Handling
 - Always use try/finally blocks for resource cleanup (database connections, etc.)
@@ -213,6 +228,8 @@ Follow these patterns when using Pydantic AI:
       # code
   ```
 - Remove `async` from functions that don't use `await` (RUF029)
+- Keep function complexity under 10 (C901) by extracting helper functions
+- Add return type annotations to all test functions (ANN201)
 
 ## API Keys and Environment
 
@@ -223,9 +240,13 @@ OPENAI_API_KEY=your_key_here
 PERPLEXITY_API_KEY=your_key_here
 
 # Optional for ontology search features
-LANCEDB_URI=your_lancedb_uri_here
-LANCEDB_API_KEY=your_lancedb_api_key_here
 BIOONTOLOGY_API_KEY=your_bioontology_api_key_here
+
+# Optional for semantic reranking
+COHERE_API_KEY=your_cohere_api_key_here
+# Note: Cohere is disabled by default for better performance
+# To enable Cohere for ontology concept matching:
+# use_cohere_with_ontology_concept_match=true
 
 # Optional for MongoDB index
 MONGODB_URI=your_mongodb_uri_here

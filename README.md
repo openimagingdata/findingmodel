@@ -6,10 +6,14 @@ A Python library for managing Open Imaging Finding Models - structured data mode
 
 - **Finding Model Management**: Create and manage structured medical finding models with attributes
 - **AI-Powered Tools**: Generate finding descriptions, synonyms, and detailed information using OpenAI and Perplexity
-- **Medical Ontology Integration**: Search and match concepts across RadLex, SNOMED-CT, and BioOntology (800+ medical ontologies)
+- **Medical Ontology Integration**: Search and match concepts across multiple backends:
+  - **BioOntology API**: Access to 800+ medical ontologies including SNOMED-CT, ICD-10, LOINC
+  - **LanceDB Vector Search**: Fast local vector similarity search
+  - **DuckDB Search**: High-performance vector and full-text search with HNSW indexing
+- **Protocol-Based Architecture**: Flexible backend support with automatic parallel execution
 - **MongoDB Indexing**: Full-text search and efficient storage of finding model definitions
 - **Anatomic Location Discovery**: Two-agent AI system for finding relevant anatomic locations
-- **Protocol-Based Architecture**: Flexible backend support for multiple ontology search providers
+- **Cohere Reranking**: Optional semantic reranking for improved search relevance
 
 ## Installation
 

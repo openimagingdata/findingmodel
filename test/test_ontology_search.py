@@ -1,7 +1,6 @@
 """Tests for ontology search clients and Protocol compliance."""
 
 import inspect
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pydantic_ai import models
@@ -10,8 +9,6 @@ from findingmodel.config import settings
 from findingmodel.tools.ontology_search import (
     BioOntologySearchClient,
     BioOntologySearchResult,
-    LanceDBOntologySearchClient,
-    OntologySearchResult,
 )
 
 # Prevent accidental API calls in tests
@@ -19,23 +16,6 @@ models.ALLOW_MODEL_REQUESTS = False
 
 
 # Protocol Compliance Tests
-
-
-def test_lancedb_implements_protocol() -> None:
-    """Test that LanceDBOntologySearchClient implements OntologySearchProtocol."""
-    client = LanceDBOntologySearchClient()
-
-    # Verify required methods exist
-    assert hasattr(client, "search")
-    assert hasattr(client, "__aenter__")
-    assert hasattr(client, "__aexit__")
-
-    # Verify search method signature
-    sig = inspect.signature(client.search)
-    params = list(sig.parameters.keys())
-    assert "queries" in params
-    assert "max_results" in params
-    assert "filter_anatomical" in params
 
 
 def test_bioontology_implements_protocol() -> None:
@@ -61,40 +41,14 @@ def test_bioontology_implements_protocol() -> None:
 
 @pytest.mark.asyncio
 async def test_protocol_context_managers() -> None:
-    """Test that both clients work as async context managers."""
-    # Test LanceDBOntologySearchClient
-    client = LanceDBOntologySearchClient()
-    client.connect = AsyncMock()
-    client.disconnect = MagicMock()
+    """Test that BioOntology client works as async context manager."""
+    # Skip if no API key
+    if not getattr(settings, "bioontology_api_key", None):
+        pytest.skip("BioOntology API key not configured")
 
+    client = BioOntologySearchClient()
     async with client as ctx:
         assert ctx is client
-        client.connect.assert_called_once()
-
-    client.disconnect.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_protocol_search_method_interface() -> None:
-    """Test that search methods have compatible interfaces."""
-    # Create mock client
-    client = LanceDBOntologySearchClient()
-
-    # Mock the underlying search_parallel method
-    mock_results = [OntologySearchResult(concept_id="TEST1", concept_text="test concept", score=0.9, table_name="test")]
-    client.search_parallel = AsyncMock(return_value=mock_results)
-
-    # Call through Protocol interface
-    results = await client.search(queries=["test"], max_results=10, filter_anatomical=True)
-
-    # Verify it called search_parallel with mapped parameters
-    client.search_parallel.assert_called_once()
-    call_args = client.search_parallel.call_args
-    assert call_args.kwargs["queries"] == ["test"]
-    assert call_args.kwargs["filter_anatomical"] is True
-
-    # Verify results
-    assert results == mock_results
 
 
 # BioOntology Client Tests
@@ -301,3 +255,155 @@ async def test_bioontology_semantic_type_filter() -> None:
 
     finally:
         models.ALLOW_MODEL_REQUESTS = original_allow
+
+
+# Cohere Reranking Tests
+
+
+def test_rerank_with_cohere_no_api_key() -> None:
+    """Test that rerank_with_cohere returns original order when no API key is configured."""
+    import asyncio
+    from unittest.mock import patch
+
+    from findingmodel.tools.ontology_search import OntologySearchResult, rerank_with_cohere
+
+    # Mock settings to have no Cohere API key
+    with patch("findingmodel.tools.ontology_search.settings.cohere_api_key", None):
+        # Create test documents
+        docs = [
+            OntologySearchResult(concept_id="1", concept_text="heart", score=0.5, table_name="test"),
+            OntologySearchResult(concept_id="2", concept_text="lung", score=0.8, table_name="test"),
+            OntologySearchResult(concept_id="3", concept_text="liver", score=0.3, table_name="test"),
+        ]
+
+        # Run rerank_with_cohere
+        result = asyncio.run(rerank_with_cohere("cardiac", docs))
+
+        # Should return original order
+        assert result == docs
+        assert [r.concept_id for r in result] == ["1", "2", "3"]
+
+
+def test_rerank_with_cohere_empty_documents() -> None:
+    """Test that rerank_with_cohere handles empty document list."""
+    import asyncio
+
+    from findingmodel.tools.ontology_search import rerank_with_cohere
+
+    result = asyncio.run(rerank_with_cohere("test query", []))
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_rerank_with_cohere_with_mock_client() -> None:
+    """Test rerank_with_cohere with a mocked Cohere client."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    from findingmodel.tools.ontology_search import OntologySearchResult, rerank_with_cohere
+
+    # Create test documents
+    docs = [
+        OntologySearchResult(concept_id="1", concept_text="heart", score=0.5, table_name="test"),
+        OntologySearchResult(concept_id="2", concept_text="lung", score=0.8, table_name="test"),
+        OntologySearchResult(concept_id="3", concept_text="liver", score=0.3, table_name="test"),
+    ]
+
+    # Create mock Cohere client
+    mock_client = AsyncMock()
+    mock_response = MagicMock()
+    # Simulate reranking: put doc 2 first, then 1, then 3
+    mock_response.results = [
+        MagicMock(index=1),  # lung
+        MagicMock(index=0),  # heart
+        MagicMock(index=2),  # liver
+    ]
+    mock_client.rerank = AsyncMock(return_value=mock_response)
+
+    # Run rerank with mock client
+    result = await rerank_with_cohere("lung disease", docs, client=mock_client)
+
+    # Check reordering happened
+    assert len(result) == 3
+    assert result[0].concept_id == "2"  # lung first
+    assert result[1].concept_id == "1"  # heart second
+    assert result[2].concept_id == "3"  # liver third
+
+    # Verify client was called correctly
+    mock_client.rerank.assert_called_once_with(
+        model="rerank-v3.5", query="lung disease", documents=["1: heart", "2: lung", "3: liver"], top_n=None
+    )
+
+
+@pytest.mark.asyncio
+async def test_rerank_with_cohere_top_n() -> None:
+    """Test rerank_with_cohere with top_n parameter."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    from findingmodel.tools.ontology_search import OntologySearchResult, rerank_with_cohere
+
+    # Create test documents
+    docs = [
+        OntologySearchResult(concept_id=str(i), concept_text=f"concept_{i}", score=0.5, table_name="test")
+        for i in range(5)
+    ]
+
+    # Create mock Cohere client
+    mock_client = AsyncMock()
+    mock_response = MagicMock()
+    # Return only top 2
+    mock_response.results = [
+        MagicMock(index=2),
+        MagicMock(index=4),
+    ]
+    mock_client.rerank = AsyncMock(return_value=mock_response)
+
+    # Run rerank with top_n=2
+    result = await rerank_with_cohere("test", docs, client=mock_client, top_n=2)
+
+    # Should return only 2 results
+    assert len(result) == 2
+    assert result[0].concept_id == "2"
+    assert result[1].concept_id == "4"
+
+    # Verify top_n was passed to client
+    mock_client.rerank.assert_called_once()
+    assert mock_client.rerank.call_args.kwargs["top_n"] == 2
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_rerank_with_cohere_integration() -> None:
+    """Integration test for Cohere reranking (requires COHERE_API_KEY)."""
+    from findingmodel.tools.ontology_search import OntologySearchResult, rerank_with_cohere
+
+    if not getattr(settings, "cohere_api_key", None):
+        pytest.skip("Cohere API key not configured")
+
+    # Create test documents with intentionally mismatched order
+    docs = [
+        OntologySearchResult(concept_id="1", concept_text="liver disease", score=0.9, table_name="test"),
+        OntologySearchResult(concept_id="2", concept_text="cardiac arrest", score=0.8, table_name="test"),
+        OntologySearchResult(concept_id="3", concept_text="heart failure", score=0.7, table_name="test"),
+        OntologySearchResult(concept_id="4", concept_text="myocardial infarction", score=0.6, table_name="test"),
+    ]
+
+    # Rerank with a cardiac-focused query
+    result = await rerank_with_cohere("heart attack", docs, top_n=3)
+
+    # Should return 3 results
+    assert len(result) == 3
+
+    # The cardiac-related concepts should rank higher than liver disease
+    result_ids = [r.concept_id for r in result]
+    assert "1" not in result_ids[:2]  # liver disease should not be in top 2
+
+
+def test_default_ontologies_limited() -> None:
+    """Test that BioOntologySearchClient only uses 3 core medical ontologies by default.
+
+    This test verifies we only use SNOMEDCT, RADLEX, and LOINC as default ontologies,
+    ensuring we don't regress back to including other ontologies like GAMUTS, ICD10CM,
+    or CPT which were removed for performance and relevance reasons.
+    """
+    expected_ontologies = ["SNOMEDCT", "RADLEX", "LOINC"]
+    assert expected_ontologies == BioOntologySearchClient.DEFAULT_ONTOLOGIES

@@ -7,6 +7,7 @@ from openai import AsyncOpenAI
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
+from findingmodel import logger
 from findingmodel.config import settings
 
 
@@ -28,6 +29,71 @@ def get_openai_model(model_name: str) -> OpenAIModel:
         model_name=model_name,
         provider=OpenAIProvider(api_key=settings.openai_api_key.get_secret_value()),
     )
+
+
+async def get_embedding(
+    text: str, client: AsyncOpenAI | None = None, model: str | None = None, dimensions: int = 512
+) -> list[float] | None:
+    """Get embedding for a single text using OpenAI embeddings API.
+
+    Args:
+        text: Text to embed
+        client: Optional OpenAI client (creates one if not provided)
+        model: Embedding model to use (default: from config settings)
+        dimensions: Number of dimensions for the embedding (default: 512)
+
+    Returns:
+        Embedding vector or None if failed
+    """
+    if not client:
+        if not settings.openai_api_key:
+            return None
+        client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+
+    # Use config setting if model not explicitly provided
+    if model is None:
+        model = settings.openai_embedding_model
+
+    try:
+        response = await client.embeddings.create(input=text, model=model, dimensions=dimensions)
+        return response.data[0].embedding
+    except Exception as e:
+        logger.warning(f"Failed to get embedding: {e}")
+        return None
+
+
+async def get_embeddings_batch(
+    texts: list[str], client: AsyncOpenAI | None = None, model: str | None = None, dimensions: int = 512
+) -> list[list[float] | None]:
+    """Get embeddings for a batch of texts using OpenAI embeddings API.
+
+    Args:
+        texts: List of texts to embed
+        client: Optional OpenAI client (creates one if not provided)
+        model: Embedding model to use (default: from config settings)
+        dimensions: Number of dimensions for the embeddings (default: 512)
+
+    Returns:
+        List of embedding vectors (or None for failed embeddings)
+    """
+    if not texts:
+        return []
+
+    if not client:
+        if not settings.openai_api_key:
+            return [None] * len(texts)
+        client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+
+    # Use config setting if model not explicitly provided
+    if model is None:
+        model = settings.openai_embedding_model
+
+    try:
+        response = await client.embeddings.create(input=texts, model=model, dimensions=dimensions)
+        return [data.embedding for data in response.data]
+    except Exception as e:
+        logger.error(f"Failed to get embeddings batch: {e}")
+        return [None] * len(texts)
 
 
 def get_markdown_text_from_path_or_text(
