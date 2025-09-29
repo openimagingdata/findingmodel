@@ -30,6 +30,7 @@ dependencies = [
     "pydantic[email]>=2.11.3",
     "pydantic-settings>=2.9.1",
     "rich>=13.9.4",
+    "prompt-toolkit>=3.0.48",
     "motor>=3.7.1",
     "loguru>=0.7.3",
     "pydantic-ai-slim[cohere,openai,tavily]>=0.3.2",

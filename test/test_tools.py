@@ -423,7 +423,8 @@ async def test_create_model_from_markdown_integration() -> None:
     model = await create_model_from_markdown(finding_info, markdown_text=markdown_text)
 
     assert isinstance(model, FindingModelBase)
-    assert model.name == finding_info.name
+    # Compare names case-insensitively to account for LLM casing variability
+    assert model.name.strip().lower() == finding_info.name.strip().lower()
     # AI may generate slightly different descriptions, so check that both contain key concepts
     assert model.description is not None
     assert finding_info.description is not None

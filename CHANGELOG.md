@@ -6,12 +6,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-## [0.4.0] - 2025-09-15
+## [0.4.0] - 2025-09-26
 
 ### Added
 
+- **Interactive finding model tools** with demos that support both natural-language and markdown-based workflows with agent-driven validation
 - **BioOntology.org API support**: Access 800+ medical ontologies via REST API (requires `BIOONTOLOGY_API_KEY`)
 - **DuckDB backend**: High-performance local search with HNSW vector indexing for anatomic locations
 - **Protocol-based search architecture**: `OntologySearchProtocol` allows pluggable search backends

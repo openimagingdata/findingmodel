@@ -10,6 +10,8 @@ from findingmodel.finding_model import (
     generate_oifma_id,
 )
 
+PLACEHOLDER_ATTRIBUTE_ID = "OIFMA_XXXX_000000"
+
 GITHUB_IDS_URL = "https://raw.githubusercontent.com/openimagingdata/findingmodels/refs/heads/main/ids.json"
 
 
@@ -102,6 +104,77 @@ class IdManager:
             "add_ids_to_finding_model is deprecated, use add_ids_to_model instead", DeprecationWarning, stacklevel=2
         )
         return self.add_ids_to_model(finding_model, source)
+
+    def finalize_placeholder_attribute_ids(
+        self,
+        finding_model: FindingModelFull,
+        source: str | None = None,
+    ) -> FindingModelFull:
+        """Replace placeholder attribute IDs with generated IDs and renumber value codes.
+
+        Args:
+            finding_model: Model containing attributes to update.
+            source: Optional 3-4 uppercase code identifying the source organization. When omitted the
+                code is inferred from the model's OIFM identifier.
+
+        Returns:
+            A ``FindingModelFull`` with unique attribute IDs for all placeholders. If no placeholders
+            were present the original model is returned unchanged.
+        """
+
+        resolved_source = self._resolve_source(source, finding_model.oifm_id)
+        self.load_used_ids_from_github()
+
+        model_dict = finding_model.model_dump()
+        existing_ids: set[str] = set(self.attribute_ids.keys())
+        existing_ids.update(
+            attr.get("oifma_id")
+            for attr in model_dict.get("attributes", [])
+            if attr.get("oifma_id") and attr.get("oifma_id") != PLACEHOLDER_ATTRIBUTE_ID
+        )
+
+        updated = False
+        for attr in model_dict.get("attributes", []):
+            if attr.get("oifma_id") != PLACEHOLDER_ATTRIBUTE_ID:
+                continue
+
+            new_id = self._generate_unique_oifma(resolved_source, existing_ids)
+            existing_ids.add(new_id)
+            attr["oifma_id"] = new_id
+            self.attribute_ids[new_id] = (model_dict["oifm_id"], attr.get("name", ""))
+            updated = True
+
+            if attr.get("type") == "choice":
+                for idx, value in enumerate(attr.get("values", []) or []):
+                    value["value_code"] = f"{new_id}.{idx}"
+
+        if not updated:
+            return finding_model
+
+        return FindingModelFull.model_validate(model_dict)
+
+    @staticmethod
+    def _resolve_source(source: str | None, model_id: str) -> str:
+        if source:
+            return IdManager._validate_source(source)
+        parts = model_id.split("_")
+        if len(parts) != 3 or parts[0] != "OIFM":
+            raise ValueError(f"Cannot infer attribute source from model id '{model_id}'")
+        return IdManager._validate_source(parts[1])
+
+    @staticmethod
+    def _validate_source(source: str) -> str:
+        normalized = source.strip().upper()
+        if 3 <= len(normalized) <= 4 and normalized.isalpha():
+            return normalized
+        raise ValueError("Attribute source must be a 3-4 letter uppercase string")
+
+    @staticmethod
+    def _generate_unique_oifma(source: str, existing: set[str]) -> str:
+        new_id = generate_oifma_id(source)
+        while new_id in existing:
+            new_id = generate_oifma_id(source)
+        return new_id
 
 
 # Create a singleton instance of the IdManager

@@ -5,46 +5,54 @@
 
 ## Task List
 
-### T001. [P] Project Setup and Linting
+### T001. [P] Project Setup and Linting ✅ COMPLETED
 - Ensure all dependencies are installed (pydantic-ai, pytest, etc.)
 - Confirm linting and formatting tools are configured
 - Path: `/Users/talkasab/Repos/findingmodel/`
 
-### T002. [P] Contract Test: Natural Language Editing
+### T002. [P] Contract Test: Natural Language Editing ✅ COMPLETED
 - Write unit tests for `edit_model_natural_language` as specified in `contracts/natural_language_api.md`
 - Use `TestModel` to avoid real LLM calls
 - Path: `src/findingmodel/tools/model_editor.py`, `test/test_model_editor.py`
+- Status: Unit tests implemented with TestModel override pattern
 
-### T003. [P] Contract Test: Markdown Editing
-- Write unit tests for `edit_model_markdown` and `export_model_to_markdown` as specified in `contracts/markdown_api.md`
+### T003. [P] Contract Test: Markdown Editing ✅ COMPLETED
+- Write unit tests for `edit_model_markdown` and `export_model_for_editing` as specified in `contracts/markdown_api.md`
 - Use `TestModel` to avoid real LLM calls
 - Path: `src/findingmodel/tools/model_editor.py`, `test/test_model_editor.py`
+- Status: Unit tests implemented (function renamed to export_model_for_editing)
 
-### T004. Implement: Natural Language Editing
-- Implement `edit_model_natural_language(model: FindingModelFull, command: str, source: str) -> EditResult`
+### T004. Implement: Natural Language Editing ✅ COMPLETED
+- Implement `edit_model_natural_language(model: FindingModelFull, command: str) -> EditResult`
 - Use Pydantic AI agent pattern
 - Path: `src/findingmodel/tools/model_editor.py`
 - Depends on: T002
+- Status: Implemented with agent factories and output validation (source param removed)
 
-### T005. Implement: Markdown Editing
-- Implement `export_model_to_markdown(model: FindingModelFull) -> str` and `edit_model_markdown(model: FindingModelFull, edited_markdown: str, source: str) -> EditResult`
+### T005. Implement: Markdown Editing ✅ COMPLETED
+- Implement `export_model_for_editing(model: FindingModelFull) -> str` and `edit_model_markdown(model: FindingModelFull, edited_markdown: str) -> EditResult`
 - Path: `src/findingmodel/tools/model_editor.py`
 - Depends on: T003
+- Status: Implemented with agent factories and validation (source param removed, export function renamed)
 
-### T006. Demo Script: Natural Language Editing
+### T006. Demo Script: Natural Language Editing ✅ COMPLETED
 - Create `notebooks/demo_edit_model_from_command.py` to demonstrate natural language editing
 - Path: `notebooks/demo_edit_model_from_command.py`
 - Depends on: T004
+- Status: Demo script created and updated to show rejections
 
-### T007. Demo Script: Markdown Editing
+### T007. Demo Script: Markdown Editing ✅ COMPLETED
 - Create `notebooks/demo_edit_model_from_markdown.py` to demonstrate markdown editing
 - Path: `notebooks/demo_edit_model_from_markdown.py`
 - Depends on: T005
+- Status: Demo script created with proper editable Markdown format and rejection display
 
-### T008. [P] Polish: Documentation and Final Tests
+### T008. [P] Polish: Documentation and Final Tests ✅ COMPLETED
 - Update documentation and ensure all tests pass
 - Path: `/Users/talkasab/Repos/findingmodel/`
 - Depends on: T006, T007
+- Status: Tests passing (137 passed, 22 deselected), validation framework implemented, callout tests added
+- Documentation: Added model editing section to README.md with comprehensive examples and API documentation
 
 ## Parallelization Guidance
 - T002 and T003 can be run in parallel ([P])

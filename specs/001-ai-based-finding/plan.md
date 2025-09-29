@@ -75,7 +75,7 @@ All code goes in the existing `src/findingmodel/tools/` directory. No new submod
 ## Implementation Approach
 
 1. **Natural Language Editing**
-   - Function: `edit_model_natural_language(model: FindingModelFull, command: str, source: str) -> EditResult`
+   - Function: `edit_model_natural_language(model: FindingModelFull, command: str) -> EditResult`
    - Uses a Pydantic AI agent to parse the command and apply the change directly to the model.
    - Only allows: add attribute, add values, edit descriptions (non-semantic), safe renames.
    - Uses existing ID manager for new IDs.
@@ -83,9 +83,9 @@ All code goes in the existing `src/findingmodel/tools/` directory. No new submod
    - **Demo script**: `notebooks/demo_edit_model_from_command.py` — Loads a .fm.json file, applies a natural language command, and saves the result.
 
 2. **Markdown Editing**
-   - Function: `export_model_to_markdown(model: FindingModelFull) -> str`
+   - Function: `export_model_for_editing(model: FindingModelFull) -> str`
    - Exports a simplified Markdown version of the model's attributes list for human editing.
-   - Function: `edit_model_markdown(model: FindingModelFull, edited_markdown: str, source: str) -> EditResult`
+   - Function: `edit_model_markdown(model: FindingModelFull, edited_markdown: str) -> EditResult`
    - Compares the edited Markdown to the original, and applies changes to the model (attributes only).
    - See contract: `contracts/markdown_api.md`
    - **Demo script**: `notebooks/demo_edit_model_from_markdown.py` — Loads a .fm.json file, exports/imports attributes as markdown, and saves the result.

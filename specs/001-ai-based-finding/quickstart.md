@@ -21,21 +21,19 @@ with open("test_data/pneumonia.fm.json") as f:
 
 result = await edit_model_natural_language(
     model=model,
-    command="add severity attribute with mild, moderate, severe options",
-    source="MSFT"
+    command="add severity attribute with mild, moderate, severe options"
 )
 ```
 
 ## Markdown Editing
 
 ```python
-from findingmodel.tools.model_editor import export_model_to_markdown, edit_model_markdown
+from findingmodel.tools.model_editor import export_model_for_editing, edit_model_markdown
 
-markdown_content = export_model_to_markdown(model)
+markdown_content = export_model_for_editing(model)
 # User edits markdown_content...
-result = edit_model_markdown(
+result = await edit_model_markdown(
     model=model,
-    edited_markdown=markdown_content,
-    source="MSFT"
+    edited_markdown=markdown_content
 )
 ```

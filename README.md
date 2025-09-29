@@ -56,6 +56,12 @@ Commands:
   markdown-to-fm   Convert markdown file to finding model format.
 ```
 
+> **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API but not yet exposed as CLI commands. See the Tools section below for usage examples.
+
+### Interactive Model Editing Demo
+
+We ship an interactive walkthrough at `notebooks/demo_edit_finding_model.py` (plus focused demos for markdown-only and command-driven flows) that lets you try both editor modes from a prompt-toolkit shell. Markdown edits that drop existing attribute headers are rejected immediately so you never lose data. The demo keeps every existing OIFM identifier intact while you iterate, and any new attributes start out with placeholder IDs so you can review changes safely. When you save, the session now calls `assign_real_attribute_ids` so those placeholders are replaced with permanent values from the `IdManager` before the model is written to disk.
+
 ## Models
 
 ### `FindingModelBase`
@@ -429,6 +435,31 @@ full_model = asyncio.run(add_identifiers())
 #     • unchanged: OIFMV_MSFT_345679
 #     • stable: OIFMV_MSFT_901235
 #     ...
+
+### `assign_real_attribute_ids()`
+
+Finalizes placeholder attribute IDs (`PLACEHOLDER_ATTRIBUTE_ID`) that were created through the editing workflows. This is used by the interactive demos before saving, but you can also call it directly when scripting bulk edits.
+
+```python
+from findingmodel.finding_model import FindingModelFull
+from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID
+from findingmodel.tools.model_editor import assign_real_attribute_ids
+
+
+def finalize_ids(model_json: str) -> FindingModelFull:
+    model = FindingModelFull.model_validate_json(model_json)
+    # Ensure any newly added attributes receive permanent IDs and value codes
+    finalized = assign_real_attribute_ids(model)
+    return finalized
+
+
+# Placeholder-rich model JSON from an editing session
+with open("pulmonary_embolism.edited.json", "r") as fh:
+    edited_json = fh.read()
+
+model_with_ids = finalize_ids(edited_json)
+assert all(attr.oifma_id != PLACEHOLDER_ATTRIBUTE_ID for attr in model_with_ids.attributes)
+```
 ```
 
 ### `add_standard_codes_to_model()`
@@ -660,3 +691,119 @@ result = asyncio.run(search_concepts())
 - **Guaranteed exact matches**: Post-processing ensures exact name matches are never missed
 - **Smart categorization**: Three tiers - exact matches, should include, marginal
 - **Excludes anatomy**: Focuses on diseases/conditions (use `find_anatomic_locations()` for anatomy)
+
+### `edit_model_natural_language()` and `edit_model_markdown()`
+
+AI-powered editing tools for finding models with two modes: natural language commands and Markdown-based editing. Both preserve existing OIFM IDs and only allow safe additions and non-semantic text changes.
+
+```python
+import asyncio
+from findingmodel import FindingModelFull
+from findingmodel.tools.model_editor import (
+    edit_model_natural_language,
+    edit_model_markdown,
+    export_model_for_editing
+)
+
+async def edit_with_natural_language():
+    # Load an existing model
+    with open("pneumothorax.fm.json") as f:
+        model = FindingModelFull.model_validate_json(f.read())
+    
+    # Add a new attribute using natural language
+    result = await edit_model_natural_language(
+        model=model,
+        command="Add severity attribute with values mild, moderate, severe"
+    )
+    
+    # Check for any rejected changes
+    if result.rejections:
+        print("Some changes were rejected:")
+        for rejection in result.rejections:
+            print(f"  - {rejection}")
+    
+    # The updated model with new attribute
+    updated_model = result.model
+    print(f"Model now has {len(updated_model.attributes)} attributes")
+    
+    return result
+
+async def edit_with_markdown():
+    # Load an existing model
+    with open("pneumothorax.fm.json") as f:
+        model = FindingModelFull.model_validate_json(f.read())
+    
+    # Export to editable Markdown format
+    markdown_content = export_model_for_editing(model)
+    print("Current Markdown:")
+    print(markdown_content)
+    
+    # Add new attribute section to the markdown
+    edited_markdown = markdown_content + """
+### severity
+
+Severity of the pneumothorax
+
+- mild: Small pneumothorax with minimal clinical impact
+- moderate: Medium-sized pneumothorax requiring monitoring
+- severe: Large pneumothorax requiring immediate intervention
+
+"""
+    
+    # Apply the Markdown edits
+    result = await edit_model_markdown(
+        model=model,
+        edited_markdown=edited_markdown
+    )
+    
+    # Check results
+    if result.rejections:
+        print("Some changes were rejected:")
+        for rejection in result.rejections:
+            print(f"  - {rejection}")
+    
+    updated_model = result.model
+    print(f"Model now has {len(updated_model.attributes)} attributes")
+    
+    return result
+
+# Run examples
+nl_result = asyncio.run(edit_with_natural_language())
+md_result = asyncio.run(edit_with_markdown())
+```
+
+**Safety Features:**
+- **ID preservation**: All existing OIFM IDs (model, attribute, value) are preserved
+- **Safe changes only**: Only allows adding new attributes/values or editing non-semantic text
+- **Rejection feedback**: Clear explanations when changes are rejected as unsafe
+- **Validation**: Built-in validation ensures model integrity and proper ID generation
+
+**Editable Markdown Format:**
+```markdown
+# Model Name
+
+Model description here.
+
+Synonyms: synonym1, synonym2
+
+## Attributes
+
+### attribute_name
+
+Optional attribute description
+
+- value1: Optional value description
+- value2: Another value
+- value3
+
+### another_attribute
+
+- option1
+- option2
+```
+
+**Use Cases:**
+- **Natural Language**: "Add location attribute with upper, middle, lower lobe options"
+- **Markdown**: Direct editing of exported model structure with full control over formatting
+- **Collaborative**: Export to Markdown, share with clinical experts, import their edits
+- **Batch editing**: Multiple attribute additions in a single Markdown edit session
