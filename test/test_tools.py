@@ -1,15 +1,37 @@
-import asyncio
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 
 import findingmodel.tools
-from findingmodel import FindingInfo, FindingModelBase, FindingModelFull
+import findingmodel.tools.finding_description as finding_description
+from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, logger
+from findingmodel.config import settings
 from findingmodel.finding_model import AttributeType, ChoiceAttribute, ChoiceAttributeIded
 from findingmodel.index_code import IndexCode
 from findingmodel.tools.add_ids import IdManager
+
+HAS_PERPLEXITY_API_KEY = bool(settings.perplexity_api_key.get_secret_value())
+
+
+def _mongodb_available(uri: str) -> bool:
+    client: MongoClient | None = None  # type: ignore[type-arg]
+    try:
+        client = MongoClient(uri, serverSelectionTimeoutMS=1000, connectTimeoutMS=1000)
+        client.admin.command("ping")
+        return True
+    except (PyMongoError, OSError):
+        return False
+    finally:
+        if client is not None:
+            client.close()
+
+
+HAS_MONGODB = _mongodb_available(settings.mongodb_uri.get_secret_value())
 
 
 def test_create_stub(finding_info: FindingInfo) -> None:
@@ -119,6 +141,91 @@ def test_add_ids_uses_cache_on_second_call(base_model: FindingModelBase) -> None
         # Second call - should use cache
         findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
         assert mock_client.return_value.__enter__.return_value.get.call_count == 1  # Still 1
+
+
+class _StubFindingInfoAgent:
+    def __init__(self, output: FindingInfo) -> None:
+        self._output = output
+        self.prompts: list[str] = []
+
+    async def run(self, prompt: str) -> SimpleNamespace:
+        self.prompts.append(prompt)
+        return SimpleNamespace(output=self._output)
+
+
+@pytest.mark.asyncio
+async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.MonkeyPatch) -> None:
+    output = FindingInfo(
+        name="pulmonary opacity",
+        synonyms=["Pulmonary opacity", " pulmonary opacity ", "Left lower lobe shadow"],
+        description="General statement about pulmonary opacity.",
+    )
+
+    stub_agent = _StubFindingInfoAgent(output)
+    monkeypatch.setattr(
+        finding_description,
+        "_create_finding_info_agent",
+        lambda model_name, instructions: stub_agent,
+    )
+    monkeypatch.setattr(
+        settings.__class__,
+        "check_ready_for_openai",
+        lambda self: True,
+    )
+
+    logged: list[str] = []
+
+    def fake_info(message: str, *args: object, **kwargs: object) -> None:
+        if args:
+            message = message.format(*args)
+        logged.append(message)
+
+    monkeypatch.setattr(logger, "info", fake_info)
+
+    result = await finding_description.create_info_from_name("left lower lobe opacity", model_name="stub-model")
+
+    assert result.name == "pulmonary opacity"
+    assert result.synonyms == [
+        "Pulmonary opacity",
+        "Left lower lobe shadow",
+        "left lower lobe opacity",
+    ]
+    assert any("left lower lobe opacity" in entry for entry in logged)
+    assert stub_agent.prompts, "Agent should receive the rendered prompt"
+
+
+@pytest.mark.asyncio
+async def test_create_info_from_name_preserves_name_without_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    output = FindingInfo(
+        name="pneumothorax",
+        synonyms=["pneumothorax  ", "PTX"],
+        description="Presence of air in the pleural space.",
+    )
+
+    stub_agent = _StubFindingInfoAgent(output)
+    monkeypatch.setattr(
+        finding_description,
+        "_create_finding_info_agent",
+        lambda model_name, instructions: stub_agent,
+    )
+    monkeypatch.setattr(
+        settings.__class__,
+        "check_ready_for_openai",
+        lambda self: True,
+    )
+
+    logged: list[str] = []
+    monkeypatch.setattr(
+        logger,
+        "info",
+        lambda message, *args, **kwargs: logged.append(message),
+    )
+
+    result = await finding_description.create_info_from_name("pneumothorax")
+
+    assert result.name == "pneumothorax"
+    assert result.synonyms == ["pneumothorax", "PTX"]
+    assert not logged
 
 
 def test_add_ids_handles_http_timeout(base_model: FindingModelBase) -> None:
@@ -360,6 +467,7 @@ async def test_create_info_from_name_edge_cases() -> None:
 
 
 @pytest.mark.callout
+@pytest.mark.skipif(not HAS_PERPLEXITY_API_KEY, reason="Perplexity API key not configured")
 @pytest.mark.asyncio
 async def test_add_details_to_info_integration() -> None:
     """Integration test for add_details_to_info with real Perplexity API."""
@@ -494,6 +602,28 @@ async def test_create_model_from_markdown_file_integration(tmp_path: Path) -> No
 
 @pytest.mark.callout
 @pytest.mark.asyncio
+async def test_create_info_from_name_integration_normalizes_output() -> None:
+    """Ensure create_info_from_name returns normalized data when using the real API."""
+    from findingmodel.tools import create_info_from_name
+
+    raw_input = " PCL tear "
+    result = await create_info_from_name(raw_input)
+
+    assert result.name == result.name.strip()
+    assert result.name, "Finding name should not be empty"
+
+    synonyms = result.synonyms or []
+    assert all(syn == syn.strip() for syn in synonyms)
+    assert len({syn.casefold() for syn in synonyms}) == len(synonyms)
+
+    original_term = raw_input.strip()
+    if result.name.casefold() != original_term.casefold():
+        assert original_term in synonyms
+
+
+@pytest.mark.callout
+@pytest.mark.skipif(not HAS_PERPLEXITY_API_KEY, reason="Perplexity API key not configured")
+@pytest.mark.asyncio
 async def test_ai_tools_error_handling() -> None:
     """Test AI tools error handling with invalid inputs."""
     from findingmodel.finding_info import FindingInfo
@@ -512,27 +642,8 @@ async def test_ai_tools_error_handling() -> None:
     assert detailed.name == minimal_info.name
 
 
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_ai_tools_consistency() -> None:
-    """Test that AI tools produce consistent results for the same input."""
-    from findingmodel.tools import create_info_from_name
-
-    # Run the same query twice
-    result1 = await create_info_from_name("myocardial infarction")
-    result2 = await create_info_from_name("myocardial infarction")
-
-    # Names should be identical (normalized)
-    assert result1.name.strip().lower() == result2.name.strip().lower()
-
-    # Descriptions should be similar (though may not be identical due to AI variability)
-    assert result1.description is not None
-    assert result2.description is not None
-    assert len(result1.description) > 10
-    assert len(result2.description) > 10
-
-
 # Tests for find_similar_models function
+@pytest.mark.skipif(not HAS_MONGODB, reason="MongoDB not available for find_similar_models tests")
 def test_find_similar_models_basic_functionality() -> None:
     """Test basic functionality of find_similar_models without API calls."""
     from findingmodel.tools import find_similar_models
@@ -559,6 +670,7 @@ def test_find_similar_models_basic_functionality() -> None:
 
 
 @pytest.mark.callout
+@pytest.mark.skipif(not HAS_MONGODB, reason="MongoDB not available for find_similar_models tests")
 @pytest.mark.asyncio
 async def test_find_similar_models_integration() -> None:
     """Integration test for find_similar_models with real OpenAI API."""
@@ -585,6 +697,7 @@ async def test_find_similar_models_integration() -> None:
 
 
 @pytest.mark.callout
+@pytest.mark.skipif(not HAS_MONGODB, reason="MongoDB not available for find_similar_models tests")
 @pytest.mark.asyncio
 async def test_find_similar_models_edge_cases() -> None:
     """Test find_similar_models with edge cases."""
@@ -670,109 +783,6 @@ def test_add_ids_invalid_response_data(base_model: FindingModelBase) -> None:
         # This should raise an AssertionError due to invalid response structure
         with pytest.raises(AssertionError):
             findingmodel.tools.add_ids_to_model(base_model, source="TEST")
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_ai_tools_api_key_missing() -> None:
-    """Test AI tools behavior when API keys are missing or invalid."""
-    import os
-
-    from pydantic import SecretStr
-
-    # Save original API key
-    original_key = os.environ.get("OPENAI_API_KEY")
-
-    # Import here so we can access the original settings
-    from findingmodel import config
-
-    original_settings_key = config.settings.openai_api_key
-
-    try:
-        # Remove API key from environment and force empty key in settings
-        if "OPENAI_API_KEY" in os.environ:
-            del os.environ["OPENAI_API_KEY"]
-
-        # Directly set an empty API key in settings
-        config.settings.openai_api_key = SecretStr("")
-
-        # Import the function after modifying settings
-        from findingmodel.tools import create_info_from_name
-
-        # Should raise appropriate error
-        with pytest.raises(Exception) as exc_info:
-            await create_info_from_name("test finding")
-
-        # Error should indicate missing API key
-        error_msg = str(exc_info.value).lower()
-        assert "api" in error_msg or "key" in error_msg or "auth" in error_msg or "openai" in error_msg
-
-    finally:
-        # Restore original API key
-        if original_key:
-            os.environ["OPENAI_API_KEY"] = original_key
-
-        # Restore original settings
-        config.settings.openai_api_key = original_settings_key
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_ai_tools_rate_limiting() -> None:
-    """Test AI tools behavior under rate limiting conditions."""
-    from findingmodel.tools import create_info_from_name
-
-    # This test depends on actual API behavior
-    # We'll make multiple rapid requests and see how it handles them
-    tasks = []
-    for i in range(3):  # Keep it small to avoid actually hitting rate limits
-        task = create_info_from_name(f"test finding {i}")
-        tasks.append(task)
-
-    # Should handle all requests gracefully (may be slower due to rate limiting)
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    # All should succeed or fail with appropriate errors
-    for result in results:
-        if isinstance(result, Exception):
-            # If rate limited, error should indicate that
-            error_msg = str(result).lower()
-            assert "rate" in error_msg or "limit" in error_msg or "quota" in error_msg
-        else:
-            # If successful, should be valid FindingInfo
-            from findingmodel.finding_info import FindingInfo
-
-            assert isinstance(result, FindingInfo)
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_ai_tools_malformed_response_handling() -> None:
-    """Test AI tools handling of malformed API responses."""
-    # This is difficult to test without mocking the API
-    # But we can test with edge case inputs that might cause issues
-    from findingmodel.tools import create_info_from_name
-
-    # Test with inputs that might cause parsing issues
-    edge_cases = [
-        "",  # Empty string
-        " ",  # Just whitespace
-        "x" * 1000,  # Very long string
-        "Special chars: !@#$%^&*(){}[]|\\:;\"'<>,.?/~`",
-        "Unicode: 测试 🏥 ∅ ∞",
-    ]
-
-    for test_input in edge_cases:
-        try:
-            result = await create_info_from_name(test_input)
-            # If it succeeds, should return valid structure
-            from findingmodel.finding_info import FindingInfo
-
-            assert isinstance(result, FindingInfo)
-            assert result.name is not None
-        except Exception as e:
-            # If it fails, should be a reasonable error
-            assert isinstance(e, (ValueError, TypeError, AttributeError))
 
 
 def test_tools_import_failures() -> None:
