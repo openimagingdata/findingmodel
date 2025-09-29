@@ -1,21 +1,19 @@
 # Update Documentation and Best Practices
 
-Analyze the recent work completed in this project and update all relevant documentation. Use Serena's memory to understand what has changed and what knowledge should be preserved. Follow these steps:
+Analyze the recent work completed in this project and update all relevant documentation. Use Serena's memory (via serena MCP commands) to understand what has changed and what knowledge should be preserved. Follow these steps:
 
 ## 1. ANALYZE RECENT CHANGES
 
 - Review git history for commits from the last ${ARGUMENTS:-7} days
-- Use Serena to examine modified files and understand semantic changes
-- Check Serena's memories in .serena/memories/ for context about recent decisions
+- Use git and Serena MCP tools to examine modified files and understand semantic changes
 - Identify new patterns, APIs, components, or architectural changes
 
 ## 2. SCAN EXISTING DOCUMENTATION
 
 Review all documentation in these locations:
 
-- Root directory: README.md, CLAUDE.md, CHANGELOG.md
-- docs/: All documentation files
-- .serena/memories/: Review stored project knowledge and decisions
+- From project root: .github/copilot-instructions.md, README.md, CLAUDE.md, CHANGELOG.md
+- Serena MCP tools: Review stored project knowledge and decisions (serena's read_memory)
 
 ## 3. UPDATE DOCUMENTATION SYSTEMATICALLY
 
@@ -26,7 +24,7 @@ Review all documentation in these locations:
 - Updated usage examples reflecting current implementation
 - New dependencies or requirements
 
-### Update CLAUDE.md (and sub-directory CLAUDE.md)
+### Update CLAUDE.md (and sub-directory CLAUDE.md) and copilot-instructions.md
 
 - New coding patterns discovered during implementation
 - Updated best practices based on what worked well
@@ -47,26 +45,19 @@ Review all documentation in these locations:
 - Deprecated features with migration guides
 - Updated examples using actual code from tests
 
-### Update .serena/project.yml
-
-- Verify project metadata is current
-- Update technology stack if new tools were added
-- Ensure build/test commands reflect current setup
-
 ## 4. SYNCHRONIZE WITH SERENA'S MEMORY
 
 Ask Serena to:
 
-- Store important architectural decisions in memory
+- Store important architectural decisions in memory (serena MCP's `write_memory`)
 - Update technology understanding based on new patterns
 - Record rationale for significant changes
 - Save learned optimizations and performance improvements
 
 Use these Serena commands:
 
-- `serena_store_memory`: Save key decisions and patterns
-- `serena_read_memory`: Verify stored knowledge is accurate
-- `serena_update_memory`: Refine existing memories with new insights
+- `write_memory`: Save key decisions and patterns
+- `read_memory`: Verify stored knowledge is accurate
 
 ## 6. VALIDATE DOCUMENTATION
 
@@ -101,8 +92,7 @@ Create a summary of changes for the team:
 
 ## SERENA INTEGRATION NOTES
 
-- Serena stores memories in .serena/memories/ - use this knowledge
-- Check .serena/project.yml for project configuration
+- Use the Serena  memories by calling serena's `read_memory` tool
 - Leverage Serena's understanding of code relationships
 - Use Serena's symbol-level comprehension for accurate API docs
 - Let Serena help identify what's truly important to document

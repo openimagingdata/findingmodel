@@ -1,4 +1,4 @@
-# AI Assistant Usage Guidelines (2025-09-28)
+# AI Assistant Usage Guidelines (2025-10-06)
 
 ## Core Principles
 - Always use the Serena MCP server for repository context and note-taking. Run lookups with `find_symbol`, `search_for_pattern`, or `read_memory` before scanning files manually.
@@ -13,7 +13,18 @@
 - Lead with project overview, tech stack, testing commands, and coding conventions.
 - Use numbered sections and short bullet lists for scannability.
 - Explicitly state required tools (uv, task, pytest) and note when Taskfile commands are canonical.
-- Emphasize preventing accidental external API calls in tests (`models.ALLOW_MODEL_REQUESTS = False`).
+
+## Testing Guidelines (Updated 2025-10-06)
+- **Unit tests**: Use `TestModel()` or `FunctionModel()` from pydantic_ai for deterministic mocked responses. Never manage global flags.
+- **Integration tests**: Mark with `@pytest.mark.callout` to allow real API calls during `task test-full`.
+- **Antipattern removed**: Do NOT set `models.ALLOW_MODEL_REQUESTS = False` at module level or in fixtures. This is a development safety guard, not a test isolation mechanism.
+
+## Model Editing Feature (v0.4)
+- **Dual-mode editor**: Supports both natural language commands and markdown-based editing via CLI
+- **ID preservation**: All existing OIFM IDs are maintained during edits
+- **Placeholder workflow**: New content uses temporary placeholder IDs; promote to stable IDs before publishing using provided utilities
+- **Clinical validation**: AI-powered medical domain accuracy checking
+- **Safe edits only**: Only additions and semantic-preserving modifications allowed
 
 ## Required Behaviors for Agents
 1. Before answering architecture or standards questions, query Serena memories (`project_overview`, `code_style_conventions`, `suggested_commands`).

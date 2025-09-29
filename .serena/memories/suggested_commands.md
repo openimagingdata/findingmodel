@@ -38,6 +38,8 @@ The package provides a CLI accessible via:
 - `python -m findingmodel make-stub-model "finding name"` - Create basic model
 - `python -m findingmodel markdown-to-fm input.md` - Convert markdown to model
 - `python -m findingmodel fm-to-markdown model.json` - Convert model to markdown
+- `python -m findingmodel edit-model model.json` - AI-powered model editor (natural language and markdown)
+- `python -m findingmodel validate-model model.json` - Validate model integrity and clinical accuracy
 
 ## Git Commands (Darwin/macOS)
 - `git status` - Check repository status
