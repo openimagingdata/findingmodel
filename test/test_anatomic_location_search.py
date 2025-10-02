@@ -1,9 +1,8 @@
-"""Unit tests for anatomic location search functionality."""
+"""Tests for anatomic location search functionality."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
 
 from findingmodel.tools.anatomic_location_search import (
@@ -18,9 +17,6 @@ from findingmodel.tools.duckdb_search import DuckDBOntologySearchClient
 from findingmodel.tools.ontology_search import (
     OntologySearchResult,
 )
-
-# Prevent accidental API calls during testing
-models.ALLOW_MODEL_REQUESTS = False
 
 
 class TestOntologySearchResult:

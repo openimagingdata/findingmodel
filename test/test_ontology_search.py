@@ -3,17 +3,12 @@
 import inspect
 
 import pytest
-from pydantic_ai import models
 
 from findingmodel.config import settings
 from findingmodel.tools.ontology_search import (
     BioOntologySearchClient,
     BioOntologySearchResult,
 )
-
-# Prevent accidental API calls in tests
-models.ALLOW_MODEL_REQUESTS = False
-
 
 # Protocol Compliance Tests
 
@@ -126,35 +121,27 @@ async def test_bioontology_search_pneumonia() -> None:
     if not getattr(settings, "bioontology_api_key", None):
         pytest.skip("BioOntology API key not configured")
 
-    # Temporarily enable model requests for integration test
-    original_allow = models.ALLOW_MODEL_REQUESTS
-    try:
-        models.ALLOW_MODEL_REQUESTS = True
+    async with BioOntologySearchClient() as client:
+        results = await client.search_bioontology(
+            query="pneumonia",
+            ontologies=["SNOMEDCT", "RADLEX"],
+            page_size=10,
+        )
 
-        async with BioOntologySearchClient() as client:
-            results = await client.search_bioontology(
-                query="pneumonia",
-                ontologies=["SNOMEDCT", "RADLEX"],
-                page_size=10,
-            )
+        assert results.query == "pneumonia"
+        assert results.total_count > 0
+        assert len(results.results) > 0
 
-            assert results.query == "pneumonia"
-            assert results.total_count > 0
-            assert len(results.results) > 0
+        # Check first result has expected fields
+        first_result = results.results[0]
+        assert first_result.concept_id
+        assert first_result.ontology in ["SNOMEDCT", "RADLEX"]
+        assert first_result.pref_label
+        assert first_result.ui_link
 
-            # Check first result has expected fields
-            first_result = results.results[0]
-            assert first_result.concept_id
-            assert first_result.ontology in ["SNOMEDCT", "RADLEX"]
-            assert first_result.pref_label
-            assert first_result.ui_link
-
-            # Check that we get results from both ontologies if available
-            ontologies_found = {r.ontology for r in results.results}
-            assert len(ontologies_found) > 0  # At least one ontology represented
-
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_allow
+        # Check that we get results from both ontologies if available
+        ontologies_found = {r.ontology for r in results.results}
+        assert len(ontologies_found) > 0  # At least one ontology represented
 
 
 @pytest.mark.callout
@@ -165,26 +152,18 @@ async def test_bioontology_search_all_pages() -> None:
     if not getattr(settings, "bioontology_api_key", None):
         pytest.skip("BioOntology API key not configured")
 
-    # Temporarily enable model requests for integration test
-    original_allow = models.ALLOW_MODEL_REQUESTS
-    try:
-        models.ALLOW_MODEL_REQUESTS = True
+    async with BioOntologySearchClient() as client:
+        results = await client.search_all_pages(
+            query="fracture",
+            ontologies=["SNOMEDCT"],
+            max_results=25,  # Get more than one page
+        )
 
-        async with BioOntologySearchClient() as client:
-            results = await client.search_all_pages(
-                query="fracture",
-                ontologies=["SNOMEDCT"],
-                max_results=25,  # Get more than one page
-            )
-
-            assert len(results) <= 25
-            assert all(r.ontology == "SNOMEDCT" for r in results)
-            assert all(
-                "fracture" in r.pref_label.lower() or any("fracture" in s.lower() for s in r.synonyms) for r in results
-            )
-
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_allow
+        assert len(results) <= 25
+        assert all(r.ontology == "SNOMEDCT" for r in results)
+        assert all(
+            "fracture" in r.pref_label.lower() or any("fracture" in s.lower() for s in r.synonyms) for r in results
+        )
 
 
 @pytest.mark.callout
@@ -195,29 +174,21 @@ async def test_bioontology_search_as_ontology_results() -> None:
     if not getattr(settings, "bioontology_api_key", None):
         pytest.skip("BioOntology API key not configured")
 
-    # Temporarily enable model requests for integration test
-    original_allow = models.ALLOW_MODEL_REQUESTS
-    try:
-        models.ALLOW_MODEL_REQUESTS = True
+    async with BioOntologySearchClient() as client:
+        results = await client.search_as_ontology_results(
+            query="hepatic metastasis",
+            ontologies=["SNOMEDCT", "RADLEX"],
+            max_results=10,
+        )
 
-        async with BioOntologySearchClient() as client:
-            results = await client.search_as_ontology_results(
-                query="hepatic metastasis",
-                ontologies=["SNOMEDCT", "RADLEX"],
-                max_results=10,
-            )
-
-            assert len(results) <= 10
-            # Check results are in OntologySearchResult format
-            if results:
-                first_result = results[0]
-                assert hasattr(first_result, "concept_id")
-                assert hasattr(first_result, "concept_text")
-                assert hasattr(first_result, "table_name")
-                assert hasattr(first_result, "score")
-
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_allow
+        assert len(results) <= 10
+        # Check results are in OntologySearchResult format
+        if results:
+            first_result = results[0]
+            assert hasattr(first_result, "concept_id")
+            assert hasattr(first_result, "concept_text")
+            assert hasattr(first_result, "table_name")
+            assert hasattr(first_result, "score")
 
 
 @pytest.mark.callout
@@ -228,33 +199,25 @@ async def test_bioontology_semantic_type_filter() -> None:
     if not getattr(settings, "bioontology_api_key", None):
         pytest.skip("BioOntology API key not configured")
 
-    # Temporarily enable model requests for integration test
-    original_allow = models.ALLOW_MODEL_REQUESTS
-    try:
-        models.ALLOW_MODEL_REQUESTS = True
+    async with BioOntologySearchClient() as client:
+        results = await client.search_bioontology(
+            query="liver",
+            ontologies=["SNOMEDCT"],
+            semantic_types=["T047"],  # Disease or syndrome
+            page_size=10,
+        )
 
-        async with BioOntologySearchClient() as client:
-            results = await client.search_bioontology(
-                query="liver",
-                ontologies=["SNOMEDCT"],
-                semantic_types=["T047"],  # Disease or syndrome
-                page_size=10,
-            )
-
-            # Results should be disease-related liver concepts, not anatomical
-            if results.results:
-                # Check that results are disease-related
-                for result in results.results[:5]:
-                    assert (
-                        any(
-                            keyword in result.pref_label.lower()
-                            for keyword in ["disease", "disorder", "syndrome", "failure", "cirrhosis", "hepatitis"]
-                        )
-                        or "T047" in result.semantic_types
+        # Results should be disease-related liver concepts, not anatomical
+        if results.results:
+            # Check that results are disease-related
+            for result in results.results[:5]:
+                assert (
+                    any(
+                        keyword in result.pref_label.lower()
+                        for keyword in ["disease", "disorder", "syndrome", "failure", "cirrhosis", "hepatitis"]
                     )
-
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_allow
+                    or "T047" in result.semantic_types
+                )
 
 
 # Cohere Reranking Tests

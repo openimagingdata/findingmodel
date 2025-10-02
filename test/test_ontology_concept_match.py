@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
 
 from findingmodel.tools.ontology_concept_match import (
@@ -17,10 +16,6 @@ from findingmodel.tools.ontology_concept_match import (
     match_ontology_concepts,
 )
 from findingmodel.tools.ontology_search import OntologySearchResult
-
-# Prevent accidental API calls during testing
-models.ALLOW_MODEL_REQUESTS = False
-
 
 # Query Terms Generation Tests
 
@@ -743,31 +738,23 @@ async def test_bioontology_integration() -> None:
     if not getattr(settings, "bioontology_api_key", None):
         pytest.skip("BioOntology API key not configured")
 
-    # Temporarily enable model requests for integration test
-    original_allow = models.ALLOW_MODEL_REQUESTS
-    try:
-        models.ALLOW_MODEL_REQUESTS = True
+    # Test with real search - use simplified API (no search_clients parameter)
+    result = await match_ontology_concepts(
+        finding_name="fracture",
+        finding_description="bone break",
+        max_exact_matches=3,
+        max_should_include=5,
+    )
 
-        # Test with real search - use simplified API (no search_clients parameter)
-        result = await match_ontology_concepts(
-            finding_name="fracture",
-            finding_description="bone break",
-            max_exact_matches=3,
-            max_should_include=5,
-        )
+    # Verify we got results
+    assert result is not None
+    # At minimum, we should have some categorized results
+    total_results = len(result.exact_matches) + len(result.should_include) + len(result.marginal_concepts)
+    assert total_results > 0, "Should find some ontology concepts for fracture"
 
-        # Verify we got results
-        assert result is not None
-        # At minimum, we should have some categorized results
-        total_results = len(result.exact_matches) + len(result.should_include) + len(result.marginal_concepts)
-        assert total_results > 0, "Should find some ontology concepts for fracture"
-
-        # Verify result contains OntologySearchResult objects with expected fields
-        for code in result.exact_matches:
-            assert hasattr(code, "concept_id")
-            assert hasattr(code, "concept_text")
-            assert hasattr(code, "score")
-            assert hasattr(code, "table_name")
-
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_allow
+    # Verify result contains OntologySearchResult objects with expected fields
+    for code in result.exact_matches:
+        assert hasattr(code, "concept_id")
+        assert hasattr(code, "concept_text")
+        assert hasattr(code, "score")
+        assert hasattr(code, "table_name")
