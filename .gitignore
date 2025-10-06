@@ -89,6 +89,6 @@ dmypy.json
 # Project-specific stuff
 notebooks/test_model.fm.json
 notebooks/data/anatomic_locations.json
-!.vscode/mcp.json
 .serena/cache
+mcp.json
 .mcp.json
