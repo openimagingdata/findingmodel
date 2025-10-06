@@ -1,5 +1,3 @@
-src/findingmodel/
-
 # Copilot Instructions · FindingModel
 
 1. **Use Serena MCP for everything.** Before answering questions or editing code, run Serena lookups:
@@ -19,11 +17,11 @@ src/findingmodel/
 
    - Ruff handles formatting (120 char max) and linting; run `task check` before commits.
    - Strict typing: annotate everything, prefer async for IO, keep validators pure.
-   - Naming: snake*case functions/vars, PascalCase classes, OIFM IDs `OIFM*{SOURCE}\_{6_DIGITS}`.
+   - Naming: snake_case functions/vars, PascalCase classes, OIFM IDs `OIFM_{SOURCE}_{6_DIGITS}`.
 
 4. **Development workflow** (see Serena `suggested_commands`).
 
-   - Tests: `task test` (local), `task test-full` (includes callouts). Avoid real API hits in unit tests—set `models.ALLOW_MODEL_REQUESTS = False` (Serena `pydantic_ai_testing_best_practices`).
+   - Tests: `task test` (local), `task test-full` (includes callouts). Unit tests use `TestModel`/`FunctionModel` with mocks; integration tests marked `@pytest.mark.callout` call real APIs.
    - Quality: `task check` (format/lint/mypy), `uv run ruff format`, `uv run ruff check --fix`, `uv run mypy src` as fallbacks.
    - CLI: `python -m findingmodel` lists subcommands for config, info generation, markdown conversions.
 
