@@ -27,6 +27,8 @@ def setup_duckdb_connection(
     connection = duckdb.connect(str(db_path), read_only=read_only)
 
     for extension in extensions:
+        if not read_only:
+            connection.execute(f"INSTALL {extension}")
         connection.execute(f"LOAD {extension}")
 
     return connection
