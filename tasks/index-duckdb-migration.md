@@ -61,7 +61,7 @@ CREATE TABLE finding_models (
     
     -- Search fields (ALWAYS populated - semantic search is core feature)
     search_text TEXT NOT NULL,  -- Concatenated: name + description + synonyms for FTS
-    embedding DOUBLE[1536] NOT NULL,  -- OpenAI text-embedding-3-small (ALWAYS generated)
+    embedding FLOAT[512] NOT NULL,  -- OpenAI text-embedding-3-small with 512 dims (ALWAYS generated, convert to 32-bit)
     
     -- Metadata
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -73,16 +73,17 @@ PRAGMA create_fts_index(
     'finding_models',
     'oifm_id',
     'search_text',
-    stemmer = 'english',
+    stemmer = 'porter',  -- Use 'porter' stemmer
     stopwords = 'english',
     lower = 1,
     overwrite = 1
 );
 
 -- HNSW index for fast vector similarity search (approximate nearest neighbor)
+-- Note: Uses L2 distance by default (DuckDB doesn't support cosine metric directly)
+-- Convert L2 to cosine similarity in queries: cosine_sim = 1 - (l2_distance / 2)
 CREATE INDEX finding_models_embedding_hnsw 
-ON finding_models USING HNSW (embedding)
-WITH (metric = 'cosine');
+ON finding_models USING HNSW (embedding);
 
 -- Additional indexes for common queries
 CREATE INDEX idx_finding_models_name ON finding_models(name);  -- For name lookups
@@ -113,22 +114,24 @@ CREATE TABLE organizations (
 );
 ```
 
-#### 4. `model_contributors` - Denormalized contributors (for quick model lookups)
+#### 3. `model_people` - Links models to people
 
 ```sql
-CREATE TABLE model_contributors (
-    oifm_id VARCHAR NOT NULL,
-    contributor_id VARCHAR NOT NULL,  -- github_username or org code
-    contributor_type VARCHAR NOT NULL,  -- 'person' or 'organization'
-    PRIMARY KEY (oifm_id, contributor_id, contributor_type),
-    FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE
+CREATE TABLE model_people (
+    id INTEGER PRIMARY KEY,
+    oifm_id VARCHAR NOT NULL REFERENCES finding_models(oifm_id) ON DELETE CASCADE,
+    person_id VARCHAR NOT NULL REFERENCES people(github_username) ON DELETE RESTRICT,
+    role VARCHAR NOT NULL,  -- 'author', 'reviewer', 'maintainer'
+    display_order INTEGER,
+    
+    UNIQUE(oifm_id, person_id, role)
 );
 
--- Index for quick "get all contributors for model" queries
-CREATE INDEX idx_model_contributors_model ON model_contributors(oifm_id);
+-- Index for quick "get all people for model" queries
+CREATE INDEX idx_model_people_model ON model_people(oifm_id);
 
--- Index for quick "get all models by contributor" queries
-CREATE INDEX idx_model_contributors_contributor ON model_contributors(contributor_id);
+-- Index for quick "get all models by person" queries
+CREATE INDEX idx_model_people_person ON model_people(person_id);
 ```
 
 #### 4. `model_organizations` - Links models to organizations
@@ -137,12 +140,18 @@ CREATE INDEX idx_model_contributors_contributor ON model_contributors(contributo
 CREATE TABLE model_organizations (
     id INTEGER PRIMARY KEY,
     oifm_id VARCHAR NOT NULL REFERENCES finding_models(oifm_id) ON DELETE CASCADE,
-    organization_id VARCHAR NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
+    organization_id VARCHAR NOT NULL REFERENCES organizations(code) ON DELETE RESTRICT,
     role VARCHAR NOT NULL,  -- 'author', 'reviewer', 'maintainer'
     display_order INTEGER,
     
     UNIQUE(oifm_id, organization_id, role)
 );
+
+-- Index for quick "get all orgs for model" queries
+CREATE INDEX idx_model_organizations_model ON model_organizations(oifm_id);
+
+-- Index for quick "get all models by org" queries
+CREATE INDEX idx_model_organizations_org ON model_organizations(organization_id);
 ```
 
 #### 5. `synonyms` - Denormalized synonym storage
@@ -286,6 +295,23 @@ class DuckDBIndex:
         
         IMPORTANT: Embeds ALL queries in a single OpenAI API call for efficiency,
         then performs hybrid search for each query.
+        
+        Example implementation:
+            # Single API call for all embeddings
+            response = await openai_client.embeddings.create(
+                model=settings.openai_embedding_model,  # "text-embedding-3-small"
+                input=queries,  # List of strings
+                dimensions=settings.openai_embedding_dimensions  # 512
+            )
+            embeddings = [e.embedding for e in response.data]
+            
+            # Search with each pre-computed embedding
+            results = {}
+            for query, embedding in zip(queries, embeddings):
+                results[query] = await self._search_with_embedding(
+                    query, embedding, limit
+                )
+            return results
         """
     
     # Contributor lookups - now using normalized tables
@@ -308,6 +334,15 @@ class DuckDBIndex:
     # Batch operations
     async def update_from_directory(self, path: Path) -> dict:
         """Scan directory and update all models."""
+    
+    async def rebuild_index_from_directory(self, path: Path) -> dict:
+        """Rebuild entire index from scratch.
+        
+        Useful after:
+        - HNSW index corruption from unexpected shutdown
+        - Schema changes
+        - Experimental persistence issues
+        """
     
     # Counts
     async def count(self) -> int:
@@ -387,12 +422,12 @@ normalized_fts AS (
 ),
 semantic_results AS (
     SELECT f.oifm_id,
-           array_cosine_similarity(f.embedding, ?) as cosine_sim
+           1 - (array_distance(f.embedding, ?) / 2) as cosine_sim  -- Convert L2 to cosine
     FROM finding_models f
     LEFT JOIN tag_filtered tf ON f.oifm_id = tf.oifm_id
     WHERE f.embedding IS NOT NULL
       AND (tf.oifm_id IS NOT NULL OR ? IS NULL)  -- Only filter if tags provided
-    ORDER BY array_distance(f.embedding, ?)  -- HNSW accelerated
+    ORDER BY array_distance(f.embedding, ?)  -- HNSW accelerated (L2 distance)
     LIMIT ?
 )
 SELECT f.*, 
@@ -417,29 +452,56 @@ LIMIT ?;
 # One-time rebuild from existing files
 async def rebuild_index():
     """Rebuild DuckDB index from finding model files."""
-    index = Index()  # New DuckDBIndex
-    await index.setup()
-    
-    # Point at directory with all *.fm.json files
-    result = await index.update_from_directory(Path("path/to/finding_models"))
-    
-    print(f"Added: {result['added']}")
-    print(f"Updated: {result['updated']}")
-    print(f"Unchanged: {result['unchanged']}")
+    # Open in read-write mode for updates
+    async with Index(read_only=False) as index:
+        await index.setup()
+        
+        # Point at directory with all *.fm.json files
+        # Automatically: drops HNSW → updates data → rebuilds HNSW
+        result = await index.update_from_directory(Path("path/to/finding_models"))
+        
+        print(f"Added: {result['added']}")
+        print(f"Updated: {result['updated']}")
+        print(f"Unchanged: {result['unchanged']}")
+
+# Normal usage (read-only)
+async def search_models(query: str):
+    """Search finding models (read-only, default)."""
+    async with Index() as index:  # read_only=True by default
+        return await index.search(query)
 ```
 
 ## Implementation Steps
 
+**Note**: See `tasks/duckdb-common-patterns.md` for plan to extract shared DuckDB utilities to avoid code duplication with `duckdb_search.py`.
+
+### Step 0: Create DuckDB Utilities (Optional - can do during or after)
+- Create `src/findingmodel/tools/duckdb_utils.py` with shared utilities:
+  - `setup_duckdb_connection()` - connection management with extensions
+  - `get_embedding_for_duckdb()` / `batch_embeddings_for_duckdb()` - embedding with float32 conversion
+  - `normalize_scores()`, `weighted_fusion()`, `rrf_fusion()` - score combination
+  - `l2_to_cosine_similarity()` - distance metric conversion
+- See detailed plan in `tasks/duckdb-common-patterns.md`
+
 ### Step 1: Create DuckDBIndex skeleton
 - Create `src/findingmodel/duckdb_index.py`
-- Implement `__init__`, `setup`, schema creation
+- Implement `__init__` with `read_only=True` parameter (default for 99% of usage)
+- Implement `setup`, schema creation with:
+  - Load FTS and VSS extensions: `LOAD fts; LOAD vss;`
+  - **NO experimental persistence flag needed** - HNSW rebuilt after batch updates
+  - **Option**: Use `setup_duckdb_connection()` utility if available
+- Connection pattern:
+  - Default (read-only): For search operations
+  - Explicit read-write: Only for batch updates
 - Add to `src/findingmodel/__init__.py` exports
 
 ### Step 2: Implement core CRUD
 - `get()` - ID/name/synonym lookup (check synonyms table for exact match)
 - `add_or_update_entry_from_file()` - insert/update with hash checking
   - Update `finding_models` table
-  - Generate embeddings via OpenAI (REQUIRED, embeddings NOT NULL)
+  - Generate embeddings using `settings.openai_embedding_model` with `settings.openai_embedding_dimensions` (512)
+  - **Convert embeddings to FLOAT[512]** (from Python float64 to float32)
+  - **Option**: Use `get_embedding_for_duckdb()` utility for automatic conversion
   - Denormalize to `model_people`, `model_organizations`, `synonyms`, `attributes`, `tags` tables
 - `remove_entry()` - delete by ID (CASCADE handles denormalized tables)
 - Extract file hash and entry creation helpers
@@ -457,25 +519,47 @@ async def rebuild_index():
 - Min-max normalization
 
 ### Step 5: Implement semantic search (ALWAYS enabled)
-- Generate embeddings on insert/update using OpenAI text-embedding-3-small
-- HNSW approximate nearest neighbor query (L2 distance, convert to cosine similarity)
+- Generate embeddings using `settings.openai_embedding_model` with `settings.openai_embedding_dimensions` (512 dims)
+- Use same embedding configuration as anatomic location search for consistency
+- HNSW approximate nearest neighbor query using L2 distance (DuckDB default)
+- Convert L2 distance to cosine similarity: `cosine_sim = 1 - (l2_distance / 2)`
+- Use `array_distance(embedding, ?)` for HNSW-accelerated search
 - Embeddings are NOT NULL - semantic search is a core feature, not optional
 - Batch embed multiple queries in single OpenAI API call for efficiency
 
 ### Step 6: Implement hybrid fusion
-- Combine FTS and semantic results
-- Weighted scoring
-- Deduplication and sorting
+- Combine FTS and semantic results with weighted scoring
+- Min-max normalize BM25 scores before fusion
+- Weight: 0.3 * normalized_bm25 + 0.7 * cosine_similarity
+- Deduplication and sorting by hybrid score
+- **Option**: Use `normalize_scores()` and `weighted_fusion()` utilities if available
 
 ### Step 7: Implement validation
 - `validate_model()` - check for conflicts
 - `_check_attribute_id_conflicts()` - query `attributes` table for ID uniqueness
 - Check name, oifm_id, slug_name uniqueness in `finding_models` table
 
-### Step 8: Implement batch operations
-- `update_from_directory()` - scan directory, compare hashes
-- Use DuckDB transactions for batch inserts
-- `search_batch()` - **IMPORTANT**: Batch-embed ALL queries in single OpenAI API call for efficiency, then perform hybrid searches sequentially
+### Step 8: Implement batch operations with HNSW drop/rebuild strategy
+- `update_from_directory()` - **KEY OPTIMIZATION**:
+  1. Drop HNSW index: `DROP INDEX IF EXISTS finding_models_embedding_hnsw`
+  2. Do all updates in transaction:
+     ```python
+     self.conn.execute("BEGIN TRANSACTION")
+     try:
+         for file in files:
+             await self.add_or_update_entry_from_file(file)
+         self.conn.execute("COMMIT")
+     except Exception:
+         self.conn.execute("ROLLBACK")
+         raise
+     ```
+  3. Rebuild HNSW index: `CREATE INDEX ... USING HNSW (embedding)`
+  4. Optional: `VACUUM ANALYZE` for optimization
+- **Benefits**: No experimental persistence, no corruption risk, simpler logic
+- **Trade-off**: Index unavailable during rebuild (~5 seconds for hundreds of models)
+- `rebuild_index_from_directory()` - drop all data, rebuild from scratch (uses same pattern)
+- `search_batch()` - **IMPORTANT**: Batch-embed ALL queries in single OpenAI API call for efficiency
+- **Option**: Use `batch_embeddings_for_duckdb()` utility for automatic batching
 
 ### Step 9: Testing
 - Port existing `test_index.py` tests
@@ -516,8 +600,13 @@ duckdb_index_path: Path = Path("data/finding_models.duckdb")
 hybrid_search_bm25_weight: float = 0.3
 hybrid_search_semantic_weight: float = 0.7
 
+# Embedding configuration (use existing settings)
+# openai_embedding_model: str = "text-embedding-3-small" (already in config)
+# openai_embedding_dimensions: int = 512 (already in config, matches anatomic locations)
+
 # OpenAI key now REQUIRED (embeddings always generated for semantic search)
 # Configured via OPENAI_API_KEY environment variable
+# Note: OpenAI returns float64 embeddings; convert to float32 for DuckDB FLOAT[512]
 ```
 
 ## Benefits
@@ -525,7 +614,10 @@ hybrid_search_semantic_weight: float = 0.7
 **Simplicity:**
 - No MongoDB server setup required
 - Single `.duckdb` file storage
-- No async motor client complexity (just `duckdb.connect`)
+- Simpler connection management (synchronous `duckdb.connect` in async methods, matching existing pattern)
+- **Note**: DuckDB Python API is synchronous; async methods wrap sync calls (same as existing `duckdb_search.py`)
+- **No experimental HNSW persistence** - drop/rebuild strategy avoids corruption risks
+- Read-only connections by default (99% of usage)
 - Fewer dependencies (remove motor, pymongo)
 - Rebuild index from files anytime
 
@@ -566,13 +658,27 @@ hybrid_search_semantic_weight: float = 0.7
 
 ## Risks & Mitigations
 
+**Risk: HNSW index unavailable during batch updates**
+- **Impact**: Search unavailable for ~5 seconds during `update_from_directory()`
+- **Frequency**: Rare (only during batch updates)
+- **Mitigation**: 
+  - Batch updates are infrequent (development/maintenance only)
+  - Can show "updating index" message to users
+  - Could implement background update with old index serving reads
+  - No corruption risk - worst case is cancelled update, run again
+
+**Risk: ELIMINATED - No experimental HNSW persistence**
+- **Previous concern**: Experimental persistence could cause data loss
+- **Solution**: Drop/rebuild HNSW strategy completely avoids this
+- **Benefit**: Much safer, simpler, no special flags needed
+
 **Risk: Breaking existing code**
 - Mitigation: Keep same public API, use alias pattern
 - Run full test suite before merging
 
 **Risk: Embeddings are slow to generate**
-- Mitigation: Make optional, generate async in background
-- Cache embeddings, only regenerate if content changes
+- Mitigation: Cache embeddings, only regenerate if content changes
+- Use batch embedding API for multiple models
 
 **Risk: FTS index maintenance**
 - Mitigation: Rebuild FTS on setup (fast with DuckDB)
@@ -585,15 +691,26 @@ hybrid_search_semantic_weight: float = 0.7
 ## Success Criteria
 
 - [ ] All existing Index tests pass with new DuckDBIndex
-- [ ] All denormalized tables properly maintained (contributors, attributes, tags)
+- [ ] All denormalized tables properly maintained (contributors, attributes, tags, synonyms)
 - [ ] Hybrid search returns relevant results (manual verification with known queries)
 - [ ] Tag filtering works correctly in search
 - [ ] Attribute ID uniqueness validation works
 - [ ] Person and organization lookups work
+- [ ] Separate model_people and model_organizations tables work correctly
 - [ ] No MongoDB dependency in `pyproject.toml`
 - [ ] Search latency < 100ms for typical queries
 - [ ] HNSW semantic search faster than exact cosine similarity
 - [ ] Index can be rebuilt from directory of `*.fm.json` files
+- [ ] `rebuild_index_from_directory()` successfully recovers from corruption
+- [ ] Drop/rebuild HNSW strategy works in `update_from_directory()`
+- [ ] HNSW index rebuilt successfully after batch updates (< 10 seconds)
+- [ ] Read-only mode works by default (no writes possible)
+- [ ] Read-write mode works for batch updates
+- [ ] Batch embedding optimization works (single OpenAI API call for multiple queries)
+- [ ] FLOAT[512] embeddings properly stored and retrieved (matches anatomic location config)
+- [ ] Embedding generation uses config settings (model + dimensions)
+- [ ] FTS and VSS extensions load correctly on setup
+- [ ] No experimental persistence flags needed
 - [ ] Documentation updated
 - [ ] CLI commands work without changes
 
