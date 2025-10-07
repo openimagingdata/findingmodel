@@ -3,6 +3,7 @@ from loguru import logger as logger
 import findingmodel.tools as tools
 
 from .config import settings as settings
+from .duckdb_index import DuckDBIndex as DuckDBIndex
 from .finding_info import FindingInfo as FindingInfo
 from .finding_model import ChoiceAttribute as ChoiceAttribute
 from .finding_model import ChoiceAttributeIded as ChoiceAttributeIded
@@ -15,6 +16,7 @@ from .finding_model import NumericAttributeIded as NumericAttributeIded
 from .index_code import IndexCode as IndexCode
 
 __all__ = [
+    "DuckDBIndex",
     "FindingInfo",
     "FindingModelBase",
     "FindingModelFull",

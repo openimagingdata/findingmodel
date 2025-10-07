@@ -60,8 +60,14 @@ class FindingModelConfig(BaseSettings):
     duckdb_anatomic_path: str = Field(
         default="data/anatomic_locations.duckdb", description="Path to DuckDB database for anatomic locations"
     )
+    duckdb_index_path: str = Field(
+        default="data/finding_models.duckdb", description="Path to DuckDB database for finding model index"
+    )
     openai_embedding_model: str = Field(
         default="text-embedding-3-small", description="OpenAI model for generating embeddings"
+    )
+    openai_embedding_dimensions: int = Field(
+        default=512, description="Embedding dimensions (512 for text-embedding-3-small reduced, 1536 for full)"
     )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
