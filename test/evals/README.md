@@ -13,6 +13,10 @@ The evaluation suite tests the model editor's ability to:
 ## Structure
 
 - `test_model_editor_evals.py`: Main evaluation test file containing all test cases
+- `add_case_example.py`: Template examples for adding new test cases
+- `list_cases.py`: Utility script to list all available test cases
+- `README.md`: This documentation file
+- `IMPLEMENTATION.md`: Technical implementation summary
 
 ## Test Cases
 
@@ -61,6 +65,15 @@ pytest test/evals/test_model_editor_evals.py::test_single_successful_case -v
 ```bash
 cd test/evals
 python test_model_editor_evals.py
+```
+
+### List all available test cases:
+
+```bash
+cd test/evals
+python list_cases.py
+# Or make it executable and run directly
+./list_cases.py
 ```
 
 ## Adding New Test Cases
