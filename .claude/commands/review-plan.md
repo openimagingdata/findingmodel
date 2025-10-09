@@ -1,17 +1,15 @@
 ---
-description: 'Assess plan file for clarity, completeness, alignment with best practices, and technical currency'
-mode: agent
-model: GPT-5-Codex (Preview) (copilot)
-tools: ['edit', 'search', 'pylance mcp server/pylanceDocuments', 'pylance mcp server/pylanceFileSyntaxErrors', 'pylance mcp server/pylanceImports', 'pylance mcp server/pylanceInstalledTopLevelModules', 'pylance mcp server/pylanceInvokeRefactoring', 'pylance mcp server/pylancePythonEnvironments', 'pylance mcp server/pylanceRunCodeSnippet', 'pylance mcp server/pylanceSettings', 'pylance mcp server/pylanceSyntaxErrors', 'pylance mcp server/pylanceUpdatePythonEnvironment', 'pylance mcp server/pylanceWorkspaceRoots', 'pylance mcp server/pylanceWorkspaceUserFiles', 'pylance mcp server/pylanceDocuments', 'pylance mcp server/pylanceFileSyntaxErrors', 'pylance mcp server/pylanceImports', 'pylance mcp server/pylanceInstalledTopLevelModules', 'pylance mcp server/pylanceInvokeRefactoring', 'pylance mcp server/pylancePythonEnvironments', 'pylance mcp server/pylanceRunCodeSnippet', 'pylance mcp server/pylanceSettings', 'pylance mcp server/pylanceSyntaxErrors', 'pylance mcp server/pylanceUpdatePythonEnvironment', 'pylance mcp server/pylanceWorkspaceRoots', 'pylance mcp server/pylanceWorkspaceUserFiles', 'pylance mcp server/pylanceDocuments', 'pylance mcp server/pylanceFileSyntaxErrors', 'pylance mcp server/pylanceImports', 'pylance mcp server/pylanceInstalledTopLevelModules', 'pylance mcp server/pylanceInvokeRefactoring', 'pylance mcp server/pylancePythonEnvironments', 'pylance mcp server/pylanceRunCodeSnippet', 'pylance mcp server/pylanceSettings', 'pylance mcp server/pylanceSyntaxErrors', 'pylance mcp server/pylanceUpdatePythonEnvironment', 'pylance mcp server/pylanceWorkspaceRoots', 'pylance mcp server/pylanceWorkspaceUserFiles', 'ref/*', 'perplexity/search', 'serena/*', 'pylance mcp server/*', 'usages', 'think', 'changes', 'fetch', 'githubRepo', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'ms-python.python/installPythonPackage', 'ms-python.python/configurePythonEnvironment', 'ms-vscode.vscode-websearchforcopilot/websearch', 'todos']
+argument-hint: <plan-file-path>
+description: Assess plan file for clarity, completeness, alignment with best practices, and technical currency
 ---
 
 # Plan Review Assessment
 
 ## Context
 
-Plan to review: ${file}
+Plan to review: $1
 
-**Project standards:** Auto-loaded from `.github/copilot-instructions.md` and `CLAUDE.md` files.
+**Project standards:** Auto-loaded from CLAUDE.md and Serena memories.
 
 ## Review Process
 
@@ -43,7 +41,7 @@ Document relevant findings.
 ### Step 4: Technical Approach Validation
 
 **Alignment:**
-- Does approach align with `.github/copilot-instructions.md` standards?
+- Does approach align with CLAUDE.md standards?
 - Are patterns consistent with established practices?
 
 **Complexity (YAGNI):**
