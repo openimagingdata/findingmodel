@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from contextlib import suppress
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from types import TracebackType
@@ -12,11 +14,18 @@ import duckdb
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
+from findingmodel import logger
 from findingmodel.common import normalize_name
 from findingmodel.config import settings
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelFull
-from findingmodel.tools.duckdb_utils import get_embedding_for_duckdb, setup_duckdb_connection
+from findingmodel.tools.duckdb_utils import (
+    batch_embeddings_for_duckdb,
+    get_embedding_for_duckdb,
+    l2_to_cosine_similarity,
+    normalize_scores,
+    setup_duckdb_connection,
+)
 
 DEFAULT_CONTRIBUTOR_ROLE = "contributor"
 
@@ -61,6 +70,31 @@ class IndexReturnType(StrEnum):
     UNCHANGED = "unchanged"
 
 
+@dataclass(slots=True)
+class _BatchPayload:
+    model_rows: list[tuple[object, ...]]
+    synonym_rows: list[tuple[str, str]]
+    tag_rows: list[tuple[str, str]]
+    attribute_rows: list[tuple[str, str, str, str, str]]
+    people_rows: list[tuple[str, str, str, str, str | None]]
+    model_people_rows: list[tuple[str, str, str, int]]
+    organization_rows: list[tuple[str, str, str | None]]
+    model_organization_rows: list[tuple[str, str, str, int]]
+    ids_to_delete: list[str]
+
+
+@dataclass(slots=True)
+class _RowData:
+    model_rows: list[tuple[object, ...]]
+    synonym_rows: list[tuple[str, str]]
+    tag_rows: list[tuple[str, str]]
+    attribute_rows: list[tuple[str, str, str, str, str]]
+    people_rows: list[tuple[str, str, str, str, str | None]]
+    model_people_rows: list[tuple[str, str, str, int]]
+    organization_rows: list[tuple[str, str, str | None]]
+    model_organization_rows: list[tuple[str, str, str, int]]
+
+
 _SCHEMA_STATEMENTS: tuple[str, ...] = (
     """
     CREATE TABLE IF NOT EXISTS finding_models (
@@ -102,9 +136,7 @@ _SCHEMA_STATEMENTS: tuple[str, ...] = (
         person_id VARCHAR NOT NULL,
         role VARCHAR NOT NULL DEFAULT 'contributor',
         display_order INTEGER,
-        PRIMARY KEY (oifm_id, person_id, role),
-        FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE,
-        FOREIGN KEY (person_id) REFERENCES people(github_username) ON DELETE RESTRICT
+        PRIMARY KEY (oifm_id, person_id, role)
     )
     """,
     """
@@ -113,17 +145,14 @@ _SCHEMA_STATEMENTS: tuple[str, ...] = (
         organization_id VARCHAR NOT NULL,
         role VARCHAR NOT NULL DEFAULT 'contributor',
         display_order INTEGER,
-        PRIMARY KEY (oifm_id, organization_id, role),
-        FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE,
-        FOREIGN KEY (organization_id) REFERENCES organizations(code) ON DELETE RESTRICT
+        PRIMARY KEY (oifm_id, organization_id, role)
     )
     """,
     """
     CREATE TABLE IF NOT EXISTS synonyms (
         oifm_id VARCHAR NOT NULL,
         synonym VARCHAR NOT NULL,
-        PRIMARY KEY (oifm_id, synonym),
-        FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE
+        PRIMARY KEY (oifm_id, synonym)
     )
     """,
     """
@@ -132,16 +161,14 @@ _SCHEMA_STATEMENTS: tuple[str, ...] = (
         oifm_id VARCHAR NOT NULL,
         model_name VARCHAR NOT NULL,
         attribute_name VARCHAR NOT NULL,
-        attribute_type VARCHAR NOT NULL,
-        FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE
+        attribute_type VARCHAR NOT NULL
     )
     """,
     """
     CREATE TABLE IF NOT EXISTS tags (
         oifm_id VARCHAR NOT NULL,
         tag VARCHAR NOT NULL,
-        PRIMARY KEY (oifm_id, tag),
-        FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE
+        PRIMARY KEY (oifm_id, tag)
     )
     """,
 )
@@ -162,6 +189,18 @@ _INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_attributes_model ON attributes(oifm_id)",
     "CREATE INDEX IF NOT EXISTS idx_attributes_name ON attributes(attribute_name)",
 )
+
+_FTS_INDEX_STATEMENT = """
+PRAGMA create_fts_index(
+    'finding_models',
+    'oifm_id',
+    'search_text',
+    stemmer = 'porter',
+    stopwords = 'english',
+    lower = 1,
+    overwrite = 1
+)
+"""
 
 
 class DuckDBIndex:
@@ -185,6 +224,7 @@ class DuckDBIndex:
             conn.execute(statement)
         for statement in _INDEX_STATEMENTS:
             conn.execute(statement)
+        self._create_search_indexes(conn)
 
     async def __aenter__(self) -> DuckDBIndex:
         """Enter async context manager, ensuring a connection is available."""
@@ -298,14 +338,15 @@ class DuckDBIndex:
         if model is None:
             model = FindingModelFull.model_validate_json(file_path.read_text())
 
-        existing = conn.execute(
+        existing_rows = conn.execute(
             """
             SELECT oifm_id, file_hash_sha256
             FROM finding_models
             WHERE oifm_id = ? OR filename = ?
             """,
             (model.oifm_id, file_path.name),
-        ).fetchone()
+        ).fetchall()
+        existing = existing_rows[0] if existing_rows else None
 
         status = IndexReturnType.ADDED
         if existing is not None:
@@ -330,6 +371,8 @@ class DuckDBIndex:
 
         conn.execute("BEGIN TRANSACTION")
         try:
+            self._drop_search_indexes(conn)
+            self._delete_denormalized_records(conn, [row[0] for row in existing_rows])
             conn.execute(
                 "DELETE FROM finding_models WHERE oifm_id = ? OR filename = ?",
                 (model.oifm_id, file_path.name),
@@ -345,10 +388,9 @@ class DuckDBIndex:
                     file_hash_sha256,
                     description,
                     search_text,
-                    embedding,
-                    updated_at
+                    embedding
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     model.oifm_id,
@@ -370,9 +412,428 @@ class DuckDBIndex:
             conn.execute("COMMIT")
         except Exception:  # pragma: no cover - rollback path
             conn.execute("ROLLBACK")
+            self._create_search_indexes(conn)
             raise
 
+        self._create_search_indexes(conn)
+
         return status
+
+    def _collect_directory_files(self, directory: Path) -> list[tuple[str, str, Path]]:
+        files: list[tuple[str, str, Path]] = []
+        for file_path in sorted(directory.glob("*.fm.json")):
+            file_hash = self._calculate_file_hash(file_path)
+            files.append((file_path.name, file_hash, file_path))
+        return files
+
+    def _stage_directory_files(self, conn: duckdb.DuckDBPyConnection, files: Sequence[tuple[str, str, Path]]) -> None:
+        if not files:
+            return
+
+        values_clause = ", ".join(["(?, ?)"] * len(files))
+        params: list[str] = []
+        for filename, file_hash, _ in files:
+            params.extend([filename, file_hash])
+        conn.execute(f"INSERT INTO tmp_directory_files VALUES {values_clause}", params)
+
+    def _classify_directory_changes(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+    ) -> tuple[set[str], dict[str, str], set[str]]:
+        rows = conn.execute(
+            """
+            SELECT
+                dir.filename AS directory_filename,
+                dir.file_hash_sha256 AS directory_hash,
+                fm.oifm_id AS index_oifm_id,
+                fm.filename AS index_filename,
+                fm.file_hash_sha256 AS index_hash
+            FROM tmp_directory_files AS dir
+            FULL OUTER JOIN finding_models AS fm
+              ON dir.filename = fm.filename
+            """
+        ).fetchall()
+
+        added_filenames: set[str] = set()
+        updated_entries: dict[str, str] = {}
+        removed_ids: set[str] = set()
+
+        for dir_filename, dir_hash, index_oifm_id, index_filename, index_hash in rows:
+            if dir_filename is not None and index_filename is None:
+                added_filenames.add(str(dir_filename))
+            elif dir_filename is not None and index_filename is not None:
+                if dir_hash != index_hash and index_oifm_id is not None:
+                    updated_entries[str(dir_filename)] = str(index_oifm_id)
+            elif index_filename is not None and index_oifm_id is not None:
+                removed_ids.add(str(index_oifm_id))
+
+        return added_filenames, updated_entries, removed_ids
+
+    async def _prepare_batch_payload(
+        self,
+        filenames_to_process: Sequence[str],
+        files_by_name: Mapping[str, tuple[str, Path]],
+        updated_entries: Mapping[str, str],
+        removed_ids: Iterable[str],
+        *,
+        allow_duplicate_synonyms: bool = False,
+    ) -> _BatchPayload:
+        metadata, embedding_payloads = self._load_models_metadata(
+            filenames_to_process,
+            files_by_name,
+            allow_duplicate_synonyms=allow_duplicate_synonyms,
+        )
+        embeddings = await self._generate_embeddings(embedding_payloads)
+        row_data = self._build_row_data(metadata, embeddings)
+
+        ids_to_delete_set = set(removed_ids)
+        ids_to_delete_set.update(
+            updated_entries[filename]
+            for filename in filenames_to_process
+            if filename in updated_entries and updated_entries[filename] is not None
+        )
+
+        return _BatchPayload(
+            model_rows=row_data.model_rows,
+            synonym_rows=row_data.synonym_rows,
+            tag_rows=row_data.tag_rows,
+            attribute_rows=row_data.attribute_rows,
+            people_rows=row_data.people_rows,
+            model_people_rows=row_data.model_people_rows,
+            organization_rows=row_data.organization_rows,
+            model_organization_rows=row_data.model_organization_rows,
+            ids_to_delete=sorted(ids_to_delete_set),
+        )
+
+    def _execute_batch_directory_update(self, conn: duckdb.DuckDBPyConnection, payload: _BatchPayload) -> None:
+        if not payload.ids_to_delete and not payload.model_rows:
+            return
+
+        indexes_dropped = False
+        conn.execute("BEGIN TRANSACTION")
+        try:
+            self._drop_search_indexes(conn)
+            indexes_dropped = True
+            self._apply_batch_mutations(conn, payload)
+
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            if indexes_dropped:
+                self._create_search_indexes(conn)
+            raise
+
+        self._create_search_indexes(conn)
+
+    def _load_models_metadata(
+        self,
+        filenames_to_process: Sequence[str],
+        files_by_name: Mapping[str, tuple[str, Path]],
+        *,
+        allow_duplicate_synonyms: bool = False,
+    ) -> tuple[list[tuple[FindingModelFull, str, str, str]], list[str]]:
+        metadata: list[tuple[FindingModelFull, str, str, str]] = []
+        embedding_payloads: list[str] = []
+
+        for filename in filenames_to_process:
+            if filename not in files_by_name:
+                raise FileNotFoundError(f"File {filename} not found during directory ingestion")
+            file_hash, file_path = files_by_name[filename]
+            model = FindingModelFull.model_validate_json(file_path.read_text())
+            if not allow_duplicate_synonyms:
+                validation_errors = self._validate_model(model)
+                if validation_errors:
+                    joined = "; ".join(validation_errors)
+                    raise ValueError(f"Model validation failed for {filename}: {joined}")
+            search_text = self._build_search_text(model)
+            metadata.append((model, filename, file_hash, search_text))
+            embedding_payloads.append(self._build_embedding_text(model))
+
+        return metadata, embedding_payloads
+
+    async def _generate_embeddings(self, embedding_payloads: Sequence[str]) -> list[list[float]]:
+        if not embedding_payloads:
+            return []
+
+        client = await self._ensure_openai_client()
+        raw_embeddings = await batch_embeddings_for_duckdb(embedding_payloads, client=client)
+
+        embeddings: list[list[float]] = []
+        for embedding in raw_embeddings:
+            if embedding is None:
+                raise RuntimeError("Failed to generate embeddings for one or more models")
+            embeddings.append(embedding)
+        return embeddings
+
+    def _build_row_data(
+        self,
+        metadata: Sequence[tuple[FindingModelFull, str, str, str]],
+        embeddings: Sequence[list[float]],
+    ) -> _RowData:
+        model_rows: list[tuple[object, ...]] = []
+        synonym_rows: list[tuple[str, str]] = []
+        tag_rows: list[tuple[str, str]] = []
+        attribute_rows: list[tuple[str, str, str, str, str]] = []
+        people_rows_dict: dict[str, tuple[str, str, str, str, str | None]] = {}
+        model_people_rows: list[tuple[str, str, str, int]] = []
+        organization_rows_dict: dict[str, tuple[str, str, str | None]] = {}
+        model_organization_rows: list[tuple[str, str, str, int]] = []
+
+        for (model, filename, file_hash, search_text), embedding in zip(metadata, embeddings, strict=True):
+            model_rows.append((
+                model.oifm_id,
+                normalize_name(model.name),
+                model.name,
+                filename,
+                file_hash,
+                model.description,
+                search_text,
+                embedding,
+            ))
+
+            synonym_rows.extend((model.oifm_id, synonym) for synonym in model.synonyms or [])
+            tag_rows.extend((model.oifm_id, tag) for tag in model.tags or [])
+            attribute_rows.extend(
+                (
+                    attribute.oifma_id,
+                    model.oifm_id,
+                    model.name,
+                    attribute.name,
+                    str(attribute.type),
+                )
+                for attribute in model.attributes
+            )
+
+            for order, contributor in enumerate(model.contributors or []):
+                if isinstance(contributor, Person):
+                    people_rows_dict[contributor.github_username] = (
+                        contributor.github_username,
+                        contributor.name,
+                        str(contributor.email),
+                        contributor.organization_code,
+                        str(contributor.url) if contributor.url else None,
+                    )
+                    model_people_rows.append((
+                        model.oifm_id,
+                        contributor.github_username,
+                        DEFAULT_CONTRIBUTOR_ROLE,
+                        order,
+                    ))
+                elif isinstance(contributor, Organization):
+                    organization_rows_dict[contributor.code] = (
+                        contributor.code,
+                        contributor.name,
+                        str(contributor.url) if contributor.url else None,
+                    )
+                    model_organization_rows.append((
+                        model.oifm_id,
+                        contributor.code,
+                        DEFAULT_CONTRIBUTOR_ROLE,
+                        order,
+                    ))
+
+        return _RowData(
+            model_rows=model_rows,
+            synonym_rows=synonym_rows,
+            tag_rows=tag_rows,
+            attribute_rows=attribute_rows,
+            people_rows=list(people_rows_dict.values()),
+            model_people_rows=model_people_rows,
+            organization_rows=list(organization_rows_dict.values()),
+            model_organization_rows=model_organization_rows,
+        )
+
+    def _apply_batch_mutations(self, conn: duckdb.DuckDBPyConnection, payload: _BatchPayload) -> None:
+        if payload.ids_to_delete:
+            self._delete_denormalized_records(conn, payload.ids_to_delete)
+            placeholders = ", ".join(["?"] * len(payload.ids_to_delete))
+            conn.execute(
+                f"DELETE FROM finding_models WHERE oifm_id IN ({placeholders})",
+                payload.ids_to_delete,
+            )
+            logger.debug(
+                "Deleted {} existing models during batch apply: {}",
+                len(payload.ids_to_delete),
+                sorted(payload.ids_to_delete),
+            )
+
+        statements: list[tuple[str, str, str, Sequence[tuple[object, ...]]]] = [
+            (
+                "finding_models",
+                "inserted",
+                """
+                INSERT INTO finding_models (
+                    oifm_id,
+                    slug_name,
+                    name,
+                    filename,
+                    file_hash_sha256,
+                    description,
+                    search_text,
+                    embedding
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                payload.model_rows,
+            ),
+            (
+                "synonyms",
+                "inserted",
+                "INSERT INTO synonyms (oifm_id, synonym) VALUES (?, ?)",
+                payload.synonym_rows,
+            ),
+            (
+                "tags",
+                "inserted",
+                "INSERT INTO tags (oifm_id, tag) VALUES (?, ?)",
+                payload.tag_rows,
+            ),
+            (
+                "attributes",
+                "inserted",
+                """
+                INSERT INTO attributes (
+                    attribute_id,
+                    oifm_id,
+                    model_name,
+                    attribute_name,
+                    attribute_type
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                payload.attribute_rows,
+            ),
+            (
+                "people",
+                "upserted",
+                """
+                INSERT INTO people (
+                    github_username,
+                    name,
+                    email,
+                    organization_code,
+                    url
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT (github_username) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    email = EXCLUDED.email,
+                    organization_code = EXCLUDED.organization_code,
+                    url = EXCLUDED.url,
+                    updated_at = now()
+                """,
+                payload.people_rows,
+            ),
+            (
+                "model_people",
+                "upserted",
+                """
+                INSERT INTO model_people (oifm_id, person_id, role, display_order)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (oifm_id, person_id, role) DO UPDATE SET display_order = EXCLUDED.display_order
+                """,
+                payload.model_people_rows,
+            ),
+            (
+                "organizations",
+                "upserted",
+                """
+                INSERT INTO organizations (
+                    code,
+                    name,
+                    url
+                ) VALUES (?, ?, ?)
+                ON CONFLICT (code) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    url = EXCLUDED.url,
+                    updated_at = now()
+                """,
+                payload.organization_rows,
+            ),
+            (
+                "model_organizations",
+                "upserted",
+                """
+                INSERT INTO model_organizations (oifm_id, organization_id, role, display_order)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (oifm_id, organization_id, role) DO UPDATE SET display_order = EXCLUDED.display_order
+                """,
+                payload.model_organization_rows,
+            ),
+        ]
+
+        for table_name, action, statement, rows in statements:
+            if rows:
+                conn.executemany(statement, rows)
+                logger.debug(
+                    "Batch {} {} rows in {}",
+                    action,
+                    len(rows),
+                    table_name,
+                )
+
+    async def update_from_directory(
+        self,
+        directory: str | Path,
+        *,
+        allow_duplicate_synonyms: bool = False,
+    ) -> dict[str, int]:
+        """Batch-update the index to match the contents of a directory."""
+
+        directory_path = Path(directory).expanduser()
+        if not directory_path.is_dir():
+            raise ValueError(f"{directory_path} is not a valid directory.")
+
+        files = self._collect_directory_files(directory_path)
+        logger.info(
+            "Refreshing DuckDB index from {} ({} files)",
+            directory_path,
+            len(files),
+        )
+
+        conn = self._ensure_writable_connection()
+        await self.setup()
+
+        conn.execute("DROP TABLE IF EXISTS tmp_directory_files")
+        conn.execute("CREATE TEMP TABLE tmp_directory_files(filename TEXT, file_hash_sha256 TEXT)")
+
+        try:
+            self._stage_directory_files(conn, files)
+            added_filenames, updated_entries, removed_ids = self._classify_directory_changes(conn)
+            logger.debug(
+                "Directory diff computed for {}: added={} updated={} removed={}",
+                directory_path,
+                len(added_filenames),
+                len(updated_entries),
+                len(removed_ids),
+            )
+            if not added_filenames and not updated_entries and not removed_ids:
+                logger.info("DuckDB index already in sync with {}", directory_path)
+                return {"added": 0, "updated": 0, "removed": 0}
+
+            files_by_name = {filename: (file_hash, path) for filename, file_hash, path in files}
+            filenames_to_process = sorted(added_filenames | set(updated_entries.keys()))
+            payload = await self._prepare_batch_payload(
+                filenames_to_process,
+                files_by_name,
+                updated_entries,
+                removed_ids,
+                allow_duplicate_synonyms=allow_duplicate_synonyms,
+            )
+            self._execute_batch_directory_update(conn, payload)
+            logger.info(
+                "DuckDB index refreshed: added={} updated={} removed={}",
+                len(added_filenames),
+                len(updated_entries),
+                len(removed_ids),
+            )
+            return {
+                "added": len(added_filenames),
+                "updated": len(updated_entries),
+                "removed": len(removed_ids),
+            }
+        except Exception:
+            logger.exception("Failed to refresh DuckDB index from {}", directory_path)
+            raise
+        finally:
+            conn.execute("DROP TABLE IF EXISTS tmp_directory_files")
 
     async def remove_entry(self, oifm_id: str) -> bool:
         """Remove a finding model by ID."""
@@ -380,10 +841,20 @@ class DuckDBIndex:
         conn = self._ensure_writable_connection()
         await self.setup()
 
-        deleted = conn.execute(
-            "DELETE FROM finding_models WHERE oifm_id = ? RETURNING oifm_id",
-            (oifm_id,),
-        ).fetchone()
+        conn.execute("BEGIN TRANSACTION")
+        try:
+            self._drop_search_indexes(conn)
+            self._delete_denormalized_records(conn, [oifm_id])
+            deleted = conn.execute(
+                "DELETE FROM finding_models WHERE oifm_id = ? RETURNING oifm_id",
+                (oifm_id,),
+            ).fetchone()
+            conn.execute("COMMIT")
+        except Exception:  # pragma: no cover - rollback path
+            conn.execute("ROLLBACK")
+            self._create_search_indexes(conn)
+            raise
+        self._create_search_indexes(conn)
         return deleted is not None
 
     async def search(
@@ -399,7 +870,30 @@ class DuckDBIndex:
         exact_matches = self._search_exact(conn, query, tags=tags)
         if exact_matches:
             return exact_matches[:limit]
-        return []
+
+        fts_matches = self._search_fts(conn, query, limit=limit, tags=tags)
+        semantic_matches = await self._search_semantic(conn, query, limit=limit, tags=tags)
+
+        combined: list[IndexEntry] = []
+        seen: set[str] = set()
+
+        for entry, _ in fts_matches:
+            if entry.oifm_id in seen:
+                continue
+            combined.append(entry)
+            seen.add(entry.oifm_id)
+            if len(combined) >= limit:
+                return combined
+
+        for entry, _ in semantic_matches:
+            if entry.oifm_id in seen:
+                continue
+            combined.append(entry)
+            seen.add(entry.oifm_id)
+            if len(combined) >= limit:
+                break
+
+        return combined
 
     def _ensure_connection(self) -> duckdb.DuckDBPyConnection:
         if self.conn is None:
@@ -524,14 +1018,14 @@ class DuckDBIndex:
             if isinstance(contributor, Person):
                 conn.execute(
                     """
-                    INSERT INTO people (github_username, name, email, organization_code, url, updated_at)
-                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    INSERT INTO people (github_username, name, email, organization_code, url)
+                    VALUES (?, ?, ?, ?, ?)
                     ON CONFLICT (github_username) DO UPDATE SET
                         name = EXCLUDED.name,
                         email = EXCLUDED.email,
                         organization_code = EXCLUDED.organization_code,
                         url = EXCLUDED.url,
-                        updated_at = CURRENT_TIMESTAMP
+                        updated_at = CURRENT_TIMESTAMP()
                     """,
                     (
                         contributor.github_username,
@@ -552,12 +1046,12 @@ class DuckDBIndex:
             elif isinstance(contributor, Organization):
                 conn.execute(
                     """
-                    INSERT INTO organizations (code, name, url, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    INSERT INTO organizations (code, name, url)
+                    VALUES (?, ?, ?)
                     ON CONFLICT (code) DO UPDATE SET
                         name = EXCLUDED.name,
                         url = EXCLUDED.url,
-                        updated_at = CURRENT_TIMESTAMP
+                        updated_at = CURRENT_TIMESTAMP()
                     """,
                     (
                         contributor.code,
@@ -684,6 +1178,137 @@ class DuckDBIndex:
     def _entry_has_tags(self, entry: IndexEntry, tags: Sequence[str]) -> bool:
         entry_tags = set(entry.tags or [])
         return all(tag in entry_tags for tag in tags)
+
+    def _search_fts(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        query: str,
+        *,
+        limit: int,
+        tags: Sequence[str] | None = None,
+    ) -> list[tuple[IndexEntry, float]]:
+        rows = conn.execute(
+            """
+            WITH candidates AS (
+                SELECT
+                    f.oifm_id,
+                    fts_main_finding_models.match_bm25(f.oifm_id, ?) AS bm25_score
+                FROM finding_models AS f
+            )
+            SELECT oifm_id, bm25_score
+            FROM candidates
+            WHERE bm25_score IS NOT NULL
+            ORDER BY bm25_score DESC
+            LIMIT ?
+            """,
+            (query, limit * 3),
+        ).fetchall()
+
+        if not rows:
+            return []
+
+        entries: list[IndexEntry] = []
+        scores: list[float] = []
+        for oifm_id, score in rows:
+            entry = self._fetch_index_entry(conn, str(oifm_id))
+            if entry is None:
+                continue
+            if tags and not self._entry_has_tags(entry, tags):
+                continue
+            entries.append(entry)
+            scores.append(float(score))
+            if len(entries) >= limit:
+                break
+
+        if not entries:
+            return []
+
+        normalized_scores = normalize_scores(scores)
+        paired = list(zip(entries, normalized_scores, strict=True))
+        paired.sort(key=lambda item: item[1], reverse=True)
+        return [(entry, score) for entry, score in paired]
+
+    def _delete_denormalized_records(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        oifm_ids: Sequence[str],
+    ) -> None:
+        unique_ids = list(dict.fromkeys(oifm_ids))
+        if not unique_ids:
+            return
+
+        tables = ("model_people", "model_organizations", "synonyms", "attributes", "tags")
+        placeholders = ", ".join("?" for _ in unique_ids)
+        for table in tables:
+            conn.execute(
+                f"DELETE FROM {table} WHERE oifm_id IN ({placeholders})",
+                unique_ids,
+            )
+
+    def _create_search_indexes(self, conn: duckdb.DuckDBPyConnection) -> None:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS finding_models_embedding_hnsw ON finding_models USING HNSW (embedding)"
+        )
+        conn.execute(_FTS_INDEX_STATEMENT)
+
+    def _drop_search_indexes(self, conn: duckdb.DuckDBPyConnection) -> None:
+        with suppress(duckdb.Error):  # pragma: no cover - index already absent or extension missing
+            conn.execute("DROP INDEX IF EXISTS finding_models_embedding_hnsw")
+        with suppress(duckdb.Error):  # pragma: no cover - FTS index missing or extension unavailable
+            conn.execute("PRAGMA drop_fts_index('finding_models')")
+
+    async def _search_semantic(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        query: str,
+        *,
+        limit: int,
+        tags: Sequence[str] | None = None,
+    ) -> list[tuple[IndexEntry, float]]:
+        if limit <= 0:
+            return []
+
+        trimmed_query = query.strip()
+        if not trimmed_query:
+            return []
+
+        embedding = await get_embedding_for_duckdb(
+            trimmed_query,
+            client=await self._ensure_openai_client(),
+        )
+        if embedding is None:
+            return []
+
+        dimensions = settings.openai_embedding_dimensions
+        rows = conn.execute(
+            f"""
+            SELECT oifm_id, array_distance(embedding, CAST(? AS FLOAT[{dimensions}])) AS l2_distance
+            FROM finding_models
+            ORDER BY array_distance(embedding, CAST(? AS FLOAT[{dimensions}]))
+            LIMIT ?
+            """,
+            (embedding, embedding, limit * 3),
+        ).fetchall()
+
+        if not rows:
+            return []
+
+        entries: list[IndexEntry] = []
+        scores: list[float] = []
+        for oifm_id, l2_distance in rows:
+            entry = self._fetch_index_entry(conn, str(oifm_id))
+            if entry is None:
+                continue
+            if tags and not self._entry_has_tags(entry, tags):
+                continue
+            scores.append(l2_to_cosine_similarity(float(l2_distance)))
+            entries.append(entry)
+            if len(entries) >= limit:
+                break
+
+        paired = list(zip(entries, scores, strict=True))
+        paired.sort(key=lambda item: item[1], reverse=True)
+        return [(entry, score) for entry, score in paired]
 
 
 __all__ = [

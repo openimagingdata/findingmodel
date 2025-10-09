@@ -17,6 +17,8 @@ tasks:
 
   test-full:
     desc: "Test the findingmodel library"
+    env:
+      PYDANTIC_ALLOW_MODEL_REQUESTS: "1"
     cmds:
       - echo "Testing library (including call-outs)..."
       - uv run pytest -rs {{.CLI_ARGS}}

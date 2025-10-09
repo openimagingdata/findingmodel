@@ -31,6 +31,9 @@ def setup_duckdb_connection(
             connection.execute(f"INSTALL {extension}")
         connection.execute(f"LOAD {extension}")
 
+    if not read_only:
+        connection.execute("SET hnsw_enable_experimental_persistence = true")
+
     return connection
 
 

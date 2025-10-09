@@ -31,6 +31,8 @@ The Index class (`src/findingmodel/index.py`) is 789 lines handling:
 
 ## Schema Design
 
+**Updated 2025-10-08:** foreign key constraints were removed to simplify rebuilds. Integrity is enforced by the rebuild process, which always refreshes all denormalized tables before recreating indexes. Hybrid search indexes (FTS + HNSW) are dropped before any write and rebuilt afterward.
+
 **8 Tables:**
 1. `finding_models` - main model metadata with embeddings (NOT NULL)
 2. `people` - normalized person master data
@@ -95,11 +97,12 @@ CREATE INDEX idx_finding_models_slug_name ON finding_models(slug_name);  -- For 
 ```sql
 CREATE TABLE people (
     github_username VARCHAR PRIMARY KEY,
-    name VARCHAR,
-    email VARCHAR,
-    affiliation VARCHAR,
-    orcid VARCHAR,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    name VARCHAR NOT NULL,
+    email VARCHAR NOT NULL,
+    organization_code VARCHAR,
+    url VARCHAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -110,7 +113,8 @@ CREATE TABLE organizations (
     code VARCHAR PRIMARY KEY,  -- e.g., "MSFT", "ACR"
     name VARCHAR NOT NULL,
     url VARCHAR,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -118,13 +122,12 @@ CREATE TABLE organizations (
 
 ```sql
 CREATE TABLE model_people (
-    id INTEGER PRIMARY KEY,
-    oifm_id VARCHAR NOT NULL REFERENCES finding_models(oifm_id) ON DELETE CASCADE,
-    person_id VARCHAR NOT NULL REFERENCES people(github_username) ON DELETE RESTRICT,
-    role VARCHAR NOT NULL,  -- 'author', 'reviewer', 'maintainer'
+    oifm_id VARCHAR NOT NULL,
+    person_id VARCHAR NOT NULL,
+    role VARCHAR NOT NULL DEFAULT 'contributor',
     display_order INTEGER,
-    
-    UNIQUE(oifm_id, person_id, role)
+
+    PRIMARY KEY (oifm_id, person_id, role)
 );
 
 -- Index for quick "get all people for model" queries
@@ -138,13 +141,12 @@ CREATE INDEX idx_model_people_person ON model_people(person_id);
 
 ```sql
 CREATE TABLE model_organizations (
-    id INTEGER PRIMARY KEY,
-    oifm_id VARCHAR NOT NULL REFERENCES finding_models(oifm_id) ON DELETE CASCADE,
-    organization_id VARCHAR NOT NULL REFERENCES organizations(code) ON DELETE RESTRICT,
-    role VARCHAR NOT NULL,  -- 'author', 'reviewer', 'maintainer'
+    oifm_id VARCHAR NOT NULL,
+    organization_id VARCHAR NOT NULL,
+    role VARCHAR NOT NULL DEFAULT 'contributor',
     display_order INTEGER,
-    
-    UNIQUE(oifm_id, organization_id, role)
+
+    PRIMARY KEY (oifm_id, organization_id, role)
 );
 
 -- Index for quick "get all orgs for model" queries
@@ -160,8 +162,7 @@ CREATE INDEX idx_model_organizations_org ON model_organizations(organization_id)
 CREATE TABLE synonyms (
     oifm_id VARCHAR NOT NULL,
     synonym VARCHAR NOT NULL,
-    PRIMARY KEY (oifm_id, synonym),
-    FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE
+    PRIMARY KEY (oifm_id, synonym)
 );
 
 -- Index for quick "find model by synonym" queries (exact match lookup)
@@ -181,8 +182,7 @@ CREATE TABLE attributes (
     oifm_id VARCHAR NOT NULL,
     model_name VARCHAR NOT NULL,  -- Denormalized for quick lookup
     attribute_name VARCHAR NOT NULL,
-    attribute_type VARCHAR NOT NULL,  -- 'choice' or 'numeric'
-    FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE
+    attribute_type VARCHAR NOT NULL  -- 'choice' or 'numeric'
 );
 
 -- Index for quick "find model by attribute ID" queries (for validation)
@@ -198,8 +198,7 @@ CREATE INDEX idx_attributes_name ON attributes(attribute_name);
 CREATE TABLE tags (
     oifm_id VARCHAR NOT NULL,
     tag VARCHAR NOT NULL,
-    PRIMARY KEY (oifm_id, tag),
-    FOREIGN KEY (oifm_id) REFERENCES finding_models(oifm_id) ON DELETE CASCADE
+    PRIMARY KEY (oifm_id, tag)
 );
 
 -- Index for quick "find models with tag" queries
@@ -216,12 +215,12 @@ CREATE INDEX idx_tags_model ON tags(oifm_id);
   - `model_people` - link models to person contributors
   - `model_organizations` - link models to organization contributors
 - **Denormalized data tables** for fast lookups without joins:
-  - `synonyms` - exact match synonym lookups (also in search_text for FTS)
-  - `attributes` - attribute ID uniqueness validation, model ↔ attribute queries
-  - `tags` - fast tag filtering and model ↔ tag queries
+    - `synonyms` - exact match synonym lookups (also in search_text for FTS)
+    - `attributes` - attribute ID uniqueness validation, model ↔ attribute queries
+    - `tags` - fast tag filtering and model ↔ tag queries
 - **HNSW index** on embeddings ALWAYS populated for semantic search (core feature, not optional)
 - **FTS index** for BM25 text search on concatenated search_text
-- **Foreign keys** with CASCADE for automatic cleanup
+- **Manual cleanup** replaces FK cascades: denormalized tables are cleared in transactions before re-inserting rows
 - No attributes stored in main table - reconstructed from denormalized tables only when needed
 
 ### Index Strategy Summary
@@ -231,8 +230,7 @@ CREATE INDEX idx_tags_model ON tags(oifm_id);
 2. Unique constraints - `name`, `slug_name`, `filename` in `finding_models`
 3. FTS index - BM25 scoring on `search_text` in `finding_models`
 4. HNSW index - Vector similarity on `embedding` in `finding_models` (ALWAYS populated)
-5. Foreign key indexes - `oifm_id` columns in junction/denormalized tables (for CASCADE performance)
-6. Lookup indexes:
+5. Lookup indexes:
    - `synonyms(synonym)` - exact match synonym lookups
    - `tags(tag)` - filter models by tag
    - `model_people(person_id)` - find models by person contributor
@@ -245,7 +243,7 @@ CREATE INDEX idx_tags_model ON tags(oifm_id);
 - **HNSW** - semantic search (approximate nearest neighbor, much faster than exact) - core feature, always on
 - **Denormalized indexes** - eliminate joins for common queries (synonyms, tags, contributors, attributes)
 - **Separate contributor tables** - cleaner than polymorphic, better query performance
-- **Foreign key CASCADE** - automatic cleanup when models deleted
+- **Manual cleanup** - `_delete_denormalized_records` removes dependent rows before inserts/deletes
 
 ## Implementation Approach
 
@@ -274,7 +272,7 @@ class DuckDBIndex:
         """Add or update finding model from file, handling all denormalized tables."""
         
     async def remove_entry(self, oifm_id: str) -> None:
-        """Remove model and all denormalized data (CASCADE handles it)."""
+        """Remove model and all denormalized data (application clears tables before rebuild)."""
     
     # Search - enhanced with hybrid approach (semantic ALWAYS enabled)
     async def search(
@@ -503,7 +501,7 @@ async def search_models(query: str):
   - **Convert embeddings to FLOAT[512]** (from Python float64 to float32)
   - **Option**: Use `get_embedding_for_duckdb()` utility for automatic conversion
   - Denormalize to `model_people`, `model_organizations`, `synonyms`, `attributes`, `tags` tables
-- `remove_entry()` - delete by ID (CASCADE handles denormalized tables)
+- `remove_entry()` - delete by ID (manual helpers clear denormalized tables before commit)
 - Extract file hash and entry creation helpers
 - `get_person()`, `get_organization()` - lookups in normalized tables
 - `count()`, `count_people()`, `count_organizations()` - simple counts
@@ -540,26 +538,27 @@ async def search_models(query: str):
 - Check name, oifm_id, slug_name uniqueness in `finding_models` table
 
 ### Step 8: Implement batch operations with HNSW drop/rebuild strategy
-- `update_from_directory()` - **KEY OPTIMIZATION**:
-  1. Drop HNSW index: `DROP INDEX IF EXISTS finding_models_embedding_hnsw`
-  2. Do all updates in transaction:
-     ```python
-     self.conn.execute("BEGIN TRANSACTION")
-     try:
-         for file in files:
-             await self.add_or_update_entry_from_file(file)
-         self.conn.execute("COMMIT")
-     except Exception:
-         self.conn.execute("ROLLBACK")
-         raise
-     ```
-  3. Rebuild HNSW index: `CREATE INDEX ... USING HNSW (embedding)`
-  4. Optional: `VACUUM ANALYZE` for optimization
-- **Benefits**: No experimental persistence, no corruption risk, simpler logic
-- **Trade-off**: Index unavailable during rebuild (~5 seconds for hundreds of models)
-- `rebuild_index_from_directory()` - drop all data, rebuild from scratch (uses same pattern)
-- `search_batch()` - **IMPORTANT**: Batch-embed ALL queries in single OpenAI API call for efficiency
-- **Option**: Use `batch_embeddings_for_duckdb()` utility for automatic batching
+- `update_from_directory()` - **KEY OPTIMIZATION**. Directory ingestion pipeline:
+  1. Accept input directory (string or `Path`) and resolve to absolute `Path`.
+  2. Enumerate `*.fm.json` files, computing SHA-256 hash for each (reuse `_calculate_file_hash`).
+  3. Create a DuckDB temporary table `tmp_directory_files(filename TEXT, file_hash_sha256 TEXT)` and bulk insert filename/hash pairs (filenames stored relative to directory root for comparison).
+  4. Perform a `FULL OUTER JOIN` between `finding_models` and `tmp_directory_files` on filename to classify rows:
+      - `added`: rows where `tmp_directory_files.filename IS NOT NULL` and matching `finding_models.filename IS NULL`.
+      - `updated`: rows where both sides exist but hashes differ.
+      - `removed`: rows where `finding_models.filename IS NOT NULL` and matching `tmp_directory_files.filename IS NULL`.
+  5. Materialize three working tables (or CTE-driven result sets) representing the new, updated, and removed entries to drive batch actions.
+  6. Generate batch commands:
+      - Inserts: load and validate new files, stage payloads, and append to `finding_models` plus denormalized tables.
+      - Updates: reload affected files, mark rows for deletion via `_delete_denormalized_records`, then upsert fresh data.
+      - Deletes: queue `oifm_id` values for `_delete_denormalized_records` and base row deletion.
+  7. Wrap the batch in a single transaction:
+      - Drop `finding_models_embedding_hnsw` and `fts_main_finding_models` indexes up front.
+      - Execute queued deletes, updates, and inserts in deterministic order (deletes → updates → inserts).
+      - Recreate FTS and HNSW indexes after data changes complete.
+  8. Return a structured result object summarizing counts (`added`, `updated`, `removed`) and any validation errors.
+- `rebuild_index_from_directory()` - drop all data, rebuild from scratch (reuse step 8 pipeline but skip diff detection).
+- `search_batch()` - **IMPORTANT**: Batch-embed ALL queries in single OpenAI API call for efficiency.
+- **Option**: Use `batch_embeddings_for_duckdb()` utility for automatic batching.
 
 ### Step 9: Testing
 - Port existing `test_index.py` tests

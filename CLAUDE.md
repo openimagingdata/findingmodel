@@ -22,6 +22,7 @@ Claude Code must follow these instructions when working in this repository.
 - Protocol-based backend pattern documented in Serena `protocol_based_architecture_2025`; follow that interface when adding search providers.
 - AI workflow conventions rely on two-agent patterns and structured outputs—review Serena `ontology_concept_search_refactoring` and `anatomic_location_search_implementation` before refactoring those areas.
 - Mongo/JSONL index behaviour summarized in `project_state_january_2025` and `ontology_search_optimizations_2025` memories.
+- DuckDB index migration drops search indexes before any write, clears denormalized tables manually, and rebuilds HNSW/FTS afterward; no foreign keys remain (see Serena `index_duckdb_migration_decisions_2025`).
 
 ## 3. Coding standards (Serena `code_style_conventions`)
 
@@ -49,7 +50,7 @@ Claude Code must follow these instructions when working in this repository.
 
 ## 5. Workflow expectations
 
-- Follow `suggested_commands` memory for canonical dev commands and CLI usage (`python -m findingmodel ...`).
+- Follow `suggested_commands` memory for canonical dev commands and CLI usage (`uv run python -m findingmodel ...`).
 - Use `task_completion_checklist` when wrapping a feature or PR.
 - Prefer programmatic solutions before invoking LLMs; agents should perform judgment, not heavy data munging.
 - When adding features:

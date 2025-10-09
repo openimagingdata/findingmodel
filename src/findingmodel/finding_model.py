@@ -60,7 +60,6 @@ AttributeValueCode = Annotated[
 IndexCodeList = Annotated[
     list[IndexCode],
     Field(
-        default=None,
         description="References to concepts in standad ontologies to facilitate interoperability between systems.",
         min_length=1,
     ),
@@ -98,7 +97,6 @@ AttributeNameStr = Annotated[
 AttributeDescriptionStr = Annotated[
     str | None,
     Field(
-        default=None,
         description="A one-to-two sentence description of the attribute that might be included in a medical textbook",
         min_length=5,
         max_length=500,
@@ -108,7 +106,6 @@ AttributeDescriptionStr = Annotated[
 RequiredBool = Annotated[
     bool,
     Field(
-        default=False,
         description="Whether the attribute is used every time a radiologist describes the finding",
     ),
 ]
@@ -116,7 +113,6 @@ RequiredBool = Annotated[
 MaxSelectedInt = Annotated[
     int,
     Field(
-        default=1,
         description="The maximum number of values that can be selected for a choice attribute (defaults to 1).",
         ge=1,
     ),
@@ -199,7 +195,6 @@ ChoiceAttributeIded.__doc__ = ChoiceAttribute.__doc__
 MinimumNumeric = Annotated[
     int | float | None,
     Field(
-        default=None,
         description="The minimum value for the attribute.",
     ),
 ]
@@ -207,7 +202,6 @@ MinimumNumeric = Annotated[
 MaximumNumeric = Annotated[
     int | float | None,
     Field(
-        default=None,
         description="The maximum value for the attribute.",
     ),
 ]
@@ -215,7 +209,6 @@ MaximumNumeric = Annotated[
 UnitStr = Annotated[
     str | None,
     Field(
-        default=None,
         description="The unit of measure for the attribute",
     ),
 ]
@@ -288,7 +281,6 @@ DescriptionString = Annotated[
 SynonymSequence = Annotated[
     Sequence[str] | None,
     Field(
-        default=None,
         description="Other terms that might be used to describe the finding in a radiology report",
         min_length=1,
     ),
@@ -297,7 +289,6 @@ SynonymSequence = Annotated[
 TagSequence = Annotated[
     Sequence[str] | None,
     Field(
-        default=None,
         description="Tags that might be used to categorize the finding among other findings",
         min_length=1,
     ),

@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 import pytest
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
@@ -6,7 +8,15 @@ from findingmodel.finding_model import FindingModelFull
 from findingmodel.tools import model_editor
 from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID, IdManager
 
-models.ALLOW_MODEL_REQUESTS = False
+
+@pytest.fixture(autouse=True)
+def _disable_model_requests() -> Iterator[None]:
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = False
+    try:
+        yield
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
 
 
 @pytest.mark.asyncio
