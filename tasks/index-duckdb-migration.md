@@ -689,29 +689,36 @@ hybrid_search_semantic_weight: float = 0.7
 
 ## Success Criteria
 
-- [ ] All existing Index tests pass with new DuckDBIndex
-- [ ] All denormalized tables properly maintained (contributors, attributes, tags, synonyms)
-- [ ] Hybrid search returns relevant results (manual verification with known queries)
-- [ ] Tag filtering works correctly in search
-- [ ] Attribute ID uniqueness validation works
-- [ ] Person and organization lookups work
-- [ ] Separate model_people and model_organizations tables work correctly
-- [ ] No MongoDB dependency in `pyproject.toml`
-- [ ] Search latency < 100ms for typical queries
-- [ ] HNSW semantic search faster than exact cosine similarity
-- [ ] Index can be rebuilt from directory of `*.fm.json` files
-- [ ] `rebuild_index_from_directory()` successfully recovers from corruption
-- [ ] Drop/rebuild HNSW strategy works in `update_from_directory()`
-- [ ] HNSW index rebuilt successfully after batch updates (< 10 seconds)
-- [ ] Read-only mode works by default (no writes possible)
-- [ ] Read-write mode works for batch updates
-- [ ] Batch embedding optimization works (single OpenAI API call for multiple queries)
-- [ ] FLOAT[512] embeddings properly stored and retrieved (matches anatomic location config)
-- [ ] Embedding generation uses config settings (model + dimensions)
-- [ ] FTS and VSS extensions load correctly on setup
-- [ ] No experimental persistence flags needed
-- [ ] Documentation updated
-- [ ] CLI commands work without changes
+### Completed ✅
+- [x] DuckDBIndex class created with schema and indexes
+- [x] Core CRUD operations implemented (`get`, `contains`, `add_or_update_entry_from_file`, `remove_entry`)
+- [x] Person and organization lookups (`get_person`, `get_organization`)
+- [x] Count operations (`count`, `count_people`, `count_organizations`)
+- [x] Batch directory ingestion with hash-based diffing (`update_from_directory`)
+- [x] Denormalized tables maintained (contributors via `_upsert_contributors`, synonyms, tags, attributes)
+- [x] Separate model_people and model_organizations tables implemented
+- [x] Drop/rebuild HNSW strategy in batch updates (indexes dropped/recreated in transactions)
+- [x] FLOAT[512] embeddings generated and stored using config settings
+- [x] FTS and VSS extensions load correctly via `setup_duckdb_connection` utility
+- [x] Batch embedding generation using `batch_embeddings_for_duckdb` utility
+- [x] Read-only mode by default with explicit writable connection for updates
+- [x] Hybrid search implementation (exact match → FTS + semantic → weighted fusion)
+- [x] Semantic search using HNSW index with L2→cosine conversion
+- [x] Enhanced logging for batch operations (table names, row counts, deleted IDs)
+
+### In Progress 🔄
+- [ ] Comprehensive test coverage for `update_from_directory` (currently no DuckDB-specific tests)
+- [ ] Tag filtering in search queries (schema supports it, not yet implemented in search)
+- [ ] Attribute ID uniqueness validation (_validate_model needs implementation)
+
+### Not Started ❌
+- [ ] `search_batch()` method (batch queries with single embedding call)
+- [ ] All existing Index tests ported and passing
+- [ ] Search latency benchmarks (< 100ms target)
+- [ ] HNSW vs exact cosine performance comparison
+- [ ] MongoDB dependency removal from `pyproject.toml`
+- [ ] Documentation updates
+- [ ] CLI commands verification
 
 ## Clarifications Applied
 
