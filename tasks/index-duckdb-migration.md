@@ -1,24 +1,74 @@
-# Index DuckDB Migration Plan
+# Index DuckDB Migration Plan - Phase 1
+
+**Status**: 🔄 In Progress (70% complete)
+**Branch**: `refactor-index`
+**Phase**: 1 of 2 (Technology Migration)
 
 ## Goal
-Migrate the Index class from MongoDB to DuckDB with hybrid FTS + vector search, keeping the implementation simple and maintainable.
+Migrate the Index class from MongoDB to DuckDB with hybrid FTS + vector search. Phase 1 focuses on getting a working, tested implementation shipped. Phase 2 (see [tasks/refactoring/01-index-decomposition.md](tasks/refactoring/01-index-decomposition.md)) will decompose into focused classes.
 
-## Current State
+## Current State (2025-10-09)
 
-The Index class (`src/findingmodel/index.py`) is 789 lines handling:
-- MongoDB storage with 3 collections (index, people, organizations)
-- CRUD operations for finding models
-- Search by ID, name, or synonym
-- File-based batch updates
-- Validation and conflict detection
-- Basic text search
+### What's Done ✅
+**Implementation**: [src/findingmodel/duckdb_index.py](../src/findingmodel/duckdb_index.py) (1,319 lines, 47 methods)
 
-**Problems:**
-- Requires MongoDB server (additional infrastructure)
-- No semantic search capability
-- Text search is basic pattern matching
-- Complex async MongoDB client management
-- Over-engineered for simple lookup/search use case
+- ✅ Complete schema with 8 tables (finding_models + denormalized tables)
+- ✅ Core CRUD operations (get, contains, add_or_update_entry_from_file, remove_entry)
+- ✅ Hybrid search (exact match → FTS + semantic → weighted fusion)
+- ✅ Batch directory ingestion with hash-based diffing
+- ✅ Drop/rebuild HNSW strategy (no experimental persistence)
+- ✅ Separate model_people and model_organizations tables
+- ✅ DuckDB utilities extracted ([duckdb_utils.py](../src/findingmodel/tools/duckdb_utils.py))
+- ✅ Read-only mode by default
+- ✅ Enhanced logging for batch operations
+
+**Tests**: [test/test_duckdb_index.py](../test/test_duckdb_index.py) (230 lines, 4 tests)
+
+### What's Missing ❌
+
+**Code gaps:**
+- ❌ `search_batch()` method (batch embedding optimization)
+- ❌ Tag filtering in `search()` (schema supports it, not implemented)
+- ❌ `_validate_model()` implementation (currently a stub)
+
+**Test coverage:**
+- ❌ Only 4 tests vs 34 in MongoDB Index
+- ❌ No tests for `update_from_directory` batch logic
+- ❌ No tests for denormalized table integrity
+- ❌ No performance benchmarks
+
+**Integration:**
+- ❌ MongoDB Index still in use ([index.py](../src/findingmodel/index.py))
+- ❌ Config still has MongoDB settings
+- ❌ CLI commands not tested with DuckDB
+
+### Architectural Note
+DuckDBIndex is currently **monolithic** (same "god object" pattern as MongoDB Index). This is acceptable for Phase 1—we prioritize **getting it working and tested** over perfect architecture.
+
+**Phase 2** (separate effort, see [refactoring/01-index-decomposition.md](refactoring/01-index-decomposition.md)) will decompose BOTH MongoDB and DuckDB implementations into 5 focused classes (Repository, Validator, FileManager, SearchEngine, Facade). This should NOT block shipping Phase 1.
+
+## Why Phase 1 First?
+
+1. **Validate the technology choice** - Make sure DuckDB hybrid search works for real use cases
+2. **Get user feedback** - Learn if semantic search, hybrid weights, tag filtering are valuable
+3. **Reduce risk** - Don't combine technology migration + architectural refactoring in one PR
+4. **Ship value faster** - Better search capability available sooner
+5. **Refactor with confidence** - Once working end-to-end, we'll know exactly what abstractions make sense
+
+## TL;DR - What to Do Next
+
+**First**: Complete core functionality
+1. Implement 3 missing features: `search_batch()`, tag filtering, `validate_model()`
+2. Port all 34 tests from MongoDB Index + add DuckDB-specific tests
+
+**Then**: Integration
+1. **OPTIONAL**: Basic 2-class decomposition (search/data or read/write split)
+2. Replace MongoDB Index with DuckDB (rename files, update config)
+3. Integration testing (CLI, notebooks, performance)
+
+**Result**: Working DuckDB Index with hybrid search, 40+ tests, ready to merge
+
+**Phase 2** (later): Full 5-class decomposition of both backends (see [refactoring/01-index-decomposition.md](refactoring/01-index-decomposition.md))
 
 ## Target State
 
@@ -687,38 +737,167 @@ hybrid_search_semantic_weight: float = 0.7
 - Mitigation: Use read-only mode for searches, single writer pattern
 - Document limitations vs multi-writer MongoDB
 
-## Success Criteria
+## Phase 1 Completion Plan
 
-### Completed ✅
-- [x] DuckDBIndex class created with schema and indexes
-- [x] Core CRUD operations implemented (`get`, `contains`, `add_or_update_entry_from_file`, `remove_entry`)
-- [x] Person and organization lookups (`get_person`, `get_organization`)
-- [x] Count operations (`count`, `count_people`, `count_organizations`)
-- [x] Batch directory ingestion with hash-based diffing (`update_from_directory`)
-- [x] Denormalized tables maintained (contributors via `_upsert_contributors`, synonyms, tags, attributes)
-- [x] Separate model_people and model_organizations tables implemented
-- [x] Drop/rebuild HNSW strategy in batch updates (indexes dropped/recreated in transactions)
-- [x] FLOAT[512] embeddings generated and stored using config settings
-- [x] FTS and VSS extensions load correctly via `setup_duckdb_connection` utility
-- [x] Batch embedding generation using `batch_embeddings_for_duckdb` utility
-- [x] Read-only mode by default with explicit writable connection for updates
-- [x] Hybrid search implementation (exact match → FTS + semantic → weighted fusion)
-- [x] Semantic search using HNSW index with L2→cosine conversion
-- [x] Enhanced logging for batch operations (table names, row counts, deleted IDs)
+### Step 1: Implement Missing Features
+- [ ] **search_batch()**: Batch embedding optimization
+  ```python
+  async def search_batch(self, queries: list[str], limit: int = 10) -> dict[str, list[IndexEntry]]:
+      # Single OpenAI API call for all queries
+      embeddings = await batch_embeddings_for_duckdb(queries)
+      # Search with pre-computed embeddings
+      results = {}
+      for query, embedding in zip(queries, embeddings):
+          results[query] = await self._search_with_embedding(query, embedding, limit)
+      return results
+  ```
+- [ ] **Tag filtering in search()**: Add `tags: list[str] | None = None` parameter
+  - Use CTE to filter by tags: `WHERE tag IN (...) GROUP BY oifm_id HAVING COUNT(DISTINCT tag) = len(tags)`
+  - Apply to both FTS and semantic search CTEs
+- [ ] **validate_model()**: Implement proper validation
+  - Check OIFM ID uniqueness in finding_models
+  - Check name/slug_name uniqueness
+  - Check attribute ID conflicts in attributes table
+  - Return list of error messages
 
-### In Progress 🔄
-- [ ] Comprehensive test coverage for `update_from_directory` (currently no DuckDB-specific tests)
-- [ ] Tag filtering in search queries (schema supports it, not yet implemented in search)
-- [ ] Attribute ID uniqueness validation (_validate_model needs implementation)
+### Step 2: Port All Tests
+- [ ] Port all 34 tests from [test/test_index.py](../test/test_index.py)
+- [ ] Add DuckDB-specific tests:
+  - [ ] `update_from_directory` with add/update/delete scenarios
+  - [ ] Denormalized table integrity (synonyms, tags, attributes, contributors)
+  - [ ] HNSW index drop/rebuild during batch operations
+  - [ ] Tag filtering in search
+  - [ ] `search_batch()` batching behavior
+  - [ ] Validation (ID conflicts, name conflicts, attribute conflicts)
+- [ ] Add performance tests:
+  - [ ] Search latency < 100ms for typical queries
+  - [ ] Batch embedding optimization vs individual calls
+  - [ ] Directory sync with 100+ models
 
-### Not Started ❌
-- [ ] `search_batch()` method (batch queries with single embedding call)
-- [ ] All existing Index tests ported and passing
-- [ ] Search latency benchmarks (< 100ms target)
-- [ ] HNSW vs exact cosine performance comparison
-- [ ] MongoDB dependency removal from `pyproject.toml`
-- [ ] Documentation updates
-- [ ] CLI commands verification
+**Deliverable**: All tests passing (40+ tests total)
+
+### Step 3: OPTIONAL Basic Decomposition
+Split DuckDBIndex into **TWO focused classes** (not the full 5-class decomposition):
+
+**Option A: Read/Write Split** (Simplest)
+```python
+# src/findingmodel/duckdb_index_reader.py
+class DuckDBIndexReader:
+    """Read-only operations: get, search, count."""
+    def __init__(self, db_path: Path, read_only: bool = True)
+    async def get(self, id_or_name: str) -> IndexEntry | None
+    async def search(self, query: str, ...) -> list[IndexEntry]
+    async def search_batch(self, queries: list[str], ...) -> dict
+    async def count() -> int
+    # ~400 lines
+
+# src/findingmodel/duckdb_index_writer.py
+class DuckDBIndexWriter(DuckDBIndexReader):
+    """Write operations: add, update, remove, batch."""
+    def __init__(self, db_path: Path, read_only: bool = False)
+    async def add_or_update_entry_from_file(self, file: Path) -> tuple
+    async def remove_entry(self, oifm_id: str) -> None
+    async def update_from_directory(self, path: Path) -> dict
+    async def validate_model(self, model: FindingModelFull) -> list[str]
+    # ~900 lines
+
+# src/findingmodel/duckdb_index.py (facade)
+class DuckDBIndex(DuckDBIndexWriter):
+    """Backward-compatible facade."""
+    pass  # Inherits everything
+```
+
+**Option B: Search/Data Split** (Your suggestion)
+```python
+# src/findingmodel/duckdb_search_engine.py
+class DuckDBSearchEngine:
+    """All search operations."""
+    async def search(...) -> list[IndexEntry]
+    async def search_batch(...) -> dict
+    async def _search_exact(...) -> IndexEntry | None
+    async def _search_fts(...) -> list[tuple[str, float]]
+    async def _search_semantic(...) -> list[tuple[str, float]]
+    async def _hybrid_fusion(...) -> list[str]
+    # ~500 lines
+
+# src/findingmodel/duckdb_data_manager.py
+class DuckDBDataManager:
+    """All data loading/management."""
+    async def add_or_update_entry_from_file(...) -> tuple
+    async def update_from_directory(...) -> dict
+    async def remove_entry(...) -> None
+    async def validate_model(...) -> list[str]
+    # All the batch/denormalization helpers
+    # ~800 lines
+
+# src/findingmodel/duckdb_index.py (facade)
+class DuckDBIndex:
+    """Facade combining search + data."""
+    def __init__(self, db_path: Path, read_only: bool = True):
+        self.search_engine = DuckDBSearchEngine(db_path)
+        self.data_manager = DuckDBDataManager(db_path, read_only)
+
+    # Delegate methods
+    async def search(self, query: str, ...) -> list[IndexEntry]:
+        return await self.search_engine.search(query, ...)
+
+    async def update_from_directory(self, path: Path) -> dict:
+        return await self.data_manager.update_from_directory(path)
+    # ~200 lines of delegation
+```
+
+**Decision**: Choose Option A (simpler) OR Option B (cleaner separation) OR **skip** if too risky before shipping.
+
+### Step 4: Replace MongoDB Index
+- [ ] Rename `index.py` → `mongodb_index.py` (keep for reference)
+- [ ] Rename `duckdb_index.py` → `index.py`
+- [ ] Update `src/findingmodel/__init__.py`:
+  ```python
+  from findingmodel.index import DuckDBIndex as Index  # Alias for backward compat
+  ```
+- [ ] Update `config.py`:
+  - Remove MongoDB settings (uri, db, collections)
+  - Add `duckdb_index_path: Path = Path("data/finding_models.duckdb")`
+- [ ] Mark MongoDB dependencies as optional in `pyproject.toml`
+
+### Step 5: Integration Testing
+- [ ] Test CLI commands with DuckDB (`python -m findingmodel ...`)
+- [ ] Rebuild index from directory: `update_from_directory("path/to/models")`
+- [ ] Verify all existing notebooks/demos work
+- [ ] Performance benchmarks vs MongoDB (if comparable data available)
+
+**Deliverable**: Working DuckDB-based Index, all integration tests passing
+
+### Phase 1 Success Criteria ✅
+
+**Functionality**:
+- [x] DuckDBIndex class with complete schema and indexes
+- [x] Core CRUD (get, contains, add/update, remove, counts)
+- [x] Hybrid search (exact → FTS + semantic → fusion)
+- [x] Batch directory ingestion with hash diffing
+- [ ] **search_batch()** with batch embedding
+- [ ] **Tag filtering** in search
+- [ ] **validate_model()** implementation
+- [ ] **All 34+ tests ported and passing**
+
+**Quality**:
+- [x] Drop/rebuild HNSW strategy (no corruption risk)
+- [x] Read-only mode by default
+- [x] Enhanced logging
+- [ ] **Test coverage ≥ 90%**
+- [ ] **Search latency < 100ms**
+- [ ] **No regressions vs MongoDB Index**
+
+**Integration**:
+- [ ] **MongoDB Index replaced** (or deprecated with DuckDB as default)
+- [ ] **Config updated** (DuckDB path, no MongoDB)
+- [ ] **CLI commands verified**
+- [ ] **Documentation updated** (README, migration guide)
+
+**Optional** (can defer to Phase 2):
+- [ ] Basic decomposition (read/write or search/data split)
+- [ ] MongoDB dependencies removed from pyproject.toml
+- [ ] Performance comparison report
 
 ## Clarifications Applied
 

@@ -1,20 +1,40 @@
-# Index Class Decomposition Plan
+# Index Class Decomposition Plan - Phase 2
+
+**Status**: 📋 Planned (Phase 2 - not started)
+**Prerequisites**: Phase 1 DuckDB migration complete (see [../index-duckdb-migration.md](../index-duckdb-migration.md))
+**Scope**: Refactor BOTH MongoDB and DuckDB Index implementations
 
 ## Executive Summary
-The Index class in `src/findingmodel/index.py` has grown to 34+ methods with 700+ lines, violating Single Responsibility Principle. This refactoring will decompose it into 5 focused classes with clear responsibilities.
+Both Index implementations (MongoDB and DuckDB) are monolithic classes with 34-47 methods and 700-1,300 lines, violating Single Responsibility Principle. This Phase 2 refactoring will decompose them into 5 focused classes with clear responsibilities.
 
 **Impact**: 60% complexity reduction, improved testability, enables parallel development
 **Risk**: Medium - Core functionality used throughout codebase
-**Effort**: 1-2 weeks with incremental approach
+**Timing**: After Phase 1 (DuckDB migration) is complete and merged
 
-## Current State Analysis
+## Current State Analysis (Post-Phase 1)
 
-### Problems
-- **God Object**: 34 methods handling database, validation, file I/O, search, and batch operations
+### Two Monolithic Implementations
+
+**MongoDB Index** ([src/findingmodel/mongodb_index.py](../../src/findingmodel/index.py) - to be renamed):
+- 789 lines, 34 methods
+- God object handling database, validation, file I/O, search, batch operations
+- AsyncMotor MongoDB client management
+- Basic text search only
+
+**DuckDB Index** ([src/findingmodel/duckdb_index.py](../../src/findingmodel/duckdb_index.py)):
+- 1,319 lines, 47 methods
+- Same god object pattern
+- Hybrid search (FTS + vector embeddings)
+- Complex batch operations with denormalized tables
+- HNSW index management
+
+### Common Problems
+- **God Object**: Both implementations violate Single Responsibility Principle
 - **Deep Call Chains**: 5-level validation chains creating tight coupling
 - **Mixed Concerns**: Database operations intertwined with business logic
 - **Testing Difficulty**: Hard to mock or test individual responsibilities
-- **High Coupling**: 60+ calls to/from other modules based on PROJECT_INDEX analysis
+- **Code Duplication**: Similar patterns in both implementations (validation, file operations)
+- **High Coupling**: 60+ calls to/from other modules
 
 ### Key Methods by Responsibility
 ```python
@@ -47,30 +67,46 @@ The Index class in `src/findingmodel/index.py` has grown to 34+ methods with 700
 
 ## Target Architecture
 
-### Component Breakdown
+### Component Breakdown (Protocol-Based)
 
-#### 1. IndexRepository (Database Layer)
+#### 1. IndexRepository Protocol (Database Layer)
 ```python
-# src/findingmodel/index/repository.py
-class IndexRepository:
-    """Pure database operations for finding models."""
-    
-    def __init__(self, mongodb_uri: str, db_name: str, branch: str = "main")
-    async def setup_indexes() -> None
-    async def get_by_id(oifm_id: str) -> IndexEntry | None
-    async def get_by_name(name: str) -> IndexEntry | None
-    async def get_by_id_or_name_or_synonym(query: str) -> IndexEntry | None
-    async def count() -> int
-    async def count_people() -> int
-    async def count_organizations() -> int
-    async def get_person(github_username: str) -> Person | None
-    async def get_organization(code: str) -> Organization | None
-    async def insert_entry(entry: dict) -> str
-    async def update_entry(oifm_id: str, entry: dict) -> bool
-    async def delete_entry(oifm_id: str) -> bool
-    async def bulk_write(operations: list) -> BulkWriteResult
-    async def find(filter: dict, limit: int) -> list[IndexEntry]
-    async def get_all_validation_data() -> tuple[dict, dict, dict]
+# src/findingmodel/index/protocols.py
+from typing import Protocol
+
+class IndexRepositoryProtocol(Protocol):
+    """Protocol for database operations (backend-agnostic)."""
+
+    async def setup_indexes() -> None: ...
+    async def get_by_id(oifm_id: str) -> IndexEntry | None: ...
+    async def get_by_name(name: str) -> IndexEntry | None: ...
+    async def get_by_id_or_name_or_synonym(query: str) -> IndexEntry | None: ...
+    async def count() -> int: ...
+    async def count_people() -> int: ...
+    async def count_organizations() -> int: ...
+    async def get_person(github_username: str) -> Person | None: ...
+    async def get_organization(code: str) -> Organization | None: ...
+    async def insert_entry(entry: dict) -> str: ...
+    async def update_entry(oifm_id: str, entry: dict) -> bool: ...
+    async def delete_entry(oifm_id: str) -> bool: ...
+    async def find(filter: dict, limit: int) -> list[IndexEntry]: ...
+    async def get_all_validation_data() -> tuple[dict, dict, dict]: ...
+
+# Two implementations:
+
+# src/findingmodel/index/mongodb_repository.py
+class MongoDBRepository:
+    """MongoDB implementation of IndexRepositoryProtocol."""
+    def __init__(self, mongodb_uri: str, db_name: str):
+        # AsyncMotor client, collections
+        ...
+
+# src/findingmodel/index/duckdb_repository.py
+class DuckDBRepository:
+    """DuckDB implementation of IndexRepositoryProtocol."""
+    def __init__(self, db_path: Path, read_only: bool = True):
+        # DuckDB connection
+        ...
 ```
 
 #### 2. ModelValidator (Business Logic)
@@ -143,7 +179,49 @@ class Index:
     # ... other delegating methods
 ```
 
-## Implementation Plan
+## Alternative: Basic Decomposition (Phase 1.5)
+
+**If you want a simpler intermediate step before full decomposition**, consider a **2-class split** in Phase 1:
+
+### Option A: Read/Write Split
+```python
+# src/findingmodel/index/duckdb_index_reader.py (400 lines)
+class DuckDBIndexReader:
+    """Read-only operations."""
+    async def get(), search(), search_batch(), count()
+
+# src/findingmodel/index/duckdb_index_writer.py (900 lines)
+class DuckDBIndexWriter(DuckDBIndexReader):
+    """Write operations (inherits read)."""
+    async def add_or_update_entry_from_file(), update_from_directory(), validate_model()
+
+# Facade: class DuckDBIndex(DuckDBIndexWriter): pass
+```
+
+### Option B: Search/Data Split
+```python
+# src/findingmodel/index/duckdb_search_engine.py (500 lines)
+class DuckDBSearchEngine:
+    """All search operations."""
+
+# src/findingmodel/index/duckdb_data_manager.py (800 lines)
+class DuckDBDataManager:
+    """All data loading/management."""
+
+# Facade: combines both with delegation
+class DuckDBIndex:
+    def __init__(self):
+        self.search = DuckDBSearchEngine(...)
+        self.data = DuckDBDataManager(...)
+```
+
+**Pros**: Reduces complexity by 40-50%, easier to test
+**Cons**: Still not perfect, will need further refactoring in Phase 2
+**Recommendation**: Only do this in Phase 1 if it feels low-risk. Otherwise defer to Phase 2.
+
+---
+
+## Full Decomposition Implementation Plan (Phase 2)
 
 ### Phase 1: Setup Infrastructure (Day 1-2)
 1. Create new directory structure:
