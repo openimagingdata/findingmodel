@@ -864,8 +864,13 @@ class DuckDBIndex:
         limit: int = 10,
         tags: Sequence[str] | None = None,
     ) -> list[IndexEntry]:
-        """Search for finding models, returning exact matches if present."""
+        """Search for finding models, returning exact matches if present.
 
+        Args:
+            query: Search query string
+            limit: Maximum number of results to return
+            tags: Optional list of tags - models must have ALL specified tags
+        """
         conn = self._ensure_connection()
         exact_matches = self._search_exact(conn, query, tags=tags)
         if exact_matches:
@@ -894,6 +899,69 @@ class DuckDBIndex:
                 break
 
         return combined
+
+    async def search_batch(self, queries: list[str], *, limit: int = 10) -> dict[str, list[IndexEntry]]:
+        """Search multiple queries efficiently with single embedding call.
+
+        Embeds ALL queries in a single OpenAI API call for efficiency,
+        then performs hybrid search for each query.
+
+        Args:
+            queries: List of search query strings
+            limit: Maximum number of results per query
+
+        Returns:
+            Dictionary mapping each query string to its list of results
+        """
+        if not queries:
+            return {}
+
+        conn = self._ensure_connection()
+        client = await self._ensure_openai_client()
+
+        # Generate embeddings for all queries in a single batch API call
+        embeddings = await batch_embeddings_for_duckdb(queries, client=client)
+
+        results: dict[str, list[IndexEntry]] = {}
+        for query, embedding in zip(queries, embeddings, strict=True):
+            # Check for exact match first
+            exact_matches = self._search_exact(conn, query, tags=None)
+            if exact_matches:
+                results[query] = exact_matches[:limit]
+                continue
+
+            # Perform FTS search
+            fts_matches = self._search_fts(conn, query, limit=limit, tags=None)
+
+            # Perform semantic search using pre-generated embedding
+            semantic_matches: list[tuple[IndexEntry, float]] = []
+            if embedding is not None:
+                semantic_matches = self._search_semantic_with_embedding(conn, embedding, limit=limit, tags=None)
+
+            # Combine results
+            combined: list[IndexEntry] = []
+            seen: set[str] = set()
+
+            for entry, _ in fts_matches:
+                if entry.oifm_id in seen:
+                    continue
+                combined.append(entry)
+                seen.add(entry.oifm_id)
+                if len(combined) >= limit:
+                    break
+
+            if len(combined) < limit:
+                for entry, _ in semantic_matches:
+                    if entry.oifm_id in seen:
+                        continue
+                    combined.append(entry)
+                    seen.add(entry.oifm_id)
+                    if len(combined) >= limit:
+                        break
+
+            results[query] = combined
+
+        return results
 
     def _ensure_connection(self) -> duckdb.DuckDBPyConnection:
         if self.conn is None:
@@ -1145,10 +1213,63 @@ class DuckDBIndex:
         return "\n".join(part for part in parts if part)
 
     def _validate_model(self, model: FindingModelFull) -> list[str]:
-        """Placeholder until validation is ported in later steps."""
+        """Validate that a model can be added without conflicts.
 
-        _ = model
-        return []
+        Checks for uniqueness of OIFM ID, name, slug_name, and attribute IDs.
+        Returns a list of error messages (empty if valid).
+
+        Args:
+            model: The finding model to validate
+
+        Returns:
+            List of validation error messages (empty list means valid)
+        """
+        errors: list[str] = []
+        conn = self._ensure_connection()
+
+        # Check OIFM ID uniqueness
+        row = conn.execute(
+            "SELECT oifm_id FROM finding_models WHERE oifm_id = ?",
+            (model.oifm_id,),
+        ).fetchone()
+        if row is not None:
+            errors.append(f"OIFM ID '{model.oifm_id}' already exists")
+
+        # Check name uniqueness (case-insensitive)
+        row = conn.execute(
+            "SELECT name FROM finding_models WHERE LOWER(name) = LOWER(?) AND oifm_id != ?",
+            (model.name, model.oifm_id),
+        ).fetchone()
+        if row is not None:
+            errors.append(f"Name '{model.name}' already in use")
+
+        # Check slug_name uniqueness
+        slug_name = normalize_name(model.name)
+        row = conn.execute(
+            "SELECT slug_name FROM finding_models WHERE slug_name = ? AND oifm_id != ?",
+            (slug_name, model.oifm_id),
+        ).fetchone()
+        if row is not None:
+            errors.append(f"Slug name '{slug_name}' already in use")
+
+        # Check attribute ID conflicts (any attribute IDs already used by OTHER models)
+        if model.attributes:
+            attribute_ids = [attr.oifma_id for attr in model.attributes]
+            if attribute_ids:
+                placeholders = ", ".join("?" for _ in attribute_ids)
+                conflicting_rows = conn.execute(
+                    f"""
+                    SELECT attribute_id, model_name
+                    FROM attributes
+                    WHERE attribute_id IN ({placeholders})
+                      AND oifm_id != ?
+                    """,
+                    [*attribute_ids, model.oifm_id],
+                ).fetchall()
+                for attr_id, model_name in conflicting_rows:
+                    errors.append(f"Attribute ID '{attr_id}' already used by model '{model_name}'")
+
+        return errors
 
     def _calculate_file_hash(self, filename: Path) -> str:
         if not filename.exists() or not filename.is_file():
@@ -1265,6 +1386,8 @@ class DuckDBIndex:
         limit: int,
         tags: Sequence[str] | None = None,
     ) -> list[tuple[IndexEntry, float]]:
+        """Perform semantic search by generating embedding for query text."""
+
         if limit <= 0:
             return []
 
@@ -1277,6 +1400,32 @@ class DuckDBIndex:
             client=await self._ensure_openai_client(),
         )
         if embedding is None:
+            return []
+
+        return self._search_semantic_with_embedding(conn, embedding, limit=limit, tags=tags)
+
+    def _search_semantic_with_embedding(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        embedding: list[float],
+        *,
+        limit: int,
+        tags: Sequence[str] | None = None,
+    ) -> list[tuple[IndexEntry, float]]:
+        """Perform semantic search using a pre-computed embedding.
+
+        This is used by search_batch() to avoid redundant embedding generation.
+
+        Args:
+            conn: Active database connection
+            embedding: Pre-computed embedding vector
+            limit: Maximum number of results to return
+            tags: Optional list of tags - models must have ALL specified tags
+
+        Returns:
+            List of (IndexEntry, score) tuples sorted by descending similarity
+        """
+        if limit <= 0:
             return []
 
         dimensions = settings.openai_embedding_dimensions
