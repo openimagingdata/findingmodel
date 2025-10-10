@@ -128,3 +128,14 @@ def finding_info() -> FindingInfo:
         description="A test finding for testing.",
         synonyms=["test", "finding"],
     )
+
+
+@pytest.fixture
+def tmp_defs_path(tmp_path: Path) -> Path:
+    """Create a temporary path with test files copied from test/data/defs."""
+    import shutil
+
+    data_dir = Path(__file__).parent / "data" / "defs"
+    defs_path = tmp_path / "defs"
+    shutil.copytree(data_dir, defs_path)
+    return defs_path

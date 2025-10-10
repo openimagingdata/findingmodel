@@ -354,9 +354,14 @@ class DuckDBIndex:
             if existing[1] == file_hash and existing[0] == model.oifm_id:
                 return IndexReturnType.UNCHANGED
 
-        validation_errors = [] if allow_duplicate_synonyms else self._validate_model(model)
-        if validation_errors:
-            raise ValueError(f"Model validation failed: {'; '.join(validation_errors)}")
+        # Only validate for new models or when OIFM ID changes
+        # (updating same model with same ID shouldn't fail validation)
+        if existing is None or existing[0] != model.oifm_id:
+            validation_errors = [] if allow_duplicate_synonyms else self._validate_model(model)
+            if validation_errors:
+                raise ValueError(f"Model validation failed: {'; '.join(validation_errors)}")
+        else:
+            validation_errors = []
 
         embedding_payload = self._build_embedding_text(model)
         embedding = await get_embedding_for_duckdb(
@@ -481,6 +486,7 @@ class DuckDBIndex:
         metadata, embedding_payloads = self._load_models_metadata(
             filenames_to_process,
             files_by_name,
+            updated_entries,
             allow_duplicate_synonyms=allow_duplicate_synonyms,
         )
         embeddings = await self._generate_embeddings(embedding_payloads)
@@ -529,6 +535,7 @@ class DuckDBIndex:
         self,
         filenames_to_process: Sequence[str],
         files_by_name: Mapping[str, tuple[str, Path]],
+        updated_entries: Mapping[str, str],
         *,
         allow_duplicate_synonyms: bool = False,
     ) -> tuple[list[tuple[FindingModelFull, str, str, str]], list[str]]:
@@ -540,7 +547,8 @@ class DuckDBIndex:
                 raise FileNotFoundError(f"File {filename} not found during directory ingestion")
             file_hash, file_path = files_by_name[filename]
             model = FindingModelFull.model_validate_json(file_path.read_text())
-            if not allow_duplicate_synonyms:
+            # Only validate new models (not updates of existing models)
+            if filename not in updated_entries and not allow_duplicate_synonyms:
                 validation_errors = self._validate_model(model)
                 if validation_errors:
                     joined = "; ".join(validation_errors)
@@ -900,7 +908,7 @@ class DuckDBIndex:
 
         return combined
 
-    async def search_batch(self, queries: list[str], *, limit: int = 10) -> dict[str, list[IndexEntry]]:
+    async def search_batch(self, queries: list[str], *, limit: int = 10) -> dict[str, list[IndexEntry]]:  # noqa: C901
         """Search multiple queries efficiently with single embedding call.
 
         Embeds ALL queries in a single OpenAI API call for efficiency,
@@ -1093,7 +1101,7 @@ class DuckDBIndex:
                         email = EXCLUDED.email,
                         organization_code = EXCLUDED.organization_code,
                         url = EXCLUDED.url,
-                        updated_at = CURRENT_TIMESTAMP()
+                        updated_at = now()
                     """,
                     (
                         contributor.github_username,
@@ -1119,7 +1127,7 @@ class DuckDBIndex:
                     ON CONFLICT (code) DO UPDATE SET
                         name = EXCLUDED.name,
                         url = EXCLUDED.url,
-                        updated_at = CURRENT_TIMESTAMP()
+                        updated_at = now()
                     """,
                     (
                         contributor.code,
