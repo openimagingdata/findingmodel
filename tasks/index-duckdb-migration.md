@@ -943,9 +943,536 @@ class DuckDBIndex:
 
 ✅ **No Atlas Search**: Removed completely.
 
+## Phase 1.5: Optimization Opportunities (Before Integration)
+
+### Assessment Date: 2025-10-10
+
+Before proceeding with integration (Step 4), several high-value optimizations have been identified that will benefit both Phase 1 completion and future work.
+
+### 1. Embedding Cache System ⭐ HIGHEST PRIORITY
+
+**Current State**: ❌ No caching - every embedding regenerated on each operation
+**Problem**:
+- Expensive: Every embedding call costs money
+- Slow: Re-indexing regenerates ALL embeddings even for unchanged content
+- Wasteful: Both anatomic locations and finding models repeat work
+
+**Recommended Solution**: DuckDB-based embedding cache
+
+**Design**:
+```python
+# src/findingmodel/embedding_cache.py
+# New file: embeddings_cache.duckdb
+
+CREATE TABLE embedding_cache (
+    text_hash TEXT PRIMARY KEY,           -- SHA256 of input text
+    model TEXT NOT NULL,                  -- e.g., "text-embedding-3-small"
+    dimensions INTEGER NOT NULL,          -- 512 or 1536
+    embedding FLOAT[dimensions] NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_cache_model ON embedding_cache(model, dimensions);
+```
+
+**Benefits**:
+- ✅ Consistent with DuckDB-first architecture
+- ✅ Fast indexed lookups by hash
+- ✅ Shared between anatomic locations AND finding model indexes
+- ✅ Can be versioned/cleared by model or date
+- ✅ No additional dependencies
+- ✅ Massive cost savings on re-indexing
+
+**Integration Points**:
+- Wrap `get_embedding()` and `get_embeddings_batch()` in [tools/common.py:34-96](../src/findingmodel/tools/common.py)
+- Check cache before calling OpenAI API
+- Store misses after successful API calls
+- Use text hash (SHA256) as key for deterministic lookups
+
+**Implementation**:
+```python
+class EmbeddingCache:
+    """DuckDB-based cache for OpenAI embeddings."""
+
+    async def get_embedding(
+        self, text: str, model: str, dimensions: int
+    ) -> list[float] | None:
+        """Get cached embedding or None if not found."""
+        text_hash = hashlib.sha256(text.encode()).hexdigest()
+        # Query cache table
+
+    async def store_embedding(
+        self, text: str, model: str, dimensions: int, embedding: list[float]
+    ) -> None:
+        """Store embedding in cache."""
+        text_hash = hashlib.sha256(text.encode()).hexdigest()
+        # Insert or replace
+
+    async def get_embeddings_batch(
+        self, texts: list[str], model: str, dimensions: int
+    ) -> list[list[float] | None]:
+        """Get batch of embeddings, returning None for misses."""
+        # Bulk query for all hashes
+
+    async def store_embeddings_batch(
+        self, texts: list[str], model: str, dimensions: int,
+        embeddings: list[list[float]]
+    ) -> None:
+        """Store batch of embeddings."""
+        # Bulk insert
+```
+
+**Usage in tools/common.py**:
+```python
+_embedding_cache = EmbeddingCache()  # Module-level singleton
+
+async def get_embedding(
+    text: str, client: AsyncOpenAI | None = None,
+    model: str | None = None, dimensions: int = 512
+) -> list[float] | None:
+    """Get embedding with caching."""
+    resolved_model = model or settings.openai_embedding_model
+
+    # Check cache first
+    cached = await _embedding_cache.get_embedding(text, resolved_model, dimensions)
+    if cached is not None:
+        return cached
+
+    # Cache miss - call API
+    if not client:
+        client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+
+    response = await client.embeddings.create(
+        input=text, model=resolved_model, dimensions=dimensions
+    )
+    embedding = response.data[0].embedding
+
+    # Store in cache
+    await _embedding_cache.store_embedding(text, resolved_model, dimensions, embedding)
+    return embedding
+```
+
+### 2. CLI Commands for Index Management ⭐ HIGH PRIORITY
+
+**Current State**: ❌ No CLI commands for index building/updating
+**Need**: Make DuckDB index operations accessible via CLI
+
+**Recommended Commands**:
+```bash
+# Finding models index
+uv run python -m findingmodel index build <directory> [--output path.duckdb]
+uv run python -m findingmodel index update <directory> [--index path.duckdb]
+uv run python -m findingmodel index validate <directory>
+uv run python -m findingmodel index stats [--index path.duckdb]
+
+# Anatomic locations index
+uv run python -m findingmodel anatomic build <json_file> [--output path.duckdb]
+uv run python -m findingmodel anatomic update <json_file> [--index path.duckdb]
+uv run python -m findingmodel anatomic stats [--index path.duckdb]
+```
+
+**Implementation** in [cli.py](../src/findingmodel/cli.py):
+```python
+@cli.group()
+def index() -> None:
+    """Index management commands."""
+    pass
+
+@index.command()
+@click.argument("directory", type=click.Path(exists=True, path_type=Path))
+@click.option("--output", "-o", type=click.Path(), help="Output database path")
+def build(directory: Path, output: Path | None) -> None:
+    """Build finding model index from directory of *.fm.json files."""
+    console = Console()
+
+    async def _do_build():
+        db_path = output or settings.duckdb_index_path
+        console.print(f"[green]Building index at {db_path}")
+
+        async with DuckDBIndex(db_path=db_path, read_only=False) as idx:
+            await idx.setup()
+            result = await idx.update_from_directory(directory)
+
+            console.print(f"[green]✓ Added: {result['added']}")
+            console.print(f"[yellow]✓ Updated: {result['updated']}")
+            console.print(f"[red]✓ Removed: {result['removed']}")
+
+    asyncio.run(_do_build())
+
+@index.command()
+@click.argument("directory", type=click.Path(exists=True, path_type=Path))
+@click.option("--index", type=click.Path(), help="Database path")
+def update(directory: Path, index: Path | None) -> None:
+    """Update existing index from directory."""
+    # Similar to build, but expects existing database
+
+@index.command()
+@click.argument("directory", type=click.Path(exists=True, path_type=Path))
+def validate(directory: Path) -> None:
+    """Validate finding models without writing to index."""
+    # Load models and run validate_model() on each
+
+@index.command()
+@click.option("--index", type=click.Path(), help="Database path")
+def stats(index: Path | None) -> None:
+    """Show index statistics."""
+    # Print counts, schema info, index status
+```
+
+**Refactor anatomic migration script**:
+- Extract functions from [migrate_anatomic_to_duckdb.py](../notebooks/migrate_anatomic_to_duckdb.py) into reusable module
+- Add to CLI as `anatomic` command group
+
+### 3. Pooch Integration for Remote DuckDB Files
+
+**Current State**: ❌ Not used, not in dependencies
+**Value**: Auto-download pre-built DuckDB files instead of building locally
+
+**Benefits**:
+- ✅ Users don't need to build indexes on first use
+- ✅ Faster onboarding (download vs build+embed)
+- ✅ Centralized index updates (rebuild once, distribute to all)
+- ✅ Hash verification for integrity
+
+**Configuration additions** to [config.py](../src/findingmodel/config.py):
+```python
+# Remote index URLs (optional - fallback to local build if not set)
+duckdb_index_url: str | None = Field(
+    default=None,
+    description="URL to download pre-built finding models index (e.g., GitHub releases)"
+)
+duckdb_anatomic_url: str | None = Field(
+    default=None,
+    description="URL to download pre-built anatomic locations index"
+)
+```
+
+**Implementation pattern**:
+```python
+import pooch
+
+def get_index_path() -> Path:
+    """Get index path, downloading if needed."""
+    if settings.duckdb_index_url:
+        # Use pooch to download and cache
+        return pooch.retrieve(
+            url=settings.duckdb_index_url,
+            known_hash=None,  # Or fetch from manifest
+            path=settings.duckdb_index_path.parent,
+            fname=settings.duckdb_index_path.name,
+        )
+    return settings.duckdb_index_path
+```
+
+**Distribution pattern**:
+- Build index in CI/CD pipeline
+- Upload to GitHub releases or S3
+- Update config with URL
+- Users auto-download on first use
+
+**Add to pyproject.toml**:
+```toml
+[project.optional-dependencies]
+remote = ["pooch>=1.8.0"]
+```
+
+### 4. Extract Shared Validation Logic ⭐ QUICK WIN
+
+**Current State**: ~150 lines duplicated between DuckDBIndex and MongoDB Index
+
+**Duplicated validation** in:
+- [duckdb_index.py:1223-1279](../src/findingmodel/duckdb_index.py) - `_validate_model()`
+- [index.py:254-341](../src/findingmodel/index.py) - `_check_*_conflict()` methods
+- [tools/model_editor.py:359](../src/findingmodel/tools/model_editor.py) - `_validate_model_id()`
+
+**Should extract to**: `src/findingmodel/index_validation.py`
+
+**Proposed API**:
+```python
+# src/findingmodel/index_validation.py
+
+from typing import Protocol
+
+class ValidationContext(Protocol):
+    """Protocol for index implementations to provide validation data."""
+
+    async def get_existing_oifm_ids(self) -> set[str]:
+        """Get all existing OIFM IDs."""
+
+    async def get_existing_names(self) -> set[str]:
+        """Get all existing model names (normalized)."""
+
+    async def get_attribute_ids_by_model(self) -> dict[str, str]:
+        """Get mapping of attribute_id -> oifm_id."""
+
+def check_oifm_id_conflict(
+    model: FindingModelFull,
+    existing_ids: set[str],
+    allow_self: bool = False
+) -> list[str]:
+    """Check for OIFM ID conflicts."""
+    errors = []
+    if model.oifm_id in existing_ids:
+        if not (allow_self and existing_ids == {model.oifm_id}):
+            errors.append(f"OIFM ID {model.oifm_id} already exists")
+    return errors
+
+def check_name_conflict(
+    model: FindingModelFull,
+    existing_names: set[str],
+    allow_self: bool = False
+) -> list[str]:
+    """Check for name/slug conflicts."""
+    errors = []
+    normalized_name = normalize_name(model.name)
+    if normalized_name in existing_names:
+        if not (allow_self and existing_names == {normalized_name}):
+            errors.append(f"Name {model.name} already exists (normalized: {normalized_name})")
+    return errors
+
+def check_attribute_id_conflict(
+    model: FindingModelFull,
+    attribute_ids_by_model: dict[str, str],
+    allow_self: bool = False
+) -> list[str]:
+    """Check for attribute ID conflicts across models."""
+    errors = []
+    for attr in model.all_attributes():
+        if attr.attribute_id in attribute_ids_by_model:
+            existing_model = attribute_ids_by_model[attr.attribute_id]
+            if not (allow_self and existing_model == model.oifm_id):
+                errors.append(
+                    f"Attribute ID {attr.attribute_id} already used by {existing_model}"
+                )
+    return errors
+
+async def validate_finding_model(
+    model: FindingModelFull,
+    context: ValidationContext,
+    allow_self: bool = False
+) -> list[str]:
+    """Complete validation using protocol-based context."""
+    errors = []
+
+    # Gather data from context
+    existing_ids = await context.get_existing_oifm_ids()
+    existing_names = await context.get_existing_names()
+    attribute_map = await context.get_attribute_ids_by_model()
+
+    # Run checks
+    errors.extend(check_oifm_id_conflict(model, existing_ids, allow_self))
+    errors.extend(check_name_conflict(model, existing_names, allow_self))
+    errors.extend(check_attribute_id_conflict(model, attribute_map, allow_self))
+
+    return errors
+```
+
+**Usage in DuckDBIndex**:
+```python
+from findingmodel.index_validation import validate_finding_model, ValidationContext
+
+class DuckDBIndex:
+    # ... existing methods ...
+
+    # Implement protocol
+    async def get_existing_oifm_ids(self) -> set[str]:
+        """Get all OIFM IDs from database."""
+
+    async def get_existing_names(self) -> set[str]:
+        """Get all normalized names from database."""
+
+    async def get_attribute_ids_by_model(self) -> dict[str, str]:
+        """Get attribute_id -> oifm_id mapping from attributes table."""
+
+    def _validate_model(self, model: FindingModelFull) -> list[str]:
+        """Validate model using shared validation logic."""
+        return await validate_finding_model(model, self, allow_self=False)
+```
+
+**Benefits**:
+- ✅ DRY - single source of truth for validation
+- ✅ Testable - validate logic independent of index implementation
+- ✅ Reusable - works with any index backend (MongoDB, DuckDB, future)
+- ✅ Protocol-based - no tight coupling
+
+### 5. Enhanced DuckDB Utilities
+
+**Current State**: Some utilities extracted to [duckdb_utils.py](../src/findingmodel/tools/duckdb_utils.py)
+**Opportunity**: Extract more common patterns from anatomic migration script and index
+
+**Already extracted** ✅:
+- `setup_duckdb_connection()` - connection with extensions
+- `batch_embeddings_for_duckdb()` - batch embedding with float32 conversion
+- `normalize_scores()`, `weighted_fusion()`, `rrf_fusion()` - score combination
+- `l2_to_cosine_similarity()` - distance conversion
+
+**Could add**:
+```python
+# src/findingmodel/tools/duckdb_utils.py additions
+
+def create_hnsw_index(
+    conn: duckdb.DuckDBPyConnection,
+    table: str,
+    column: str,
+    index_name: str | None = None,
+    metric: str = "cosine",
+    ef_construction: int = 128,
+    ef_search: int = 64,
+    m: int = 16
+) -> None:
+    """Create HNSW vector index with standard parameters."""
+    name = index_name or f"idx_{table}_{column}_hnsw"
+    conn.execute(f"""
+        CREATE INDEX {name}
+        ON {table}
+        USING HNSW ({column})
+        WITH (metric = '{metric}', ef_construction = {ef_construction},
+              ef_search = {ef_search}, M = {m})
+    """)
+
+def drop_search_indexes(
+    conn: duckdb.DuckDBPyConnection,
+    table: str,
+    hnsw_index: str | None = None,
+    fts_index: str | None = None
+) -> None:
+    """Drop HNSW and FTS indexes for table."""
+    if hnsw_index:
+        conn.execute(f"DROP INDEX IF EXISTS {hnsw_index}")
+    if fts_index:
+        conn.execute(f"DROP INDEX IF EXISTS {fts_index}")
+
+def create_fts_index(
+    conn: duckdb.DuckDBPyConnection,
+    table: str,
+    id_column: str,
+    *text_columns: str,
+    stemmer: str = "porter",
+    stopwords: str = "english",
+    overwrite: bool = True
+) -> None:
+    """Create FTS index on text columns."""
+    columns_str = ", ".join([f"'{col}'" for col in text_columns])
+    conn.execute(f"""
+        PRAGMA create_fts_index(
+            '{table}',
+            '{id_column}',
+            {columns_str},
+            stemmer = '{stemmer}',
+            stopwords = '{stopwords}',
+            lower = 1,
+            overwrite = {1 if overwrite else 0}
+        )
+    """)
+
+def bulk_insert_with_validation(
+    conn: duckdb.DuckDBPyConnection,
+    table: str,
+    records: list[tuple],
+    columns: list[str]
+) -> tuple[int, int]:
+    """Bulk insert with error handling.
+
+    Returns:
+        Tuple of (successful_count, failed_count)
+    """
+    placeholders = ", ".join(["?" for _ in columns])
+    cols = ", ".join(columns)
+
+    try:
+        conn.executemany(
+            f"INSERT INTO {table} ({cols}) VALUES ({placeholders})",
+            records
+        )
+        return len(records), 0
+    except Exception as e:
+        # Fall back to individual inserts for error reporting
+        successful = 0
+        failed = 0
+        for record in records:
+            try:
+                conn.execute(
+                    f"INSERT INTO {table} ({cols}) VALUES ({placeholders})",
+                    record
+                )
+                successful += 1
+            except Exception:
+                failed += 1
+        return successful, failed
+```
+
+### 6. Extract Shared Data Models (Minor)
+
+**Current State**: Models duplicated in both index implementations
+
+**Duplicated**:
+- `IndexEntry` in both [index.py:26](../src/findingmodel/index.py) and [duckdb_index.py:41](../src/findingmodel/duckdb_index.py)
+- `AttributeInfo` in both files
+- `IndexReturnType` enum in both files
+
+**Should extract to**: `src/findingmodel/index_models.py`
+
+```python
+# src/findingmodel/index_models.py
+
+from enum import StrEnum
+from pydantic import BaseModel, Field
+
+class AttributeInfo(BaseModel):
+    """Basic information about an attribute."""
+    attribute_id: str
+    attribute_name: str
+    attribute_type: str  # 'choice' or 'numeric'
+
+class IndexEntry(BaseModel):
+    """Index entry for a finding model."""
+    oifm_id: str
+    name: str
+    slug_name: str
+    description: str | None = None
+    synonyms: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    attributes: list[AttributeInfo] = Field(default_factory=list)
+    contributors: list[Person | Organization] = Field(default_factory=list)
+    # ... other fields
+
+class IndexReturnType(StrEnum):
+    """Result type for index operations."""
+    ADDED = "added"
+    UPDATED = "updated"
+    UNCHANGED = "unchanged"
+```
+
+**Benefits**:
+- ✅ Single source of truth
+- ✅ Easier to maintain consistency
+- ✅ Shared between MongoDB and DuckDB implementations
+
+## Implementation Priority
+
+### Priority 1: Before Integration (Blocking)
+1. **Embedding Cache** - Enables fast re-indexing during development/testing
+2. **Extract Validation Logic** - Quick win, prevents further duplication
+3. **CLI Commands** - Makes index operations accessible for testing
+
+### Priority 2: With Integration (Recommended)
+4. **Pooch Integration** - Better user experience for distribution
+5. **Enhanced DuckDB Utils** - Cleanup and consolidation
+
+### Priority 3: After Integration (Nice to Have)
+6. **Extract Shared Models** - Cleanup, can be done incrementally
+
+## Next Steps
+
+After these optimizations, proceed with:
+- Step 4: Replace MongoDB Index (integration)
+- Step 5: Integration Testing
+- Phase 2: Full 5-class decomposition (separate effort)
+
 ## References
 
 - Research: Serena memory `duckdb_hybrid_search_research_2025`
 - Existing DuckDB implementation: `src/findingmodel/tools/duckdb_search.py`
 - Current Index: `src/findingmodel/index.py` (789 lines)
 - Test suite: `test/test_index.py` (635 lines, 34 tests)
+- Anatomic migration: `notebooks/migrate_anatomic_to_duckdb.py` (458 lines)
