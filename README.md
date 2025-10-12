@@ -28,15 +28,15 @@ Create a `.env` file with your API keys:
 ```bash
 # Required for AI features
 OPENAI_API_KEY=your_key_here
+# Optional for more detailed web lookups
 PERPLEXITY_API_KEY=your_key_here
 
 # Optional for enhanced ontology search
-LANCEDB_URI=your_lancedb_uri  # For vector search
-LANCEDB_API_KEY=your_key_here
 BIOONTOLOGY_API_KEY=your_key_here  # For BioOntology.org access
 
 # Optional for MongoDB indexing
 MONGODB_URI=mongodb://localhost:27017
+
 ```
 
 ## CLI
@@ -57,6 +57,20 @@ Commands:
 ```
 
 > **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API but not yet exposed as CLI commands. See the Tools section below for usage examples.
+
+### Pre-built Database Files
+
+The package uses DuckDB for high-performance search (anatomic locations and finding model index). For convenience, you can configure automatic download of pre-built databases by adding environment variables:
+
+```bash
+# Optional: in your .env file
+REMOTE_ANATOMIC_DB_URL=https://your-server.com/anatomic_locations.duckdb
+REMOTE_ANATOMIC_DB_HASH=sha256:your_hash_here
+REMOTE_INDEX_DB_URL=https://your-server.com/finding_models.duckdb
+REMOTE_INDEX_DB_HASH=sha256:your_hash_here
+```
+
+Files download automatically on first use and are cached in the package installation. Both URL and hash must be provided.
 
 ### Interactive Model Editing Demo
 

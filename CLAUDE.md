@@ -7,7 +7,7 @@ Claude Code must follow these instructions when working in this repository.
 - Keep the Serena MCP server connected; treat it as the source of truth.
 - **Look up context** with `read_memory` before inspecting files (start with `project_overview`, `code_style_conventions`, `suggested_commands`, `ai_assistant_usage_2025`).
 - **Explore code** using Serena tools (`find_symbol`, `search_for_pattern`, `get_symbols_overview`) rather than ad-hoc greps.
-- **Document discoveries** using `write_memory` (update `instruction_files_plan_2025` when guidance changes).
+- **Maintain reference system**: Update existing memories rather than creating new ones; consolidate related information into cohesive references (e.g., DuckDB download info goes in Index/anatomic location memories, not standalone). Keep memories compact and organized.
 - Do not create private scratch notes—Serena memories are mandatory so Copilot and Claude stay in sync.
 
 ## 1. Project snapshot (see Serena `project_overview`)
@@ -31,6 +31,8 @@ Claude Code must follow these instructions when working in this repository.
 - Naming: snake*case functions/vars, PascalCase classes, UPPER_SNAKE constants, OIFM IDs `OIFM*{SOURCE}\_{6_DIGITS}`.
 - Asynchronous operations: use async for IO-bound code; remove async if no awaits (RUF029).
 - Error handling: raise project exceptions (e.g., `ConfigurationError`), ensure cleanup with `try/finally`.
+- **YAGNI principle**: "You Aren't Going To Need It" - implement only what is required now, avoid speculative features, versioning, or complex abstractions until they're actually needed.
+- **Package data pattern**: use `importlib.resources.files('findingmodel') / 'data'` for package-internal data files; store under `src/findingmodel/data/` with `.gitignore` for large files.
 
 ## 4. Testing + QA (Serena `pydantic_ai_testing_best_practices`)
 

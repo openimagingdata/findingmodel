@@ -66,6 +66,29 @@
 - Consistent with anatomic location search pattern
 - FLOAT[512] embeddings from text-embedding-3-small (same as anatomic locations)
 
+### Remote Database Downloads (2025-10-11)
+**Decision**: Optional automatic download of pre-built DuckDB files via Pooch integration.
+**Configuration**:
+```python
+# In config.py
+duckdb_index_path: str = Field(default="finding_models.duckdb")  # filename only
+remote_index_db_url: str | None = Field(default=None)
+remote_index_db_hash: str | None = Field(default=None)
+```
+
+**Implementation**:
+- Uses `importlib.resources.files('findingmodel') / 'data'` to locate package data directory
+- Helper: `ensure_db_file(filename, url, hash)` downloads if missing and both URL/hash provided
+- Files cached in package installation directory
+- SHA256 verification via Pooch library
+- Explicit paths still honored (for dev/testing)
+
+**Rationale**:
+- Simplifies distribution (no need to bundle large DB files in package)
+- Users can opt-in to pre-built databases
+- Development still uses local builds
+- Follows YAGNI (simple config-driven downloads, no versioning/update checking)
+
 ## Two-Phase Approach (2025-10-09)
 
 ### Phase 1: Technology Migration (Current)
@@ -127,8 +150,10 @@
 
 **Remove**: All MongoDB settings (uri, db, collections, use_atlas_search)
 **Add**: 
-- duckdb_index_path: Path = Path("data/finding_models.duckdb")
+- duckdb_index_path: str = "finding_models.duckdb" (filename only, not full path)
 - hybrid_search_bm25_weight: float = 0.3
 - hybrid_search_semantic_weight: float = 0.7
+- remote_index_db_url: str | None = None (optional download URL)
+- remote_index_db_hash: str | None = None (optional SHA256 for verification)
 
 **Reuse**: openai_embedding_model, openai_embedding_dimensions (already in config)

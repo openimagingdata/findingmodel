@@ -20,7 +20,17 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
         Args:
             db_path: Path to DuckDB database (defaults to config setting)
         """
-        self.db_path = Path(db_path or settings.duckdb_anatomic_path)
+        if db_path:
+            self.db_path = Path(db_path)  # Honor explicit path
+        else:
+            # Use package data directory with optional download
+            from findingmodel.config import ensure_db_file
+
+            self.db_path = ensure_db_file(
+                settings.duckdb_anatomic_path,
+                settings.remote_anatomic_db_url,
+                settings.remote_anatomic_db_hash,
+            )
         self.conn: duckdb.DuckDBPyConnection | None = None
         self._openai_client: AsyncOpenAI | None = None
 

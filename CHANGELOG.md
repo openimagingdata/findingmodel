@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Remote database downloads**: Optional automatic download of pre-built DuckDB database files
+  - Configure via environment variables: `REMOTE_ANATOMIC_DB_URL`, `REMOTE_ANATOMIC_DB_HASH`, `REMOTE_INDEX_DB_URL`, `REMOTE_INDEX_DB_HASH`
+  - Files download automatically on first use with SHA256 verification
+  - Cached in package installation for subsequent use
+
 ## [0.4.0] - 2025-09-26
 
 ### Added

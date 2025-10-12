@@ -1,7 +1,7 @@
 # Anatomic Location Search Implementation
 
 ## Overview
-Successfully implemented a two-agent Pydantic AI tool for finding anatomic locations for medical imaging findings. This tool searches across multiple ontology databases (anatomic_locations, radlex, snomedct) using LanceDB hybrid search.
+Successfully implemented a two-agent Pydantic AI tool for finding anatomic locations for medical imaging findings. This tool searches across multiple ontology databases (anatomic_locations, radlex, snomedct) using DuckDB hybrid search.
 
 ## Architecture Decisions
 
@@ -9,8 +9,31 @@ Successfully implemented a two-agent Pydantic AI tool for finding anatomic locat
 - **Search Agent**: Generates diverse search queries and gathers results from ontology databases (uses smaller model for efficiency)
 - **Matching Agent**: Analyzes results and selects best primary and alternate locations based on clinical relevance and specificity (uses larger model for nuanced decisions)
 
+### DuckDB Backend (2025-09)
+- Replaced LanceDB with DuckDB for anatomic location search
+- Uses HNSW vector indexing for semantic search
+- BM25 full-text search on descriptions/synonyms
+- Hybrid search with RRF (Reciprocal Rank Fusion)
+- Exact match detection with priority (score=1.0)
+
+### Remote Database Downloads (2025-10-11)
+**Configuration**:
+```python
+# In config.py
+duckdb_anatomic_path: str = Field(default="anatomic_locations.duckdb")  # filename only
+remote_anatomic_db_url: str | None = Field(default=None)
+remote_anatomic_db_hash: str | None = Field(default=None)
+```
+
+**Implementation**:
+- Uses `importlib.resources.files('findingmodel') / 'data'` to locate package data directory
+- Helper: `ensure_db_file(filename, url, hash)` downloads if missing and both URL/hash provided
+- Files cached in package installation directory
+- SHA256 verification via Pooch library
+- Explicit paths still honored (for dev/testing)
+
 ### Reusable Components
-- **OntologySearchClient**: Production-ready LanceDB client with proper connection lifecycle management
+- **DuckDBOntologySearchClient**: Production-ready DuckDB client with proper connection lifecycle management
 - **OntologySearchResult**: Standardized model for ontology search results with conversion to IndexCode
 - **get_openai_model()**: Centralized in common.py for use by all AI tools
 
@@ -36,7 +59,8 @@ Successfully implemented a two-agent Pydantic AI tool for finding anatomic locat
 - Graceful handling of empty search results
 
 ### Configuration
-- Optional LanceDB configuration: LANCEDB_URI, LANCEDB_API_KEY
+- DuckDB database path configurable: DUCKDB_ANATOMIC_PATH
+- Optional remote download: REMOTE_ANATOMIC_DB_URL, REMOTE_ANATOMIC_DB_HASH
 - Uses existing settings pattern from config.py
 - Falls back to environment variables if not in settings
 
@@ -44,9 +68,10 @@ Successfully implemented a two-agent Pydantic AI tool for finding anatomic locat
 
 ### What Worked Well
 - Two-agent architecture provides clear separation of concerns
-- Reusable components (OntologySearchClient) can be used by other tools
+- Reusable components (DuckDBOntologySearchClient) can be used by other tools
 - Dependency injection with SearchContext makes testing easier
 - Comprehensive logging helps debug production issues
+- DuckDB provides excellent performance with simpler deployment than LanceDB
 
 ### Testing Improvements
 - Shifting from mocking everything to using TestModel/FunctionModel made tests more meaningful
@@ -59,6 +84,6 @@ Successfully implemented a two-agent Pydantic AI tool for finding anatomic locat
 - Uses centralized get_openai_model() from common.py
 
 ## Future Considerations
-- OntologySearchClient could be extended for other ontology-based searches
+- DuckDBOntologySearchClient could be extended for other ontology-based searches
 - Two-agent pattern could be applied to other complex AI tools
 - Consider adding caching for frequently searched terms

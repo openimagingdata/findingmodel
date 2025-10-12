@@ -63,3 +63,11 @@
 **See**: `tasks/duckdb-common-patterns.md` for detailed analysis and plan
 
 **Priority**: Medium (do during or after Index implementation)
+
+---
+
+## Remove Cohere references
+
+**Related to**: Various search tools
+
+**Goal**: Cohere isn't worth it, let's make sure we remove all code and the configuration optiosn

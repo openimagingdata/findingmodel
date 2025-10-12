@@ -207,7 +207,17 @@ class DuckDBIndex:
     """DuckDB-based index with read-only connections by default."""
 
     def __init__(self, db_path: str | Path | None = None, *, read_only: bool = True) -> None:
-        self.db_path = Path(db_path or settings.duckdb_index_path).expanduser()
+        if db_path:
+            self.db_path = Path(db_path).expanduser()  # Honor explicit path
+        else:
+            # Use package data directory with optional download
+            from findingmodel.config import ensure_db_file
+
+            self.db_path = ensure_db_file(
+                settings.duckdb_index_path,
+                settings.remote_index_db_url,
+                settings.remote_index_db_hash,
+            )
         self.read_only = read_only
         self.conn: duckdb.DuckDBPyConnection | None = None
         self._openai_client: AsyncOpenAI | None = None
