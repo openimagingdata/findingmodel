@@ -49,12 +49,48 @@ Options:
   --help  Show this message and exit.
 
 Commands:
+  anatomic         Manage anatomic location database.
   config           Show the currently active configuration.
   fm-to-markdown   Convert finding model JSON file to Markdown format.
   make-info        Generate description/synonyms and more...
   make-stub-model  Generate a simple finding model object (presence and...
   markdown-to-fm   Convert markdown file to finding model format.
 ```
+
+### Anatomic Location Management
+
+Build and manage the DuckDB anatomic location database:
+
+```bash
+# Build database from default URL
+python -m findingmodel anatomic build
+
+# Build from local file with force overwrite
+python -m findingmodel anatomic build --source /path/to/anatomic_locations.json --force
+
+# Build with custom output path
+python -m findingmodel anatomic build --output /custom/path/anatomic.duckdb
+
+# Validate data without building database
+python -m findingmodel anatomic validate --source https://example.com/data.json
+
+# Show database statistics
+python -m findingmodel anatomic stats
+
+# Stats for custom database path
+python -m findingmodel anatomic stats --db-path /custom/path/anatomic.duckdb
+```
+
+**Commands:**
+- `anatomic build`: Download/load anatomic location data, generate embeddings, create searchable DuckDB database
+- `anatomic validate`: Validate anatomic location data without creating database (checks required fields)
+- `anatomic stats`: Display database statistics (total records, vector count, region distribution, file size)
+
+**Options:**
+- `--source`: URL or file path to anatomic locations JSON (defaults to official repository)
+- `--output`: Database output path (defaults to `anatomic_locations.duckdb` in package data)
+- `--force`: Overwrite existing database without prompting
+- `--db-path`: Path to database for stats command
 
 > **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API but not yet exposed as CLI commands. See the Tools section below for usage examples.
 

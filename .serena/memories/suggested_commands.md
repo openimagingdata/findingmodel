@@ -41,6 +41,15 @@ The package provides a CLI accessible via:
 - `python -m findingmodel edit-model model.json` - AI-powered model editor (natural language and markdown)
 - `python -m findingmodel validate-model model.json` - Validate model integrity and clinical accuracy
 
+### Anatomic Location Management (2025-10-13)
+- `python -m findingmodel anatomic build` - Build anatomic location database from default URL
+- `python -m findingmodel anatomic build --source FILE|URL` - Build from custom source
+- `python -m findingmodel anatomic build --force` - Overwrite existing database
+- `python -m findingmodel anatomic build --output PATH` - Custom output path
+- `python -m findingmodel anatomic validate --source FILE|URL` - Validate data without building
+- `python -m findingmodel anatomic stats` - Show database statistics
+- `python -m findingmodel anatomic stats --db-path PATH` - Stats for custom database path
+
 ## Git Commands (Darwin/macOS)
 - `git status` - Check repository status
 - `git diff` - View unstaged changes

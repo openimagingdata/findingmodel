@@ -1,0 +1,2798 @@
+[
+  {
+    "_id": "RID10021",
+    "acrCommonId": "4013944",
+    "snomedId": "81502006",
+    "snomedDisplay": "Hypopharyngeal structure",
+    "description": "hypopharynx",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID7488",
+      "display": "neck"
+    },
+    "synonyms": [
+      "laryngopharynx"
+    ],
+    "partOfRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "54880"
+      },
+      {
+        "system": "MESH",
+        "code": "A14.724.490"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0014540"
+      }
+    ],
+    "definition": "The portion of the pharynx between the inferior portion of the oropharynx and the larynx. [MeSH]"
+  },
+  {
+    "_id": "RID10010",
+    "acrCommonId": "4014667",
+    "snomedId": "75573002",
+    "snomedDisplay": "Palatine tonsillar structure",
+    "description": "palatine tonsil",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "partOfRef": {
+      "id": "RID10010",
+      "display": "palatine tonsil"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10010",
+        "display": "palatine tonsil"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10010_RID5824",
+      "display": "left palatine tonsil"
+    },
+    "rightRef": {
+      "id": "RID10010_RID5825",
+      "display": "right palatine tonsil"
+    },
+    "definition": "A round-to-oval mass of lymphoid tissue embedded in the lateral wall of the pharynx situated on each side of the fauces, between the anterior and posterior pillars of the soft palate (palate, soft). [MeSH]"
+  },
+  {
+    "_id": "RID10010_RID5825",
+    "snomedId": "1721005",
+    "snomedDisplay": "Right faucial tonsil structure",
+    "description": "right palatine tonsil",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "partOfRef": {
+      "id": "RID10010_RID5825",
+      "display": "right palatine tonsil"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10010_RID5825",
+        "display": "right palatine tonsil"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10010_RID5824",
+      "display": "left palatine tonsil"
+    },
+    "unsidedRef": {
+      "id": "RID10010",
+      "display": "palatine tonsil"
+    }
+  },
+  {
+    "_id": "RID10008",
+    "acrCommonId": "4014448",
+    "snomedId": "2048000",
+    "snomedDisplay": "Lingual tonsil structure",
+    "description": "lingual tonsil",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "partOfRef": {
+      "id": "RID10008",
+      "display": "lingual tonsil"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10008",
+        "display": "lingual tonsil"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10008_RID5824",
+      "display": "left lingual tonsil"
+    },
+    "rightRef": {
+      "id": "RID10008_RID5825",
+      "display": "right lingual tonsil"
+    }
+  },
+  {
+    "_id": "RID10008_RID5825",
+    "description": "right lingual tonsil",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "partOfRef": {
+      "id": "RID10008_RID5825",
+      "display": "right lingual tonsil"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10008_RID5825",
+        "display": "right lingual tonsil"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10008_RID5824",
+      "display": "left lingual tonsil"
+    },
+    "unsidedRef": {
+      "id": "RID10008",
+      "display": "lingual tonsil"
+    }
+  },
+  {
+    "_id": "RID10039",
+    "acrCommonId": "4014601",
+    "snomedId": "68426009",
+    "snomedDisplay": "Nasal septum structure",
+    "description": "nasal septum",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "54375"
+      },
+      {
+        "system": "MESH",
+        "code": "A04.531.591"
+      }
+    ],
+    "definition": "The partition separating the two nasal cavities in the midplane, composed of cartilaginous, membranous and bony parts. [MeSH]"
+  },
+  {
+    "_id": "RID10029",
+    "acrCommonId": "4014619",
+    "snomedId": "45206002",
+    "snomedDisplay": "Nasal structure",
+    "description": "nose",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13284",
+      "display": "face"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "46472"
+      },
+      {
+        "system": "MESH",
+        "code": "A01.456.505.733"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0028429"
+      }
+    ],
+    "definition": "A specialized structure that serves as an organ of the sense of smell as well as part of the respiratory system; the term includes both the external nose and the nasal cavity. [MeSH]"
+  },
+  {
+    "_id": "RID10049",
+    "acrCommonId": "4015333",
+    "snomedId": "65289004",
+    "snomedDisplay": "Superior nasal turbinate structure",
+    "description": "superior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10049_RID5824",
+      "display": "left superior nasal turbinate"
+    },
+    "rightRef": {
+      "id": "RID10049_RID5825",
+      "display": "right superior nasal turbinate"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "57458"
+      }
+    ]
+  },
+  {
+    "_id": "RID10008_RID5824",
+    "description": "left lingual tonsil",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "partOfRef": {
+      "id": "RID10008_RID5824",
+      "display": "left lingual tonsil"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10008_RID5824",
+        "display": "left lingual tonsil"
+      }
+    ],
+    "rightRef": {
+      "id": "RID10008_RID5825",
+      "display": "right lingual tonsil"
+    },
+    "unsidedRef": {
+      "id": "RID10008",
+      "display": "lingual tonsil"
+    }
+  },
+  {
+    "_id": "RID10049_RID5824",
+    "description": "left superior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "rightRef": {
+      "id": "RID10049_RID5825",
+      "display": "right superior nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10049",
+      "display": "superior nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID10049_RID5825",
+    "description": "right superior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10049_RID5824",
+      "display": "left superior nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10049",
+      "display": "superior nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID10003",
+    "acrCommonId": "4014657",
+    "snomedId": "31389004",
+    "snomedDisplay": "Oropharyngeal structure",
+    "description": "oropharynx",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID7540",
+      "display": "suprahyoid neck"
+    },
+    "partOfRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "54879"
+      },
+      {
+        "system": "MESH",
+        "code": "A14.724.603"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0521367"
+      }
+    ],
+    "definition": "Oral part of the pharynx. [MeSH]"
+  },
+  {
+    "_id": "RID10010_RID5824",
+    "snomedId": "15058008",
+    "snomedDisplay": "Left faucial tonsil structure",
+    "description": "left palatine tonsil",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID13211",
+      "display": "pharynx"
+    },
+    "partOfRef": {
+      "id": "RID10010_RID5824",
+      "display": "left palatine tonsil"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10010_RID5824",
+        "display": "left palatine tonsil"
+      }
+    ],
+    "rightRef": {
+      "id": "RID10010_RID5825",
+      "display": "right palatine tonsil"
+    },
+    "unsidedRef": {
+      "id": "RID10010",
+      "display": "palatine tonsil"
+    }
+  },
+  {
+    "_id": "RID10054_RID5824",
+    "snomedId": "49521004",
+    "snomedDisplay": "Left external ear structure",
+    "description": "left external ear",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10053_RID5824",
+      "display": "left ear"
+    },
+    "containsRefs": [
+      {
+        "id": "RID10094_RID5824",
+        "display": "left external auditory canal"
+      },
+      {
+        "id": "RID10100_RID5824",
+        "display": "left tympanic membrane"
+      }
+    ],
+    "rightRef": {
+      "id": "RID10054_RID5825",
+      "display": "right external ear"
+    },
+    "unsidedRef": {
+      "id": "RID10054",
+      "display": "external ear"
+    }
+  },
+  {
+    "_id": "RID10051",
+    "acrCommonId": "4013975",
+    "snomedId": "6553002",
+    "snomedDisplay": "Inferior nasal turbinate structure",
+    "description": "inferior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10051_RID5824",
+      "display": "left inferior nasal turbinate"
+    },
+    "rightRef": {
+      "id": "RID10051_RID5825",
+      "display": "right inferior nasal turbinate"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "54736"
+      }
+    ]
+  },
+  {
+    "_id": "RID10050_RID5825",
+    "description": "right middle nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10050_RID5824",
+      "display": "left middle nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10050",
+      "display": "middle nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID10051_RID5824",
+    "description": "left inferior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "rightRef": {
+      "id": "RID10051_RID5825",
+      "display": "right inferior nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10051",
+      "display": "inferior nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID10051_RID5825",
+    "description": "right inferior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10051_RID5824",
+      "display": "left inferior nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10051",
+      "display": "inferior nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID10053_RID5824",
+    "snomedId": "89644007",
+    "snomedDisplay": "Left ear structure",
+    "description": "left ear",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9361_RID5824",
+      "display": "left temporal bone"
+    },
+    "containsRefs": [
+      {
+        "id": "RID10054_RID5824",
+        "display": "left external ear"
+      },
+      {
+        "id": "RID13303_RID5824",
+        "display": "left middle ear"
+      },
+      {
+        "id": "RID10199_RID5824",
+        "display": "left inner ear"
+      }
+    ],
+    "rightRef": {
+      "id": "RID10053_RID5825",
+      "display": "right ear"
+    },
+    "unsidedRef": {
+      "id": "RID10053",
+      "display": "ear"
+    }
+  },
+  {
+    "_id": "RID10054_RID5825",
+    "snomedId": "69838001",
+    "snomedDisplay": "Right external ear structure",
+    "description": "right external ear",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10053_RID5825",
+      "display": "right ear"
+    },
+    "containsRefs": [
+      {
+        "id": "RID10094_RID5825",
+        "display": "right external auditory canal"
+      },
+      {
+        "id": "RID10100_RID5825",
+        "display": "right tympanic membrane"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10054_RID5824",
+      "display": "left external ear"
+    },
+    "unsidedRef": {
+      "id": "RID10054",
+      "display": "external ear"
+    }
+  },
+  {
+    "_id": "RID10053_RID5825",
+    "snomedId": "25577004",
+    "snomedDisplay": "Right ear structure",
+    "description": "right ear",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9361_RID5825",
+      "display": "right temporal bone"
+    },
+    "containsRefs": [
+      {
+        "id": "RID10054_RID5825",
+        "display": "right external ear"
+      },
+      {
+        "id": "RID13303_RID5825",
+        "display": "right middle ear"
+      },
+      {
+        "id": "RID10199_RID5825",
+        "display": "right inner ear"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10053_RID5824",
+      "display": "left ear"
+    },
+    "unsidedRef": {
+      "id": "RID10053",
+      "display": "ear"
+    }
+  },
+  {
+    "_id": "RID10054",
+    "acrCommonId": "4013805",
+    "snomedId": "28347008",
+    "snomedDisplay": "External ear structure",
+    "description": "external ear",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10053",
+      "display": "ear"
+    },
+    "containsRefs": [
+      {
+        "id": "RID10094",
+        "display": "external auditory canal"
+      },
+      {
+        "id": "RID10100",
+        "display": "tympanic membrane"
+      }
+    ],
+    "synonyms": [
+      "outer ear"
+    ],
+    "leftRef": {
+      "id": "RID10054_RID5824",
+      "display": "left external ear"
+    },
+    "rightRef": {
+      "id": "RID10054_RID5825",
+      "display": "right external ear"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52781"
+      },
+      {
+        "system": "MESH",
+        "code": "A09.246.272"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0013453"
+      }
+    ],
+    "definition": "The outer part of the hearing system of the body. It includes the external ear canal, cartilages of the auricle (ear cartilages), and the tympanic membrane. [MeSH]"
+  },
+  {
+    "_id": "RID10053",
+    "acrCommonId": "4013759",
+    "snomedId": "117590005",
+    "snomedDisplay": "Ear structure",
+    "description": "ear",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9361",
+      "display": "temporal bone"
+    },
+    "containsRefs": [
+      {
+        "id": "RID10054",
+        "display": "external ear"
+      },
+      {
+        "id": "RID13303",
+        "display": "middle ear"
+      },
+      {
+        "id": "RID10199",
+        "display": "inner ear"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10053_RID5824",
+      "display": "left ear"
+    },
+    "rightRef": {
+      "id": "RID10053_RID5825",
+      "display": "right ear"
+    },
+    "definition": "The hearing and equilibrium system of the body. It consists of three parts: the external ear, the middle ear, and the inner ear. Sound waves are transmitted through this organ where vibration is transduced to nerve signals that pass through the acoustic nerve to the central nervous system. The inner ear also contains the vestibular organ that maintains equilibrium by transducing signals to the vestibular nerve. [MeSH]"
+  },
+  {
+    "_id": "RID10050_RID5824",
+    "description": "left middle nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "rightRef": {
+      "id": "RID10050_RID5825",
+      "display": "right middle nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10050",
+      "display": "middle nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID10050",
+    "acrCommonId": "4014567",
+    "snomedId": "60962000",
+    "snomedDisplay": "Middle nasal turbinate structure",
+    "description": "middle nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10050_RID5824",
+      "display": "left middle nasal turbinate"
+    },
+    "rightRef": {
+      "id": "RID10050_RID5825",
+      "display": "right middle nasal turbinate"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "57459"
+      }
+    ]
+  },
+  {
+    "_id": "RID10094",
+    "acrCommonId": "4013802",
+    "snomedId": "84301002",
+    "snomedDisplay": "External auditory canal structure",
+    "description": "external auditory canal",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10054",
+      "display": "external ear"
+    },
+    "synonyms": [
+      "external auditory meatus"
+    ],
+    "leftRef": {
+      "id": "RID10094_RID5824",
+      "display": "left external auditory canal"
+    },
+    "rightRef": {
+      "id": "RID10094_RID5825",
+      "display": "right external auditory canal"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "61734"
+      },
+      {
+        "system": "MESH",
+        "code": "A09.246.272.396"
+      }
+    ]
+  },
+  {
+    "_id": "RID10100",
+    "acrCommonId": "4015482",
+    "snomedId": "42859004",
+    "snomedDisplay": "Tympanic membrane structure",
+    "description": "tympanic membrane",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10054",
+      "display": "external ear"
+    },
+    "leftRef": {
+      "id": "RID10100_RID5824",
+      "display": "left tympanic membrane"
+    },
+    "rightRef": {
+      "id": "RID10100_RID5825",
+      "display": "right tympanic membrane"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "9595"
+      },
+      {
+        "system": "MESH",
+        "code": "A09.246.272.702"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0041445"
+      }
+    ],
+    "definition": "An oval semitransparent membrane separating the external ear canal from the tympanic cavity (ear, middle). It contains three layers: the skin of the external ear canal; the core of radially and circularly arranged collagen fibers; and the mucosa of the middle ear. [MeSH]"
+  },
+  {
+    "_id": "RID1011_RID5824",
+    "acrCommonId": "4015547",
+    "snomedId": "771202006",
+    "snomedDisplay": "Structure of left brachiocephalic vein",
+    "description": "left brachiocephalic vein",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "rightRef": {
+      "id": "RID1011_RID5825",
+      "display": "right brachiocephalic vein"
+    },
+    "unsidedRef": {
+      "id": "RID1011",
+      "display": "brachiocephalic vein"
+    }
+  },
+  {
+    "_id": "RID10094_RID5825",
+    "snomedId": "45124007",
+    "snomedDisplay": "Right external auditory canal structure",
+    "description": "right external auditory canal",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10054_RID5825",
+      "display": "right external ear"
+    },
+    "leftRef": {
+      "id": "RID10094_RID5824",
+      "display": "left external auditory canal"
+    },
+    "unsidedRef": {
+      "id": "RID10094",
+      "display": "external auditory canal"
+    }
+  },
+  {
+    "_id": "RID1014",
+    "acrCommonId": "4013534",
+    "snomedId": "68705008",
+    "snomedDisplay": "Structure of axillary vein",
+    "description": "axillary vein",
+    "region": "Upper Extremity",
+    "containedByRef": {
+      "id": "RID39518",
+      "display": "shoulder"
+    },
+    "synonyms": [
+      "vena axillaris",
+      "vena axillaris"
+    ],
+    "leftRef": {
+      "id": "RID43900",
+      "display": "left axillary vein"
+    },
+    "rightRef": {
+      "id": "RID43899",
+      "display": "right axillary vein"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "13329"
+      },
+      {
+        "system": "MESH",
+        "code": "A07.015.908.077"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0004456"
+      }
+    ],
+    "definition": "The venous trunk of the upper limb; a continuation of the basilar and brachial veins running from the lower border of the teres major muscle to the outer border of the first rib where it becomes the subclavian vein. [MeSH]"
+  },
+  {
+    "_id": "RID1010",
+    "acrCommonId": "4015348",
+    "snomedId": "48345005",
+    "snomedDisplay": "Superior vena cava structure",
+    "description": "superior vena cava",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1384",
+      "display": "mediastinum"
+    },
+    "definition": "The venous trunk which returns blood from the head, neck, upper extremities and chest. [MeSH]"
+  },
+  {
+    "_id": "RID10100_RID5824",
+    "snomedId": "726562006",
+    "snomedDisplay": "Structure of left tympanic membrane",
+    "description": "left tympanic membrane",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10054_RID5824",
+      "display": "left external ear"
+    },
+    "rightRef": {
+      "id": "RID10100_RID5825",
+      "display": "right tympanic membrane"
+    },
+    "unsidedRef": {
+      "id": "RID10100",
+      "display": "tympanic membrane"
+    }
+  },
+  {
+    "_id": "RID1011_RID5825",
+    "snomedId": "771203001",
+    "snomedDisplay": "Structure of right brachiocephalic vein",
+    "description": "right brachiocephalic vein",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "leftRef": {
+      "id": "RID1011_RID5824",
+      "display": "left brachiocephalic vein"
+    },
+    "unsidedRef": {
+      "id": "RID1011",
+      "display": "brachiocephalic vein"
+    }
+  },
+  {
+    "_id": "RID1011",
+    "acrCommonId": "4013562",
+    "snomedId": "8887007",
+    "snomedDisplay": "Structure of brachiocephalic vein",
+    "description": "brachiocephalic vein",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "synonyms": [
+      "innominate vein"
+    ],
+    "leftRef": {
+      "id": "RID1011_RID5824",
+      "display": "left brachiocephalic vein"
+    },
+    "rightRef": {
+      "id": "RID1011_RID5825",
+      "display": "right brachiocephalic vein"
+    },
+    "codes": [
+      {
+        "system": "MESH",
+        "code": "A07.231.908.130"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0006095"
+      }
+    ],
+    "definition": "Large veins on either side of the root of the neck formed by the junction of the internal jugular and subclavian veins. They drain blood from the head, neck, and upper extremities, and unite to form the superior vena cava. [MeSH]"
+  },
+  {
+    "_id": "RID10109",
+    "acrCommonId": "4014562",
+    "snomedId": "51837005",
+    "snomedDisplay": "Tympanic cavity structure",
+    "description": "middle ear cavity",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "tympanic cavity"
+    ],
+    "leftRef": {
+      "id": "RID10109_RID5824",
+      "display": "left middle ear cavity"
+    },
+    "rightRef": {
+      "id": "RID10109_RID5825",
+      "display": "right middle ear cavity"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "56461"
+      }
+    ]
+  },
+  {
+    "_id": "RID10100_RID5825",
+    "snomedId": "726563001",
+    "snomedDisplay": "Structure of right tympanic membrane",
+    "description": "right tympanic membrane",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10054_RID5825",
+      "display": "right external ear"
+    },
+    "leftRef": {
+      "id": "RID10100_RID5824",
+      "display": "left tympanic membrane"
+    },
+    "unsidedRef": {
+      "id": "RID10100",
+      "display": "tympanic membrane"
+    }
+  },
+  {
+    "_id": "RID10094_RID5824",
+    "snomedId": "71471005",
+    "snomedDisplay": "Left external auditory canal structure",
+    "description": "left external auditory canal",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID10054_RID5824",
+      "display": "left external ear"
+    },
+    "rightRef": {
+      "id": "RID10094_RID5825",
+      "display": "right external auditory canal"
+    },
+    "unsidedRef": {
+      "id": "RID10094",
+      "display": "external auditory canal"
+    }
+  },
+  {
+    "_id": "RID10109_RID5825",
+    "snomedId": "772137004",
+    "snomedDisplay": "Structure of tympanic cavity of right ear",
+    "description": "right middle ear cavity",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "leftRef": {
+      "id": "RID10109_RID5824",
+      "display": "left middle ear cavity"
+    },
+    "unsidedRef": {
+      "id": "RID10109",
+      "display": "middle ear cavity"
+    }
+  },
+  {
+    "_id": "RID10109_RID5824",
+    "snomedId": "772136008",
+    "snomedDisplay": "Structure of tympanic cavity of left ear",
+    "description": "left middle ear cavity",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "rightRef": {
+      "id": "RID10109_RID5825",
+      "display": "right middle ear cavity"
+    },
+    "unsidedRef": {
+      "id": "RID10109",
+      "display": "middle ear cavity"
+    }
+  },
+  {
+    "_id": "RID10151_RID5825",
+    "description": "right stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10153_RID5825",
+        "display": "right head of stapes"
+      },
+      {
+        "id": "RID10154_RID5825",
+        "display": "right anterior limb of stapes"
+      },
+      {
+        "id": "RID10155_RID5825",
+        "display": "right posterior limb of stapes"
+      },
+      {
+        "id": "RID10156_RID5825",
+        "display": "right footplate of stapes"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10151_RID5824",
+      "display": "left stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10151",
+      "display": "stapes"
+    }
+  },
+  {
+    "_id": "RID1016",
+    "acrCommonId": "4013541",
+    "snomedId": "19715009",
+    "snomedDisplay": "Structure of basilic vein",
+    "description": "basilic vein",
+    "region": "Upper Extremity",
+    "containedByRef": {
+      "id": "RID1968",
+      "display": "arm"
+    },
+    "synonyms": [
+      "vena basilica antebrachii",
+      "basilic vein of forearm",
+      "vena basilica",
+      "Vena basilica"
+    ],
+    "leftRef": {
+      "id": "RID43998",
+      "display": "left basilic vein"
+    },
+    "rightRef": {
+      "id": "RID43997",
+      "display": "right basilic vein"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "22908"
+      }
+    ]
+  },
+  {
+    "_id": "RID10169",
+    "acrCommonId": "4013489",
+    "snomedId": "76016004",
+    "snomedDisplay": "Structure of anterior process of malleus",
+    "description": "anterior process of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Processus mallei anterior"
+    ],
+    "partOfRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    },
+    "leftRef": {
+      "id": "RID10169_RID5824",
+      "display": "left anterior process of malleus"
+    },
+    "rightRef": {
+      "id": "RID10169_RID5825",
+      "display": "right anterior process of malleus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52771"
+      }
+    ]
+  },
+  {
+    "_id": "RID10154_RID5825",
+    "description": "right anterior limb of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5825",
+      "display": "right stapes"
+    },
+    "leftRef": {
+      "id": "RID10154_RID5824",
+      "display": "left anterior limb of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10154",
+      "display": "anterior limb of stapes"
+    }
+  },
+  {
+    "_id": "RID10155",
+    "acrCommonId": "4014766",
+    "snomedId": "1425000",
+    "snomedDisplay": "Structure of posterior limb of stapes",
+    "description": "posterior limb of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Crus posterior stapedis"
+    ],
+    "partOfRef": {
+      "id": "RID10151",
+      "display": "stapes"
+    },
+    "leftRef": {
+      "id": "RID10155_RID5824",
+      "display": "left posterior limb of stapes"
+    },
+    "rightRef": {
+      "id": "RID10155_RID5825",
+      "display": "right posterior limb of stapes"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52768"
+      }
+    ]
+  },
+  {
+    "_id": "RID10161_RID5824",
+    "description": "left lenticular process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5824",
+      "display": "left incus"
+    },
+    "rightRef": {
+      "id": "RID10161_RID5825",
+      "display": "right lenticular process of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10161",
+      "display": "lenticular process of incus"
+    }
+  },
+  {
+    "_id": "RID10166",
+    "acrCommonId": "4013922",
+    "snomedId": "77554002",
+    "snomedDisplay": "Structure of head of malleus",
+    "description": "head of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Caput"
+    ],
+    "partOfRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    },
+    "leftRef": {
+      "id": "RID10166_RID5824",
+      "display": "left head of malleus"
+    },
+    "rightRef": {
+      "id": "RID10166_RID5825",
+      "display": "right head of malleus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52761"
+      }
+    ]
+  },
+  {
+    "_id": "RID10166_RID5825",
+    "description": "right head of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5825",
+      "display": "right malleus"
+    },
+    "leftRef": {
+      "id": "RID10166_RID5824",
+      "display": "left head of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10166",
+      "display": "head of malleus"
+    }
+  },
+  {
+    "_id": "RID10167_RID5825",
+    "description": "right neck of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5825",
+      "display": "right malleus"
+    },
+    "leftRef": {
+      "id": "RID10167_RID5824",
+      "display": "left neck of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10167",
+      "display": "neck of malleus"
+    }
+  },
+  {
+    "_id": "RID10165_RID5825",
+    "description": "right handle of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5825",
+      "display": "right malleus"
+    },
+    "leftRef": {
+      "id": "RID10165_RID5824",
+      "display": "left handle of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10165",
+      "display": "handle of malleus"
+    }
+  },
+  {
+    "_id": "RID1015",
+    "acrCommonId": "4013559",
+    "snomedId": "20115005",
+    "snomedDisplay": "Structure of brachial vein",
+    "description": "brachial vein",
+    "region": "Upper Extremity",
+    "containedByRef": {
+      "id": "RID1968",
+      "display": "arm"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "22934"
+      }
+    ]
+  },
+  {
+    "_id": "RID10153_RID5825",
+    "description": "right head of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5825",
+      "display": "right stapes"
+    },
+    "leftRef": {
+      "id": "RID10153_RID5824",
+      "display": "left head of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10153",
+      "display": "head of stapes"
+    }
+  },
+  {
+    "_id": "RID10153_RID5824",
+    "description": "left head of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5824",
+      "display": "left stapes"
+    },
+    "rightRef": {
+      "id": "RID10153_RID5825",
+      "display": "right head of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10153",
+      "display": "head of stapes"
+    }
+  },
+  {
+    "_id": "RID10163_RID5824",
+    "description": "left malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10165_RID5824",
+        "display": "left handle of malleus"
+      },
+      {
+        "id": "RID10166_RID5824",
+        "display": "left head of malleus"
+      },
+      {
+        "id": "RID10167_RID5824",
+        "display": "left neck of malleus"
+      },
+      {
+        "id": "RID10168_RID5824",
+        "display": "left lateral process of malleus"
+      },
+      {
+        "id": "RID10169_RID5824",
+        "display": "left anterior process of malleus"
+      },
+      {
+        "id": "RID10190_RID5824",
+        "display": "left posterior fold of malleus"
+      },
+      {
+        "id": "RID10191_RID5824",
+        "display": "left anterior fold of malleus"
+      }
+    ],
+    "rightRef": {
+      "id": "RID10163_RID5825",
+      "display": "right malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    }
+  },
+  {
+    "_id": "RID10156_RID5825",
+    "description": "right footplate of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5825",
+      "display": "right stapes"
+    },
+    "leftRef": {
+      "id": "RID10156_RID5824",
+      "display": "left footplate of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10156",
+      "display": "footplate of stapes"
+    }
+  },
+  {
+    "_id": "RID10160_RID5825",
+    "description": "right long process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5825",
+      "display": "right incus"
+    },
+    "leftRef": {
+      "id": "RID10160_RID5824",
+      "display": "left long process of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10160",
+      "display": "long process of incus"
+    }
+  },
+  {
+    "_id": "RID10154_RID5824",
+    "description": "left anterior limb of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5824",
+      "display": "left stapes"
+    },
+    "rightRef": {
+      "id": "RID10154_RID5825",
+      "display": "right anterior limb of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10154",
+      "display": "anterior limb of stapes"
+    }
+  },
+  {
+    "_id": "RID10168_RID5824",
+    "description": "left lateral process of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "rightRef": {
+      "id": "RID10168_RID5825",
+      "display": "right lateral process of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10168",
+      "display": "lateral process of malleus"
+    }
+  },
+  {
+    "_id": "RID10151",
+    "acrCommonId": "4015278",
+    "snomedId": "22718006",
+    "snomedDisplay": "Stapes structure",
+    "description": "stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "stirrup",
+      "Stapes"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID10153",
+        "display": "head of stapes"
+      },
+      {
+        "id": "RID10154",
+        "display": "anterior limb of stapes"
+      },
+      {
+        "id": "RID10155",
+        "display": "posterior limb of stapes"
+      },
+      {
+        "id": "RID10156",
+        "display": "footplate of stapes"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10151_RID5824",
+      "display": "left stapes"
+    },
+    "rightRef": {
+      "id": "RID10151_RID5825",
+      "display": "right stapes"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52751"
+      },
+      {
+        "system": "MESH",
+        "code": "A09.246.397.247.806"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0038152"
+      }
+    ],
+    "definition": "One of the three ossicles of the middle ear. It transmits sound vibrations from the incus to the internal ear (Ear, Internal see labyrinth). [MeSH]"
+  },
+  {
+    "_id": "RID10161",
+    "acrCommonId": "4014432",
+    "snomedId": "59417004",
+    "snomedDisplay": "Structure of lenticular process of incus",
+    "description": "lenticular process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157",
+      "display": "incus"
+    },
+    "leftRef": {
+      "id": "RID10161_RID5824",
+      "display": "left lenticular process of incus"
+    },
+    "rightRef": {
+      "id": "RID10161_RID5825",
+      "display": "right lenticular process of incus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52775"
+      }
+    ]
+  },
+  {
+    "_id": "RID10167",
+    "acrCommonId": "4014607",
+    "snomedId": "33741002",
+    "snomedDisplay": "Structure of neck of malleus",
+    "description": "neck of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Collum"
+    ],
+    "partOfRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    },
+    "leftRef": {
+      "id": "RID10167_RID5824",
+      "display": "left neck of malleus"
+    },
+    "rightRef": {
+      "id": "RID10167_RID5825",
+      "display": "right neck of malleus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52762"
+      }
+    ]
+  },
+  {
+    "_id": "RID10143_RID5825",
+    "description": "right mastoid antrum",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9361_RID5825",
+      "display": "right temporal bone"
+    },
+    "partOfRef": {
+      "id": "RID9361_RID5825",
+      "display": "right temporal bone"
+    },
+    "leftRef": {
+      "id": "RID10143_RID5824",
+      "display": "left mastoid antrum"
+    },
+    "unsidedRef": {
+      "id": "RID10143",
+      "display": "mastoid antrum"
+    }
+  },
+  {
+    "_id": "RID10148",
+    "acrCommonId": "4014722",
+    "description": "petrosquamous suture",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9196",
+      "display": "skull"
+    },
+    "synonyms": [
+      "petrosquamosal suture",
+      "petrosquamosal fissure",
+      "petrosquamous fissure"
+    ],
+    "partOfRef": {
+      "id": "RID9196",
+      "display": "skull"
+    }
+  },
+  {
+    "_id": "RID10168_RID5825",
+    "description": "right lateral process of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5825",
+      "display": "right malleus"
+    },
+    "leftRef": {
+      "id": "RID10168_RID5824",
+      "display": "left lateral process of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10168",
+      "display": "lateral process of malleus"
+    }
+  },
+  {
+    "_id": "RID10166_RID5824",
+    "description": "left head of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "rightRef": {
+      "id": "RID10166_RID5825",
+      "display": "right head of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10166",
+      "display": "head of malleus"
+    }
+  },
+  {
+    "_id": "RID10143_RID5824",
+    "description": "left mastoid antrum",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9361_RID5824",
+      "display": "left temporal bone"
+    },
+    "partOfRef": {
+      "id": "RID9361_RID5824",
+      "display": "left temporal bone"
+    },
+    "rightRef": {
+      "id": "RID10143_RID5825",
+      "display": "right mastoid antrum"
+    },
+    "unsidedRef": {
+      "id": "RID10143",
+      "display": "mastoid antrum"
+    }
+  },
+  {
+    "_id": "RID10165_RID5824",
+    "description": "left handle of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "rightRef": {
+      "id": "RID10165_RID5825",
+      "display": "right handle of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10165",
+      "display": "handle of malleus"
+    }
+  },
+  {
+    "_id": "RID10157",
+    "acrCommonId": "4013958",
+    "snomedId": "35395007",
+    "snomedDisplay": "Incus structure",
+    "description": "incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "anvil",
+      "Incus"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID10159",
+        "display": "body of incus"
+      },
+      {
+        "id": "RID10160",
+        "display": "long process of incus"
+      },
+      {
+        "id": "RID10161",
+        "display": "lenticular process of incus"
+      },
+      {
+        "id": "RID10162",
+        "display": "short process of incus"
+      },
+      {
+        "id": "RID10197",
+        "display": "fold of incus"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10157_RID5824",
+      "display": "left incus"
+    },
+    "rightRef": {
+      "id": "RID10157_RID5825",
+      "display": "right incus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52752"
+      },
+      {
+        "system": "MESH",
+        "code": "A09.246.397.247.362"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0021181"
+      }
+    ],
+    "definition": "One of three ossicles of the middle ear. It conducts sound vibrations from the malleus to the stapes. [MeSH]"
+  },
+  {
+    "_id": "RID10165",
+    "acrCommonId": "4013916",
+    "snomedId": "75913003",
+    "snomedDisplay": "Structure of manubrium of malleus",
+    "description": "handle of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Manubrium"
+    ],
+    "partOfRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    },
+    "leftRef": {
+      "id": "RID10165_RID5824",
+      "display": "left handle of malleus"
+    },
+    "rightRef": {
+      "id": "RID10165_RID5825",
+      "display": "right handle of malleus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52760"
+      }
+    ]
+  },
+  {
+    "_id": "RID10151_RID5824",
+    "description": "left stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10153_RID5824",
+        "display": "left head of stapes"
+      },
+      {
+        "id": "RID10154_RID5824",
+        "display": "left anterior limb of stapes"
+      },
+      {
+        "id": "RID10155_RID5824",
+        "display": "left posterior limb of stapes"
+      },
+      {
+        "id": "RID10156_RID5824",
+        "display": "left footplate of stapes"
+      }
+    ],
+    "rightRef": {
+      "id": "RID10151_RID5825",
+      "display": "right stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10151",
+      "display": "stapes"
+    }
+  },
+  {
+    "_id": "RID10159",
+    "acrCommonId": "4013549",
+    "snomedId": "17586009",
+    "snomedDisplay": "Structure of body of incus",
+    "description": "body of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Corpus"
+    ],
+    "partOfRef": {
+      "id": "RID10157",
+      "display": "incus"
+    },
+    "leftRef": {
+      "id": "RID10159_RID5824",
+      "display": "left body of incus"
+    },
+    "rightRef": {
+      "id": "RID10159_RID5825",
+      "display": "right body of incus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52763"
+      }
+    ]
+  },
+  {
+    "_id": "RID10157_RID5824",
+    "description": "left incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10159_RID5824",
+        "display": "left body of incus"
+      },
+      {
+        "id": "RID10160_RID5824",
+        "display": "left long process of incus"
+      },
+      {
+        "id": "RID10161_RID5824",
+        "display": "left lenticular process of incus"
+      },
+      {
+        "id": "RID10162_RID5824",
+        "display": "left short process of incus"
+      },
+      {
+        "id": "RID10197_RID5824",
+        "display": "left fold of incus"
+      }
+    ],
+    "rightRef": {
+      "id": "RID10157_RID5825",
+      "display": "right incus"
+    },
+    "unsidedRef": {
+      "id": "RID10157",
+      "display": "incus"
+    }
+  },
+  {
+    "_id": "RID10157_RID5825",
+    "description": "right incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10159_RID5825",
+        "display": "right body of incus"
+      },
+      {
+        "id": "RID10160_RID5825",
+        "display": "right long process of incus"
+      },
+      {
+        "id": "RID10161_RID5825",
+        "display": "right lenticular process of incus"
+      },
+      {
+        "id": "RID10162_RID5825",
+        "display": "right short process of incus"
+      },
+      {
+        "id": "RID10197_RID5825",
+        "display": "right fold of incus"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10157_RID5824",
+      "display": "left incus"
+    },
+    "unsidedRef": {
+      "id": "RID10157",
+      "display": "incus"
+    }
+  },
+  {
+    "_id": "RID10159_RID5825",
+    "description": "right body of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5825",
+      "display": "right incus"
+    },
+    "leftRef": {
+      "id": "RID10159_RID5824",
+      "display": "left body of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10159",
+      "display": "body of incus"
+    }
+  },
+  {
+    "_id": "RID10160_RID5824",
+    "description": "left long process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5824",
+      "display": "left incus"
+    },
+    "rightRef": {
+      "id": "RID10160_RID5825",
+      "display": "right long process of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10160",
+      "display": "long process of incus"
+    }
+  },
+  {
+    "_id": "RID10162_RID5825",
+    "description": "right short process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5825",
+      "display": "right incus"
+    },
+    "leftRef": {
+      "id": "RID10162_RID5824",
+      "display": "left short process of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10162",
+      "display": "short process of incus"
+    }
+  },
+  {
+    "_id": "RID10155_RID5824",
+    "description": "left posterior limb of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5824",
+      "display": "left stapes"
+    },
+    "rightRef": {
+      "id": "RID10155_RID5825",
+      "display": "right posterior limb of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10155",
+      "display": "posterior limb of stapes"
+    }
+  },
+  {
+    "_id": "RID10156_RID5824",
+    "description": "left footplate of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5824",
+      "display": "left stapes"
+    },
+    "rightRef": {
+      "id": "RID10156_RID5825",
+      "display": "right footplate of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10156",
+      "display": "footplate of stapes"
+    }
+  },
+  {
+    "_id": "RID10161_RID5825",
+    "description": "right lenticular process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5825",
+      "display": "right incus"
+    },
+    "leftRef": {
+      "id": "RID10161_RID5824",
+      "display": "left lenticular process of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10161",
+      "display": "lenticular process of incus"
+    }
+  },
+  {
+    "_id": "RID10159_RID5824",
+    "description": "left body of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5824",
+      "display": "left incus"
+    },
+    "rightRef": {
+      "id": "RID10159_RID5825",
+      "display": "right body of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10159",
+      "display": "body of incus"
+    }
+  },
+  {
+    "_id": "RID10143",
+    "acrCommonId": "4014491",
+    "snomedId": "4906008",
+    "snomedDisplay": "Mastoid antrum structure",
+    "description": "mastoid antrum",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9361",
+      "display": "temporal bone"
+    },
+    "partOfRef": {
+      "id": "RID9361",
+      "display": "temporal bone"
+    },
+    "leftRef": {
+      "id": "RID10143_RID5824",
+      "display": "left mastoid antrum"
+    },
+    "rightRef": {
+      "id": "RID10143_RID5825",
+      "display": "right mastoid antrum"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "55711"
+      }
+    ]
+  },
+  {
+    "_id": "RID10156",
+    "acrCommonId": "4013856",
+    "snomedId": "59498008",
+    "snomedDisplay": "Structure of base of stapes",
+    "description": "footplate of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "base of stapes",
+      "footplate",
+      "Basis stapes"
+    ],
+    "partOfRef": {
+      "id": "RID10151",
+      "display": "stapes"
+    },
+    "leftRef": {
+      "id": "RID10156_RID5824",
+      "display": "left footplate of stapes"
+    },
+    "rightRef": {
+      "id": "RID10156_RID5825",
+      "display": "right footplate of stapes"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52769"
+      }
+    ]
+  },
+  {
+    "_id": "RID10153",
+    "acrCommonId": "4013926",
+    "snomedId": "77141004",
+    "snomedDisplay": "Structure of head of stapes",
+    "description": "head of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Caput stapedis"
+    ],
+    "partOfRef": {
+      "id": "RID10151",
+      "display": "stapes"
+    },
+    "leftRef": {
+      "id": "RID10153_RID5824",
+      "display": "left head of stapes"
+    },
+    "rightRef": {
+      "id": "RID10153_RID5825",
+      "display": "right head of stapes"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52766"
+      }
+    ]
+  },
+  {
+    "_id": "RID10167_RID5824",
+    "description": "left neck of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "rightRef": {
+      "id": "RID10167_RID5825",
+      "display": "right neck of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10167",
+      "display": "neck of malleus"
+    }
+  },
+  {
+    "_id": "RID10155_RID5825",
+    "description": "right posterior limb of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10151_RID5825",
+      "display": "right stapes"
+    },
+    "leftRef": {
+      "id": "RID10155_RID5824",
+      "display": "left posterior limb of stapes"
+    },
+    "unsidedRef": {
+      "id": "RID10155",
+      "display": "posterior limb of stapes"
+    }
+  },
+  {
+    "_id": "RID10160",
+    "acrCommonId": "4014451",
+    "snomedId": "29333002",
+    "snomedDisplay": "Structure of long process of incus",
+    "description": "long process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "long limb of incus",
+      "Crus longum"
+    ],
+    "partOfRef": {
+      "id": "RID10157",
+      "display": "incus"
+    },
+    "leftRef": {
+      "id": "RID10160_RID5824",
+      "display": "left long process of incus"
+    },
+    "rightRef": {
+      "id": "RID10160_RID5825",
+      "display": "right long process of incus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52764"
+      }
+    ]
+  },
+  {
+    "_id": "RID10154",
+    "acrCommonId": "4013485",
+    "snomedId": "90759000",
+    "snomedDisplay": "Structure of anterior limb of stapes",
+    "description": "anterior limb of stapes",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Crus anterior stapedis"
+    ],
+    "partOfRef": {
+      "id": "RID10151",
+      "display": "stapes"
+    },
+    "leftRef": {
+      "id": "RID10154_RID5824",
+      "display": "left anterior limb of stapes"
+    },
+    "rightRef": {
+      "id": "RID10154_RID5825",
+      "display": "right anterior limb of stapes"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52767"
+      }
+    ]
+  },
+  {
+    "_id": "RID10163_RID5825",
+    "description": "right malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10165_RID5825",
+        "display": "right handle of malleus"
+      },
+      {
+        "id": "RID10166_RID5825",
+        "display": "right head of malleus"
+      },
+      {
+        "id": "RID10167_RID5825",
+        "display": "right neck of malleus"
+      },
+      {
+        "id": "RID10168_RID5825",
+        "display": "right lateral process of malleus"
+      },
+      {
+        "id": "RID10169_RID5825",
+        "display": "right anterior process of malleus"
+      },
+      {
+        "id": "RID10190_RID5825",
+        "display": "right posterior fold of malleus"
+      },
+      {
+        "id": "RID10191_RID5825",
+        "display": "right anterior fold of malleus"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    }
+  },
+  {
+    "_id": "RID10162",
+    "acrCommonId": "4015251",
+    "snomedId": "54510003",
+    "snomedDisplay": "Structure of short process of incus",
+    "description": "short process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "short limb of incus",
+      "Crus breve"
+    ],
+    "partOfRef": {
+      "id": "RID10157",
+      "display": "incus"
+    },
+    "leftRef": {
+      "id": "RID10162_RID5824",
+      "display": "left short process of incus"
+    },
+    "rightRef": {
+      "id": "RID10162_RID5825",
+      "display": "right short process of incus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52765"
+      }
+    ]
+  },
+  {
+    "_id": "RID10162_RID5824",
+    "description": "left short process of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5824",
+      "display": "left incus"
+    },
+    "rightRef": {
+      "id": "RID10162_RID5825",
+      "display": "right short process of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10162",
+      "display": "short process of incus"
+    }
+  },
+  {
+    "_id": "RID10163",
+    "acrCommonId": "4014482",
+    "snomedId": "34080009",
+    "snomedDisplay": "Malleus structure",
+    "description": "malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "hammer",
+      "Malleus"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID10165",
+        "display": "handle of malleus"
+      },
+      {
+        "id": "RID10166",
+        "display": "head of malleus"
+      },
+      {
+        "id": "RID10167",
+        "display": "neck of malleus"
+      },
+      {
+        "id": "RID10168",
+        "display": "lateral process of malleus"
+      },
+      {
+        "id": "RID10169",
+        "display": "anterior process of malleus"
+      },
+      {
+        "id": "RID10190",
+        "display": "posterior fold of malleus"
+      },
+      {
+        "id": "RID10191",
+        "display": "anterior fold of malleus"
+      }
+    ],
+    "leftRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "rightRef": {
+      "id": "RID10163_RID5825",
+      "display": "right malleus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52753"
+      },
+      {
+        "system": "MESH",
+        "code": "A09.246.397.247.524"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0024631"
+      }
+    ],
+    "definition": "The largest of the auditory ossicles, and the one attached to the membrana tympani (tympanic membrane). Its club-shaped head articulates with the incus. [MeSH]"
+  },
+  {
+    "_id": "RID10168",
+    "acrCommonId": "4014066",
+    "snomedId": "62466004",
+    "snomedDisplay": "Structure of lateral process of malleus",
+    "description": "lateral process of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "Processus mallei lateralis"
+    ],
+    "partOfRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    },
+    "leftRef": {
+      "id": "RID10168_RID5824",
+      "display": "left lateral process of malleus"
+    },
+    "rightRef": {
+      "id": "RID10168_RID5825",
+      "display": "right lateral process of malleus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52770"
+      }
+    ]
+  },
+  {
+    "_id": "RID10190_RID5824",
+    "description": "left posterior fold of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "rightRef": {
+      "id": "RID10190_RID5825",
+      "display": "right posterior fold of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10190",
+      "display": "posterior fold of malleus"
+    }
+  },
+  {
+    "_id": "RID1018",
+    "acrCommonId": "4013809",
+    "snomedId": "71585003",
+    "snomedDisplay": "Structure of external jugular vein",
+    "description": "external jugular vein",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID7488",
+      "display": "neck"
+    },
+    "synonyms": [
+      "vena jugularis externa",
+      "vena jugularis externa"
+    ],
+    "partOfRef": {
+      "id": "RID1018",
+      "display": "external jugular vein"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID1018",
+        "display": "external jugular vein"
+      }
+    ],
+    "leftRef": {
+      "id": "RID43902",
+      "display": "left external jugular vein"
+    },
+    "rightRef": {
+      "id": "RID43901",
+      "display": "right external jugular vein"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "13110"
+      }
+    ]
+  },
+  {
+    "_id": "RID10191_RID5824",
+    "description": "left anterior fold of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5824",
+      "display": "left malleus"
+    },
+    "rightRef": {
+      "id": "RID10191_RID5825",
+      "display": "right anterior fold of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10191",
+      "display": "anterior fold of malleus"
+    }
+  },
+  {
+    "_id": "RID10190",
+    "acrCommonId": "4014758",
+    "snomedId": "11502004",
+    "snomedDisplay": "Structure of posterior mallear fold of tympanic membrane",
+    "description": "posterior fold of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "synonyms": [
+      "posterior malleolar fold of tympanic membrane",
+      "Plica mallearis posterior des Trommelfells"
+    ],
+    "partOfRef": {
+      "id": "RID10163",
+      "display": "malleus"
+    },
+    "leftRef": {
+      "id": "RID10190_RID5824",
+      "display": "left posterior fold of malleus"
+    },
+    "rightRef": {
+      "id": "RID10190_RID5825",
+      "display": "right posterior fold of malleus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "56778"
+      }
+    ]
+  },
+  {
+    "_id": "RID1017",
+    "acrCommonId": "4013602",
+    "snomedId": "20699002",
+    "snomedDisplay": "Structure of cephalic vein",
+    "description": "cephalic vein",
+    "region": "Upper Extremity",
+    "containedByRef": {
+      "id": "RID1968",
+      "display": "arm"
+    },
+    "synonyms": [
+      "vena cephalica",
+      "cephalic vein of forearm",
+      "vena cephalica antebrachii",
+      "vena cephalica antebrachii"
+    ],
+    "leftRef": {
+      "id": "RID44010",
+      "display": "left cephalic vein"
+    },
+    "rightRef": {
+      "id": "RID44009",
+      "display": "right cephalic vein"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "13324"
+      }
+    ]
+  },
+  {
+    "_id": "RID10197_RID5825",
+    "description": "right fold of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5825",
+      "display": "right incus"
+    },
+    "leftRef": {
+      "id": "RID10197_RID5824",
+      "display": "left fold of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10197",
+      "display": "fold of incus"
+    }
+  },
+  {
+    "_id": "RID10197",
+    "acrCommonId": "4013854",
+    "snomedId": "77724009",
+    "snomedDisplay": "Structure of fold for incus",
+    "description": "fold of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303",
+      "display": "middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157",
+      "display": "incus"
+    },
+    "leftRef": {
+      "id": "RID10197_RID5824",
+      "display": "left fold of incus"
+    },
+    "rightRef": {
+      "id": "RID10197_RID5825",
+      "display": "right fold of incus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "77728"
+      }
+    ]
+  },
+  {
+    "_id": "RID10197_RID5824",
+    "description": "left fold of incus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5824",
+      "display": "left middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10157_RID5824",
+      "display": "left incus"
+    },
+    "rightRef": {
+      "id": "RID10197_RID5825",
+      "display": "right fold of incus"
+    },
+    "unsidedRef": {
+      "id": "RID10197",
+      "display": "fold of incus"
+    }
+  },
+  {
+    "_id": "RID10190_RID5825",
+    "description": "right posterior fold of malleus",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13303_RID5825",
+      "display": "right middle ear"
+    },
+    "partOfRef": {
+      "id": "RID10163_RID5825",
+      "display": "right malleus"
+    },
+    "leftRef": {
+      "id": "RID10190_RID5824",
+      "display": "left posterior fold of malleus"
+    },
+    "unsidedRef": {
+      "id": "RID10190",
+      "display": "posterior fold of malleus"
+    }
+  }
+]

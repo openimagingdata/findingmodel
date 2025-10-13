@@ -4,9 +4,16 @@ import sys
 from pathlib import Path
 
 import click
+from openai import AsyncOpenAI
 from rich.console import Console
 from rich.table import Table
 
+from .anatomic_migration import (
+    create_anatomic_database,
+    get_database_stats,
+    load_anatomic_data,
+    validate_anatomic_record,
+)
 from .config import settings
 from .duckdb_index import DuckDBIndex
 from .finding_info import FindingInfo
@@ -412,6 +419,195 @@ def stats(index: Path | None) -> None:
             raise
 
     asyncio.run(_do_stats(index))
+
+
+@cli.group()
+def anatomic() -> None:
+    """Anatomic location database management commands."""
+    pass
+
+
+@anatomic.command("build")
+@click.option(
+    "--source",
+    "-s",
+    help="URL or file path for anatomic location data (default: config setting or standard URL)",
+)
+@click.option("--output", "-o", type=click.Path(path_type=Path), help="Output database path (default: config setting)")
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing database")
+def anatomic_build(source: str | None, output: Path | None, force: bool) -> None:
+    """Build anatomic location database from source data."""
+
+    console = Console()
+
+    async def _do_build(source: str | None, output: Path | None, force: bool) -> None:
+        # Determine source and output paths
+        from findingmodel.config import ensure_db_file
+
+        data_source = (
+            source
+            or "https://raw.githubusercontent.com/openimagingdata/CDEStaging/main/doc/anatomic_locations/anatomic_locations.json"
+        )
+        db_path = (
+            output
+            if output
+            else ensure_db_file(
+                settings.duckdb_anatomic_path,
+                settings.remote_anatomic_db_url,
+                settings.remote_anatomic_db_hash,
+            )
+        )
+
+        # Check if database already exists
+        if db_path.exists() and not force:
+            console.print(f"[yellow]Database already exists at {db_path}")
+            console.print("[yellow]Use --force to overwrite")
+            raise click.Abort()
+
+        if db_path.exists() and force:
+            console.print(f"[yellow]Removing existing database at {db_path}")
+            db_path.unlink()
+
+        console.print("[bold green]Building anatomic location database")
+        console.print(f"[gray]Source: [yellow]{data_source}")
+        console.print(f"[gray]Output: [yellow]{db_path.absolute()}")
+
+        # Ensure parent directory exists
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            # Load data
+            with console.status("[bold green]Loading anatomic location data..."):
+                records = await load_anatomic_data(data_source)
+
+            # Create OpenAI client for embeddings
+            if not settings.openai_api_key.get_secret_value():
+                console.print("[bold red]Error: OPENAI_API_KEY not configured")
+                raise click.Abort()
+
+            client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+
+            # Create database
+            with console.status("[bold green]Creating database and generating embeddings..."):
+                successful, failed = await create_anatomic_database(db_path, records, client)
+
+            # Display results
+            console.print("\n[bold green]Database built successfully!")
+            console.print(f"[green]✓ Records inserted: {successful}")
+            if failed > 0:
+                console.print(f"[yellow]⚠ Records failed: {failed}")
+            console.print(f"[gray]Database location: [yellow]{db_path.absolute()}")
+
+        except Exception as e:
+            console.print(f"[bold red]Error building database: {e}")
+            raise
+
+    asyncio.run(_do_build(source, output, force))
+
+
+@anatomic.command("validate")
+@click.option(
+    "--source",
+    "-s",
+    help="URL or file path for anatomic location data (default: standard URL)",
+)
+def anatomic_validate(source: str | None) -> None:
+    """Validate anatomic location data without building database."""
+
+    console = Console()
+
+    async def _do_validate(source: str | None) -> None:
+        data_source = (
+            source
+            or "https://raw.githubusercontent.com/openimagingdata/CDEStaging/main/doc/anatomic_locations/anatomic_locations.json"
+        )
+
+        console.print("[bold green]Validating anatomic location data")
+        console.print(f"[gray]Source: [yellow]{data_source}\n")
+
+        try:
+            # Load data
+            with console.status("[bold green]Loading data..."):
+                records = await load_anatomic_data(data_source)
+
+            # Validate each record
+            validation_errors: dict[str, list[str]] = {}
+            for i, record in enumerate(records, 1):
+                record_id = record.get("_id", f"record_{i}")
+                errors = validate_anatomic_record(record)
+                if errors:
+                    validation_errors[record_id] = errors
+
+            # Display results
+            if validation_errors:
+                console.print(f"[bold red]Validation failed for {len(validation_errors)} record(s):\n")
+                for record_id, errors in validation_errors.items():
+                    console.print(f"[yellow]{record_id}:")
+                    for error in errors:
+                        console.print(f"  [red]✗ {error}")
+                    console.print()
+                sys.exit(1)
+            else:
+                console.print(f"[bold green]✓ All {len(records)} records validated successfully!")
+
+        except Exception as e:
+            console.print(f"[bold red]Error validating data: {e}")
+            raise
+
+    asyncio.run(_do_validate(source))
+
+
+@anatomic.command("stats")
+@click.option("--db-path", type=click.Path(path_type=Path), help="Database path (default: config setting)")
+def anatomic_stats(db_path: Path | None) -> None:
+    """Show anatomic location database statistics."""
+    from findingmodel.config import ensure_db_file
+
+    console = Console()
+
+    database_path = (
+        db_path
+        if db_path
+        else ensure_db_file(
+            settings.duckdb_anatomic_path,
+            settings.remote_anatomic_db_url,
+            settings.remote_anatomic_db_hash,
+        )
+    )
+
+    if not database_path.exists():
+        console.print(f"[bold red]Error: Database not found at {database_path}")
+        console.print("[yellow]Use 'anatomic build' to create the database.")
+        raise click.Abort()
+
+    console.print("[bold green]Anatomic Location Database Statistics\n")
+    console.print(f"[gray]Database: [yellow]{database_path.absolute()}\n")
+
+    try:
+        stats_data = get_database_stats(database_path)
+
+        # Create summary table
+        summary_table = Table(title="Database Summary", show_header=True, header_style="bold cyan")
+        summary_table.add_column("Metric", style="cyan")
+        summary_table.add_column("Value", style="green", justify="right")
+
+        summary_table.add_row("Total Records", str(stats_data["total_records"]))
+        summary_table.add_row("Records with Vectors", str(stats_data["records_with_vectors"]))
+        summary_table.add_row("Unique Regions", str(stats_data["unique_regions"]))
+        summary_table.add_row("File Size", f"{stats_data['file_size_mb']:.2f} MB")
+
+        console.print(summary_table)
+
+        # Display sided distribution
+        console.print("\n[bold cyan]Sided Distribution:")
+        sided_dist = stats_data["sided_distribution"]
+        for sided, count in sorted(sided_dist.items(), key=lambda x: x[1], reverse=True):
+            sided_label = sided if sided else "NULL"
+            console.print(f"  {sided_label}: {count}")
+
+    except Exception as e:
+        console.print(f"[bold red]Error reading database: {e}")
+        raise
 
 
 if __name__ == "__main__":

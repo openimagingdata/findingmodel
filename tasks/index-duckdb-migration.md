@@ -7,7 +7,7 @@
 ## Goal
 Migrate the Index class from MongoDB to DuckDB with hybrid FTS + vector search. Phase 1 focuses on getting a working, tested implementation shipped. Phase 2 (see [tasks/refactoring/01-index-decomposition.md](tasks/refactoring/01-index-decomposition.md)) will decompose into focused classes.
 
-## Current State (2025-10-09)
+## Current State (2025-10-11)
 
 ### Phase 1 Implementation Complete ✅
 
@@ -26,6 +26,7 @@ Migrate the Index class from MongoDB to DuckDB with hybrid FTS + vector search. 
 - ✅ Read-only mode by default
 - ✅ Enhanced logging for batch operations
 - ✅ **Fixed validation bugs**: Skip validation for model updates (batch and single-file)
+- ✅ **Pooch integration**: Optional remote download of pre-built DuckDB files with SHA256 verification (2025-10-11)
 
 **Tests**: [test/test_duckdb_index.py](../test/test_duckdb_index.py) (1,500+ lines, 67 tests)
 
@@ -47,11 +48,31 @@ Migrate the Index class from MongoDB to DuckDB with hybrid FTS + vector search. 
 
 ### What's Remaining for Integration ⏳
 
-**Integration tasks** (not blockers for merging, can be separate PR):
+**Critical Next Steps** (Priority 1 - do before merging):
+1. 🔴 **Update `pending-fixes.md`** - Remove completed Pooch items, move remaining issues to appropriate tracking
+2. 🔴 **Anatomic location search alignment** - Apply same Pooch pattern to anatomic DB (already documented in memories, needs implementation verification)
+3. 🔴 **Config cleanup** - Review hardcoded dimensions issue noted in `pending-fixes.md` (anatomic_location_search.py line uses 512 instead of config)
+
+**Integration tasks** (Priority 2 - can be separate PR):
 - ⏳ MongoDB Index still in use ([index.py](../src/findingmodel/index.py))
 - ⏳ Config still has MongoDB settings
 - ⏳ CLI commands not tested with DuckDB
 - ⏳ Documentation updates (README, migration guide)
+
+### Anatomic Location Search Status
+
+**Current State**:
+- ✅ Already using DuckDB (`duckdb_search.py`) with HNSW + FTS hybrid search
+- ✅ Pooch download pattern documented in Serena memory (`anatomic_location_search_implementation`)
+- ✅ Config fields exist (`duckdb_anatomic_path`, `remote_anatomic_db_url`, `remote_anatomic_db_hash`)
+- ⚠️ **NEEDS VERIFICATION**: Ensure `__init__` in `duckdb_search.py` actually calls `ensure_db_file()` (may already be done)
+- ⚠️ **NEEDS FIX**: Hardcoded `dimensions=512` in `anatomic_location_search.py` line 6 - should use `Config().openai_embedding_dimensions`
+
+**Action Items**:
+1. Check if `DuckDBOntologySearchClient.__init__` uses `ensure_db_file()` helper
+2. Fix hardcoded dimensions in `anatomic_location_search.py`
+3. Verify anatomic location tests still pass
+4. Update `pending-fixes.md` to remove completed items
 
 ### Architectural Note
 DuckDBIndex is currently **monolithic** (same "god object" pattern as MongoDB Index). This is acceptable for Phase 1—we prioritize **getting it working and tested** over perfect architecture.

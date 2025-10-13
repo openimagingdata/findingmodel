@@ -10,10 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Anatomic location CLI commands**: New command group for managing anatomic location database
+  - `anatomic build`: Build DuckDB database from anatomic location data (URL or local file)
+  - `anatomic validate`: Validate anatomic location data without building database
+  - `anatomic stats`: Display database statistics (records, vectors, regions, file size)
+  - Migration logic extracted from notebook into reusable `anatomic_migration` module
+  - Comprehensive test coverage (72 tests) for migration functions and CLI commands
 - **Remote database downloads**: Optional automatic download of pre-built DuckDB database files
   - Configure via environment variables: `REMOTE_ANATOMIC_DB_URL`, `REMOTE_ANATOMIC_DB_HASH`, `REMOTE_INDEX_DB_URL`, `REMOTE_INDEX_DB_HASH`
   - Files download automatically on first use with SHA256 verification
   - Cached in package installation for subsequent use
+
+### Changed
+
+- **DuckDB search client refactoring**: Eliminated hardcoded configuration values
+  - Replaced hardcoded embedding dimensions with `settings.openai_embedding_dimensions`
+  - All DuckDB operations now use common utilities from `duckdb_utils` module
+  - Improved maintainability and consistency across codebase
+
+### Removed
+
+- Removed `notebooks/migrate_anatomic_to_duckdb.py` (replaced by CLI commands)
 
 ## [0.4.0] - 2025-09-26
 
