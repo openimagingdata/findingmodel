@@ -649,6 +649,7 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "duckdb" },
+    { name = "httpx" },
     { name = "instructor" },
     { name = "jinja2" },
     { name = "loguru" },
@@ -676,6 +677,7 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.1.8" },
     { name = "duckdb", specifier = ">=1.3.2" },
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "instructor", specifier = ">=1.7.9" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7.3" },

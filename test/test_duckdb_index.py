@@ -1020,16 +1020,11 @@ async def test_remove_entry_clears_related_rows(
 # ============================================================================
 
 
-def test_setup_creates_hnsw_index(index: DuckDBIndex) -> None:
-    """Test that setup() creates HNSW index."""
+def test_setup_creates_search_indexes(index: DuckDBIndex) -> None:
+    """Test that setup() creates both HNSW and FTS indexes."""
     conn = index._ensure_connection()
-    assert _hnsw_index_exists(conn)
-
-
-def test_setup_creates_fts_index(index: DuckDBIndex) -> None:
-    """Test that setup() creates FTS index."""
-    conn = index._ensure_connection()
-    assert _fts_index_works(conn)
+    assert _hnsw_index_exists(conn), "HNSW index should be created"
+    assert _fts_index_works(conn), "FTS index should be functional"
 
 
 @pytest.mark.asyncio
