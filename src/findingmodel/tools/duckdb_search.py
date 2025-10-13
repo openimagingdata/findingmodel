@@ -7,7 +7,7 @@ import duckdb
 from openai import AsyncOpenAI
 
 from findingmodel.config import settings
-from findingmodel.tools.common import get_embedding
+from findingmodel.tools.duckdb_utils import get_embedding_for_duckdb, rrf_fusion, setup_duckdb_connection
 from findingmodel.tools.ontology_search import OntologySearchProtocol, OntologySearchResult
 
 
@@ -40,10 +40,7 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
     async def __aenter__(self) -> "DuckDBOntologySearchClient":
         """Enter async context."""
         if self.conn is None:
-            # Just connect directly - DuckDB is fast enough
-            self.conn = duckdb.connect(str(self.db_path), read_only=True)
-            self.conn.execute("LOAD fts")
-            self.conn.execute("LOAD vss")
+            self.conn = setup_duckdb_connection(self.db_path, read_only=True)
 
         if self._openai_client is None and settings.openai_api_key:
             self._openai_client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
@@ -222,14 +219,15 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
         # Vector search (if we have embeddings)
         vector_results = []
         if embedding:
-            # Convert embedding list to FLOAT[512] for DuckDB
+            # Convert embedding list to FLOAT[dimensions] for DuckDB
+            dimensions = settings.openai_embedding_dimensions
             vector_results = self.conn.execute(
-                """
-                SELECT 
+                f"""
+                SELECT
                     id,
                     description,
                     synonyms,
-                    array_cosine_distance(vector, ?::FLOAT[512]) as score
+                    array_cosine_distance(vector, ?::FLOAT[{dimensions}]) as score
                 FROM anatomic_locations
                 WHERE vector IS NOT NULL
                 ORDER BY score ASC
@@ -343,28 +341,27 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
         if not vector_results:
             return fts_results[:limit]
 
-        # Combine using reciprocal rank fusion
-        fts_dict = {r[0]: (r, i + 1) for i, r in enumerate(fts_results)}
-        vec_dict = {r[0]: (r, i + 1) for i, r in enumerate(vector_results)}
+        # Convert to (id, score) format for rrf_fusion utility
+        fts_scores = [(r[0], r[3]) for r in fts_results]
+        vec_scores = [(r[0], r[3]) for r in vector_results]
 
-        combined = {}
-        k = 60  # RRF constant
+        # Apply RRF fusion using utility function
+        fused_scores = rrf_fusion(fts_scores, vec_scores)
 
-        for id in set(fts_dict.keys()) | set(vec_dict.keys()):
-            fts_rank = fts_dict.get(id, (None, len(fts_results) + 1))[1]
-            vec_rank = vec_dict.get(id, (None, len(vector_results) + 1))[1]
+        # Build result lookup by ID
+        result_map = {}
+        for r in fts_results + vector_results:
+            if r[0] not in result_map:
+                result_map[r[0]] = r
 
-            # RRF score
-            score = 0.5 * (1 / (k + fts_rank)) + 0.5 * (1 / (k + vec_rank))
+        # Reconstruct results with RRF scores
+        combined_results = []
+        for id, score in fused_scores[:limit]:
+            if id in result_map:
+                row = result_map[id]
+                combined_results.append((*row[:3], score))
 
-            # Get the actual data (prefer FTS result for metadata)
-            data_tuple = fts_dict.get(id) or vec_dict.get(id)
-            if data_tuple:
-                data = data_tuple[0]
-                combined[id] = (*data[:3], score)
-
-        # Sort by RRF score
-        return sorted(combined.values(), key=lambda x: x[3], reverse=True)[:limit]
+        return combined_results
 
     def _combine_with_exact_matches(
         self, exact_matches: list[OntologySearchResult], other_results: list[OntologySearchResult], limit: int
@@ -455,12 +452,13 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
         # Vector search with filters (if we have embeddings)
         vector_results = []
         if embedding:
+            dimensions = settings.openai_embedding_dimensions
             vector_query = f"""
-                SELECT 
+                SELECT
                     id,
                     description,
                     synonyms,
-                    array_cosine_distance(vector, ?::FLOAT[512]) as score
+                    array_cosine_distance(vector, ?::FLOAT[{dimensions}]) as score
                 FROM anatomic_locations
                 WHERE vector IS NOT NULL
                     AND {where_clause}
@@ -479,12 +477,12 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
         return self._combine_with_exact_matches(exact_matches, ontology_results, limit)
 
     async def _get_embedding(self, text: str) -> list[float] | None:
-        """Get embedding for text using text-embedding-3-small.
+        """Get embedding for text.
 
         Args:
             text: Text to embed
 
         Returns:
-            Embedding vector (512 dimensions) or None if not available
+            Embedding vector or None if not available
         """
-        return await get_embedding(text, client=self._openai_client, dimensions=512)
+        return await get_embedding_for_duckdb(text, client=self._openai_client)
