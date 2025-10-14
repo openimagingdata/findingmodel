@@ -31,7 +31,7 @@ def _mongodb_available(uri: str) -> bool:
             client.close()
 
 
-HAS_MONGODB = _mongodb_available(settings.mongodb_uri.get_secret_value())
+HAS_MONGODB = _mongodb_available("mongodb://localhost:27017")
 
 
 def test_create_stub(finding_info: FindingInfo) -> None:

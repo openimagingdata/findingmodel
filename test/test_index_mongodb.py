@@ -9,7 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import ServerSelectionTimeoutError
 
 from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded, FindingModelFull, NumericAttributeIded
-from findingmodel.index import Index
+from findingmodel.mongodb_index import Index
 
 TEST_MONGODB_URI = "mongodb://localhost:27017"
 TEST_MONGODB_DB = "test_findingmodels_db"

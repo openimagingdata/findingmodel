@@ -653,7 +653,6 @@ dependencies = [
     { name = "instructor" },
     { name = "jinja2" },
     { name = "loguru" },
-    { name = "motor" },
     { name = "openai" },
     { name = "pooch" },
     { name = "prompt-toolkit" },
@@ -661,6 +660,11 @@ dependencies = [
     { name = "pydantic-ai-slim", extra = ["cohere", "openai", "tavily"] },
     { name = "pydantic-settings" },
     { name = "rich" },
+]
+
+[package.optional-dependencies]
+mongodb = [
+    { name = "motor" },
 ]
 
 [package.dev-dependencies]
@@ -681,7 +685,7 @@ requires-dist = [
     { name = "instructor", specifier = ">=1.7.9" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7.3" },
-    { name = "motor", specifier = ">=3.7.1" },
+    { name = "motor", marker = "extra == 'mongodb'", specifier = ">=3.7.1" },
     { name = "openai", specifier = ">=1.76" },
     { name = "pooch", specifier = ">=1.8.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.48" },
@@ -690,6 +694,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "rich", specifier = ">=13.9.4" },
 ]
+provides-extras = ["mongodb"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -15,7 +15,7 @@ from .anatomic_migration import (
     validate_anatomic_record,
 )
 from .config import settings
-from .duckdb_index import DuckDBIndex
+from .index import DuckDBIndex
 from .finding_info import FindingInfo
 from .finding_model import FindingModelBase, FindingModelFull
 from .tools import (

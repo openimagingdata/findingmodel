@@ -15,10 +15,10 @@ from pydantic import ValidationError
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator
 
-from findingmodel import duckdb_index
+from findingmodel import index as duckdb_index
 from findingmodel.config import settings
 from findingmodel.contributor import Organization, Person
-from findingmodel.duckdb_index import DuckDBIndex, IndexReturnType
+from findingmodel.index import DuckDBIndex, IndexReturnType
 from findingmodel.finding_model import FindingModelFull
 
 

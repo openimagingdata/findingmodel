@@ -17,8 +17,8 @@ from pydantic_ai import Agent, RunContext
 from typing_extensions import NotRequired, TypedDict
 
 from findingmodel import logger
+from findingmodel.index import DuckDBIndex as Index
 from findingmodel.config import settings
-from findingmodel.index import Index
 from findingmodel.tools.common import get_openai_model
 
 
@@ -271,7 +271,7 @@ async def find_similar_models(  # noqa: C901
 
         # Step 2: Batch search all terms at once
         logger.info("Performing batch search for all terms")
-        batch_results = await index.search_batch(search_terms, limit_per_query=5)
+        batch_results = await index.search_batch(search_terms, limit=5)
 
         # Combine and deduplicate results
         all_found_models = {}

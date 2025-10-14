@@ -13,10 +13,10 @@ from click.testing import CliRunner
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-from findingmodel import duckdb_index
+from findingmodel import index as duckdb_index
 from findingmodel.cli import cli
 from findingmodel.config import settings
-from findingmodel.duckdb_index import DuckDBIndex
+from findingmodel.index import DuckDBIndex
 
 # ============================================================================
 # Test Helpers and Fixtures

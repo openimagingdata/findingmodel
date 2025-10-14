@@ -38,12 +38,14 @@ class FindingModelConfig(BaseSettings):
     perplexity_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
     perplexity_default_model: str = Field(default="sonar-pro")
 
-    # Mongo DB
-    mongodb_uri: QuoteStrippedSecretStr = Field(default=SecretStr("mongodb://localhost:27017"))
-    mongodb_db: str = Field(default="findingmodels")
-    mongodb_index_collection_base: str = Field(default="index_entries")
-    mongodb_organizations_collection_base: str = Field(default="organizations")
-    mongodb_people_collection_base: str = Field(default="people")
+    # DEPRECATED: MongoDB is no longer the default index backend
+    # Use DuckDB instead (see duckdb_* settings below)
+    # To use MongoDB, install with: pip install findingmodel[mongodb]
+    # mongodb_uri: QuoteStrippedSecretStr = Field(default=SecretStr("mongodb://localhost:27017"))
+    # mongodb_db: str = Field(default="findingmodels")
+    # mongodb_index_collection_base: str = Field(default="index_entries")
+    # mongodb_organizations_collection_base: str = Field(default="organizations")
+    # mongodb_people_collection_base: str = Field(default="people")
 
     # BioOntology API
     bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
@@ -78,7 +80,10 @@ class FindingModelConfig(BaseSettings):
     remote_anatomic_db_hash: str | None = Field(
         default=None, description="SHA256 hash for anatomic DB (e.g. 'sha256:abc...')"
     )
-    remote_index_db_url: str | None = Field(default=None, description="URL to download finding models index database")
+    remote_index_db_url: str | None = Field(
+        default="https://findingmodelsdata.t3.storage.dev/finding_models.duckdb",
+        description="URL to download finding models index database",
+    )
     remote_index_db_hash: str | None = Field(
         default=None, description="SHA256 hash for index DB (e.g. 'sha256:def...')"
     )
