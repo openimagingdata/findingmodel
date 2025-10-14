@@ -57,7 +57,7 @@ Claude Code must follow these instructions when working in this repository.
 - Prefer programmatic solutions before invoking LLMs; agents should perform judgment, not heavy data munging.
 - When adding features:
   1. Review relevant Serena memories for conventions.
-  2. Implement/test.
+  2. Implement -> assess/evaluate -> test.
   3. Update or create Serena memories summarizing architecture, commands, or conventions.
 
 ## 6. Documentation alignment
@@ -79,3 +79,5 @@ Claude Code must follow these instructions when working in this repository.
 - `pydantic_ai_testing_best_practices` – AI testing safeguards.
 - `ai_assistant_usage_2025` – how Copilot/Claude should collaborate.
 - `instruction_files_plan_2025` – update checklist for these instruction files.
+
+IMPORTANT! DON'T include time estimates in your planning—they're not useful.

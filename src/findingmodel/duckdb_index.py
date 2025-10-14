@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Iterable, Mapping, Sequence
-from contextlib import suppress
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -21,6 +20,9 @@ from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.tools.duckdb_utils import (
     batch_embeddings_for_duckdb,
+    create_fts_index,
+    create_hnsw_index,
+    drop_search_indexes,
     get_embedding_for_duckdb,
     l2_to_cosine_similarity,
     normalize_scores,
@@ -189,18 +191,6 @@ _INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_attributes_model ON attributes(oifm_id)",
     "CREATE INDEX IF NOT EXISTS idx_attributes_name ON attributes(attribute_name)",
 )
-
-_FTS_INDEX_STATEMENT = """
-PRAGMA create_fts_index(
-    'finding_models',
-    'oifm_id',
-    'search_text',
-    stemmer = 'porter',
-    stopwords = 'english',
-    lower = 1,
-    overwrite = 1
-)
-"""
 
 
 class DuckDBIndex:
@@ -1385,16 +1375,26 @@ class DuckDBIndex:
             )
 
     def _create_search_indexes(self, conn: duckdb.DuckDBPyConnection) -> None:
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS finding_models_embedding_hnsw ON finding_models USING HNSW (embedding)"
+        create_hnsw_index(
+            conn,
+            table="finding_models",
+            column="embedding",
+            index_name="finding_models_embedding_hnsw",
+            metric="l2sq",
         )
-        conn.execute(_FTS_INDEX_STATEMENT)
+        create_fts_index(
+            conn,
+            "finding_models",
+            "oifm_id",
+            "search_text",
+            stemmer="porter",
+            stopwords="english",
+            lower=1,
+            overwrite=True,
+        )
 
     def _drop_search_indexes(self, conn: duckdb.DuckDBPyConnection) -> None:
-        with suppress(duckdb.Error):  # pragma: no cover - index already absent or extension missing
-            conn.execute("DROP INDEX IF EXISTS finding_models_embedding_hnsw")
-        with suppress(duckdb.Error):  # pragma: no cover - FTS index missing or extension unavailable
-            conn.execute("PRAGMA drop_fts_index('finding_models')")
+        drop_search_indexes(conn, table="finding_models", hnsw_index_name="finding_models_embedding_hnsw")
 
     async def _search_semantic(
         self,

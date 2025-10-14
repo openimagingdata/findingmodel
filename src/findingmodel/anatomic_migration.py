@@ -14,7 +14,12 @@ from openai import AsyncOpenAI
 
 from findingmodel import logger
 from findingmodel.config import settings
-from findingmodel.tools.duckdb_utils import batch_embeddings_for_duckdb, setup_duckdb_connection
+from findingmodel.tools.duckdb_utils import (
+    batch_embeddings_for_duckdb,
+    create_fts_index,
+    create_hnsw_index,
+    setup_duckdb_connection,
+)
 
 
 def create_searchable_text(record: dict[str, Any]) -> str:
@@ -322,30 +327,33 @@ def _create_indexes(conn: duckdb.DuckDBPyConnection, dimensions: int) -> None:
     logger.info("Creating indexes...")
 
     # Create FTS index on searchable text fields
-    logger.info("Creating FTS index...")
-    conn.execute("""
-        PRAGMA create_fts_index(
-            'anatomic_locations', 
-            'id',
-            'description', 
-            'definition',
-            overwrite=1
-        )
-    """)
+    create_fts_index(
+        conn,
+        "anatomic_locations",
+        "id",
+        "description",
+        "definition",
+        stemmer="porter",
+        stopwords="english",
+        lower=0,
+        overwrite=True,
+    )
 
-    # Create HNSW index for vector similarity search
-    logger.info("Creating HNSW index for vector similarity search...")
+    # Create HNSW index for vector similarity search (optional, will fall back to brute force)
     try:
-        conn.execute("""
-            CREATE INDEX idx_anatomic_hnsw 
-            ON anatomic_locations 
-            USING HNSW (vector)
-            WITH (metric = 'cosine', ef_construction = 128, ef_search = 64, M = 16)
-        """)
-        logger.info("HNSW index created successfully")
-    except Exception as e:
-        logger.warning(f"Could not create HNSW index: {e}")
-        logger.warning("Vector search will use brute force instead of index")
+        create_hnsw_index(
+            conn,
+            table="anatomic_locations",
+            column="vector",
+            index_name="idx_anatomic_hnsw",
+            metric="cosine",
+            ef_construction=128,
+            ef_search=64,
+            m=16,
+        )
+    except Exception:
+        # Utility logged the specific error; continuing without index
+        logger.info("Anatomic location search will continue without HNSW index")
 
     # Create standard indexes
     logger.info("Creating standard indexes...")
