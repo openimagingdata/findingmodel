@@ -77,16 +77,21 @@ class FindingModelConfig(BaseSettings):
     )
 
     # Optional remote DuckDB download URLs
-    remote_anatomic_db_url: str | None = Field(default=None, description="URL to download anatomic locations database")
+    remote_anatomic_db_url: str | None = Field(
+        default="https://findingmodelsdata.t3.storage.dev/anatomic_locations_20251016.duckdb",
+        description="URL to download anatomic locations database",
+    )
     remote_anatomic_db_hash: str | None = Field(
-        default=None, description="SHA256 hash for anatomic DB (e.g. 'sha256:abc...')"
+        default="sha256:b69c9b072b3661241e858abb307c4eff7d5d074d27fdda61fb87b0efec0dd65b",
+        description="SHA256 hash for anatomic DB (e.g. 'sha256:abc...')",
     )
     remote_index_db_url: str | None = Field(
-        default="https://findingmodelsdata.t3.storage.dev/finding_models.duckdb",
+        default="https://findingmodelsdata.t3.storage.dev/finding_models_20251016.duckdb",
         description="URL to download finding models index database",
     )
     remote_index_db_hash: str | None = Field(
-        default=None, description="SHA256 hash for index DB (e.g. 'sha256:def...')"
+        default="sha256:05a7491c5e98a0e4c8c4ad73c627d8e4d7a9c165fbe500bfd436f1880ab4fc53",
+        description="SHA256 hash for index DB (e.g. 'sha256:def...')",
     )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
