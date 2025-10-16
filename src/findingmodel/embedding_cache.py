@@ -8,10 +8,14 @@ from pathlib import Path
 from typing import Final
 
 import duckdb
+from platformdirs import user_cache_dir
 
 from findingmodel import logger
 
-_DEFAULT_CACHE_PATH: Final[Path] = Path("data/embeddings_cache.duckdb")
+_DEFAULT_CACHE_PATH: Final[Path] = (
+    Path(user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
+    / "embeddings.duckdb"
+)
 
 
 class EmbeddingCache:

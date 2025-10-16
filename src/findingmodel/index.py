@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -26,6 +26,7 @@ from findingmodel.tools.duckdb_utils import (
     get_embedding_for_duckdb,
     l2_to_cosine_similarity,
     normalize_scores,
+    rrf_fusion,
     setup_duckdb_connection,
 )
 
@@ -511,16 +512,30 @@ class DuckDBIndex:
             ids_to_delete=sorted(ids_to_delete_set),
         )
 
-    def _execute_batch_directory_update(self, conn: duckdb.DuckDBPyConnection, payload: _BatchPayload) -> None:
+    def _execute_batch_directory_update(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        payload: _BatchPayload,
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> None:
         if not payload.ids_to_delete and not payload.model_rows:
             return
+
+        if progress_callback:
+            progress_callback("Dropping search indexes...")
 
         indexes_dropped = False
         conn.execute("BEGIN TRANSACTION")
         try:
             self._drop_search_indexes(conn)
             indexes_dropped = True
-            self._apply_batch_mutations(conn, payload)
+
+            # Delete old entries first if needed
+            if payload.ids_to_delete:
+                self._delete_old_entries(conn, payload.ids_to_delete, progress_callback)
+
+            # Insert new/updated entries
+            self._insert_models_with_progress(conn, payload, progress_callback)
 
             conn.execute("COMMIT")
         except Exception:
@@ -529,7 +544,104 @@ class DuckDBIndex:
                 self._create_search_indexes(conn)
             raise
 
+        if progress_callback:
+            progress_callback("Rebuilding search indexes...")
         self._create_search_indexes(conn)
+
+    def _delete_old_entries(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        ids_to_delete: list[str],
+        progress_callback: Callable[[str], None] | None,
+    ) -> None:
+        """Delete old entries from all tables."""
+        if progress_callback:
+            progress_callback(f"Removing {len(ids_to_delete)} old entries...")
+        self._delete_denormalized_records(conn, ids_to_delete)
+        placeholders = ", ".join(["?"] * len(ids_to_delete))
+        conn.execute(
+            f"DELETE FROM finding_models WHERE oifm_id IN ({placeholders})",
+            ids_to_delete,
+        )
+
+    def _insert_models_with_progress(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        payload: _BatchPayload,
+        progress_callback: Callable[[str], None] | None,
+    ) -> None:
+        """Insert models with progress updates for large batches."""
+        total_models = len(payload.model_rows)
+        chunk_size = 500
+
+        if total_models > chunk_size:
+            if progress_callback:
+                progress_callback(f"Processing {total_models} models in chunks of {chunk_size}...")
+
+            # Process in chunks
+            for chunk_start in range(0, total_models, chunk_size):
+                chunk_end = min(chunk_start + chunk_size, total_models)
+                chunk_num = (chunk_start // chunk_size) + 1
+                total_chunks = (total_models + chunk_size - 1) // chunk_size
+
+                if progress_callback:
+                    progress_callback(
+                        f"Writing chunk {chunk_num}/{total_chunks} ({chunk_end}/{total_models} models)..."
+                    )
+
+                chunk_payload = self._create_chunk_payload(payload, chunk_start, chunk_end)
+                self._apply_batch_mutations(conn, chunk_payload)
+        else:
+            if progress_callback:
+                progress_callback(f"Writing {total_models} models to database...")
+            # Create payload without deletions (already done in _delete_old_entries)
+            no_delete_payload = _BatchPayload(
+                model_rows=payload.model_rows,
+                synonym_rows=payload.synonym_rows,
+                tag_rows=payload.tag_rows,
+                attribute_rows=payload.attribute_rows,
+                people_rows=payload.people_rows,
+                model_people_rows=payload.model_people_rows,
+                organization_rows=payload.organization_rows,
+                model_organization_rows=payload.model_organization_rows,
+                ids_to_delete=[],
+            )
+            self._apply_batch_mutations(conn, no_delete_payload)
+
+    def _create_chunk_payload(
+        self,
+        payload: _BatchPayload,
+        start_idx: int,
+        end_idx: int,
+    ) -> _BatchPayload:
+        """Create a chunk of the payload for batch processing."""
+        # Get the oifm_ids in this chunk
+        chunk_model_rows = payload.model_rows[start_idx:end_idx]
+        chunk_oifm_ids = {row[0] for row in chunk_model_rows}  # oifm_id is first element
+
+        # Filter all related rows to only those in this chunk
+        chunk_synonym_rows = [row for row in payload.synonym_rows if row[0] in chunk_oifm_ids]
+        chunk_tag_rows = [row for row in payload.tag_rows if row[0] in chunk_oifm_ids]
+        chunk_attribute_rows = [
+            row for row in payload.attribute_rows if row[1] in chunk_oifm_ids
+        ]  # oifm_id is second element
+        chunk_model_people_rows = [row for row in payload.model_people_rows if row[0] in chunk_oifm_ids]
+        chunk_model_organization_rows = [row for row in payload.model_organization_rows if row[0] in chunk_oifm_ids]
+
+        # For people and organizations, we need to include all that are referenced
+        # (even if they're not in this chunk, to avoid conflicts)
+
+        return _BatchPayload(
+            model_rows=chunk_model_rows,
+            synonym_rows=chunk_synonym_rows,
+            tag_rows=chunk_tag_rows,
+            attribute_rows=chunk_attribute_rows,
+            people_rows=payload.people_rows,  # Include all people (upsert handles duplicates)
+            model_people_rows=chunk_model_people_rows,
+            organization_rows=payload.organization_rows,  # Include all organizations
+            model_organization_rows=chunk_model_organization_rows,
+            ids_to_delete=[],  # Only delete in first chunk
+        )
 
     def _load_models_metadata(
         self,
@@ -599,8 +711,11 @@ class DuckDBIndex:
                 embedding,
             ))
 
-            synonym_rows.extend((model.oifm_id, synonym) for synonym in model.synonyms or [])
-            tag_rows.extend((model.oifm_id, tag) for tag in model.tags or [])
+            # Deduplicate to avoid PRIMARY KEY violations
+            unique_synonyms = list(dict.fromkeys(model.synonyms or []))
+            unique_tags = list(dict.fromkeys(model.tags or []))
+            synonym_rows.extend((model.oifm_id, synonym) for synonym in unique_synonyms)
+            tag_rows.extend((model.oifm_id, tag) for tag in unique_tags)
             attribute_rows.extend(
                 (
                     attribute.oifma_id,
@@ -782,13 +897,22 @@ class DuckDBIndex:
         directory: str | Path,
         *,
         allow_duplicate_synonyms: bool = False,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> dict[str, int]:
-        """Batch-update the index to match the contents of a directory."""
+        """Batch-update the index to match the contents of a directory.
+
+        Args:
+            directory: Path to directory containing .fm.json files
+            allow_duplicate_synonyms: Allow models with duplicate synonyms
+            progress_callback: Optional callback for progress updates (receives status messages)
+        """
 
         directory_path = Path(directory).expanduser()
         if not directory_path.is_dir():
             raise ValueError(f"{directory_path} is not a valid directory.")
 
+        if progress_callback:
+            progress_callback("Scanning directory for .fm.json files...")
         files = self._collect_directory_files(directory_path)
         logger.info(
             "Refreshing DuckDB index from {} ({} files)",
@@ -803,6 +927,8 @@ class DuckDBIndex:
         conn.execute("CREATE TEMP TABLE tmp_directory_files(filename TEXT, file_hash_sha256 TEXT)")
 
         try:
+            if progress_callback:
+                progress_callback(f"Analyzing {len(files)} files...")
             self._stage_directory_files(conn, files)
             added_filenames, updated_entries, removed_ids = self._classify_directory_changes(conn)
             logger.debug(
@@ -814,10 +940,17 @@ class DuckDBIndex:
             )
             if not added_filenames and not updated_entries and not removed_ids:
                 logger.info("DuckDB index already in sync with {}", directory_path)
+                if progress_callback:
+                    progress_callback("Index already up to date")
                 return {"added": 0, "updated": 0, "removed": 0}
 
             files_by_name = {filename: (file_hash, path) for filename, file_hash, path in files}
             filenames_to_process = sorted(added_filenames | set(updated_entries.keys()))
+
+            if progress_callback:
+                total = len(filenames_to_process)
+                progress_callback(f"Processing {total} models (loading and generating embeddings)...")
+
             payload = await self._prepare_batch_payload(
                 filenames_to_process,
                 files_by_name,
@@ -825,7 +958,14 @@ class DuckDBIndex:
                 removed_ids,
                 allow_duplicate_synonyms=allow_duplicate_synonyms,
             )
-            self._execute_batch_directory_update(conn, payload)
+
+            self._execute_batch_directory_update(conn, payload, progress_callback)
+
+            if progress_callback:
+                progress_callback(
+                    f"Complete: {len(added_filenames)} added, {len(updated_entries)} updated, {len(removed_ids)} removed"
+                )
+
             logger.info(
                 "DuckDB index refreshed: added={} updated={} removed={}",
                 len(added_filenames),
@@ -872,7 +1012,10 @@ class DuckDBIndex:
         limit: int = 10,
         tags: Sequence[str] | None = None,
     ) -> list[IndexEntry]:
-        """Search for finding models, returning exact matches if present.
+        """Search for finding models using hybrid search with RRF fusion.
+
+        Uses Reciprocal Rank Fusion to combine FTS and semantic search results,
+        returning exact matches immediately if found.
 
         Args:
             query: Search query string
@@ -880,39 +1023,44 @@ class DuckDBIndex:
             tags: Optional list of tags - models must have ALL specified tags
         """
         conn = self._ensure_connection()
+        
+        # Exact matches take priority - return immediately if found
         exact_matches = self._search_exact(conn, query, tags=tags)
         if exact_matches:
             return exact_matches[:limit]
 
+        # Get both FTS and semantic results
         fts_matches = self._search_fts(conn, query, limit=limit, tags=tags)
         semantic_matches = await self._search_semantic(conn, query, limit=limit, tags=tags)
 
-        combined: list[IndexEntry] = []
-        seen: set[str] = set()
+        # If no vector results, just return FTS results
+        if not semantic_matches:
+            return [entry for entry, _ in fts_matches[:limit]]
 
-        for entry, _ in fts_matches:
-            if entry.oifm_id in seen:
-                continue
-            combined.append(entry)
-            seen.add(entry.oifm_id)
-            if len(combined) >= limit:
-                return combined
+        # Apply RRF fusion
+        fts_scores = [(entry.oifm_id, score) for entry, score in fts_matches]
+        semantic_scores = [(entry.oifm_id, score) for entry, score in semantic_matches]
+        fused_scores = rrf_fusion(fts_scores, semantic_scores)
 
-        for entry, _ in semantic_matches:
-            if entry.oifm_id in seen:
-                continue
-            combined.append(entry)
-            seen.add(entry.oifm_id)
-            if len(combined) >= limit:
-                break
+        # Build result lookup by oifm_id
+        entry_map: dict[str, IndexEntry] = {}
+        for entry, _ in fts_matches + semantic_matches:
+            if entry.oifm_id not in entry_map:
+                entry_map[entry.oifm_id] = entry
 
-        return combined
+        # Return entries in RRF-ranked order
+        results: list[IndexEntry] = []
+        for oifm_id, _ in fused_scores[:limit]:
+            if oifm_id in entry_map:
+                results.append(entry_map[oifm_id])
 
-    async def search_batch(self, queries: list[str], *, limit: int = 10) -> dict[str, list[IndexEntry]]:  # noqa: C901
-        """Search multiple queries efficiently with single embedding call.
+        return results
+
+    async def search_batch(self, queries: list[str], *, limit: int = 10) -> dict[str, list[IndexEntry]]:
+        """Search multiple queries efficiently with single embedding call and RRF fusion.
 
         Embeds ALL queries in a single OpenAI API call for efficiency,
-        then performs hybrid search for each query.
+        then performs hybrid search with RRF fusion for each query.
 
         Args:
             queries: List of search query strings
@@ -946,28 +1094,29 @@ class DuckDBIndex:
             if embedding is not None:
                 semantic_matches = self._search_semantic_with_embedding(conn, embedding, limit=limit, tags=None)
 
-            # Combine results
-            combined: list[IndexEntry] = []
-            seen: set[str] = set()
+            # If no vector results, just return FTS results
+            if not semantic_matches:
+                results[query] = [entry for entry, _ in fts_matches[:limit]]
+                continue
 
-            for entry, _ in fts_matches:
-                if entry.oifm_id in seen:
-                    continue
-                combined.append(entry)
-                seen.add(entry.oifm_id)
-                if len(combined) >= limit:
-                    break
+            # Apply RRF fusion
+            fts_scores = [(entry.oifm_id, score) for entry, score in fts_matches]
+            semantic_scores = [(entry.oifm_id, score) for entry, score in semantic_matches]
+            fused_scores = rrf_fusion(fts_scores, semantic_scores)
 
-            if len(combined) < limit:
-                for entry, _ in semantic_matches:
-                    if entry.oifm_id in seen:
-                        continue
-                    combined.append(entry)
-                    seen.add(entry.oifm_id)
-                    if len(combined) >= limit:
-                        break
+            # Build result lookup by oifm_id
+            entry_map: dict[str, IndexEntry] = {}
+            for entry, _ in fts_matches + semantic_matches:
+                if entry.oifm_id not in entry_map:
+                    entry_map[entry.oifm_id] = entry
 
-            results[query] = combined
+            # Return entries in RRF-ranked order
+            query_results: list[IndexEntry] = []
+            for oifm_id, _ in fused_scores[:limit]:
+                if oifm_id in entry_map:
+                    query_results.append(entry_map[oifm_id])
+
+            results[query] = query_results
 
         return results
 
@@ -1152,9 +1301,11 @@ class DuckDBIndex:
     ) -> None:
         conn.execute("DELETE FROM synonyms WHERE oifm_id = ?", (oifm_id,))
         if synonyms:
+            # Deduplicate synonyms to avoid PRIMARY KEY violations
+            unique_synonyms = list(dict.fromkeys(synonyms))
             conn.executemany(
                 "INSERT INTO synonyms (oifm_id, synonym) VALUES (?, ?)",
-                [(oifm_id, synonym) for synonym in synonyms],
+                [(oifm_id, synonym) for synonym in unique_synonyms],
             )
 
     def _replace_tags(
@@ -1165,9 +1316,11 @@ class DuckDBIndex:
     ) -> None:
         conn.execute("DELETE FROM tags WHERE oifm_id = ?", (oifm_id,))
         if tags:
+            # Deduplicate tags to avoid PRIMARY KEY violations
+            unique_tags = list(dict.fromkeys(tags))
             conn.executemany(
                 "INSERT INTO tags (oifm_id, tag) VALUES (?, ?)",
-                [(oifm_id, tag) for tag in tags],
+                [(oifm_id, tag) for tag in unique_tags],
             )
 
     def _replace_attributes(self, conn: duckdb.DuckDBPyConnection, model: FindingModelFull) -> None:

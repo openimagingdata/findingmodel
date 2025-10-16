@@ -387,7 +387,7 @@ async def test_search_basic_functionality(populated_index: Index) -> None:
     assert len(results) >= 1
 
     # Check that we get IndexEntry objects back
-    from findingmodel.index import IndexEntry
+    from findingmodel.mongodb_index import IndexEntry
 
     assert all(isinstance(result, IndexEntry) for result in results)
 

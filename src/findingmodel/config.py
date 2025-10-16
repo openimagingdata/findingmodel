@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import openai
+from platformdirs import user_data_dir
 from pydantic import BeforeValidator, Field, HttpUrl, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -62,11 +63,11 @@ class FindingModelConfig(BaseSettings):
     # DuckDB configuration
     duckdb_anatomic_path: str = Field(
         default="anatomic_locations.duckdb",
-        description="Filename for anatomic locations database in package data directory",
+        description="Filename for anatomic locations database in user data directory",
     )
     duckdb_index_path: str = Field(
         default="finding_models.duckdb",
-        description="Filename for finding models index database in package data directory",
+        description="Filename for finding models index database in user data directory",
     )
     openai_embedding_model: str = Field(
         default="text-embedding-3-small", description="OpenAI model for generating embeddings"
@@ -106,7 +107,7 @@ openai.api_key = settings.openai_api_key.get_secret_value()
 
 
 def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | None) -> Path:
-    """Download DB file to package data directory if it doesn't exist and remote URL is configured.
+    """Download DB file to user data directory if it doesn't exist and remote URL is configured.
 
     Args:
         filename: Database filename (e.g., 'anatomic_locations.duckdb')
@@ -116,13 +117,11 @@ def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | Non
     Returns:
         Path to the database file (may not exist if download not configured)
     """
-    from importlib.resources import files
-
     from findingmodel import logger
 
-    # Get package data directory
-    data_dir = files("findingmodel") / "data"
-    db_path = Path(str(data_dir)) / filename
+    # Get user data directory (platform-specific)
+    data_dir = Path(user_data_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
+    db_path = data_dir / filename
 
     if db_path.exists():
         logger.debug(f"Database file already exists: {db_path}")
@@ -132,10 +131,10 @@ def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | Non
         import pooch
 
         logger.info(f"Downloading database file '{filename}' from {remote_url}")
-        db_path.parent.mkdir(parents=True, exist_ok=True)
+        data_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            downloaded = pooch.retrieve(url=remote_url, known_hash=remote_hash, path=db_path.parent, fname=filename)
+            downloaded = pooch.retrieve(url=remote_url, known_hash=remote_hash, path=data_dir, fname=filename)
             logger.info(f"Successfully downloaded database file to {downloaded}")
             return Path(downloaded)
         except Exception as e:

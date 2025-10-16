@@ -15,9 +15,9 @@ from .anatomic_migration import (
     validate_anatomic_record,
 )
 from .config import settings
-from .index import DuckDBIndex
 from .finding_info import FindingInfo
 from .finding_model import FindingModelBase, FindingModelFull
+from .index import DuckDBIndex
 from .tools import (
     add_ids_to_finding_model,
     add_standard_codes_to_finding_model,
@@ -211,11 +211,13 @@ def build(directory: Path, output: Path | None) -> None:
         console.print(f"[bold green]Building index at [yellow]{db_path}")
         console.print(f"[gray]Source directory: [yellow]{directory.absolute()}")
 
+        def progress_update(message: str) -> None:
+            console.print(f"[cyan]→[/cyan] {message}")
+
         try:
-            with console.status("[bold green]Creating database and scanning directory..."):
-                async with DuckDBIndex(db_path=db_path, read_only=False) as idx:
-                    await idx.setup()
-                    result = await idx.update_from_directory(directory)
+            async with DuckDBIndex(db_path=db_path, read_only=False) as idx:
+                await idx.setup()
+                result = await idx.update_from_directory(directory, progress_callback=progress_update)
 
             # Display results with color coding
             console.print("\n[bold green]Index built successfully!")
@@ -250,10 +252,12 @@ def update(directory: Path, index: Path | None) -> None:
         console.print(f"[bold green]Updating index at [yellow]{db_path}")
         console.print(f"[gray]Source directory: [yellow]{directory.absolute()}")
 
+        def progress_update(message: str) -> None:
+            console.print(f"[cyan]→[/cyan] {message}")
+
         try:
-            with console.status("[bold green]Scanning directory and updating index..."):
-                async with DuckDBIndex(db_path=db_path, read_only=False) as idx:
-                    result = await idx.update_from_directory(directory)
+            async with DuckDBIndex(db_path=db_path, read_only=False) as idx:
+                result = await idx.update_from_directory(directory, progress_callback=progress_update)
 
             # Display results with color coding
             console.print("\n[bold green]Index updated successfully!")

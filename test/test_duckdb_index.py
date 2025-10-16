@@ -528,7 +528,7 @@ async def test_search_basic_functionality(populated_index: DuckDBIndex) -> None:
     assert len(results) >= 1
 
     # Check that we get IndexEntry objects back
-    from findingmodel.duckdb_index import IndexEntry
+    from findingmodel.index import IndexEntry
 
     assert all(isinstance(result, IndexEntry) for result in results)
 
