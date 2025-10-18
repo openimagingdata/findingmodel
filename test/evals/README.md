@@ -78,54 +78,74 @@ python list_cases.py
 
 ## Adding New Test Cases
 
-To add new evaluation cases:
+The evaluator-based pattern makes adding cases straightforward. Just specify what you expect, and the evaluators automatically check it.
 
-1. **For successful edits**, add to `create_successful_edit_cases()`:
-   ```python
-   cases.append(
-       ModelEditorCase(
-           name="your_case_name",
-           model_json=load_fm_json("your_model.fm.json"),
-           command="Your editing command",
-           edit_type="natural_language",  # or "markdown"
-           should_succeed=True,
-           added_attribute_names=["expected_attr_name"],
-           changes_keywords=["keyword1", "keyword2"],
-       )
-   )
-   ```
+### Example: Add a successful edit case
 
-2. **For rejection cases**, add to `create_rejection_cases()`:
-   ```python
-   cases.append(
-       ModelEditorCase(
-           name="reject_your_case",
-           model_json=load_fm_json("your_model.fm.json"),
-           command="Command that should be rejected",
-           edit_type="natural_language",
-           should_succeed=False,
-           rejection_keywords=["expected", "in", "rejection"],
-       )
-   )
-   ```
+```python
+# In create_successful_edit_cases():
+cases.append(
+    ModelEditorCase(
+        name="add_laterality_attribute",
+        model_json=load_fm_json("pulmonary_embolism.fm.json"),
+        command="Add a choice attribute named 'laterality' with values: left, right, bilateral",
+        edit_type="natural_language",
+        should_succeed=True,
+        added_attribute_names=["laterality"],  # AttributeAdditionEvaluator checks this
+        changes_keywords=["laterality", "added"],  # ChangeTrackingEvaluator checks these
+    )
+)
+```
 
-3. **For markdown edits**, add to `create_markdown_edit_cases()`:
-   ```python
-   model = FindingModelFull.model_validate_json(your_json)
-   base_md = model_editor.export_model_for_editing(model)
-   modified_md = base_md + "\n### new_attribute\n...\n"
-   
-   cases.append(
-       ModelEditorCase(
-           name="markdown_your_case",
-           model_json=your_json,
-           command=modified_md,
-           edit_type="markdown",
-           should_succeed=True,
-           added_attribute_names=["new_attribute"],
-       )
-   )
-   ```
+**The evaluators will automatically check:**
+- ID preserved (IDPreservationEvaluator - strict)
+- "laterality" attribute added (AttributeAdditionEvaluator - partial credit)
+- Changes recorded with keywords (ChangeTrackingEvaluator - hybrid)
+
+### Example: Add a rejection case
+
+```python
+# In create_rejection_cases():
+cases.append(
+    ModelEditorCase(
+        name="reject_rename_attribute",
+        model_json=load_fm_json("pulmonary_embolism.fm.json"),
+        command="Rename the 'presence' attribute to 'occurrence'",
+        edit_type="natural_language",
+        should_succeed=False,
+        rejection_keywords=["rename", "not allowed"],  # RejectionAccuracyEvaluator checks these
+    )
+)
+```
+
+**The evaluators will automatically check:**
+- ID preserved (IDPreservationEvaluator - strict)
+- Rejections recorded (RejectionAccuracyEvaluator - strict)
+- Keywords in rejection message (RejectionAccuracyEvaluator - partial credit)
+- Model unchanged from original (ContentPreservationEvaluator - strict)
+
+### Example: Add a markdown edit case
+
+```python
+# In create_markdown_edit_cases():
+model = FindingModelFull.model_validate_json(load_fm_json("breast_density.fm.json"))
+base_md = model_editor.export_model_for_editing(model)
+enhanced_md = base_md + "\n### calcifications\n\nPresence of calcifications\n\n- absent\n- present\n\n"
+
+cases.append(
+    ModelEditorCase(
+        name="markdown_add_calcifications",
+        model_json=model.model_dump_json(),
+        command=enhanced_md,
+        edit_type="markdown",
+        should_succeed=True,
+        added_attribute_names=["calcifications"],
+        changes_keywords=["calcifications", "added"],
+    )
+)
+```
+
+See `add_case_example.py` for more detailed examples with explanations of what each evaluator checks.
 
 ## Test Data
 
@@ -140,16 +160,28 @@ The evaluation cases use real finding model JSON files from `test/data/defs/`:
 
 You can add new test cases using any of these models or add new models to the data directory.
 
-## Evaluation Metrics
+## Evaluation Approach
 
-Each case is evaluated on:
+The evaluation suite uses **focused evaluators** from the Pydantic Evals framework. Each evaluator checks a specific aspect of model editor behavior, with **hybrid scoring**:
 
-- **ID Preservation**: Model and attribute IDs must remain unchanged
-- **Success/Rejection**: Edits succeed or are rejected as expected
-- **Attribute Addition**: Expected attributes are added with correct properties
-- **Changes Tracking**: Successful edits are recorded in the changes list
-- **Rejection Tracking**: Rejected edits are recorded with clear reasons
-- **Content Preservation**: Original content is preserved when edits are rejected
+- **Strict requirements**: Non-negotiable checks (0.0 or 1.0)
+- **Partial credit**: Quality metrics with proportional scoring (0.0-1.0)
+
+### Evaluators
+
+Defined in `test_model_editor_evals.py` as specialized evaluators (note: `test/evals/base.py` contains generic reusable evaluators):
+
+1. **IDPreservationEvaluator** (strict): Model IDs must never change
+2. **AttributeAdditionEvaluator** (partial): Proportional score for expected attributes added
+3. **ChangeTrackingEvaluator** (hybrid):
+   - Strict: Changes must be recorded for successful edits
+   - Partial: Keyword matches in change descriptions
+4. **RejectionAccuracyEvaluator** (hybrid):
+   - Strict: Rejections must be recorded for failed edits
+   - Partial: Keyword matches in rejection messages
+5. **ContentPreservationEvaluator** (strict): Model unchanged when edits rejected
+
+Each case is evaluated by all evaluators using `Dataset.evaluate()`, producing an overall score from 0.0-1.0.
 
 ## Dependencies
 

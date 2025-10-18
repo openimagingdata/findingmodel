@@ -613,6 +613,7 @@ dev = [
     { name = "go-task-bin" },
     { name = "jupyter" },
     { name = "mypy" },
+    { name = "pydantic-evals" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
@@ -643,6 +644,7 @@ dev = [
     { name = "go-task-bin", specifier = ">=3.43.3" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "mypy", specifier = ">=1.13.0" },
+    { name = "pydantic-evals", specifier = ">=0.1.0" },
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "ruff", specifier = ">=0.7.2" },
@@ -2155,6 +2157,23 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/42/30/134c8a921630d8a88d6f905a562495a6421e959a23c19b0f49b660801d67/pydantic_core-2.41.1-pp311-pypy311_pp73-musllinux_1_1_armv7l.whl", hash = "sha256:e244c37d5471c9acdcd282890c6c4c83747b77238bfa19429b8473586c907656", size = 2324489, upload-time = "2025-10-07T10:50:36.48Z" },
     { url = "https://files.pythonhosted.org/packages/9c/48/a9263aeaebdec81e941198525b43edb3b44f27cfa4cb8005b8d3eb8dec72/pydantic_core-2.41.1-pp311-pypy311_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:1e798b4b304a995110d41ec93653e57975620ccb2842ba9420037985e7d7284e", size = 2322763, upload-time = "2025-10-07T10:50:38.751Z" },
     { url = "https://files.pythonhosted.org/packages/1d/62/755d2bd2593f701c5839fc084e9c2c5e2418f460383ad04e3b5d0befc3ca/pydantic_core-2.41.1-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:f1fc716c0eb1663c59699b024428ad5ec2bcc6b928527b8fe28de6cb89f47efb", size = 2144046, upload-time = "2025-10-07T10:50:40.686Z" },
+]
+
+[[package]]
+name = "pydantic-evals"
+version = "1.0.10"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "logfire-api" },
+    { name = "pydantic" },
+    { name = "pydantic-ai-slim" },
+    { name = "pyyaml" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/54/a6/2c3ced06c7164bf7bf7f4ec8ae232ed5adbaf05b309ca6755aa3b8b4e76e/pydantic_evals-1.0.10.tar.gz", hash = "sha256:341bfc105a3470373885ccbe70486064f783656c7c015c97152b2ba9351581e5", size = 45494, upload-time = "2025-09-20T00:16:23.428Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/28/ae/087d9a83dd7e91ad6c77e0d41d4ce25f24992cf0420412a19c045303568b/pydantic_evals-1.0.10-py3-none-any.whl", hash = "sha256:4146863594f851cdb606e7d9ddc445f298b53e40c9588d76a4794d792ba5b47a", size = 54608, upload-time = "2025-09-20T00:16:08.426Z" },
 ]
 
 [[package]]

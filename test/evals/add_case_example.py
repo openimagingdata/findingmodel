@@ -1,27 +1,43 @@
 """Example template for adding new evaluation cases to test_model_editor_evals.py
 
-This file shows how to create new evaluation cases. Copy the examples below
-and add them to the appropriate function in test_model_editor_evals.py.
+This file shows how to create new evaluation cases using the evaluator-based pattern.
+The cases are evaluated using Dataset.evaluate() with focused evaluators that check
+different aspects of model editor behavior.
+
+EVALUATOR OVERVIEW:
+- IDPreservationEvaluator: Checks model ID never changes (strict)
+- AttributeAdditionEvaluator: Checks expected attributes added (partial credit)
+- ChangeTrackingEvaluator: Checks changes recorded with keywords (hybrid)
+- RejectionAccuracyEvaluator: Checks rejections recorded with keywords (hybrid)
+- ContentPreservationEvaluator: Checks model unchanged on rejection (strict)
+
+Copy the examples below and add them to the appropriate function in test_model_editor_evals.py.
 """
 
 
 # Example 1: Add a successful edit case
 def example_add_successful_case() -> object:
-    """Example of adding a new successful edit case."""
+    """Example of adding a new successful edit case.
+
+    The evaluators will check:
+    - ID preserved (IDPreservationEvaluator)
+    - "laterality" attribute added (AttributeAdditionEvaluator)
+    - Changes recorded with keywords "laterality" and "added" (ChangeTrackingEvaluator)
+    """
     from test_model_editor_evals import ModelEditorCase, load_fm_json
 
     # Load a model to test with
     model_json = load_fm_json("pulmonary_embolism.fm.json")
 
-    # Create a new case
+    # Create a new case - evaluators check all the expectations automatically
     new_case = ModelEditorCase(
         name="add_laterality_attribute",  # Unique name for this case
         model_json=model_json,
         command="Add a choice attribute named 'laterality' with values: left, right, bilateral",
         edit_type="natural_language",
         should_succeed=True,
-        added_attribute_names=["laterality"],  # Attributes we expect to be added
-        changes_keywords=["laterality", "added"],  # Keywords we expect in the changes summary
+        added_attribute_names=["laterality"],  # AttributeAdditionEvaluator checks these
+        changes_keywords=["laterality", "added"],  # ChangeTrackingEvaluator checks these
     )
 
     # Add this case to the list in create_successful_edit_cases() function
@@ -30,20 +46,27 @@ def example_add_successful_case() -> object:
 
 # Example 2: Add a rejection case
 def example_add_rejection_case() -> object:
-    """Example of adding a new rejection case."""
+    """Example of adding a new rejection case.
+
+    The evaluators will check:
+    - ID preserved (IDPreservationEvaluator)
+    - Rejections recorded (RejectionAccuracyEvaluator - strict requirement)
+    - Keywords found in rejection message (RejectionAccuracyEvaluator - partial credit)
+    - Model unchanged from original (ContentPreservationEvaluator)
+    """
     from test_model_editor_evals import ModelEditorCase, load_fm_json
 
     # Load a model to test with
     model_json = load_fm_json("aortic_dissection.fm.json")
 
-    # Create a rejection case
+    # Create a rejection case - evaluators check all the expectations automatically
     new_case = ModelEditorCase(
         name="reject_change_value_name",
         model_json=model_json,
         command="In the 'presence' attribute, rename the 'absent' value to 'not present'",
         edit_type="natural_language",
         should_succeed=False,  # This should be rejected
-        rejection_keywords=["rename", "value", "not allowed"],  # Keywords we expect in rejections
+        rejection_keywords=["rename", "value", "not allowed"],  # RejectionAccuracyEvaluator checks these
     )
 
     # Add this case to the list in create_rejection_cases() function
@@ -52,7 +75,13 @@ def example_add_rejection_case() -> object:
 
 # Example 3: Add a markdown-based edit case
 def example_add_markdown_case() -> object:
-    """Example of adding a markdown-based edit case."""
+    """Example of adding a markdown-based edit case.
+
+    The evaluators will check:
+    - ID preserved (IDPreservationEvaluator)
+    - "calcifications" attribute added (AttributeAdditionEvaluator)
+    - Changes recorded with keywords (ChangeTrackingEvaluator)
+    """
     from test_model_editor_evals import ModelEditorCase, load_fm_json
 
     from findingmodel.finding_model import FindingModelFull
@@ -80,15 +109,15 @@ Presence and pattern of calcifications
 """
     )
 
-    # Create the case
+    # Create the case - evaluators check expectations automatically
     new_case = ModelEditorCase(
         name="markdown_add_calcifications",
         model_json=model_json,
         command=enhanced_md,
         edit_type="markdown",
         should_succeed=True,
-        added_attribute_names=["calcifications"],
-        changes_keywords=["calcifications", "added"],
+        added_attribute_names=["calcifications"],  # AttributeAdditionEvaluator checks this
+        changes_keywords=["calcifications", "added"],  # ChangeTrackingEvaluator checks these
     )
 
     # Add this case to the list in create_markdown_edit_cases() function
@@ -136,8 +165,12 @@ def example_reject_ambiguous_command() -> object:
 
 if __name__ == "__main__":
     print("This file contains example templates for adding new evaluation cases.")
+    print("\nEVALUATOR-BASED PATTERN:")
+    print("  Cases are evaluated using Dataset.evaluate() with focused evaluators.")
+    print("  Each evaluator checks a specific aspect (ID preservation, attributes, etc.)")
+    print("  Scoring is hybrid: strict for non-negotiables, partial credit for quality.\n")
     print("Copy the examples and add them to test_model_editor_evals.py in the appropriate functions:")
     print("  - create_successful_edit_cases()")
     print("  - create_rejection_cases()")
     print("  - create_markdown_edit_cases()")
-    print("\nSee the docstrings in each example function for details.")
+    print("\nSee the docstrings in each example function for details on what evaluators check.")
