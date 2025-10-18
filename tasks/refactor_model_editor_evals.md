@@ -12,7 +12,13 @@
 
 **Related PR:** `copilot/add-eval-case-functionality`
 
-**Related Documents:** `docs/evaluation_guide.md`, memory: `agent_evaluation_best_practices_2025`
+**Related Documents:**
+
+- `docs/evaluation_guide.md` - Comprehensive guide to agent evaluation
+- `docs/logfire_observability_guide.md` - Logfire observability patterns (Phase 3)
+- **Serena Memories:**
+  - `agent_evaluation_best_practices_2025` - Evaluation patterns and lessons learned
+  - `logfire_observability_2025` - Logfire integration best practices
 
 ## Overview
 
@@ -80,6 +86,7 @@ Create reusable evaluator classes that work across all agents:
 - [x] Reusable across different agent types
 
 **Implementation:** `test/evals/base.py` (lines 23-367)
+
 - ExactMatchEvaluator
 - ContainsEvaluator
 - KeywordMatchEvaluator
@@ -114,6 +121,7 @@ class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
 - [x] Example implementation in docstring
 
 **Implementation:** `test/evals/base.py` (lines 374-546)
+
 - AgentEvaluationSuite[InputT, ExpectedT, ActualT]
 - 4 abstract methods + 2 concrete helpers
 - Comprehensive docstring with full usage example
@@ -141,6 +149,7 @@ Extract common helpers from existing evals:
 - [ ] Used by multiple eval suites (will be verified in Phase 2)
 
 **Implementation:** `test/evals/utils.py`
+
 - load_fm_json()
 - create_mock_edit_result()
 - compare_models()
@@ -162,6 +171,7 @@ Add unit tests for the 5 base evaluators. Task 1.1 acceptance criteria required 
 **File:** `test/evals/test_base_evaluators.py`
 
 Implemented 25 focused unit tests covering:
+
 - ExactMatchEvaluator (4 tests)
 - ContainsEvaluator (5 tests)
 - KeywordMatchEvaluator (7 tests)
@@ -267,63 +277,426 @@ Update all documentation to reflect new patterns:
 - [x] Hybrid scoring approach documented
 
 **Implementation:**
+
 - `test/evals/README.md` - Added "Evaluation Approach" section, updated examples
 - `test/evals/add_case_example.py` - Updated module docstring and example comments
 - Module docstring in `test_model_editor_evals.py` - Expanded with pattern explanation
 
 ---
 
-### Phase 3: Observability
+### Phase 3: Observability with Logfire
+
+**Status:** 🔲 Optional (Planning complete, ready for implementation)
 
 **Priority:** Medium
 
-Add observability features for debugging and monitoring.
+**Updated:** 2025-10-18
 
-#### Task 3.1: Add Logfire Integration
+Add observability features using Pydantic Logfire for debugging, monitoring, and understanding agent behavior during evaluations.
 
-**Files:** `test/evals/test_model_editor_evals.py`, `pyproject.toml`
+**Reference Documentation:** `docs/logfire_observability_guide.md`
 
-Enable OpenTelemetry tracing via Logfire:
+**Key Design Decision:** Logfire integration should be **on by default** but gracefully degrade when no token is present. This ensures developers get observability benefits without requiring setup, while production users can opt-in to cloud tracing.
+
+---
+
+#### Task 3.1: Add Logfire Dependency
+
+**Files:** `pyproject.toml`
+
+Add Logfire to development dependencies:
+
+```toml
+[project.optional-dependencies]
+dev = [
+    # ... existing dependencies
+    "logfire>=1.0.0",  # OpenTelemetry observability platform
+]
+```
+
+**Acceptance Criteria:**
+
+- [ ] Logfire added to `dev` dependencies
+- [ ] Version constraint appropriate (>=1.0.0 or compatible)
+- [ ] Dependency installs cleanly with `uv pip install -e ".[dev]"`
+
+---
+
+#### Task 3.2: Configure Logfire in Model Editor Evals
+
+**Files:** `test/evals/test_model_editor_evals.py`
+
+Add Logfire configuration at module level with graceful degradation:
 
 ```python
-import logfire
+"""
+Model Editor evaluation suite with Logfire observability.
 
-logfire.configure(
-    send_to_logfire='if-token-present',
-    environment='test',
-    service_name='findingmodel-evals',
-)
+This module uses Pydantic Logfire for tracing and observability.
+
+**Logfire Integration:**
+- Enabled by default with graceful degradation
+- Sends traces to Logfire platform if LOGFIRE_TOKEN is present
+- Falls back to local-only logging if no token
+- Can be disabled entirely with LOGFIRE_DISABLE=true
+
+**Setup for Cloud Tracing:**
+    1. Authenticate: logfire auth
+    2. Run evals normally - traces appear in Logfire UI
+
+**Environment Variables:**
+- LOGFIRE_TOKEN: Authentication token (auto-detected from logfire auth)
+- LOGFIRE_DISABLE: Set to 'true' to completely disable Logfire
+- LOGFIRE_EVAL_VERBOSE: Set to 'true' for verbose eval logging
+"""
+
+import os
+import logfire
+from typing import TYPE_CHECKING
+
+# Check if Logfire should be disabled
+LOGFIRE_DISABLED = os.getenv('LOGFIRE_DISABLE', 'false').lower() == 'true'
+VERBOSE_EVALS = os.getenv('LOGFIRE_EVAL_VERBOSE', 'false').lower() == 'true'
+
+if not LOGFIRE_DISABLED:
+    # Configure Logfire at module level
+    logfire.configure(
+        send_to_logfire='if-token-present',  # Auto-detect token, graceful degradation
+        service_name='findingmodel-model-editor-evals',
+        environment='test',
+        console=True,  # Always show console output
+        console_min_log_level='debug' if VERBOSE_EVALS else 'info',
+        console_colors='auto',  # Auto-detect terminal color support
+    )
+
+    # Log configuration status
+    if os.getenv('LOGFIRE_TOKEN'):
+        logfire.info('Logfire enabled - traces will be sent to platform')
+    else:
+        logfire.info(
+            'Logfire local-only mode - run "logfire auth" to enable cloud tracing'
+        )
+else:
+    # Disabled mode - configure no-op
+    logfire.configure(send_to_logfire=False, console=False)
+
+if TYPE_CHECKING:
+    # For type checking only
+    from logfire import Logfire
 ```
 
 **Acceptance Criteria:**
 
 - [ ] Logfire configured at module level
-- [ ] Traces sent to Logfire when token present
-- [ ] Works offline (gracefully degrades)
-- [ ] Documentation on viewing traces in Logfire UI
+- [ ] Uses `send_to_logfire='if-token-present'` for graceful degradation
+- [ ] Checks `LOGFIRE_DISABLE` environment variable
+- [ ] Checks `LOGFIRE_EVAL_VERBOSE` environment variable
+- [ ] Logs configuration status on import
+- [ ] Clear docstring explaining Logfire integration
+- [ ] No errors or warnings when token is absent
+- [ ] No errors when running under pytest (auto-disables platform sending)
 
 ---
 
-#### Task 3.2: Add Metrics Collection
+#### Task 3.3: Instrument Evaluation Execution
 
-**File:** `test/evals/test_model_editor_evals.py`
+**Files:** `test/evals/test_model_editor_evals.py`
 
-Track evaluation metrics:
+Add Logfire tracing to the evaluation test function:
 
 ```python
-# Metrics to track:
-- Duration per case
-- Token usage (if available)
-- Success rate by category
-- Evaluator score distributions
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_run_model_editor_evals():
+    """
+    Run the full model_editor evaluation suite with Logfire tracing.
+
+    This test is marked with @pytest.mark.callout because it requires
+    OpenAI API access. Logfire will automatically disable cloud sending
+    during pytest runs but will still capture spans locally for debugging.
+    """
+    with logfire.span(
+        'model_editor_eval_suite',
+        total_cases=len(all_cases),
+        evaluator_count=len(evaluators),
+    ):
+        # Log suite start
+        logfire.info(
+            'Starting model_editor evaluation suite',
+            cases_total=len(all_cases),
+            evaluators=[e.__class__.__name__ for e in evaluators],
+        )
+
+        # Run evaluation
+        report = await model_editor_dataset.evaluate(run_model_editor_task)
+
+        # Log results
+        logfire.info(
+            'Evaluation suite completed',
+            overall_score=report.overall_score(),
+            cases_passed=sum(1 for r in report.results if r.score >= 0.8),
+            cases_failed=sum(1 for r in report.results if r.score < 0.8),
+            cases_total=len(report.results),
+        )
+
+        # Print report
+        report.print(include_input=False, include_output=True)
+
+        # Assert threshold
+        assert report.overall_score() >= 0.85, (
+            f"Evaluation score {report.overall_score():.2f} below threshold 0.85"
+        )
 ```
 
 **Acceptance Criteria:**
 
-- [ ] Metrics collected automatically
-- [ ] Summary printed at end of run
-- [ ] Can export to JSON/CSV for analysis
-- [ ] Regression detection (compare to baseline)
+- [ ] Top-level span wraps entire evaluation suite
+- [ ] Logs suite start with metadata
+- [ ] Logs suite completion with results
+- [ ] Span includes case count and evaluator count as attributes
+- [ ] No changes to test logic or assertions
+- [ ] Works with and without Logfire token
+
+---
+
+#### Task 3.4: Instrument Task Execution Function
+
+**Files:** `test/evals/test_model_editor_evals.py`
+
+Add tracing to individual case execution:
+
+```python
+async def run_model_editor_task(case: ModelEditorCase) -> ModelEditorActualOutput:
+    """
+    Execute a single model_editor evaluation case with Logfire tracing.
+
+    This function is called by Dataset.evaluate() for each case.
+    """
+    with logfire.span(
+        'eval_case {name}',
+        name=case.name,
+        case_name=case.name,
+        edit_type=case.edit_type,
+        should_succeed=case.should_succeed,
+    ):
+        # Log case start
+        if VERBOSE_EVALS:
+            logfire.debug(
+                'Starting evaluation case',
+                case_name=case.name,
+                model_id=case.model_json[:50] + '...',  # Truncate for logging
+                command_length=len(case.command),
+            )
+
+        # Execute case (existing logic)
+        model = FindingModelFull.model_validate_json(case.model_json)
+
+        with logfire.span('model_editor_execution', operation=case.edit_type):
+            if case.edit_type == 'natural_language':
+                result = await model_editor.edit_model(model, case.command)
+            else:  # markdown
+                result = await model_editor.edit_model_from_markdown(model, case.command)
+
+        # Log result
+        logfire.info(
+            'Case completed',
+            case_name=case.name,
+            success=len(result.changes) > 0,
+            changes_count=len(result.changes),
+            rejections_count=len(result.rejections),
+        )
+
+        # Return output (existing logic)
+        return ModelEditorActualOutput(
+            model=result.model,
+            changes=result.changes,
+            rejections=result.rejections,
+        )
+```
+
+**Acceptance Criteria:**
+
+- [ ] Each case wrapped in its own span
+- [ ] Span includes case metadata (name, type, expected outcome)
+- [ ] Logs case start (verbose mode only)
+- [ ] Logs case completion with results
+- [ ] Model editor execution in sub-span
+- [ ] No changes to core logic or return values
+- [ ] Works with existing mock and API tests
+
+---
+
+#### Task 3.5: Add Logfire to Base Evaluators (Optional)
+
+**Files:** `test/evals/base.py`
+
+Add optional Logfire tracing to base evaluators for detailed evaluation debugging:
+
+```python
+class KeywordMatchEvaluator(Evaluator[InputT, OutputT]):
+    """
+    Base evaluator for keyword matching with optional Logfire tracing.
+    """
+
+    def __init__(
+        self,
+        keywords: list[str],
+        text_extractor: Callable[[OutputT], str],
+        case_insensitive: bool = True,
+        enable_tracing: bool = False,  # Opt-in for tracing
+    ):
+        self.keywords = keywords
+        self.text_extractor = text_extractor
+        self.case_insensitive = case_insensitive
+        self.enable_tracing = enable_tracing
+
+    def evaluate(self, ctx: EvaluatorContext[InputT, OutputT]) -> float:
+        """Evaluate with optional tracing."""
+        if self.enable_tracing:
+            import logfire
+            with logfire.span(
+                'evaluate_keywords',
+                evaluator='KeywordMatchEvaluator',
+                case_name=getattr(ctx, 'case_name', 'unknown'),
+                keywords_count=len(self.keywords),
+            ):
+                score = self._evaluate_impl(ctx)
+                logfire.debug(
+                    'Keyword evaluation',
+                    score=score,
+                    matched_keywords=self._get_matched_keywords(ctx),
+                )
+                return score
+        else:
+            return self._evaluate_impl(ctx)
+
+    def _evaluate_impl(self, ctx: EvaluatorContext[InputT, OutputT]) -> float:
+        """Core evaluation logic (unchanged)."""
+        # ... existing implementation
+```
+
+**Note:** This task is **optional** and may add too much overhead. Consider implementing only if debugging evaluators becomes necessary.
+
+**Acceptance Criteria:**
+
+- [ ] Tracing is opt-in per evaluator instance
+- [ ] Default is `enable_tracing=False` (no overhead)
+- [ ] When enabled, logs evaluation details
+- [ ] No changes to default behavior
+- [ ] All existing tests pass
+
+**Decision:** Defer this task unless debugging needs arise
+
+---
+
+#### Task 3.6: Update Documentation
+
+**Files:**
+
+- `docs/logfire_observability_guide.md` ✅ **CREATED**
+- `test/evals/README.md`
+- `test/evals/test_model_editor_evals.py` (module docstring)
+
+Update documentation to explain Logfire integration:
+
+**README.md updates:**
+
+Add new section after "Running the Evaluations":
+
+````markdown
+## Observability with Logfire
+
+The evaluation suite integrates with [Pydantic Logfire](https://logfire.pydantic.dev/)
+for observability and debugging.
+
+### Quick Start
+
+Logfire works out of the box in local-only mode. To enable cloud tracing:
+
+```bash
+# Authenticate (one-time setup)
+logfire auth
+
+# Run evaluations - traces automatically appear in Logfire UI
+pytest test/evals/test_model_editor_evals.py::test_run_model_editor_evals -v -s
+```
+````
+
+### Viewing Traces
+
+After authentication, traces appear in your Logfire dashboard at [Pydantic.dev](https://logfire.pydantic.dev/).
+
+You can see:
+
+- Evaluation suite execution timeline
+- Individual case execution spans
+- Agent LLM calls and responses
+- Performance metrics and timing
+- Error traces with full context
+
+### Environment Variables
+
+- `LOGFIRE_DISABLE=true` - Completely disable Logfire
+- `LOGFIRE_EVAL_VERBOSE=true` - Enable verbose logging
+- `LOGFIRE_TOKEN=<token>` - Explicit token (alternative to `logfire auth`)
+
+### More Information
+
+See `docs/logfire_observability_guide.md` for comprehensive documentation.
+
+**Acceptance Criteria:**
+
+- [ ] Comprehensive guide created at `docs/logfire_observability_guide.md` ✅
+- [ ] README.md updated with Logfire section
+- [ ] Module docstring explains Logfire integration
+- [ ] Examples of viewing traces in Logfire UI
+- [ ] Environment variable documentation
+- [ ] Troubleshooting section for common issues
+
+---
+
+#### Task 3.7: Create Serena Memory
+
+**Files:** Serena memory system
+
+Create memory documenting Logfire best practices for the project:
+
+**Memory Name:** `logfire_observability_2025`
+
+**Content:** Summary of Logfire integration patterns, configuration, and best practices specific to FindingModel project.
+
+**Acceptance Criteria:**
+
+- [ ] Memory created via `write_memory` tool
+- [ ] Covers configuration patterns
+- [ ] Documents environment variables
+- [ ] Links to full documentation
+- [ ] Includes examples from evaluation suites
+- [ ] Notes about graceful degradation
+
+---
+
+### Phase 3 Complete When
+
+- [ ] Logfire added to dependencies
+- [ ] Module-level configuration implemented with graceful degradation
+- [ ] Evaluation suite instrumented (top-level span + logging)
+- [ ] Task execution function instrumented (per-case spans)
+- [ ] Documentation updated (README + comprehensive guide)
+- [ ] Serena memory created
+- [ ] All existing tests still pass
+- [ ] Works with and without LOGFIRE_TOKEN
+- [ ] No warnings when token absent
+- [ ] Respects LOGFIRE_DISABLE environment variable
+
+**Benefits:**
+
+- Rich observability into evaluation execution
+- Debugging support for failing cases
+- Performance insights (case duration, bottlenecks)
+- Optional cloud tracing for production monitoring
+- Zero friction for local development (works without setup)
+- Foundation for other agent evaluation suites
 
 ---
 
@@ -372,7 +745,7 @@ Track evaluation scores over time:
 
 ## Success Criteria
 
-### Phase 1 Complete When
+### Phase 1 Complete When ✅ COMPLETE
 
 - [x] Base evaluator library exists and is tested
 - [x] **Base evaluator tests written** (Phase 1-A) ✅ COMPLETE
@@ -388,13 +761,19 @@ Track evaluation scores over time:
 - [x] Critical import bug fixed
 - [x] Senior review completed
 
-### Phase 3 Complete When
+### Phase 3 Complete Requirements
 
-- [ ] Logfire integration working
-- [ ] Metrics collected and reported
-- [ ] Can debug failures via traces
+- [ ] Logfire added to dependencies (pyproject.toml)
+- [ ] Module-level configuration implemented with graceful degradation
+- [ ] Evaluation suite instrumented (top-level span + logging)
+- [ ] Task execution function instrumented (per-case spans)
+- [ ] Documentation updated (README + module docstrings)
+- [ ] All existing tests still pass
+- [ ] Works with and without LOGFIRE_TOKEN
+- [ ] No warnings when token absent
+- [ ] Respects LOGFIRE_DISABLE environment variable
 
-### Phase 5 Complete When
+### Phase 5 Complete Requirements
 
 - [ ] CI/CD workflow running evals
 - [ ] Regression tracking in place
@@ -452,25 +831,41 @@ Track evaluation scores over time:
 
 ## Implementation Status Summary
 
-| Phase | Status | Files Created/Modified | Notes |
-|-------|--------|----------------------|-------|
-| Phase 1 | ✅ 100% COMPLETE | `test/evals/base.py`, `test/evals/utils.py` | All tasks complete including tests |
-| Phase 1-A | ✅ 100% COMPLETE | `test/evals/test_base_evaluators.py` | All 25 tests passing (0.09s) |
+| Phase       | Status               | Files Created/Modified                                                                                | Notes                                                               |
+| ----------- | -------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Phase 1     | ✅ 100% COMPLETE     | `test/evals/base.py`, `test/evals/utils.py`                                                           | All tasks complete including tests                                  |
+| Phase 1-A   | ✅ 100% COMPLETE     | `test/evals/test_base_evaluators.py`                                                                  | All 25 tests passing (0.09s)                                        |
 | **Phase 2** | **✅ 100% COMPLETE** | **`test/evals/test_model_editor_evals.py`, `test/evals/README.md`, `test/evals/add_case_example.py`** | **5 evaluators, Dataset pattern, hybrid scoring, import bug fixed** |
-| Phase 3 | 🔲 Optional | - | Observability integration (Logfire, metrics) |
-| Phase 5 | 🔲 Optional | - | CI/CD integration |
+| Phase 3     | 🔲 Planning Complete | `docs/logfire_observability_guide.md`                                                                 | Observability integration (detailed plan ready)                     |
+| Phase 5     | 🔲 Optional          | -                                                                                                     | CI/CD integration                                                   |
 
 ## References
 
-- **Full guide:** `docs/evaluation_guide.md`
-- **Implementation:** `test/evals/test_model_editor_evals.py` (Phase 2 refactoring)
-- **Base evaluators:** `test/evals/base.py` (reusable evaluators)
-- **Unit tests:** `test/evals/test_base_evaluators.py` (25 tests for base evaluators)
-- **Serena memory:** `agent_evaluation_best_practices_2025` (includes Phase 2 lessons learned)
+### Documentation
+
+- **Evaluation guide:** `docs/evaluation_guide.md` - Comprehensive guide to agent evaluation
+- **Logfire guide:** `docs/logfire_observability_guide.md` - Observability patterns for evals (Phase 3)
+
+### Implementation
+
+- **Main eval suite:** `test/evals/test_model_editor_evals.py` - Phase 2 refactored implementation
+- **Base evaluators:** `test/evals/base.py` - Reusable evaluator library
+- **Unit tests:** `test/evals/test_base_evaluators.py` - 25 tests for base evaluators
+
+### Plans and Tasks
+
 - **Current PR:** `copilot/add-eval-case-functionality`
-- **Expansion plan:** `tasks/expand_agent_eval_coverage.md`
+- **Expansion plan:** `tasks/expand_agent_eval_coverage.md` - Roadmap for other agents
+
+### Serena Memories
+
+- **`agent_evaluation_best_practices_2025`** - Evaluation patterns, lessons learned from Phase 2
+- **`logfire_observability_2025`** - Logfire integration best practices (Phase 3)
+- **`pydantic_ai_testing_best_practices`** - General AI testing conventions
+- **`test_suite_improvements_2025`** - Testing improvements
+- **`ai_assistant_usage_2025`** - AI assistant collaboration patterns
+
+### External Resources
+
 - **Pydantic AI Evals:** <https://ai.pydantic.dev/evals/>
-- **Related memories:**
-  - `pydantic_ai_testing_best_practices`
-  - `test_suite_improvements_2025`
-  - `ai_assistant_usage_2025`
+- **Pydantic Logfire:** <https://logfire.pydantic.dev/docs/>

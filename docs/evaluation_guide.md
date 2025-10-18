@@ -48,6 +48,7 @@ We use [Pydantic AI Evals](https://ai.pydantic.dev/evals/), a framework designed
 ### Core Concepts
 
 **Case**: A single test scenario with inputs and expected outputs
+
 ```python
 case = Case(
     name='add_severity_attribute',
@@ -57,6 +58,7 @@ case = Case(
 ```
 
 **Dataset**: Collection of cases with shared evaluators
+
 ```python
 dataset = Dataset(
     cases=[case1, case2, case3],
@@ -65,6 +67,7 @@ dataset = Dataset(
 ```
 
 **Evaluator**: Assesses one aspect of agent output, returning a score (0.0-1.0)
+
 ```python
 class IDPreservationEvaluator(Evaluator[InputT, OutputT]):
     def evaluate(self, ctx: EvaluatorContext[InputT, OutputT]) -> float:
@@ -340,11 +343,13 @@ async def test_single_case_mock():
 ### 1. Test at Multiple Levels
 
 **Component Tests** (what we're building now):
+
 - Test individual agents in isolation
 - Use mocks for dependencies
 - Fast, deterministic, focused
 
 **Integration Tests** (future):
+
 - Test multiple agents working together
 - Test real backend integrations (MongoDB, BioOntology)
 - Slower, more comprehensive
@@ -352,6 +357,7 @@ async def test_single_case_mock():
 ### 2. Design Test Cases by Category
 
 Organize cases into clear categories:
+
 - **Success cases**: Agent handles request correctly
 - **Rejection cases**: Agent properly rejects unsafe/invalid requests
 - **Edge cases**: Boundary conditions, empty inputs, very large inputs
@@ -361,11 +367,13 @@ Organize cases into clear categories:
 ### 3. Use Real Test Data
 
 Prefer real data from your project over synthetic data:
+
 - Tests realistic scenarios
 - Catches edge cases from production
 - Maintains consistency with actual usage
 
 For findingmodel:
+
 ```python
 def load_fm_json(filename: str) -> str:
     """Load real finding model from test data."""
@@ -378,11 +386,13 @@ def load_fm_json(filename: str) -> str:
 LLM outputs are non-deterministic. Design evaluators accordingly:
 
 **❌ Don't use exact string matching:**
+
 ```python
 return 1.0 if output == "Expected exact text" else 0.0
 ```
 
 **✅ Use keyword/concept matching:**
+
 ```python
 keywords = ["severity", "added", "attribute"]
 matches = sum(1 for kw in keywords if kw in output.lower())
@@ -390,12 +400,14 @@ return matches / len(keywords)
 ```
 
 **✅ Use structured outputs:**
+
 ```python
 # Agent returns Pydantic model, not free text
 return 1.0 if output.severity in ["mild", "moderate", "severe"] else 0.0
 ```
 
 **✅ Use LLM-as-judge (for quality assessment):**
+
 ```python
 judge_prompt = f"Rate this description for clinical accuracy (0-10): {output}"
 score = await judge_agent.run(judge_prompt)
@@ -405,6 +417,7 @@ return score / 10.0
 ### 5. Prefer Multiple Small Evaluators
 
 **❌ One big evaluator doing everything:**
+
 ```python
 class BigEvaluator(Evaluator):
     def evaluate(self, ctx):
@@ -417,6 +430,7 @@ class BigEvaluator(Evaluator):
 ```
 
 **✅ Multiple focused evaluators:**
+
 ```python
 evaluators = [
     IDPreservationEvaluator(),     # 0.0 or 1.0
@@ -427,6 +441,7 @@ evaluators = [
 ```
 
 Benefits:
+
 - Clear separation of concerns
 - Independent scores for each aspect
 - Easier to debug failures
@@ -654,6 +669,7 @@ python test_model_editor_evals.py
 ### CI/CD Integration
 
 Evals marked with `@pytest.mark.callout` are:
+
 - Skipped in regular `task test` runs
 - Run in `task test-full` with API credentials
 - Should be part of release validation
@@ -662,7 +678,7 @@ Evals marked with `@pytest.mark.callout` are:
 
 ### Reading Reports
 
-```
+```text
                            Evaluation Summary: my_agent
 ┏━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━┓
 ┃ Case ID ┃ Inputs ┃ Outputs   ┃ Scores     ┃ Duration ┃
@@ -679,6 +695,7 @@ Evals marked with `@pytest.mark.callout` are:
 ```
 
 **Key metrics:**
+
 - **Per-case scores**: How each case performed on each evaluator
 - **Average scores**: Overall performance per evaluator
 - **Duration**: Execution time per case
