@@ -13,8 +13,7 @@ from platformdirs import user_cache_dir
 from findingmodel import logger
 
 _DEFAULT_CACHE_PATH: Final[Path] = (
-    Path(user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
-    / "embeddings.duckdb"
+    Path(user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True)) / "embeddings.duckdb"
 )
 
 

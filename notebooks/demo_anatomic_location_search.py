@@ -214,16 +214,18 @@ def check_configuration() -> bool:
             print("Error: OPENAI_API_KEY is required but not set")
             return False
 
-        # Check DuckDB database exists
-        if not Path(settings.duckdb_anatomic_path).exists():
-            print(f"Error: DuckDB database not found at {settings.duckdb_anatomic_path}")
-            print("Please ensure the anatomic locations database has been created")
-            return False
-
         print("Configuration:")
         print(f"  OpenAI Model (small): {settings.openai_default_model_small}")
         print(f"  OpenAI Model (main): {settings.openai_default_model}")
-        print(f"  DuckDB Database: {settings.duckdb_anatomic_path} (exists)")
+
+        # Check if database exists or will be downloaded
+        db_path = Path(settings.duckdb_anatomic_path)
+        if db_path.exists():
+            print(f"  DuckDB Database: {settings.duckdb_anatomic_path} (exists)")
+        else:
+            print(f"  DuckDB Database: {settings.duckdb_anatomic_path} (will auto-download)")
+            if settings.remote_anatomic_db_url:
+                print(f"  Remote URL: {settings.remote_anatomic_db_url}")
         print()
         return True
 

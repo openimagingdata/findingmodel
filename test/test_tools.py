@@ -663,7 +663,12 @@ def test_find_similar_models_basic_functionality() -> None:
 
     except Exception as e:
         # If it requires API calls or database doesn't exist, we'll handle that in the callout tests
-        if "API" in str(e) or "key" in str(e).lower() or "openai" in str(e).lower() or "database does not exist" in str(e).lower():
+        if (
+            "API" in str(e)
+            or "key" in str(e).lower()
+            or "openai" in str(e).lower()
+            or "database does not exist" in str(e).lower()
+        ):
             pytest.skip(f"Skipping test that requires API access or database: {e}")
         else:
             raise

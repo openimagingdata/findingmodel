@@ -133,18 +133,22 @@ def test_index_update_basic(tmp_path: Path, tmp_defs_path: Path, _session_cli_mo
     assert "Removed: 0" in result.output
 
 
-def test_index_update_error_no_database(
+def test_index_update_creates_database_if_not_exists(
     tmp_path: Path, tmp_defs_path: Path, _session_cli_monkeypatch_setup: None
 ) -> None:
-    """Test error: database doesn't exist."""
+    """Test that update creates database if it doesn't exist."""
     runner = CliRunner()
     nonexistent_db = tmp_path / "nonexistent.duckdb"
 
+    # Database doesn't exist initially
+    assert not nonexistent_db.exists()
+
+    # Update should create it and populate it
     result = runner.invoke(cli, ["index", "update", str(tmp_defs_path), "--index", str(nonexistent_db)])
 
-    assert result.exit_code != 0
-    assert "Error: Database not found" in result.output
-    assert "Use 'index build' to create a new index" in result.output
+    assert result.exit_code == 0
+    assert nonexistent_db.exists()
+    assert "Index updated successfully" in result.output
 
 
 # ============================================================================
@@ -214,13 +218,17 @@ def test_index_stats_basic(tmp_path: Path, tmp_defs_path: Path, _session_cli_mon
     assert "Database Summary" in result.output
 
 
-def test_index_stats_error_no_database(tmp_path: Path, _session_cli_monkeypatch_setup: None) -> None:
-    """Test error: database not found."""
+def test_index_stats_with_empty_database(tmp_path: Path, _session_cli_monkeypatch_setup: None) -> None:
+    """Test stats on empty database (created on-demand with base contributors)."""
     runner = CliRunner()
     nonexistent_db = tmp_path / "nonexistent_stats.duckdb"
 
+    # Database doesn't exist initially
+    assert not nonexistent_db.exists()
+
     result = runner.invoke(cli, ["index", "stats", "--index", str(nonexistent_db)])
 
-    assert result.exit_code != 0
-    assert "Error: Database not found" in result.output
-    assert "Use 'index build' to create a new index" in result.output
+    # Should succeed and create empty database with base contributors
+    assert result.exit_code == 0
+    assert nonexistent_db.exists()
+    assert "Index Statistics" in result.output

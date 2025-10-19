@@ -227,6 +227,9 @@ class DuckDBIndex:
             conn.execute(statement)
         self._create_search_indexes(conn)
 
+        # Load base contributors if tables are empty
+        self._load_base_contributors(conn)
+
     async def __aenter__(self) -> DuckDBIndex:
         """Enter async context manager, ensuring a connection is available."""
 
@@ -1023,7 +1026,7 @@ class DuckDBIndex:
             tags: Optional list of tags - models must have ALL specified tags
         """
         conn = self._ensure_connection()
-        
+
         # Exact matches take priority - return immediately if found
         exact_matches = self._search_exact(conn, query, tags=tags)
         if exact_matches:
@@ -1545,6 +1548,53 @@ class DuckDBIndex:
             lower=1,
             overwrite=True,
         )
+
+    def _load_base_contributors(self, conn: duckdb.DuckDBPyConnection) -> None:
+        """Load base organizations and people if the tables are empty."""
+        import json
+        from importlib.resources import files
+
+        # Check if organizations table is empty
+        org_result = conn.execute("SELECT COUNT(*) FROM organizations").fetchone()
+        org_count = org_result[0] if org_result else 0
+        if org_count == 0:
+            # Load base organizations from package data
+            base_orgs_file = files("findingmodel") / "data" / "base_organizations.jsonl"
+            with base_orgs_file.open("r") as f:
+                for line in f:
+                    if line.strip():
+                        org_data = json.loads(line)
+                        conn.execute(
+                            """
+                            INSERT INTO organizations (code, name, url)
+                            VALUES (?, ?, ?)
+                            """,
+                            (org_data["code"], org_data["name"], org_data.get("url")),
+                        )
+
+        # Check if people table is empty
+        people_result = conn.execute("SELECT COUNT(*) FROM people").fetchone()
+        people_count = people_result[0] if people_result else 0
+        if people_count == 0:
+            # Load base people from package data
+            base_people_file = files("findingmodel") / "data" / "base_people.jsonl"
+            with base_people_file.open("r") as f:
+                for line in f:
+                    if line.strip():
+                        person_data = json.loads(line)
+                        conn.execute(
+                            """
+                            INSERT INTO people (github_username, name, email, organization_code, url)
+                            VALUES (?, ?, ?, ?, ?)
+                            """,
+                            (
+                                person_data["github_username"],
+                                person_data["name"],
+                                person_data["email"],
+                                person_data.get("organization_code"),
+                                person_data.get("url"),
+                            ),
+                        )
 
     def _drop_search_indexes(self, conn: duckdb.DuckDBPyConnection) -> None:
         drop_search_indexes(conn, table="finding_models", hnsw_index_name="finding_models_embedding_hnsw")

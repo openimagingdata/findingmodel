@@ -77,11 +77,11 @@ class FindingModelConfig(BaseSettings):
         description="SHA256 hash for anatomic DB (e.g. 'sha256:abc...')",
     )
     remote_index_db_url: str | None = Field(
-        default="https://findingmodelsdata.t3.storage.dev/finding_models_20251016.duckdb",
+        default="https://findingmodelsdata.t3.storage.dev/finding_models_20251017.duckdb",
         description="URL to download finding models index database",
     )
     remote_index_db_hash: str | None = Field(
-        default="sha256:05a7491c5e98a0e4c8c4ad73c627d8e4d7a9c165fbe500bfd436f1880ab4fc53",
+        default="sha256:86e52f7cddfa015464f6b8f0947dd8c63d50d55b9e0376c6bdc15be66fcee25f",
         description="SHA256 hash for index DB (e.g. 'sha256:def...')",
     )
 
@@ -105,6 +105,8 @@ openai.api_key = settings.openai_api_key.get_secret_value()
 def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | None) -> Path:
     """Download DB file to user data directory if it doesn't exist and remote URL is configured.
 
+    Pooch will automatically re-download if the local file's hash doesn't match the expected hash.
+
     Args:
         filename: Database filename (e.g., 'anatomic_locations.duckdb')
         remote_url: Optional URL to download from
@@ -119,23 +121,26 @@ def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | Non
     data_dir = Path(user_data_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
     db_path = data_dir / filename
 
-    if db_path.exists():
-        logger.debug(f"Database file already exists: {db_path}")
-        return db_path
-
     if remote_url and remote_hash:
         import pooch
 
-        logger.info(f"Downloading database file '{filename}' from {remote_url}")
+        # Pooch will check if file exists and verify hash
+        # If hash mismatches, it will automatically re-download
+        logger.info(f"Ensuring database file '{filename}' is available (will download/update if needed)")
         data_dir.mkdir(parents=True, exist_ok=True)
 
         try:
             downloaded = pooch.retrieve(url=remote_url, known_hash=remote_hash, path=data_dir, fname=filename)
-            logger.info(f"Successfully downloaded database file to {downloaded}")
+            logger.info(f"Database file ready at {downloaded}")
             return Path(downloaded)
         except Exception as e:
-            logger.error(f"Failed to download database file '{filename}': {e}")
+            logger.error(f"Failed to download/verify database file '{filename}': {e}")
             raise
 
+    # No remote URL configured - check if local file exists
+    if db_path.exists():
+        logger.debug(f"Using local database file: {db_path}")
+        return db_path
+
     logger.debug(f"No remote URL configured for '{filename}', returning local path: {db_path}")
-    return db_path  # Return path even if doesn't exist (existing error handling will catch it)
+    return db_path  # Return path even if doesn't exist (existing error handling will catch it)  # Return path even if doesn't exist (existing error handling will catch it)

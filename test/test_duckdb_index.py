@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 from findingmodel import index as duckdb_index
 from findingmodel.config import settings
 from findingmodel.contributor import Organization, Person
-from findingmodel.index import DuckDBIndex, IndexReturnType
 from findingmodel.finding_model import FindingModelFull
+from findingmodel.index import DuckDBIndex, IndexReturnType
 
 
 def _fake_openai_client(*_: Any, **__: Any) -> object:  # pragma: no cover - test helper
@@ -811,7 +811,9 @@ async def test_get_organization(index: DuckDBIndex, full_model: FindingModelFull
 @pytest.mark.asyncio
 async def test_count_people(index: DuckDBIndex, full_model: FindingModelFull, tmp_path: Path) -> None:
     """Test counting people in the index."""
-    assert await index.count_people() == 0
+    # Base contributors are loaded automatically, so we expect 4 people initially
+    initial_count = await index.count_people()
+    assert initial_count == 4
 
     model1 = full_model.model_copy(deep=True)
     model1.oifm_id = "OIFM_TSTA_000001"
@@ -839,13 +841,16 @@ async def test_count_people(index: DuckDBIndex, full_model: FindingModelFull, tm
     await index.add_or_update_entry_from_file(file1, model1)
     await index.add_or_update_entry_from_file(file2, model2)
 
-    assert await index.count_people() == 2
+    # Should have initial 4 base contributors + 2 new ones = 6
+    assert await index.count_people() == 6
 
 
 @pytest.mark.asyncio
 async def test_count_organizations(index: DuckDBIndex, full_model: FindingModelFull, tmp_path: Path) -> None:
     """Test counting organizations in the index."""
-    assert await index.count_organizations() == 0
+    # Base contributors are loaded automatically, so we expect 7 organizations initially
+    initial_count = await index.count_organizations()
+    assert initial_count == 7
 
     model = full_model.model_copy(deep=True)
     model.contributors = [
@@ -857,7 +862,8 @@ async def test_count_organizations(index: DuckDBIndex, full_model: FindingModelF
     _write_model_file(test_file, model)
     await index.add_or_update_entry_from_file(test_file, model)
 
-    assert await index.count_organizations() == 2
+    # Should have initial 7 base contributors + 2 new ones = 9
+    assert await index.count_organizations() == 9
 
 
 # ============================================================================

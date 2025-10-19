@@ -11,8 +11,8 @@ from findingmodel.config import ensure_db_file
 class TestEnsureDbFileMocked:
     """Mock-based tests for ensure_db_file function."""
 
-    def test_returns_existing_file_without_download(self, tmp_path: Path) -> None:
-        """Test that existing files are returned without calling Pooch."""
+    def test_calls_pooch_to_verify_hash(self, tmp_path: Path) -> None:
+        """Test that Pooch is called even for existing files to verify hash."""
         # Create a fake existing file
         data_dir = tmp_path
         test_file = data_dir / "test.duckdb"
@@ -22,14 +22,22 @@ class TestEnsureDbFileMocked:
             # Mock user_data_dir to return our temp directory
             mock_user_data_dir.return_value = str(data_dir)
             with patch("pooch.retrieve") as mock_pooch_retrieve:
+                # Mock pooch to return the existing file path
+                mock_pooch_retrieve.return_value = str(test_file)
+
                 result = ensure_db_file("test.duckdb", "http://example.com/test.duckdb", "sha256:abc123")
 
-                # Should return existing file
+                # Should call pooch to verify hash (even for existing files)
+                mock_pooch_retrieve.assert_called_once_with(
+                    url="http://example.com/test.duckdb",
+                    known_hash="sha256:abc123",
+                    path=data_dir,
+                    fname="test.duckdb",
+                )
+
+                # Should return the file
                 assert result == test_file
                 assert result.exists()
-
-                # Should not call pooch
-                mock_pooch_retrieve.assert_not_called()
 
     def test_downloads_when_file_missing_and_url_configured(self, tmp_path: Path) -> None:
         """Test that missing files trigger Pooch download when URL is configured."""

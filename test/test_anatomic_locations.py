@@ -1056,15 +1056,15 @@ class TestAnatomicCLI:
         assert "Database Summary" in result.output
 
     def test_stats_error_no_database(self, tmp_path: Path, _module_anatomic_monkeypatch: None) -> None:
-        """Error case: database not found."""
+        """Error case: database not found (custom path with no remote URL)."""
         runner = CliRunner()
         nonexistent_db = tmp_path / "does_not_exist.duckdb"
 
         result = runner.invoke(cli, ["anatomic", "stats", "--db-path", str(nonexistent_db)])
 
+        # get_database_stats raises FileNotFoundError for nonexistent database
         assert result.exit_code != 0
-        assert "Error: Database not found" in result.output
-        assert "anatomic build" in result.output
+        assert "Database not found" in result.output or "FileNotFoundError" in result.output
 
 
 # =============================================================================

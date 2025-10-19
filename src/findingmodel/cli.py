@@ -241,13 +241,17 @@ def update(directory: Path, index: Path | None) -> None:
     console = Console()
 
     async def _do_update(directory: Path, index: Path | None) -> None:
-        db_path = index if index else Path(settings.duckdb_index_path)
+        from findingmodel.config import ensure_db_file
 
-        # Check if database exists
-        if not db_path.exists():
-            console.print(f"[bold red]Error: Database not found at {db_path}")
-            console.print("[yellow]Use 'index build' to create a new index.")
-            raise click.Abort()
+        db_path = (
+            index
+            if index
+            else ensure_db_file(
+                settings.duckdb_index_path,
+                settings.remote_index_db_url,
+                settings.remote_index_db_hash,
+            )
+        )
 
         console.print(f"[bold green]Updating index at [yellow]{db_path}")
         console.print(f"[gray]Source directory: [yellow]{directory.absolute()}")
@@ -363,12 +367,21 @@ def stats(index: Path | None) -> None:
     console = Console()
 
     async def _do_stats(index: Path | None) -> None:
-        db_path = index if index else Path(settings.duckdb_index_path)
+        from findingmodel.config import ensure_db_file
 
-        if not db_path.exists():
-            console.print(f"[bold red]Error: Database not found at {db_path}")
-            console.print("[yellow]Use 'index build' to create a new index.")
-            raise click.Abort()
+        if index:
+            db_path = index
+            # If custom path doesn't exist, create empty database first
+            if not db_path.exists():
+                # Create temporary non-read-only index to initialize database
+                async with DuckDBIndex(db_path=db_path, read_only=False) as temp_idx:
+                    await temp_idx.setup()  # This will create schema and load base contributors
+        else:
+            db_path = ensure_db_file(
+                settings.duckdb_index_path,
+                settings.remote_index_db_url,
+                settings.remote_index_db_hash,
+            )
 
         console.print(f"[bold green]Index Statistics for [yellow]{db_path}\n")
 
@@ -578,11 +591,6 @@ def anatomic_stats(db_path: Path | None) -> None:
             settings.remote_anatomic_db_hash,
         )
     )
-
-    if not database_path.exists():
-        console.print(f"[bold red]Error: Database not found at {database_path}")
-        console.print("[yellow]Use 'anatomic build' to create the database.")
-        raise click.Abort()
 
     console.print("[bold green]Anatomic Location Database Statistics\n")
     console.print(f"[gray]Database: [yellow]{database_path.absolute()}\n")
