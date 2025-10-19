@@ -27,70 +27,30 @@ async def perform_search_stages(finding_info: FindingInfo) -> dict:
     query_terms = await generate_finding_query_terms(finding_info.name, finding_info.description)
     stages_timing["query_terms"] = time.perf_counter() - query_terms_start
 
-    # Stage 2: BioOntology Search (with integrated Cohere reranking)
+    # Stage 2: BioOntology Search
     bio_start = time.perf_counter()
-
-    # Temporarily disable Cohere to get original results
-    original_cohere_setting = settings.use_cohere_with_ontology_concept_match
-    settings.use_cohere_with_ontology_concept_match = False
-
-    original_results = await execute_ontology_search(
+    search_results = await execute_ontology_search(
         query_terms=query_terms,
         exclude_anatomical=True,
         base_limit=30,
         max_results=12,
     )
-
-    # Re-enable Cohere if it was enabled
-    settings.use_cohere_with_ontology_concept_match = original_cohere_setting
-
     stages_timing["bio_search"] = time.perf_counter() - bio_start
 
-    # Stage 3: Execute search WITH Cohere reranking (if enabled)
-    cohere_enabled = settings.use_cohere_with_ontology_concept_match
-    cohere_available = bool(settings.cohere_api_key) and cohere_enabled
-    cohere_query = None
-
-    if cohere_available:
-        cohere_start = time.perf_counter()
-
-        # Build the query that will be used inside execute_ontology_search
-        primary_term = query_terms[0] if query_terms else finding_info.name
-        alternate_terms = query_terms[1:] if len(query_terms) > 1 else []
-
-        if alternate_terms:
-            cohere_query = f"What is the correct medical ontology term to represent '{primary_term}' (alternates: {', '.join(alternate_terms)})?"
-        else:
-            cohere_query = f"What is the correct medical ontology term to represent '{primary_term}'?"
-
-        # Now get the reranked results (execute_ontology_search will apply Cohere internally)
-        reranked_results = await execute_ontology_search(
-            query_terms=query_terms,
-            exclude_anatomical=True,
-            base_limit=30,
-            max_results=12,
-        )
-
-        stages_timing["cohere_rerank"] = time.perf_counter() - cohere_start
-    else:
-        # No Cohere, so reranked = original
-        reranked_results = original_results
-        stages_timing["cohere_rerank"] = 0.0
-
-    # Stage 4: AI Categorization
+    # Stage 3: AI Categorization
     ai_start = time.perf_counter()
     categorized = await categorize_with_validation(
         finding_name=finding_info.name,
-        search_results=reranked_results,
+        search_results=search_results,
         query_terms=query_terms,
     )
     stages_timing["ai_categorization"] = time.perf_counter() - ai_start
 
-    # Stage 5: Build final output
+    # Stage 4: Build final output
     build_start = time.perf_counter()
     final_response = build_final_output(
         categorized=categorized,
-        search_results=reranked_results,
+        search_results=search_results,
         max_exact_matches=5,
         max_should_include=10,
         max_marginal=10,
@@ -99,46 +59,11 @@ async def perform_search_stages(finding_info: FindingInfo) -> dict:
 
     return {
         "query_terms": query_terms,
-        "original_results": original_results,
-        "reranked_results": reranked_results,
+        "search_results": search_results,
         "categorized": categorized,
         "final_response": final_response,
         "timing": stages_timing,
-        "cohere_available": cohere_available,
-        "cohere_query": cohere_query,
     }
-
-
-def display_results_comparison(original: list, reranked: list, limit: int = 10) -> None:
-    """Display comparison of results before and after reranking."""
-    # Check if order changed
-    order_changed = False
-    if len(original) == len(reranked):
-        for i in range(min(limit, len(original))):
-            if original[i].concept_id != reranked[i].concept_id:
-                order_changed = True
-                break
-    else:
-        # Different lengths means something changed (top_n filtering)
-        order_changed = True
-
-    if order_changed:
-        print("  Before reranking | After reranking:")
-        print("  " + "-" * 60)
-        for i in range(min(limit, len(original))):
-            orig = original[i] if i < len(original) else None
-            rerank = reranked[i] if i < len(reranked) else None
-
-            orig_text = f"{orig.concept_text[:25]:25}" if orig else " " * 25
-            rerank_text = f"{rerank.concept_text[:25]:25}" if rerank else " " * 25
-
-            if orig and rerank and orig.concept_id != rerank.concept_id:
-                # Highlight changes with arrow
-                print(f"  {i + 1:2}. {orig_text} → {rerank_text}")
-            else:
-                print(f"  {i + 1:2}. {orig_text}   {rerank_text}")
-    else:
-        print("  Order unchanged (or no reranking applied)")
 
 
 def _print_finding_info_stage(finding_info: FindingInfo, source: str, timing: float) -> None:
@@ -166,44 +91,22 @@ def _print_query_terms_stage(results: dict) -> None:
 
 def _print_bio_search_stage(results: dict) -> None:
     """Print BioOntology search stage."""
-    print("Stage 3: BioOntology API Search")
+    print("Stage 2: BioOntology API Search")
     print("-" * 30)
     print(f"  Time: {results['timing']['bio_search']:.3f}s")
-    print(f"  Results found: {len(results['original_results'])}")
-    if results["original_results"]:
-        print("  Top 10 results (before reranking):")
-        for i, result in enumerate(results["original_results"][:10], 1):
+    print(f"  Results found: {len(results['search_results'])}")
+    if results["search_results"]:
+        print("  Top 10 results:")
+        for i, result in enumerate(results["search_results"][:10], 1):
             score_str = f"{result.score:.4f}" if result.score < 1.0 else "1.0000"
             source = result.table_name if hasattr(result, "table_name") else "unknown"
             print(f"    {i:2}. {result.concept_text[:35]:35} ({result.concept_id:15}) [{source:10}] - {score_str}")
     print()
 
 
-def _print_cohere_rerank_stage(results: dict) -> None:
-    """Print Cohere reranking stage."""
-    if results["cohere_available"]:
-        print("Stage 4: Cohere Reranking")
-        print("-" * 30)
-        print(f"  Time: {results['timing']['cohere_rerank']:.3f}s")
-        if results.get("cohere_query"):
-            print(f"  Query: {results['cohere_query']}")
-        display_results_comparison(results["original_results"], results["reranked_results"])
-        print()
-    else:
-        print("Stage 4: Cohere Reranking")
-        print("-" * 30)
-        if not settings.cohere_api_key:
-            print("  Skipped (Cohere API key not configured)")
-        elif not settings.use_cohere_with_ontology_concept_match:
-            print("  Skipped (disabled for ontology concept match - see use_cohere_with_ontology_concept_match)")
-        else:
-            print("  Skipped (no results to rerank)")
-        print()
-
-
 def _print_categorization_stage(results: dict) -> None:
     """Print AI categorization stage."""
-    print("Stage 5: AI Categorization")
+    print("Stage 3: AI Categorization")
     print("-" * 30)
     print(f"  Time: {results['timing']['ai_categorization']:.3f}s")
     print("  Categorized concepts:")
@@ -218,7 +121,7 @@ def _print_categorization_stage(results: dict) -> None:
 
 def _print_final_output_stage(results: dict) -> None:
     """Print final output building stage."""
-    print("Stage 6: Build Final Output")
+    print("Stage 4: Build Final Output")
     print("-" * 30)
     print(f"  Time: {results['timing']['build_output']:.3f}s")
     print("  Final results:")
@@ -251,7 +154,6 @@ def _print_verbose_stages(results: dict) -> None:
     """Print all verbose stage outputs."""
     _print_query_terms_stage(results)
     _print_bio_search_stage(results)
-    _print_cohere_rerank_stage(results)
     _print_categorization_stage(results)
     _print_final_output_stage(results)
 
@@ -344,14 +246,6 @@ def check_configuration() -> bool:
         print(f"  OpenAI Model (small): {settings.openai_default_model_small}")
         print(f"  OpenAI Model (main): {settings.openai_default_model}")
         print("  BioOntology API: Configured")
-
-        cohere_status = "Not configured"
-        if settings.cohere_api_key:
-            if settings.use_cohere_with_ontology_concept_match:
-                cohere_status = "Configured and ENABLED for ontology concept match"
-            else:
-                cohere_status = "Configured but DISABLED for ontology concept match (default)"
-        print(f"  Cohere API: {cohere_status}")
         print()
         return True
 

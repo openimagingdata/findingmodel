@@ -51,15 +51,6 @@ class FindingModelConfig(BaseSettings):
     # BioOntology API
     bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
 
-    # Cohere API
-    cohere_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="Cohere API key for reranking")
-    use_cohere_in_anatomic_location_search: bool = Field(
-        default=False, description="Enable Cohere reranking for anatomic location search (may not improve results)"
-    )
-    use_cohere_with_ontology_concept_match: bool = Field(
-        default=False, description="Enable Cohere reranking for ontology concept matching (disabled by default)"
-    )
-
     # DuckDB configuration
     duckdb_anatomic_path: str = Field(
         default="anatomic_locations.duckdb",

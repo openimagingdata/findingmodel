@@ -21,7 +21,6 @@ from findingmodel.tools.ontology_search import (
     BioOntologySearchClient,
     OntologySearchResult,
     normalize_concept,
-    rerank_with_cohere,
 )
 
 
@@ -113,40 +112,6 @@ def _add_exact_matches(
     return top_results, exact_matches_added
 
 
-async def _apply_cohere_reranking(
-    top_results: list[OntologySearchResult], query_terms: list[str]
-) -> list[OntologySearchResult]:
-    """Apply Cohere reranking if configured."""
-    if not (settings.cohere_api_key and settings.use_cohere_with_ontology_concept_match):
-        logger.debug(
-            "Skipping Cohere reranking (enabled=%s, has_key=%s)",
-            settings.use_cohere_with_ontology_concept_match,
-            bool(settings.cohere_api_key),
-        )
-        return top_results
-
-    logger.info("Applying Cohere reranking to ontology concept results")
-
-    # Build a focused query for Cohere
-    primary_term = query_terms[0] if query_terms else "medical finding"
-    alternate_terms = query_terms[1:] if len(query_terms) > 1 else []
-
-    if alternate_terms:
-        cohere_query = f"What is the correct medical ontology term to represent '{primary_term}' (alternates: {', '.join(alternate_terms)})?"
-    else:
-        cohere_query = f"What is the correct medical ontology term to represent '{primary_term}'?"
-
-    logger.info(f"Cohere reranking query: {cohere_query}")
-
-    reranked_results = await rerank_with_cohere(
-        query=cohere_query,
-        documents=top_results,
-        retry_attempts=1,
-    )
-    logger.info("Cohere reranking complete")
-    return reranked_results
-
-
 async def execute_ontology_search(
     query_terms: list[str],
     exclude_anatomical: bool = True,
@@ -229,9 +194,6 @@ async def execute_ontology_search(
             f"Selected {len(top_results)} results for categorization "
             f"({max_results} top-scored + {exact_matches_added} exact matches)"
         )
-
-        # Apply optional Cohere reranking
-        top_results = await _apply_cohere_reranking(top_results, query_terms)
 
         return top_results
 

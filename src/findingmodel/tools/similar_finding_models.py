@@ -17,8 +17,8 @@ from pydantic_ai import Agent, RunContext
 from typing_extensions import NotRequired, TypedDict
 
 from findingmodel import logger
-from findingmodel.index import DuckDBIndex as Index
 from findingmodel.config import settings
+from findingmodel.index import DuckDBIndex as Index
 from findingmodel.tools.common import get_openai_model
 
 

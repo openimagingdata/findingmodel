@@ -22,7 +22,6 @@ from findingmodel.tools.ontology_search import (
     OntologySearchProtocol,
     OntologySearchResult,
     normalize_concept,
-    rerank_with_cohere,
 )
 
 
@@ -202,13 +201,12 @@ async def find_anatomic_locations(
     description: str | None = None,
     use_duckdb: bool = True,
 ) -> LocationSearchResponse:
-    """Find relevant anatomic locations for a finding using 4-stage pipeline.
+    """Find relevant anatomic locations for a finding using 3-stage pipeline.
 
     Pipeline stages:
     1. Generate query terms using AI
     2. Execute direct search on anatomic_locations table
-    3. Optional reranking with Cohere (if API key configured)
-    4. Select best locations using AI agent
+    3. Select best locations using AI agent
 
     Args:
         finding_name: Name of the finding (e.g., "PCL tear")
@@ -247,22 +245,7 @@ async def find_anatomic_locations(
             reasoning=f"No anatomic locations found for '{finding_name}'. Using default.",
         )
 
-    # Stage 3: Optional reranking with Cohere (if enabled and configured)
-    if settings.cohere_api_key and settings.use_cohere_in_anatomic_location_search:
-        logger.info("Applying Cohere reranking to anatomic location results")
-        search_results = await rerank_with_cohere(
-            query=f"{finding_name} anatomic location {description or ''}".strip(),
-            documents=search_results,
-            retry_attempts=1,
-        )
-    else:
-        logger.debug(
-            "Skipping Cohere reranking (enabled=%s, has_key=%s)",
-            settings.use_cohere_in_anatomic_location_search,
-            bool(settings.cohere_api_key),
-        )
-
-    # Stage 4: Selection using AI agent
+    # Stage 3: Selection using AI agent
     selection_agent = create_location_selection_agent()
 
     # Build structured prompt for the agent

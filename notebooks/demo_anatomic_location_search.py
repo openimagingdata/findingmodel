@@ -18,7 +18,6 @@ from findingmodel.tools.anatomic_location_search import (
     generate_anatomic_query_terms,
 )
 from findingmodel.tools.duckdb_search import DuckDBOntologySearchClient
-from findingmodel.tools.ontology_search import rerank_with_cohere
 
 
 async def perform_search_stages(finding_info: FindingInfo) -> dict:
@@ -36,32 +35,7 @@ async def perform_search_stages(finding_info: FindingInfo) -> dict:
         search_results = await execute_anatomic_search(query_info, client)
     stages_timing["duckdb_search"] = time.perf_counter() - duckdb_start
 
-    # Keep original results before reranking
-    original_results = search_results.copy()
-
-    # Stage 3: Cohere Reranking (if enabled and available)
-    reranked_results = search_results
-    cohere_enabled = settings.use_cohere_in_anatomic_location_search
-    cohere_available = bool(settings.cohere_api_key) and cohere_enabled
-    rerank_query = None
-
-    if cohere_available and search_results:
-        cohere_start = time.perf_counter()
-        # Build a focused query using just the primary search term
-        # The query should be simple and direct for best reranking results
-        primary_term = query_info.terms[0] if query_info.terms else finding_info.name
-        rerank_query = f"anatomic location: {primary_term}"
-
-        reranked_results = await rerank_with_cohere(
-            query=rerank_query,
-            documents=search_results,
-            retry_attempts=1,
-        )
-        stages_timing["cohere_rerank"] = time.perf_counter() - cohere_start
-    else:
-        stages_timing["cohere_rerank"] = 0.0
-
-    # Stage 4: AI Selection
+    # Stage 3: AI Selection
     ai_start = time.perf_counter()
     selection_agent = create_location_selection_agent()
 
@@ -70,8 +44,8 @@ async def perform_search_stages(finding_info: FindingInfo) -> dict:
 Finding: {finding_info.name}
 Description: {finding_info.description or "Not provided"}
 
-Search Results ({len(reranked_results)} locations found):
-{json.dumps([r.model_dump() for r in reranked_results], indent=2)}
+Search Results ({len(search_results)} locations found):
+{json.dumps([r.model_dump() for r in search_results], indent=2)}
 
 Select the best primary anatomic location and 2-3 good alternates.
 The goal is to find the "sweet spot" where it's as specific as possible,
@@ -84,42 +58,10 @@ but still encompassing the locations where the finding can occur.
 
     return {
         "query_info": query_info,
-        "original_results": original_results,
-        "reranked_results": reranked_results,
+        "search_results": search_results,
         "final_response": final_response,
         "timing": stages_timing,
-        "cohere_available": cohere_available,
-        "rerank_query": rerank_query,
     }
-
-
-def display_results_comparison(original: list, reranked: list, limit: int = 10) -> None:
-    """Display comparison of results before and after reranking."""
-    # Check if order changed
-    order_changed = False
-    if len(original) == len(reranked):
-        for i in range(min(limit, len(original))):
-            if original[i].concept_id != reranked[i].concept_id:
-                order_changed = True
-                break
-
-    if order_changed:
-        print("  Before reranking | After reranking:")
-        print("  " + "-" * 60)
-        for i in range(min(limit, len(original))):
-            orig = original[i] if i < len(original) else None
-            rerank = reranked[i] if i < len(reranked) else None
-
-            orig_text = f"{orig.concept_text[:25]:25}" if orig else " " * 25
-            rerank_text = f"{rerank.concept_text[:25]:25}" if rerank else " " * 25
-
-            if orig and rerank and orig.concept_id != rerank.concept_id:
-                # Highlight changes with arrow
-                print(f"  {i + 1:2}. {orig_text} → {rerank_text}")
-            else:
-                print(f"  {i + 1:2}. {orig_text}   {rerank_text}")
-    else:
-        print("  Order unchanged (or no reranking applied)")
 
 
 def _create_finding_info(finding_name: str, description: Optional[str]) -> tuple[FindingInfo, str, float]:
@@ -167,49 +109,24 @@ def _print_verbose_stages(results: dict) -> None:
     print()
 
     # Stage 3: DuckDB Search
-    print("Stage 3: DuckDB Search")
+    print("Stage 2: DuckDB Search")
     print("-" * 30)
     print(f"  Time: {results['timing']['duckdb_search']:.3f}s")
-    print(f"  Results found: {len(results['original_results'])}")
-    if results["original_results"]:
-        print("  Top 10 results (before reranking):")
-        for i, result in enumerate(results["original_results"][:10], 1):
+    print(f"  Results found: {len(results['search_results'])}")
+    if results["search_results"]:
+        print("  Top 10 results:")
+        for i, result in enumerate(results["search_results"][:10], 1):
             score_str = f"{result.score:.4f}" if result.score < 1.0 else "1.0000"
             print(f"    {i:2}. {result.concept_text[:45]:45} ({result.concept_id}) - {score_str}")
     print()
 
-    # Stage 4: Cohere Reranking
-    _print_cohere_stage(results)
-
-    # Stage 5: AI Selection
+    # Stage 3: AI Selection
     _print_ai_selection_stage(results)
-
-
-def _print_cohere_stage(results: dict) -> None:
-    """Print Cohere reranking stage output."""
-    if results["cohere_available"]:
-        print("Stage 4: Cohere Reranking")
-        print("-" * 30)
-        print(f"  Time: {results['timing']['cohere_rerank']:.3f}s")
-        if results.get("rerank_query"):
-            print(f"  Query: {results['rerank_query']}")
-        display_results_comparison(results["original_results"], results["reranked_results"])
-        print()
-    else:
-        print("Stage 4: Cohere Reranking")
-        print("-" * 30)
-        if not settings.cohere_api_key:
-            print("  Skipped (Cohere API key not configured)")
-        elif not settings.use_cohere_in_anatomic_location_search:
-            print("  Skipped (disabled for anatomic search - see use_cohere_in_anatomic_location_search)")
-        else:
-            print("  Skipped (no results to rerank)")
-        print()
 
 
 def _print_ai_selection_stage(results: dict) -> None:
     """Print AI selection stage output."""
-    print("Stage 5: AI Selection")
+    print("Stage 3: AI Selection")
     print("-" * 30)
     print(f"  Time: {results['timing']['ai_selection']:.3f}s")
     print(
@@ -307,14 +224,6 @@ def check_configuration() -> bool:
         print(f"  OpenAI Model (small): {settings.openai_default_model_small}")
         print(f"  OpenAI Model (main): {settings.openai_default_model}")
         print(f"  DuckDB Database: {settings.duckdb_anatomic_path} (exists)")
-
-        cohere_status = "Not configured"
-        if settings.cohere_api_key:
-            if settings.use_cohere_in_anatomic_location_search:
-                cohere_status = "Configured and ENABLED for anatomic search"
-            else:
-                cohere_status = "Configured but DISABLED for anatomic search (default)"
-        print(f"  Cohere API: {cohere_status}")
         print()
         return True
 

@@ -10,7 +10,6 @@ from pymongo import UpdateOne
 
 from findingmodel import logger
 from findingmodel.common import normalize_name
-from findingmodel.config import settings
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelFull
 

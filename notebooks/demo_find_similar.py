@@ -1,8 +1,7 @@
 import dotenv
 import logfire
 
-from findingmodel import logger
-from findingmodel.index import Index
+from findingmodel import Index, logger
 from findingmodel.tools import describe_finding_name, find_similar_models
 from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
 

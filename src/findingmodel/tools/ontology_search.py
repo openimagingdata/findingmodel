@@ -11,10 +11,8 @@ This module provides:
 import asyncio
 from typing import Any, ClassVar, Optional, Protocol, cast
 
-import cohere
 import httpx
 from pydantic import BaseModel, Field
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from findingmodel import logger
 from findingmodel.config import settings
@@ -596,70 +594,3 @@ class BioOntologySearchClient:
         all_results.sort(key=lambda x: x.score, reverse=True)
 
         return all_results
-
-
-async def rerank_with_cohere(
-    query: str,
-    documents: list[OntologySearchResult],
-    client: cohere.AsyncClientV2 | None = None,
-    model: str = "rerank-v3.5",
-    top_n: int | None = None,
-    retry_attempts: int = 1,
-) -> list[OntologySearchResult]:
-    """
-    Rerank search results using Cohere's rerank API.
-
-    Args:
-        query: The search query for reranking context
-        documents: List of search results to rerank
-        client: Optional pre-configured Cohere async client (creates one if not provided)
-        model: Cohere rerank model to use (default: rerank-v3.5)
-        top_n: Return only top N results (None = all)
-        retry_attempts: Number of retry attempts (default 1)
-
-    Returns:
-        Reranked list of OntologySearchResult objects
-    """
-    # Return original if no documents
-    if not documents:
-        return documents
-
-    # Create client if not provided
-    if client is None:
-        # Check if Cohere API key is configured
-        if not settings.cohere_api_key:
-            logger.debug("Cohere API key not configured, returning original order")
-            return documents
-
-        # Initialize new Cohere async client
-        client = cohere.AsyncClientV2(api_key=settings.cohere_api_key.get_secret_value())
-
-    # Prepare documents for reranking
-    doc_texts = [f"{doc.concept_id}: {doc.concept_text}" for doc in documents]
-
-    # Create retry-decorated function
-    @retry(
-        stop=stop_after_attempt(retry_attempts + 1),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(Exception),  # Cohere SDK exceptions
-        reraise=False,
-    )
-    async def _rerank() -> Any:  # noqa: ANN401
-        response = await client.rerank(model=model, query=query, documents=doc_texts, top_n=top_n)
-        return response
-
-    try:
-        # Execute reranking with retry logic
-        response = await _rerank()
-
-        # Reorder documents based on response
-        reranked_docs = []
-        for result in response.results:
-            reranked_docs.append(documents[result.index])
-
-        logger.info(f"Successfully reranked {len(reranked_docs)} documents with Cohere")
-        return reranked_docs
-
-    except Exception as e:
-        logger.warning(f"Cohere reranking failed after retries: {e}")
-        return documents  # Fallback to original order

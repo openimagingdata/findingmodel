@@ -21,7 +21,6 @@ from findingmodel.tools.ontology_search import (
     BioOntologySearchClient,
     BioOntologySearchResult,
     OntologySearchResult,
-    rerank_with_cohere,
 )
 
 # ==============================================================================
@@ -135,108 +134,6 @@ def test_default_ontologies_limited() -> None:
 
 
 # ==============================================================================
-# Cohere Reranking Tests
-# ==============================================================================
-
-
-def test_rerank_with_cohere_no_api_key() -> None:
-    """Test that rerank_with_cohere returns original order when no API key is configured."""
-    import asyncio
-
-    # Mock settings to have no Cohere API key
-    with patch("findingmodel.tools.ontology_search.settings.cohere_api_key", None):
-        # Create test documents
-        docs = [
-            OntologySearchResult(concept_id="1", concept_text="heart", score=0.5, table_name="test"),
-            OntologySearchResult(concept_id="2", concept_text="lung", score=0.8, table_name="test"),
-            OntologySearchResult(concept_id="3", concept_text="liver", score=0.3, table_name="test"),
-        ]
-
-        # Run rerank_with_cohere
-        result = asyncio.run(rerank_with_cohere("cardiac", docs))
-
-        # Should return original order
-        assert result == docs
-        assert [r.concept_id for r in result] == ["1", "2", "3"]
-
-
-def test_rerank_with_cohere_empty_documents() -> None:
-    """Test that rerank_with_cohere handles empty document list."""
-    import asyncio
-
-    result = asyncio.run(rerank_with_cohere("test query", []))
-    assert result == []
-
-
-@pytest.mark.asyncio
-async def test_rerank_with_cohere_with_mock_client() -> None:
-    """Test rerank_with_cohere with a mocked Cohere client."""
-    # Create test documents
-    docs = [
-        OntologySearchResult(concept_id="1", concept_text="heart", score=0.5, table_name="test"),
-        OntologySearchResult(concept_id="2", concept_text="lung", score=0.8, table_name="test"),
-        OntologySearchResult(concept_id="3", concept_text="liver", score=0.3, table_name="test"),
-    ]
-
-    # Create mock Cohere client
-    mock_client = AsyncMock()
-    mock_response = MagicMock()
-    # Simulate reranking: put doc 2 first, then 1, then 3
-    mock_response.results = [
-        MagicMock(index=1),  # lung
-        MagicMock(index=0),  # heart
-        MagicMock(index=2),  # liver
-    ]
-    mock_client.rerank = AsyncMock(return_value=mock_response)
-
-    # Run rerank with mock client
-    result = await rerank_with_cohere("lung disease", docs, client=mock_client)
-
-    # Check reordering happened
-    assert len(result) == 3
-    assert result[0].concept_id == "2"  # lung first
-    assert result[1].concept_id == "1"  # heart second
-    assert result[2].concept_id == "3"  # liver third
-
-    # Verify client was called correctly
-    mock_client.rerank.assert_called_once_with(
-        model="rerank-v3.5", query="lung disease", documents=["1: heart", "2: lung", "3: liver"], top_n=None
-    )
-
-
-@pytest.mark.asyncio
-async def test_rerank_with_cohere_top_n() -> None:
-    """Test rerank_with_cohere with top_n parameter."""
-    # Create test documents
-    docs = [
-        OntologySearchResult(concept_id=str(i), concept_text=f"concept_{i}", score=0.5, table_name="test")
-        for i in range(5)
-    ]
-
-    # Create mock Cohere client
-    mock_client = AsyncMock()
-    mock_response = MagicMock()
-    # Return only top 2
-    mock_response.results = [
-        MagicMock(index=2),
-        MagicMock(index=4),
-    ]
-    mock_client.rerank = AsyncMock(return_value=mock_response)
-
-    # Run rerank with top_n=2
-    result = await rerank_with_cohere("test", docs, client=mock_client, top_n=2)
-
-    # Should return only 2 results
-    assert len(result) == 2
-    assert result[0].concept_id == "2"
-    assert result[1].concept_id == "4"
-
-    # Verify top_n was passed to client
-    mock_client.rerank.assert_called_once()
-    assert mock_client.rerank.call_args.kwargs["top_n"] == 2
-
-
-# ==============================================================================
 # Query Generation Tests
 # ==============================================================================
 
@@ -329,187 +226,6 @@ def test_create_query_generator_agent() -> None:
 
 
 @pytest.mark.asyncio
-async def test_execute_ontology_search_with_cohere_enabled() -> None:
-    """Test execute_ontology_search when Cohere reranking is enabled and configured."""
-    # Mock the BioOntologySearchClient and settings
-    mock_client = MagicMock()
-    mock_search_results = [
-        OntologySearchResult(concept_id="1", concept_text="pneumonia", score=0.95, table_name="radlex"),
-        OntologySearchResult(concept_id="2", concept_text="Pneumonia", score=0.93, table_name="snomedct"),
-        OntologySearchResult(concept_id="3", concept_text="viral pneumonia", score=0.8, table_name="radlex"),
-    ]
-    mock_client.search_as_ontology_results = AsyncMock(return_value=mock_search_results)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=None)
-
-    # Mock rerank_with_cohere to return the same documents (for testing)
-    mock_reranked_results = mock_search_results.copy()
-
-    with (
-        patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
-        patch("findingmodel.tools.ontology_concept_match.rerank_with_cohere", new_callable=AsyncMock) as mock_rerank,
-    ):
-        # Configure settings for Cohere enabled
-        mock_settings.bioontology_api_key = "test-key"
-        mock_settings.use_cohere_with_ontology_concept_match = True
-        mock_settings.cohere_api_key = "test-cohere-key"
-
-        # Configure rerank mock to return the same documents
-        mock_rerank.return_value = mock_reranked_results
-
-        # Execute search with query terms
-        query_terms = ["pneumonia", "lung infection"]
-        results = await execute_ontology_search(query_terms=query_terms, exclude_anatomical=True)
-
-        # Verify client was created and used
-        mock_client.__aenter__.assert_called_once()
-        mock_client.search_as_ontology_results.assert_called_once()
-
-        # Verify Cohere reranking was called
-        mock_rerank.assert_called_once()
-
-        # Verify the Cohere query format is correct
-        call_args = mock_rerank.call_args
-        expected_query = (
-            "What is the correct medical ontology term to represent 'pneumonia' (alternates: lung infection)?"
-        )
-        assert call_args.kwargs["query"] == expected_query
-
-        # Verify other rerank parameters
-        assert call_args.kwargs["documents"] == mock_search_results
-        assert call_args.kwargs["retry_attempts"] == 1
-
-        # Check results
-        assert len(results) == 3
-        assert results[0].concept_text == "pneumonia"  # Should be normalized
-
-
-@pytest.mark.asyncio
-async def test_execute_ontology_search_with_cohere_disabled() -> None:
-    """Test execute_ontology_search when Cohere reranking is disabled via config."""
-    # Mock the BioOntologySearchClient and settings
-    mock_client = MagicMock()
-    mock_search_results = [
-        OntologySearchResult(concept_id="1", concept_text="pneumonia", score=0.95, table_name="radlex"),
-        OntologySearchResult(concept_id="2", concept_text="Pneumonia", score=0.93, table_name="snomedct"),
-    ]
-    mock_client.search_as_ontology_results = AsyncMock(return_value=mock_search_results)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=None)
-
-    with (
-        patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
-        patch("findingmodel.tools.ontology_concept_match.rerank_with_cohere", new_callable=AsyncMock) as mock_rerank,
-    ):
-        # Configure settings with Cohere disabled
-        mock_settings.bioontology_api_key = "test-key"
-        mock_settings.use_cohere_with_ontology_concept_match = False  # Disabled
-        mock_settings.cohere_api_key = "test-cohere-key"
-
-        # Execute search
-        query_terms = ["pneumonia", "lung infection"]
-        results = await execute_ontology_search(query_terms=query_terms, exclude_anatomical=True)
-
-        # Verify client was created and used
-        mock_client.__aenter__.assert_called_once()
-        mock_client.search_as_ontology_results.assert_called_once()
-
-        # Verify Cohere reranking was NOT called
-        mock_rerank.assert_not_called()
-
-        # Check results
-        assert len(results) == 2
-        assert results[0].concept_text == "pneumonia"  # Should be normalized
-
-
-@pytest.mark.asyncio
-async def test_execute_ontology_search_with_cohere_no_api_key() -> None:
-    """Test execute_ontology_search when Cohere config is enabled but no API key is provided."""
-    # Mock the BioOntologySearchClient and settings
-    mock_client = MagicMock()
-    mock_search_results = [
-        OntologySearchResult(concept_id="1", concept_text="pneumonia", score=0.95, table_name="radlex"),
-        OntologySearchResult(concept_id="2", concept_text="lung pneumonia", score=0.88, table_name="snomedct"),
-    ]
-    mock_client.search_as_ontology_results = AsyncMock(return_value=mock_search_results)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=None)
-
-    with (
-        patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
-        patch("findingmodel.tools.ontology_concept_match.rerank_with_cohere", new_callable=AsyncMock) as mock_rerank,
-    ):
-        # Configure settings with Cohere enabled but no API key
-        mock_settings.bioontology_api_key = "test-key"
-        mock_settings.use_cohere_with_ontology_concept_match = True  # Enabled
-        mock_settings.cohere_api_key = None  # No API key
-
-        # Execute search
-        query_terms = ["pneumonia", "lung infection"]
-        results = await execute_ontology_search(query_terms=query_terms, exclude_anatomical=True)
-
-        # Verify client was created and used
-        mock_client.__aenter__.assert_called_once()
-        mock_client.search_as_ontology_results.assert_called_once()
-
-        # Verify Cohere reranking was NOT called (no API key)
-        mock_rerank.assert_not_called()
-
-        # Check results
-        assert len(results) == 2
-        assert results[0].concept_text == "pneumonia"  # Should be normalized
-
-
-@pytest.mark.asyncio
-async def test_execute_ontology_search_with_cohere_single_query_term() -> None:
-    """Test execute_ontology_search with Cohere enabled and single query term (no alternates)."""
-    # Mock the BioOntologySearchClient and settings
-    mock_client = MagicMock()
-    mock_search_results = [
-        OntologySearchResult(concept_id="1", concept_text="pneumonia", score=0.95, table_name="radlex"),
-    ]
-    mock_client.search_as_ontology_results = AsyncMock(return_value=mock_search_results)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=None)
-
-    with (
-        patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
-        patch("findingmodel.tools.ontology_concept_match.rerank_with_cohere", new_callable=AsyncMock) as mock_rerank,
-    ):
-        # Configure settings for Cohere enabled
-        mock_settings.bioontology_api_key = "test-key"
-        mock_settings.use_cohere_with_ontology_concept_match = True
-        mock_settings.cohere_api_key = "test-cohere-key"
-
-        # Configure rerank mock
-        mock_rerank.return_value = mock_search_results
-
-        # Execute search with single query term
-        query_terms = ["pneumonia"]
-        results = await execute_ontology_search(query_terms=query_terms, exclude_anatomical=True)
-
-        # Verify Cohere reranking was called
-        mock_rerank.assert_called_once()
-
-        # Verify the Cohere query format for single term (no alternates)
-        call_args = mock_rerank.call_args
-        expected_query = "What is the correct medical ontology term to represent 'pneumonia'?"
-        assert call_args.kwargs["query"] == expected_query
-
-        # Verify other parameters
-        assert call_args.kwargs["documents"] == mock_search_results
-        assert call_args.kwargs["retry_attempts"] == 1
-
-        # Check results
-        assert len(results) == 1
-        assert results[0].concept_text == "pneumonia"
-
-
-@pytest.mark.asyncio
 async def test_execute_ontology_search() -> None:
     """Test executing search with filtering using BioOntology API."""
     # Mock the BioOntologySearchClient and settings
@@ -529,9 +245,6 @@ async def test_execute_ontology_search() -> None:
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
-        # Add config mocks to prevent Cohere issues
-        mock_settings.use_cohere_with_ontology_concept_match = False
-        mock_settings.cohere_api_key = None
 
         # Create query terms
         query_terms = ["pneumonia", "lung infection"]
@@ -574,9 +287,6 @@ async def test_execute_ontology_search_with_custom_ontologies() -> None:
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
-        # Add config mocks to prevent Cohere issues
-        mock_settings.use_cohere_with_ontology_concept_match = False
-        mock_settings.cohere_api_key = None
 
         # Test with custom ontologies
         query_terms = ["pneumonia", "lung infection"]
@@ -620,9 +330,6 @@ async def test_execute_ontology_search_with_none_ontologies() -> None:
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
-        # Add config mocks to prevent Cohere issues
-        mock_settings.use_cohere_with_ontology_concept_match = False
-        mock_settings.cohere_api_key = None
 
         # Test with ontologies=None (default behavior)
         query_terms = ["pneumonia"]
@@ -791,9 +498,6 @@ async def test_match_ontology_concepts_integration() -> None:
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
-        # Add config mocks to prevent Cohere issues
-        mock_settings.use_cohere_with_ontology_concept_match = False
-        mock_settings.cohere_api_key = None
 
         mock_agent = MagicMock()
         mock_result = MagicMock()
@@ -841,9 +545,6 @@ async def test_match_ontology_concepts_with_custom_ontologies() -> None:
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
-        # Add config mocks to prevent Cohere issues
-        mock_settings.use_cohere_with_ontology_concept_match = False
-        mock_settings.cohere_api_key = None
 
         mock_agent = MagicMock()
         mock_result = MagicMock()
@@ -901,9 +602,6 @@ async def test_match_ontology_concepts_with_none_ontologies() -> None:
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
-        # Add config mocks to prevent Cohere issues
-        mock_settings.use_cohere_with_ontology_concept_match = False
-        mock_settings.cohere_api_key = None
 
         mock_agent = MagicMock()
         mock_result = MagicMock()
@@ -1060,32 +758,6 @@ async def test_bioontology_semantic_type_filter() -> None:
                     )
                     or "T047" in result.semantic_types
                 )
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_rerank_with_cohere_integration() -> None:
-    """Integration test for Cohere reranking (requires COHERE_API_KEY)."""
-    if not getattr(settings, "cohere_api_key", None):
-        pytest.skip("Cohere API key not configured")
-
-    # Create test documents with intentionally mismatched order
-    docs = [
-        OntologySearchResult(concept_id="1", concept_text="liver disease", score=0.9, table_name="test"),
-        OntologySearchResult(concept_id="2", concept_text="cardiac arrest", score=0.8, table_name="test"),
-        OntologySearchResult(concept_id="3", concept_text="heart failure", score=0.7, table_name="test"),
-        OntologySearchResult(concept_id="4", concept_text="myocardial infarction", score=0.6, table_name="test"),
-    ]
-
-    # Rerank with a cardiac-focused query
-    result = await rerank_with_cohere("heart attack", docs, top_n=3)
-
-    # Should return 3 results
-    assert len(result) == 3
-
-    # The cardiac-related concepts should rank higher than liver disease
-    result_ids = [r.concept_id for r in result]
-    assert "1" not in result_ids[:2]  # liver disease should not be in top 2
 
 
 @pytest.mark.callout
