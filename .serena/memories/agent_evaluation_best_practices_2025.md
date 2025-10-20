@@ -34,7 +34,7 @@ assert report.overall_score() >= threshold
 **IMPORTANT API Details:**
 - Method is `evaluate()` NOT `evaluate_async()`
 - Evaluators passed to `Dataset()` constructor, NOT to `evaluate()` method
-- Use relative imports in test files: `from .utils import ...` NOT `from test.evals.utils import ...`
+- Use absolute imports in eval files: `from evals.base import ...` NOT `from .base import ...`
 
 ## Key Principles
 
@@ -88,13 +88,13 @@ def evaluate(self, ctx: EvaluatorContext[...]) -> float:
 Load actual finding models from `test/data/defs/*.fm.json` rather than synthetic data.
 
 ### 7. Follow Project Conventions
-- Use `@pytest.mark.callout` for tests requiring API access
+- Eval suites run standalone via `task evals` or `python -m evals.tool_name`
+- For integration tests requiring APIs, use `@pytest.mark.callout` (in test/ not evals/)
 - Provide mock tests using `TestModel` for quick validation without API
-- Enable Logfire integration for observability (Phase 3)
 
 ## Reusable Components
 
-### Base Evaluator Library (`test/evals/base.py`)
+### Base Evaluator Library (`evals/base.py`)
 
 Generic reusable evaluators for any agent:
 - `ExactMatchEvaluator[InputT, str]`: Exact string match
@@ -103,13 +103,13 @@ Generic reusable evaluators for any agent:
 - `StructuralValidityEvaluator[InputT, BaseModel]`: Check Pydantic model has required fields
 - `ErrorHandlingEvaluator[InputT, OutputT]`: Verify errors handled as expected
 
-All base evaluators are unit tested in `test/evals/test_base_evaluators.py` (25 tests, 0.09s).
+All base evaluators are unit tested in `test/test_base_evaluators.py` (25 tests).
 
 ### Agent-Specific Evaluators
 
-Create specialized evaluators in the agent's test file for domain-specific checks.
+Create specialized evaluators in the agent's eval file for domain-specific checks.
 
-**Example: model_editor evaluators** (`test/evals/test_model_editor_evals.py`):
+**Example: model_editor evaluators** (`evals/model_editor.py`):
 ```python
 # 1. IDPreservationEvaluator (strict) - Model IDs must never change
 # 2. AttributeAdditionEvaluator (partial) - Proportional score for attributes added
@@ -118,80 +118,158 @@ Create specialized evaluators in the agent's test file for domain-specific check
 # 5. ContentPreservationEvaluator (strict) - Model unchanged when edits rejected
 ```
 
-### Base Suite Class
-
-```python
-class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
-    @abstractmethod
-    def create_successful_cases(self) -> list[Case]: ...
-    
-    @abstractmethod
-    def create_failure_cases(self) -> list[Case]: ...
-    
-    @abstractmethod
-    def create_edge_cases(self) -> list[Case]: ...
-    
-    @abstractmethod
-    async def execute_agent(self, input_data: InputT) -> ActualT: ...
-```
-
 ## Running Evaluations
 
 ```bash
-# Quick mock test (no API)
-pytest test/evals/test_model_editor_evals.py::test_single_successful_case -v
+# Run all eval suites
+task evals
 
-# Full evaluation suite (requires API)
-pytest test/evals/test_model_editor_evals.py::test_run_model_editor_evals -v -s
-task test-full test/evals/
+# Run specific suite
+task evals:model_editor
+python -m evals.model_editor
 
-# Run as standalone
-python test/evals/test_model_editor_evals.py
-
-# List available cases
-python test/evals/list_cases.py
+# From Python
+from evals.model_editor import run_model_editor_evals
+report = await run_model_editor_evals()
 ```
 
 ## Evaluation Suite Structure
 
 ```
-test/evals/
+evals/                               # Root-level directory (NOT in test/)
 ├── base.py                          # Reusable evaluators & base classes
-├── test_base_evaluators.py          # Unit tests for base evaluators
-├── test_model_editor_evals.py       # ✅ model_editor evaluation (Phase 2 COMPLETE)
-├── test_anatomic_search_evals.py    # TODO: anatomic_location_search
-├── test_ontology_match_evals.py     # TODO: ontology_concept_match
+├── model_editor.py                  # ✅ model_editor evaluation (COMPLETE)
 ├── utils.py                         # Shared helpers
-├── README.md                        # Documentation
-├── add_case_example.py              # Template examples
-└── list_cases.py                    # Utility to list all cases
+├── README.md                        # Quick-start guide
+├── evals_guide.md                   # Comprehensive how-to-write guide
+└── CLAUDE.md                        # AI agent reference for eval development
+
+test/                                # Test directory (pytest discovers here)
+├── test_base_evaluators.py          # Unit tests for evaluator library
+└── test_*.py                        # Unit and integration tests
 ```
+
+**Key distinction:** Evals assess behavioral quality (0.0-1.0 scores), tests verify correctness (pass/fail).
+
+## Creating New Eval Suites
+
+When creating new eval suites, follow this pattern:
+
+### File Structure
+- **Filename**: `evals/tool_name.py` (NOT `test_tool_name.py`)
+- **Main function**: `run_tool_name_evals()` (NOT `test_run_tool_name_evals()`)
+- **Imports**: Absolute (`from evals.base import ...`)
+
+### Required Components
+
+1. **Define data models** (input, expected output, actual output)
+2. **Create focused evaluators** inheriting from `Evaluator` base class
+3. **Build dataset** with cases and evaluators at module level
+4. **Main eval function** that runs `dataset.evaluate()` and returns Report
+5. **`__main__` block** for standalone execution
+
+### Template
+
+```python
+"""Evaluation suite for {tool_name} agent."""
+
+from evals.base import ExactMatchEvaluator, KeywordMatchEvaluator
+from evals.utils import load_fm_json
+from pydantic_evals import Case, Dataset
+
+# 1. Data models
+class ToolInput(BaseModel): ...
+class ToolExpected(BaseModel): ...
+class ToolOutput(BaseModel): ...
+
+# 2. Evaluators (focused, hybrid scoring)
+class CustomEvaluator(Evaluator[ToolInput, ToolOutput, ToolExpected]):
+    def evaluate(self, ctx: EvaluatorContext[...]) -> float:
+        # Return 0.0-1.0 score
+        return score
+
+# 3. Dataset (at module level)
+evaluators = [CustomEvaluator(), KeywordMatchEvaluator(...)]
+dataset = Dataset(
+    cases=[
+        Case(input=..., expected_output=..., metadata=...),
+        # More cases...
+    ],
+    evaluators=evaluators,
+)
+
+# 4. Main eval function
+async def run_tool_name_evals() -> Report:
+    """Run evaluation suite for {tool_name}."""
+    async def task_fn(input_data: ToolInput) -> ToolOutput:
+        # Execute agent and return output
+        return result
+    
+    report = await dataset.evaluate(task_fn)
+    return report
+
+# 5. Standalone execution
+if __name__ == "__main__":
+    import asyncio
+
+    async def main():
+        print("\nRunning {tool_name} evaluation suite...")
+        print("=" * 80)
+        
+        report = await run_tool_name_evals()
+        
+        print("\n" + "=" * 80)
+        print("{TOOL_NAME} EVALUATION RESULTS")
+        print("=" * 80 + "\n")
+        report.print(include_input=False, include_output=True)
+        print(f"\nOVERALL SCORE: {report.overall_score():.2f}")
+        print("=" * 80 + "\n")
+    
+    asyncio.run(main())
+```
+
+### Converting from Pytest-Based Evals
+
+If migrating from pytest-based eval tests, apply these transformations:
+
+1. **Remove pytest decorators**: Delete `@pytest.mark.callout`, `@pytest.mark.asyncio`
+2. **Rename function**: `test_run_X_evals()` → `run_X_evals()`
+3. **Change imports**: Relative (`from .base`) → Absolute (`from evals.base`)
+4. **Return Report**: Function returns Report object instead of using assertions
+5. **Add `__main__` block**: Enable standalone execution via `python -m evals.X`
+
+See `evals/model_editor.py` for complete working example.
 
 ## Agents Needing Evaluation Suites
 
 Priority order for creating eval suites:
-1. **model_editor** ✅ **COMPLETE (Phase 2)** - 12 cases, 5 evaluators, hybrid scoring
+1. **model_editor** ✅ **COMPLETE** - 12 cases, 5 evaluators, hybrid scoring
 2. **anatomic_location_search** - Two-agent architecture
 3. **ontology_concept_match** - Multi-backend
 4. **finding_description** - LLM-generated content
 5. **similar_finding_models** - Similarity/ranking
 6. **markdown_in** - Parsing accuracy
 
-## Current Status (Updated 2025-10-18)
+## Current Status (Updated 2025-10-21)
+
+### ✅ Eval/Test Separation Complete (October 2025)
+- Moved eval suites from `test/evals/` to root `evals/` directory
+- Pytest no longer discovers eval suites during normal test runs
+- Clear three-tier structure: unit tests, integration tests, evals
+- Added `task evals` and `task evals:model_editor` commands
+- Documentation: `evals/README.md`, `evals/evals_guide.md`, `evals/CLAUDE.md`
 
 ### ✅ Phase 1 Complete
-- Base evaluator library (`test/evals/base.py`) - 5 generic evaluators
-- Base suite class (`AgentEvaluationSuite`)
-- Shared utilities (`test/evals/utils.py`)
-- Unit tests for evaluators (`test/evals/test_base_evaluators.py`)
+- Base evaluator library (`evals/base.py`) - 5 generic evaluators
+- Shared utilities (`evals/utils.py`)
+- Unit tests for evaluators (`test/test_base_evaluators.py`)
 
 ### ✅ Phase 2 Complete
 - Refactored model_editor evals to use Evaluator classes
 - 5 focused evaluators with hybrid scoring approach
 - Using `Dataset.evaluate()` pattern correctly
-- All 12 test cases passing (11 original + 1 new)
-- Documentation updated (README.md, add_case_example.py)
-- Critical import bug fixed (relative imports for test modules)
+- All 12 test cases passing
+- Standalone execution via `python -m evals.model_editor`
 
 ### 🔲 Phase 3 Optional
 - Logfire integration for observability
@@ -208,9 +286,11 @@ Priority order for creating eval suites:
 ❌ Testing library functionality instead of your agent logic  
 ❌ Using `evaluate_async()` method (doesn't exist, use `evaluate()`)  
 ❌ Passing evaluators to `evaluate()` method (pass to Dataset constructor)  
-❌ Absolute imports in test files (use relative: `from .utils import ...`)
+❌ Using pytest decorators in eval suites (evals run standalone, not via pytest)  
+❌ Relative imports in eval files (use `from evals.base` not `from .base`)  
+❌ Naming eval files with `test_` prefix (use `tool_name.py`)
 
-## Lessons Learned (Phase 2)
+## Lessons Learned
 
 ### 1. Hybrid Scoring is Key
 Non-negotiables (ID preservation, error recording) must be strict (0.0 or 1.0). Quality measures (keyword matching, completeness) should use partial credit.
@@ -218,8 +298,8 @@ Non-negotiables (ID preservation, error recording) must be strict (0.0 or 1.0). 
 ### 2. Always Run the Tests
 Linting passes doesn't mean code works. Critical import bug prevented tests from running at all until senior review actually executed them.
 
-### 3. Relative Imports in Test Modules
-Use `from .utils import ...` NOT `from test.evals.utils import ...` to avoid `ModuleNotFoundError`.
+### 3. Absolute Imports in Eval Files
+Use `from evals.base import ...` NOT `from .base import ...` since eval files are modules, not test files.
 
 ### 4. Evaluators in Dataset Constructor
 Evaluators passed to `Dataset(cases=..., evaluators=...)` constructor, NOT to `evaluate()` method.
@@ -227,11 +307,17 @@ Evaluators passed to `Dataset(cases=..., evaluators=...)` constructor, NOT to `e
 ### 5. API is `evaluate()` Not `evaluate_async()`
 The method name is `evaluate()` despite being async. There is no `evaluate_async()`.
 
+### 6. Evals vs Tests Separation Matters
+- **Tests** (in `test/`): Verify correctness with pass/fail, discovered by pytest
+- **Evals** (in `evals/`): Assess quality with 0.0-1.0 scores, run standalone
+- Keeping them separate prevents slow expensive evals from running during normal testing
+
 ## Resources
 
-- **Full guide:** `docs/evaluation_guide.md`
-- **Phase 2 implementation:** `test/evals/test_model_editor_evals.py`
-- **Phase 2 review:** `tasks/PHASE_2_SENIOR_REVIEW.md`
+- **Quick start:** `evals/README.md`
+- **Full guide:** `evals/evals_guide.md`
+- **AI reference:** `evals/CLAUDE.md`
+- **Example implementation:** `evals/model_editor.py`
 - **Refactoring plan:** `tasks/refactor_model_editor_evals.md`
 - **Pydantic AI Evals:** https://ai.pydantic.dev/evals/
 - **Related memories:** `pydantic_ai_testing_best_practices`, `test_suite_improvements_2025`

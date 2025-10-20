@@ -31,7 +31,7 @@ def load_fm_json(filename: str) -> str:
         >>> json_str = load_fm_json("pulmonary_embolism.fm.json")
         >>> model = FindingModelFull.model_validate_json(json_str)
     """
-    test_data_dir = Path(__file__).parent.parent / "data" / "defs"
+    test_data_dir = Path(__file__).parent.parent / "test" / "data" / "defs"
     file_path = test_data_dir / filename
     return file_path.read_text(encoding="utf-8")
 

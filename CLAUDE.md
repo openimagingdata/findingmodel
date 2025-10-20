@@ -36,17 +36,41 @@ Claude Code must follow these instructions when working in this repository.
 
 ## 4. Testing + QA (Serena `pydantic_ai_testing_best_practices`)
 
-- Default: block external calls by setting `models.ALLOW_MODEL_REQUESTS = False` in tests.
-- Use `TestModel` / `FunctionModel` for deterministic AI agent tests; mark real-call tests with `@pytest.mark.callout`.
-- Test data lives under `test/data/`; keep fixtures reusable.
-- Tasks:
+### Three-Tier Testing Structure
 
-  ```bash
-  task test          # fast local suite
-  task test-full     # includes callouts
-  task check         # format + lint + mypy
-  task build         # package build
-  ```
+FindingModel uses a clear separation between tests and evaluations:
+
+1. **Unit Tests** (`test/test_*.py`) - Verify logic correctness with mocked dependencies
+   - Fast, no API calls
+   - Run with `task test`
+   - Default: block external calls by setting `models.ALLOW_MODEL_REQUESTS = False`
+
+2. **Integration Tests** (`test/test_*.py` with `@pytest.mark.callout`) - Verify wiring with real APIs
+   - Real API calls, specific scenarios
+   - Run with `task test-full`
+   - Use `TestModel` / `FunctionModel` for deterministic AI agent tests
+
+3. **Evals** (`evals/*.py`) - Assess behavioral quality comprehensively
+   - Dataset.evaluate() with focused evaluators
+   - Run with `task evals` or `task evals:model_editor`
+   - See `evals/CLAUDE.md` for eval development guidance
+
+**Key distinction**: Tests verify correctness (pass/fail), evals assess quality (0.0-1.0 scores with partial credit).
+
+### Test Data and Fixtures
+
+- Test data lives under `test/data/`; keep fixtures reusable
+- Eval suites access test data via `evals/utils.py` helpers
+
+### Tasks
+
+```bash
+task test          # unit tests (fast, no API)
+task test-full     # integration tests (includes callouts)
+task evals         # run all eval suites
+task check         # format + lint + mypy
+task build         # package build
+```
 
 - uv fallbacks: `uv run ruff format`, `uv run ruff check --fix`, `uv run mypy src`, `uv run pytest -rs -m "not callout"`.
 

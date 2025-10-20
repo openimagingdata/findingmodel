@@ -28,7 +28,7 @@ Create evaluation suites for these agents:
 
 ### 1. Anatomic Location Search
 
-**File:** `test/evals/test_anatomic_search_evals.py`
+**File:** `evals/anatomic_search.py`
 
 **Agent Details:**
 
@@ -80,7 +80,7 @@ Create evaluation suites for these agents:
 #### Acceptance Criteria
 
 - [ ] Minimum 20 test cases covering all categories
-- [ ] Uses base evaluators from `test/evals/base.py`
+- [ ] Uses base evaluators from `evals/base.py`
 - [ ] Tests both MongoDB and DuckDB backends
 - [ ] Mock tests using `TestModel` for quick validation
 - [ ] Full API tests marked with `@pytest.mark.callout`
@@ -91,7 +91,7 @@ Create evaluation suites for these agents:
 
 ### 2. Ontology Concept Match
 
-**File:** `test/evals/test_ontology_match_evals.py`
+**File:** `evals/ontology_match.py`
 
 **Agent Details:**
 
@@ -159,7 +159,7 @@ Create evaluation suites for these agents:
 
 ### 3. Finding Description
 
-**File:** `test/evals/test_finding_description_evals.py`
+**File:** `evals/test_finding_description_evals.py`
 
 **Agent Details:**
 
@@ -229,7 +229,7 @@ Create evaluation suites for these agents:
 
 ### 4. Similar Finding Models
 
-**File:** `test/evals/test_similar_models_evals.py`
+**File:** `evals/test_similar_models_evals.py`
 
 **Agent Details:**
 
@@ -302,7 +302,7 @@ Create evaluation suites for these agents:
 
 ### 5. Markdown Input
 
-**File:** `test/evals/test_markdown_in_evals.py`
+**File:** `evals/test_markdown_in_evals.py`
 
 **Agent Details:**
 

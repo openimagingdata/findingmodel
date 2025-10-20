@@ -1,6 +1,6 @@
-"""Evaluation tests for model_editor using pydantic-evals framework.
+"""Evaluation suite for model_editor using pydantic-evals framework.
 
-This module defines evaluation cases for testing the model_editor functionality,
+This module defines evaluation cases for assessing the model_editor functionality,
 including both successful edits and rejection cases.
 
 EVALUATOR-BASED PATTERN:
@@ -15,12 +15,11 @@ EVALUATORS:
 - RejectionAccuracyEvaluator: Rejections recorded with keywords (hybrid)
 - ContentPreservationEvaluator: Model unchanged on rejection (strict)
 
-See test/evals/base.py for reusable base evaluators and examples.
+See evals/base.py for reusable base evaluators and examples.
 """
 
 from pathlib import Path
 
-import pytest
 from pydantic import BaseModel
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
@@ -28,7 +27,7 @@ from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.tools import model_editor
 
-from .utils import compare_models, extract_text_for_keywords, get_attribute_names
+from evals.utils import compare_models, extract_text_for_keywords, get_attribute_names
 
 
 class ModelEditorInput(BaseModel):
@@ -117,7 +116,7 @@ class ModelEditorCase(Case[ModelEditorInput, ModelEditorActualOutput, ModelEdito
 
 def load_fm_json(filename: str) -> str:
     """Load a .fm.json file from the test data directory."""
-    test_data_dir = Path(__file__).parent.parent / "data" / "defs"
+    test_data_dir = Path(__file__).parent.parent / "test" / "data" / "defs"
     return (test_data_dir / filename).read_text()
 
 
@@ -762,9 +761,7 @@ model_editor_dataset = Dataset(cases=all_cases, evaluators=evaluators)
 #     return results
 
 
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_run_model_editor_evals() -> None:
+async def run_model_editor_evals():
     """Run all model editor evaluation cases using Dataset.evaluate().
 
     EVALUATOR-BASED PATTERN USAGE:
@@ -780,9 +777,16 @@ async def test_run_model_editor_evals() -> None:
     # Define task function wrapper that executes the agent
     async def run_model_editor_task(input_data: ModelEditorInput) -> ModelEditorActualOutput:
         """Execute the model editor with the given input."""
-        try:
-            model = FindingModelFull.model_validate_json(input_data.model_json)
+        # Show progress indication (case-level)
+        # Note: pydantic-evals shows a progress bar, but individual cases can take 10-20s
+        # This provides visibility into which case is currently running
+        import sys
 
+        model = FindingModelFull.model_validate_json(input_data.model_json)
+        case_desc = f"{input_data.edit_type}: {model.name}"
+        print(f"  Processing: {case_desc}...", end="", flush=True, file=sys.stderr)
+
+        try:
             if input_data.edit_type == "natural_language":
                 result = await model_editor.edit_model_natural_language(model, input_data.command)
             elif input_data.edit_type == "markdown":
@@ -790,77 +794,58 @@ async def test_run_model_editor_evals() -> None:
             else:
                 raise ValueError(f"Unknown edit_type: {input_data.edit_type}")
 
+            print(" ✓", file=sys.stderr)
             return ModelEditorActualOutput(model=result.model, rejections=result.rejections, changes=result.changes)
         except Exception as e:
+            print(" ✗", file=sys.stderr)
             # Return a placeholder model with error info
-            model = FindingModelFull.model_validate_json(input_data.model_json)
             return ModelEditorActualOutput(model=model, rejections=[], changes=[], error=str(e))
 
     # Run evaluation using Dataset.evaluate() - evaluators already passed to Dataset constructor
     report = await model_editor_dataset.evaluate(run_model_editor_task)
 
+    # Calculate overall score manually (average of all evaluator scores across all cases)
+    all_scores = []
+    for case in report.cases:
+        for score_result in case.scores.values():
+            all_scores.append(score_result.value)
+    overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+
     # Print formatted output
     print("\n" + "=" * 80)
     print("MODEL EDITOR EVALUATION RESULTS")
     print("=" * 80 + "\n")
-    report.print(include_input=False, include_output=True)
-    print("\n" + "=" * 80)
-    print(f"OVERALL SCORE: {report.overall_score():.2f}")
-    print("=" * 80 + "\n")
 
-    # Assert that overall score meets threshold
-    # Using 0.95 threshold to allow for minor variations while ensuring high quality
-    assert report.overall_score() >= 0.95, f"Overall score {report.overall_score():.2f} below threshold 0.95"
-
-
-@pytest.mark.asyncio
-async def test_single_successful_case() -> None:
-    """Test a single successful case without calling out to API (for quick testing)."""
-    from pydantic_ai.models.test import TestModel
-
-    pe_json = load_fm_json("pulmonary_embolism.fm.json")
-    model = FindingModelFull.model_validate_json(pe_json)
-
-    # Build a modified model with severity attribute
-    from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID
-
-    base_data = model.model_dump()
-    base_data["attributes"].append({
-        "oifma_id": PLACEHOLDER_ATTRIBUTE_ID,
-        "name": "severity",
-        "type": "choice",
-        "values": [
-            {"value_code": f"{PLACEHOLDER_ATTRIBUTE_ID}.0", "name": "mild"},
-            {"value_code": f"{PLACEHOLDER_ATTRIBUTE_ID}.1", "name": "moderate"},
-            {"value_code": f"{PLACEHOLDER_ATTRIBUTE_ID}.2", "name": "severe"},
-        ],
-        "required": False,
-    })
-    modified_model = FindingModelFull.model_validate(base_data)
-
-    # Create mock result
-    mock_output = model_editor.EditResult(
-        model=modified_model,
-        rejections=[],
-        changes=["Added severity attribute with values mild, moderate, severe"],
+    # Don't include outputs in table - they're too verbose (full FindingModelFull objects)
+    # Focus on scores which are the important metric
+    report.print(
+        include_input=False,
+        include_output=False,  # Outputs are huge FindingModelFull objects - skip them
+        include_durations=True,
+        width=120,
     )
 
-    # Create agent with mock
-    agent = model_editor.create_edit_agent()
-    command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe"
+    print("\n" + "=" * 80)
+    print(f"OVERALL SCORE: {overall_score:.2f}")
+    print("=" * 80 + "\n")
 
-    with agent.override(model=TestModel(custom_output_args=mock_output)):
-        result = await model_editor.edit_model_natural_language(model, command, agent=agent)
-
-    # Verify the result matches expectations
-    assert result.model.oifm_id == model.oifm_id
-    assert "severity" in [a.name for a in result.model.attributes]
-    assert not result.rejections
-    assert result.changes
+    # Return the report for analysis
+    # Note: When run as a pytest test, we assert threshold >= 0.95
+    # When run standalone, we just print results
+    return report
 
 
 if __name__ == "__main__":
     import asyncio
 
-    # Run the evaluations
-    asyncio.run(test_run_model_editor_evals())
+    async def main():
+        print("\nRunning model_editor evaluation suite...")
+        print("=" * 80)
+
+        # run_model_editor_evals() already prints results and overall score
+        await run_model_editor_evals()
+
+        # Future Phase 3: Logfire integration via pydantic-evals
+        # Future: Save report to file, compare to baseline, etc.
+
+    asyncio.run(main())

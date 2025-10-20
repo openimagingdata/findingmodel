@@ -312,7 +312,9 @@ async def test_agent_evals():
     report.print(include_input=True, include_output=True)
 
     # Assert minimum quality threshold
-    assert report.overall_score() >= 0.9, f"Only {report.overall_score():.1%} passing"
+    all_scores = [score.value for case in report.cases for score in case.scores.values()]
+    overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+    assert overall_score >= 0.9, f"Only {overall_score:.1%} passing"
 
     # Can also check specific evaluators
     for evaluator_name, score in report.evaluator_scores().items():
@@ -464,7 +466,9 @@ async def test_quick_validation():
 @pytest.mark.asyncio
 async def test_full_evals():
     report = await dataset.evaluate_async(task_function)
-    assert report.overall_score() >= 0.9
+    all_scores = [score.value for case in report.cases for score in case.scores.values()]
+    overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+    assert overall_score >= 0.9
 ```
 
 ### 7. Add Observability
@@ -488,7 +492,7 @@ logfire.configure(
 
 ### Base Evaluator Library
 
-Create `test/evals/base.py` with reusable evaluators:
+Create `evals/base.py` with reusable evaluators:
 
 ```python
 """Reusable evaluators for findingmodel agents."""
@@ -642,20 +646,20 @@ class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
 
 ```bash
 # Run single mock test
-pytest test/evals/test_model_editor_evals.py::test_single_case_mock -v
+pytest evals/test_model_editor_evals.py::test_single_case_mock -v
 ```
 
 ### Full Evaluation Suite (Requires API)
 
 ```bash
 # Run all eval tests marked with @pytest.mark.callout
-pytest test/evals/test_model_editor_evals.py::test_full_evals -v -s
+pytest evals/test_model_editor_evals.py::test_full_evals -v -s
 
 # Run all eval tests across all agents
-task test-full test/evals/
+task test-full evals/
 
 # View detailed output
-pytest test/evals/ -m callout -v -s
+pytest evals/ -m callout -v -s
 ```
 
 ### Standalone Execution
@@ -699,7 +703,7 @@ Evals marked with `@pytest.mark.callout` are:
 - **Per-case scores**: How each case performed on each evaluator
 - **Average scores**: Overall performance per evaluator
 - **Duration**: Execution time per case
-- **Overall score**: `report.overall_score()` - average across all evaluators
+- **Overall score**: Average of all evaluator scores across all cases (calculate manually as shown in examples above)
 
 ### Investigating Failures
 
@@ -723,7 +727,9 @@ for case_result in report.case_results:
 
 ```python
 # Require 90% overall
-assert report.overall_score() >= 0.9
+all_scores = [score.value for case in report.cases for score in case.scores.values()]
+overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+assert overall_score >= 0.9
 
 # Require specific evaluators to pass
 for name, score in report.evaluator_scores().items():
@@ -735,7 +741,7 @@ for name, score in report.evaluator_scores().items():
 
 ## Next Steps
 
-1. **Create base evaluator library** (`test/evals/base.py`)
+1. **Create base evaluator library** (`evals/base.py`)
 2. **Refactor existing model_editor evals** to use Pydantic Evals standard pattern
 3. **Create eval suites for other agents**:
    - `anatomic_location_search`

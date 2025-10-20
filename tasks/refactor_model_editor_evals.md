@@ -14,7 +14,7 @@
 
 **Related Documents:**
 
-- `docs/evaluation_guide.md` - Comprehensive guide to agent evaluation
+- `evals/evals_guide.md` - Comprehensive guide to agent evaluation
 - `docs/logfire_observability_guide.md` - Logfire observability patterns (Phase 3)
 - **Serena Memories:**
   - `agent_evaluation_best_practices_2025` - Evaluation patterns and lessons learned
@@ -64,7 +64,7 @@ Create reusable base components that can be used across all agent evaluation sui
 
 #### Task 1.1: Create Base Evaluator Library ✅ DONE (code only)
 
-**File:** `test/evals/base.py`
+**File:** `evals/base.py`
 
 Create reusable evaluator classes that work across all agents:
 
@@ -85,7 +85,7 @@ Create reusable evaluator classes that work across all agents:
 - [ ] **Unit tests for each evaluator** ⚠️ **BLOCKING** - See Phase 1-A
 - [x] Reusable across different agent types
 
-**Implementation:** `test/evals/base.py` (lines 23-367)
+**Implementation:** `evals/base.py` (lines 23-367)
 
 - ExactMatchEvaluator
 - ContainsEvaluator
@@ -97,7 +97,7 @@ Create reusable evaluator classes that work across all agents:
 
 #### Task 1.2: Create Base Suite Class ✅ DONE
 
-**File:** `test/evals/base.py`
+**File:** `evals/base.py`
 
 Create abstract base class for agent evaluation suites:
 
@@ -120,7 +120,7 @@ class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
 - [x] Documentation on how to subclass
 - [x] Example implementation in docstring
 
-**Implementation:** `test/evals/base.py` (lines 374-546)
+**Implementation:** `evals/base.py` (lines 374-546)
 
 - AgentEvaluationSuite[InputT, ExpectedT, ActualT]
 - 4 abstract methods + 2 concrete helpers
@@ -130,7 +130,7 @@ class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
 
 #### Task 1.3: Create Shared Utilities ✅ DONE
 
-**File:** `test/evals/utils.py`
+**File:** `evals/utils.py`
 
 Extract common helpers from existing evals:
 
@@ -148,7 +148,7 @@ Extract common helpers from existing evals:
 - [x] Type hints throughout
 - [ ] Used by multiple eval suites (will be verified in Phase 2)
 
-**Implementation:** `test/evals/utils.py`
+**Implementation:** `evals/utils.py`
 
 - load_fm_json()
 - create_mock_edit_result()
@@ -168,7 +168,7 @@ Add unit tests for the 5 base evaluators. Task 1.1 acceptance criteria required 
 
 #### Task 1-A.1: Create Test File ✅ DONE
 
-**File:** `test/evals/test_base_evaluators.py`
+**File:** `evals/test_base_evaluators.py`
 
 Implemented 25 focused unit tests covering:
 
@@ -205,7 +205,7 @@ Apply the new patterns to the existing model_editor evaluation suite.
 
 #### Task 2.1: Create Focused Evaluators ✅ DONE
 
-**File:** `test/evals/test_model_editor_evals.py`
+**File:** `evals/test_model_editor_evals.py`
 
 Replace single `evaluate_model_editor_case()` function with multiple evaluators:
 
@@ -225,13 +225,13 @@ Replace single `evaluate_model_editor_case()` function with multiple evaluators:
 - [x] Inherit from base `Evaluator` class
 - [x] Well-documented
 
-**Implementation:** Lines 326-656 in `test/evals/test_model_editor_evals.py`
+**Implementation:** Lines 326-656 in `evals/test_model_editor_evals.py`
 
 ---
 
 #### Task 2.2: Convert to Dataset Pattern ✅ DONE
 
-**File:** `test/evals/test_model_editor_evals.py`
+**File:** `evals/test_model_editor_evals.py`
 
 Use `Dataset.evaluate()` instead of manual loops:
 
@@ -265,7 +265,7 @@ report.print(include_input=False, include_output=True)
 
 #### Task 2.3: Update Documentation ✅ DONE
 
-**Files:** `test/evals/README.md`, `test/evals/add_case_example.py`
+**Files:** `evals/README.md`, `evals/add_case_example.py`
 
 Update all documentation to reflect new patterns:
 
@@ -278,8 +278,8 @@ Update all documentation to reflect new patterns:
 
 **Implementation:**
 
-- `test/evals/README.md` - Added "Evaluation Approach" section, updated examples
-- `test/evals/add_case_example.py` - Updated module docstring and example comments
+- `evals/README.md` - Added "Evaluation Approach" section, updated examples
+- `evals/add_case_example.py` - Updated module docstring and example comments
 - Module docstring in `test_model_editor_evals.py` - Expanded with pattern explanation
 
 ---
@@ -324,7 +324,7 @@ dev = [
 
 #### Task 3.2: Configure Logfire in Model Editor Evals
 
-**Files:** `test/evals/test_model_editor_evals.py`
+**Files:** `evals/test_model_editor_evals.py`
 
 Add Logfire configuration at module level with graceful degradation:
 
@@ -400,7 +400,7 @@ if TYPE_CHECKING:
 
 #### Task 3.3: Instrument Evaluation Execution
 
-**Files:** `test/evals/test_model_editor_evals.py`
+**Files:** `evals/test_model_editor_evals.py`
 
 Add Logfire tracing to the evaluation test function:
 
@@ -461,7 +461,7 @@ async def test_run_model_editor_evals():
 
 #### Task 3.4: Instrument Task Execution Function
 
-**Files:** `test/evals/test_model_editor_evals.py`
+**Files:** `evals/test_model_editor_evals.py`
 
 Add tracing to individual case execution:
 
@@ -528,7 +528,7 @@ async def run_model_editor_task(case: ModelEditorCase) -> ModelEditorActualOutpu
 
 #### Task 3.5: Add Logfire to Base Evaluators (Optional)
 
-**Files:** `test/evals/base.py`
+**Files:** `evals/base.py`
 
 Add optional Logfire tracing to base evaluators for detailed evaluation debugging:
 
@@ -594,8 +594,8 @@ class KeywordMatchEvaluator(Evaluator[InputT, OutputT]):
 **Files:**
 
 - `docs/logfire_observability_guide.md` ✅ **CREATED**
-- `test/evals/README.md`
-- `test/evals/test_model_editor_evals.py` (module docstring)
+- `evals/README.md`
+- `evals/test_model_editor_evals.py` (module docstring)
 
 Update documentation to explain Logfire integration:
 
@@ -618,7 +618,7 @@ Logfire works out of the box in local-only mode. To enable cloud tracing:
 logfire auth
 
 # Run evaluations - traces automatically appear in Logfire UI
-pytest test/evals/test_model_editor_evals.py::test_run_model_editor_evals -v -s
+pytest evals/test_model_editor_evals.py::test_run_model_editor_evals -v -s
 ```
 ````
 
@@ -730,7 +730,7 @@ CI workflow for running evaluations:
 
 #### Task 5.2: Regression Tracking
 
-**File:** `test/evals/regression.py`
+**File:** `evals/regression.py`
 
 Track evaluation scores over time:
 
@@ -833,9 +833,9 @@ Track evaluation scores over time:
 
 | Phase       | Status               | Files Created/Modified                                                                                | Notes                                                               |
 | ----------- | -------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Phase 1     | ✅ 100% COMPLETE     | `test/evals/base.py`, `test/evals/utils.py`                                                           | All tasks complete including tests                                  |
-| Phase 1-A   | ✅ 100% COMPLETE     | `test/evals/test_base_evaluators.py`                                                                  | All 25 tests passing (0.09s)                                        |
-| **Phase 2** | **✅ 100% COMPLETE** | **`test/evals/test_model_editor_evals.py`, `test/evals/README.md`, `test/evals/add_case_example.py`** | **5 evaluators, Dataset pattern, hybrid scoring, import bug fixed** |
+| Phase 1     | ✅ 100% COMPLETE     | `evals/base.py`, `evals/utils.py`                                                           | All tasks complete including tests                                  |
+| Phase 1-A   | ✅ 100% COMPLETE     | `evals/test_base_evaluators.py`                                                                  | All 25 tests passing (0.09s)                                        |
+| **Phase 2** | **✅ 100% COMPLETE** | **`evals/test_model_editor_evals.py`, `evals/README.md`, `evals/add_case_example.py`** | **5 evaluators, Dataset pattern, hybrid scoring, import bug fixed** |
 | Phase 3     | 🔲 Planning Complete | `docs/logfire_observability_guide.md`                                                                 | Observability integration (detailed plan ready)                     |
 | Phase 5     | 🔲 Optional          | -                                                                                                     | CI/CD integration                                                   |
 
@@ -843,14 +843,14 @@ Track evaluation scores over time:
 
 ### Documentation
 
-- **Evaluation guide:** `docs/evaluation_guide.md` - Comprehensive guide to agent evaluation
+- **Evaluation guide:** `evals/evals_guide.md` - Comprehensive guide to agent evaluation
 - **Logfire guide:** `docs/logfire_observability_guide.md` - Observability patterns for evals (Phase 3)
 
 ### Implementation
 
-- **Main eval suite:** `test/evals/test_model_editor_evals.py` - Phase 2 refactored implementation
-- **Base evaluators:** `test/evals/base.py` - Reusable evaluator library
-- **Unit tests:** `test/evals/test_base_evaluators.py` - 25 tests for base evaluators
+- **Main eval suite:** `evals/test_model_editor_evals.py` - Phase 2 refactored implementation
+- **Base evaluators:** `evals/base.py` - Reusable evaluator library
+- **Unit tests:** `evals/test_base_evaluators.py` - 25 tests for base evaluators
 
 ### Plans and Tasks
 

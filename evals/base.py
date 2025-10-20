@@ -464,7 +464,9 @@ class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
         >>> dataset = suite.build_dataset(evaluators)
         >>> report = await dataset.evaluate_async(suite.execute_agent)
         >>> report.print(include_input=True, include_output=True)
-        >>> assert report.overall_score() >= 0.9, f"Only {report.overall_score():.1%} passing"
+        >>> all_scores = [score.value for case in report.cases for score in case.scores.values()]
+        >>> overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+        >>> assert overall_score >= 0.9, f"Only {overall_score:.1%} passing"
     """
 
     @abstractmethod

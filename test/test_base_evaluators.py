@@ -14,7 +14,7 @@ import pytest
 from pydantic import BaseModel
 from pydantic_evals.evaluators import EvaluatorContext
 
-from .base import (
+from evals.base import (
     ContainsEvaluator,
     ErrorHandlingEvaluator,
     ExactMatchEvaluator,
