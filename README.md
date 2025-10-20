@@ -142,6 +142,18 @@ async def get_contributors():
         if org:
             print(f"Organization: {org.name}")
 
+        # Get all people (sorted by name)
+        people = await index.get_people()
+        print(f"Found {len(people)} people:")
+        for person in people[:5]:  # Show first 5
+            print(f"  - {person.name} (@{person.github_username})")
+
+        # Get all organizations (sorted by name)
+        organizations = await index.get_organizations()
+        print(f"Found {len(organizations)} organizations:")
+        for org in organizations[:5]:  # Show first 5
+            print(f"  - {org.name} ({org.code})")
+
         # Count contributors
         people_count = await index.count_people()
         org_count = await index.count_organizations()

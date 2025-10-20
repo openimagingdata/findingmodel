@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Protocol-based architecture for pluggable search backends
   - Demo: `notebooks/demo_ontology_concept_match.py`
 - **Finding Model Editor Tool**: AI-assisted interactive editor with markdown and natural language workflows
+- **Index API enhancements**:
+  - `get_people()` method to retrieve all people from Index (sorted by name)
+  - `get_organizations()` method to retrieve all organizations from Index (sorted by name)
+  - Available in both DuckDBIndex and MongoDBIndex implementations
+- **Documentation**: New `docs/database-management.md` guide for maintainers covering database operations, CLI commands, and write-mode Python API
 
 ### Changed
 
@@ -35,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Database file locations**: Files now stored in platform-native directories
   - Auto-download mitigates migration: databases automatically download to new locations on first use
 - **Test suite reorganization**: Reduced from 17 to 12 test files, grouped by feature area
+- **Documentation restructure**: README.md now focuses on user perspective (read-only Index operations), with maintainer/write operations moved to docs/database-management.md
 
 ### Deprecated
 
