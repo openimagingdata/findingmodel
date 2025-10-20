@@ -8,6 +8,7 @@ import pytest
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import ServerSelectionTimeoutError
 
+from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded, FindingModelFull, NumericAttributeIded
 from findingmodel.mongodb_index import Index
 
@@ -632,3 +633,84 @@ async def test_large_query_handling(index: Index) -> None:
     special_char_query = "\"'\\/{}[]$^*+?.|()"
     results = await index.search(special_char_query, limit=5)
     assert isinstance(results, list)
+
+
+@pytest.mark.asyncio
+async def test_get_people(index: Index, sample_model: FindingModelFull, tmp_path: Path) -> None:
+    """Test retrieving all people from the index."""
+    # Get initial count (may have existing test data)
+    initial_people = await index.get_people()
+    initial_count = len(initial_people)
+
+    # Add a finding model with contributors (using unique usernames with timestamp to avoid conflicts)
+    import time
+
+    timestamp = str(int(time.time() * 1000))  # milliseconds since epoch
+    model = sample_model.model_copy(deep=True)
+    model.contributors = [
+        Person(
+            github_username=f"user1_{timestamp}",
+            name="Alice User",
+            email="alice@example.com",
+            organization_code="MSFT",
+        ),
+        Person(
+            github_username=f"user2_{timestamp}", name="Bob User", email="bob@example.com", organization_code="MGB"
+        ),
+    ]
+    test_file = tmp_path / "test.fm.json"
+    test_file.write_text(model.model_dump_json())
+    await index.add_or_update_entry_from_file(test_file, model)
+
+    # Should have initial + 2 people
+    people = await index.get_people()
+    assert len(people) == initial_count + 2
+    assert all(isinstance(p, Person) for p in people)
+    # Verify sorted by name
+    names = [p.name for p in people]
+    assert names == sorted(names)
+    # Verify our new people are present
+    usernames = [p.github_username for p in people]
+    assert f"user1_{timestamp}" in usernames
+    assert f"user2_{timestamp}" in usernames
+
+
+@pytest.mark.asyncio
+async def test_get_organizations(index: Index, sample_model: FindingModelFull, tmp_path: Path) -> None:
+    """Test retrieving all organizations from the index."""
+    from pydantic import HttpUrl
+
+    # Get initial count (may have existing test data)
+    initial_orgs = await index.get_organizations()
+    initial_count = len(initial_orgs)
+
+    # Add a finding model with contributors from organizations (codes must be 3-4 chars, using timestamp for uniqueness)
+    import time
+    import hashlib
+
+    # Generate unique 3-letter codes from timestamp hash
+    timestamp = str(int(time.time() * 1000))
+    hash_val = int(hashlib.md5(timestamp.encode()).hexdigest()[:6], 16)
+    # Convert to 3 uppercase letters using modulo
+    code1 = ''.join([chr(65 + ((hash_val >> (i * 5)) % 26)) for i in range(3)])
+    code2 = ''.join([chr(65 + ((hash_val >> (i * 5 + 15)) % 26)) for i in range(3)])
+    model = sample_model.model_copy(deep=True)
+    model.contributors = [
+        Organization(code=code1, name=f"Alpha Org {timestamp}", url=HttpUrl("https://alpha.example.com")),
+        Organization(code=code2, name=f"Beta Org {timestamp}", url=HttpUrl("https://beta.example.com")),
+    ]
+    test_file = tmp_path / "test.fm.json"
+    test_file.write_text(model.model_dump_json())
+    await index.add_or_update_entry_from_file(test_file, model)
+
+    # Should have initial + 2 organizations
+    orgs = await index.get_organizations()
+    assert len(orgs) == initial_count + 2
+    assert all(isinstance(o, Organization) for o in orgs)
+    # Verify sorted by name
+    names = [o.name for o in orgs]
+    assert names == sorted(names)
+    # Verify our new organizations are present
+    codes = [o.code for o in orgs]
+    assert code1 in codes
+    assert code2 in codes

@@ -194,6 +194,22 @@ class Index:
             return Organization.model_validate(doc)
         return None
 
+    async def get_people(self) -> list[Person]:
+        """Retrieve all people from the index."""
+        cursor = self.people_collection.find().sort("name", 1)
+        docs = await cursor.to_list(length=None)
+        # Sanitize docs: MongoDB may have url='None' as string instead of None
+        for doc in docs:
+            if doc.get("url") == "None":
+                doc["url"] = None
+        return [Person.model_validate(doc) for doc in docs]
+
+    async def get_organizations(self) -> list[Organization]:
+        """Retrieve all organizations from the index."""
+        cursor = self.organizations_collection.find().sort("name", 1)
+        docs = await cursor.to_list(length=None)
+        return [Organization.model_validate(doc) for doc in docs]
+
     def _calculate_file_hash(self, filename: str | Path) -> str:
         """Calculates the SHA-256 hash of a file."""
         filepath = filename if isinstance(filename, Path) else Path(filename)

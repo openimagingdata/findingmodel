@@ -8,12 +8,10 @@ A Python library for managing Open Imaging Finding Models - structured data mode
 - **AI-Powered Tools**: Generate finding descriptions, synonyms, and detailed information using OpenAI and Perplexity
 - **Medical Ontology Integration**: Search and match concepts across multiple backends:
   - **BioOntology API**: Access to 800+ medical ontologies including SNOMED-CT, ICD-10, LOINC
-  - **LanceDB Vector Search**: Fast local vector similarity search
   - **DuckDB Search**: High-performance vector and full-text search with HNSW indexing
 - **Protocol-Based Architecture**: Flexible backend support with automatic parallel execution
-- **MongoDB Indexing**: Full-text search and efficient storage of finding model definitions
+- **Finding Model Index**: Fast lookup and search across finding model definitions
 - **Anatomic Location Discovery**: Two-agent AI system for finding relevant anatomic locations
-- **Cohere Reranking**: Optional semantic reranking for improved search relevance
 
 ## Installation
 
@@ -28,89 +26,31 @@ Create a `.env` file with your API keys:
 ```bash
 # Required for AI features
 OPENAI_API_KEY=your_key_here
-# Optional for more detailed web lookups
-PERPLEXITY_API_KEY=your_key_here
 
-# Optional for enhanced ontology search
-BIOONTOLOGY_API_KEY=your_key_here  # For BioOntology.org access
-
-# Optional for MongoDB indexing
-MONGODB_URI=mongodb://localhost:27017
-
+# Optional for enhanced features
+PERPLEXITY_API_KEY=your_key_here  # For detailed web lookups
+BIOONTOLOGY_API_KEY=your_key_here  # For BioOntology.org access (800+ ontologies)
 ```
 
 ## CLI
 
+The package provides CLI commands for model conversion and database management:
+
 ```shell
-$ python -m findingmodel
-Usage: python -m findingmodel [OPTIONS] COMMAND [ARGS]...
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  anatomic         Manage anatomic location database.
-  config           Show the currently active configuration.
-  fm-to-markdown   Convert finding model JSON file to Markdown format.
-  make-info        Generate description/synonyms and more...
-  make-stub-model  Generate a simple finding model object (presence and...
-  markdown-to-fm   Convert markdown file to finding model format.
+$ python -m findingmodel --help
 ```
 
-### Anatomic Location Management
+**Available commands:**
+- `fm-to-markdown` / `markdown-to-fm`: Convert between JSON and Markdown formats
+- `make-info`: Generate finding descriptions and synonyms
+- `make-stub-model`: Create basic finding model templates
+- `config`: View current configuration
+- `index`: Manage finding model index (build, update, stats)
+- `anatomic`: Manage anatomic location database (build, validate, stats)
 
-Build and manage the DuckDB anatomic location database:
+For database maintainers, see [Database Management Guide](docs/database-management.md) for detailed information on building and updating databases.
 
-```bash
-# Build database from default URL
-python -m findingmodel anatomic build
-
-# Build from local file with force overwrite
-python -m findingmodel anatomic build --source /path/to/anatomic_locations.json --force
-
-# Build with custom output path
-python -m findingmodel anatomic build --output /custom/path/anatomic.duckdb
-
-# Validate data without building database
-python -m findingmodel anatomic validate --source https://example.com/data.json
-
-# Show database statistics
-python -m findingmodel anatomic stats
-
-# Stats for custom database path
-python -m findingmodel anatomic stats --db-path /custom/path/anatomic.duckdb
-```
-
-**Commands:**
-- `anatomic build`: Download/load anatomic location data, generate embeddings, create searchable DuckDB database
-- `anatomic validate`: Validate anatomic location data without creating database (checks required fields)
-- `anatomic stats`: Display database statistics (total records, vector count, region distribution, file size)
-
-**Options:**
-- `--source`: URL or file path to anatomic locations JSON (defaults to official repository)
-- `--output`: Database output path (defaults to `anatomic_locations.duckdb` in package data)
-- `--force`: Overwrite existing database without prompting
-- `--db-path`: Path to database for stats command
-
-> **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API but not yet exposed as CLI commands. See the Tools section below for usage examples.
-
-### Pre-built Database Files
-
-The package uses DuckDB for high-performance search (anatomic locations and finding model index). For convenience, you can configure automatic download of pre-built databases by adding environment variables:
-
-```bash
-# Optional: in your .env file
-REMOTE_ANATOMIC_DB_URL=https://your-server.com/anatomic_locations.duckdb
-REMOTE_ANATOMIC_DB_HASH=sha256:your_hash_here
-REMOTE_INDEX_DB_URL=https://your-server.com/finding_models.duckdb
-REMOTE_INDEX_DB_HASH=sha256:your_hash_here
-```
-
-Files download automatically on first use and are cached in the package installation. Both URL and hash must be provided.
-
-### Interactive Model Editing Demo
-
-We ship an interactive walkthrough at `notebooks/demo_edit_finding_model.py` (plus focused demos for markdown-only and command-driven flows) that lets you try both editor modes from a prompt-toolkit shell. Markdown edits that drop existing attribute headers are rejected immediately so you never lose data. The demo keeps every existing OIFM identifier intact while you iterate, and any new attributes start out with placeholder IDs so you can review changes safely. When you save, the session now calls `assign_real_attribute_ids` so those placeholders are replaced with permanent values from the `IdManager` before the model is written to disk.
+> **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `notebooks/demo_edit_finding_model.py`.
 
 ## Models
 
@@ -152,102 +92,65 @@ Information on a finding, including description and synonyms, can add detailed d
 
 ## Index
 
-The `Index` class provides MongoDB-based indexing and management of finding model definitions stored as `.fm.json` files in a `defs/` directory structure (e.g., in a clone of the [Open Imaging Finding Model repository](https://github.com/openimagingdata/findingmodels)). It enables fast lookup by ID, name, or synonym and manages collections for finding models, people, and organizations.
+The `Index` class provides fast lookup and search across finding model definitions. The index contains metadata about finding models, including their names, descriptions, synonyms, tags, and contributor information.
 
-### Basic Usage
+**Database auto-downloads on first use** - no manual setup required. For database maintenance, see the [Database Management Guide](docs/database-management.md).
+
+### Searching and Lookup
 
 ```python
 import asyncio
-from findingmodel.index import Index
+from findingmodel import Index
 
 async def main():
-    # Initialize with MongoDB connection from settings
-    index = Index()
-    
-    # Set up indexes for first-time use
-    await index.setup_indexes()
-    
-    # Get count of indexed models
-    count = await index.count()
-    print(f"Total models indexed: {count}")
-    
-    # Lookup by ID, name, or synonym (async method)
-    metadata = await index.get("abdominal aortic aneurysm")
-    if metadata:
-        print(metadata.model_dump())
-# > {'attributes': [{'attribute_id': 'OIFMA_MSFT_898601',
-# >                  'name': 'presence',
-# >                  'type': 'choice'},
-# >                 {'attribute_id': 'OIFMA_MSFT_783072',
-# >                  'name': 'change from prior',
-# >                  'type': 'choice'}],
-# >  'description': 'An abdominal aortic aneurysm (AAA) is a localized dilation of '
-# >                 'the abdominal aorta, typically defined as a diameter greater '
-# >                 'than 3 cm, which can lead to rupture and significant '
-# >                 'morbidity or mortality.',
-# >  'filename': 'abdominal_aortic_aneurysm.fm.json',
-# >  'name': 'abdominal aortic aneurysm',
-# >  'oifm_id': 'OIFM_MSFT_134126',
-# >  'synonyms': ['AAA'],
-# >  'tags': None}
+    async with Index() as index:
+        # Get count of indexed models
+        count = await index.count()
+        print(f"Total models indexed: {count}")
 
-    # Search for models (returns list of IndexEntry objects)
-    results = await index.search("abdominal", limit=5)
-    for result in results:
-        print(f"- {result.name}: {result.oifm_id}")
-    
-    # Check if a model exists
-    exists = await index.contains("pneumothorax")
-    print(f"Pneumothorax exists: {exists}")
+        # Lookup by ID, name, or synonym
+        metadata = await index.get("abdominal aortic aneurysm")
+        if metadata:
+            print(f"Found: {metadata.name} ({metadata.oifm_id})")
+            print(f"Description: {metadata.description}")
+            print(f"Synonyms: {metadata.synonyms}")
+
+        # Search for models (returns list of IndexEntry objects)
+        results = await index.search("abdominal", limit=5)
+        for result in results:
+            print(f"- {result.name}: {result.oifm_id}")
+
+        # Check if a model exists
+        exists = await index.contains("pneumothorax")
+        print(f"Pneumothorax exists: {exists}")
 
 asyncio.run(main())
-```
-
-### Directory Synchronization
-
-```python
-async def sync_directory():
-    index = Index()
-    
-    # Update index from a directory of .fm.json files
-    # Returns (added, updated, removed) counts
-    added, updated, removed = await index.update_from_directory("path/to/defs")
-    print(f"Sync complete: {added} added, {updated} updated, {removed} removed")
-    
-    # Add or update a single file
-    from findingmodel import FindingModelFull
-    model = FindingModelFull.model_validate_json(open("model.fm.json").read())
-    result = await index.add_or_update_entry_from_file("model.fm.json", model)
-    print(f"File update result: {result}")
-
-asyncio.run(sync_directory())
 ```
 
 ### Working with Contributors
 
 ```python
 async def get_contributors():
-    index = Index()
-    
-    # Get a person by GitHub username
-    person = await index.get_person("johndoe")
-    if person:
-        print(f"Name: {person.name}, Email: {person.email}")
-    
-    # Get an organization by code
-    org = await index.get_organization("MSFT")
-    if org:
-        print(f"Organization: {org.name}")
-    
-    # Count contributors
-    people_count = await index.count_people()
-    org_count = await index.count_organizations()
-    print(f"People: {people_count}, Organizations: {org_count}")
+    async with Index() as index:
+        # Get a person by GitHub username
+        person = await index.get_person("talkasab")
+        if person:
+            print(f"Name: {person.name}, Email: {person.email}")
+
+        # Get an organization by code
+        org = await index.get_organization("MSFT")
+        if org:
+            print(f"Organization: {org.name}")
+
+        # Count contributors
+        people_count = await index.count_people()
+        org_count = await index.count_organizations()
+        print(f"People: {people_count}, Organizations: {org_count}")
 
 asyncio.run(get_contributors())
 ```
 
-See [example usage in notebook](notebooks/findingmodel_index.ipynb).
+See [example usage in notebook](notebooks/findingmodel_index.ipynb) and the [Database Management Guide](docs/database-management.md) for information on updating the index.
 
 ## Tools
 

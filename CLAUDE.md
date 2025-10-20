@@ -81,3 +81,5 @@ Claude Code must follow these instructions when working in this repository.
 - `instruction_files_plan_2025` – update checklist for these instruction files.
 
 IMPORTANT! DON'T include time estimates in your planning—they're not useful.
+
+For dates, you need to use the `date` command--DON'T assume you know it.

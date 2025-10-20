@@ -809,6 +809,60 @@ async def test_get_organization(index: DuckDBIndex, full_model: FindingModelFull
 
 
 @pytest.mark.asyncio
+async def test_get_people(index: DuckDBIndex, full_model: FindingModelFull, tmp_path: Path) -> None:
+    """Test retrieving all people from the index."""
+    # Base contributors should already be present (4 people)
+    people = await index.get_people()
+    initial_count = len(people)
+    assert initial_count >= 4
+
+    # Add a finding model with a NEW contributor
+    model = full_model.model_copy(deep=True)
+    model.contributors = [
+        Person(github_username="newuser", name="New User", email="new@example.com", organization_code="MSFT")
+    ]
+    test_file = tmp_path / "test.fm.json"
+    _write_model_file(test_file, model)
+    await index.add_or_update_entry_from_file(test_file, model)
+
+    # Should include base + new contributor
+    people = await index.get_people()
+    assert len(people) == initial_count + 1
+    assert all(isinstance(p, Person) for p in people)
+    # Verify sorted by name
+    names = [p.name for p in people]
+    assert names == sorted(names)
+
+
+@pytest.mark.asyncio
+async def test_get_organizations(index: DuckDBIndex, full_model: FindingModelFull, tmp_path: Path) -> None:
+    """Test retrieving all organizations from the index."""
+    from pydantic import HttpUrl
+
+    # Base contributors should already be present (7 organizations)
+    orgs = await index.get_organizations()
+    initial_count = len(orgs)
+    assert initial_count >= 7
+
+    # Add a finding model with contributor from new organization (code must be 3-4 chars)
+    model = full_model.model_copy(deep=True)
+    model.contributors = [
+        Organization(code="NEW", name="New Organization", url=HttpUrl("https://neworg.example.com"))
+    ]
+    test_file = tmp_path / "test.fm.json"
+    _write_model_file(test_file, model)
+    await index.add_or_update_entry_from_file(test_file, model)
+
+    # Should include base + new org
+    orgs = await index.get_organizations()
+    assert len(orgs) == initial_count + 1
+    assert all(isinstance(o, Organization) for o in orgs)
+    # Verify sorted by name
+    names = [o.name for o in orgs]
+    assert names == sorted(names)
+
+
+@pytest.mark.asyncio
 async def test_count_people(index: DuckDBIndex, full_model: FindingModelFull, tmp_path: Path) -> None:
     """Test counting people in the index."""
     # Base contributors are loaded automatically, so we expect 4 people initially

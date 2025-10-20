@@ -8,101 +8,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-20
+
 ### Added
 
-- **Anatomic location CLI commands**: New command group for managing anatomic location database
-  - `anatomic build`: Build DuckDB database from anatomic location data (URL or local file)
-  - `anatomic validate`: Validate anatomic location data without building database
-  - `anatomic stats`: Display database statistics (records, vectors, regions, file size)
-  - Migration logic extracted from notebook into reusable `anatomic_migration` module
-  - Comprehensive test coverage (72 tests) for migration functions and CLI commands
-- **Remote database downloads**: Optional automatic download of pre-built DuckDB database files
-  - Configure via environment variables: `REMOTE_ANATOMIC_DB_URL`, `REMOTE_ANATOMIC_DB_HASH`, `REMOTE_INDEX_DB_URL`, `REMOTE_INDEX_DB_HASH`
-  - Files download automatically on first use with SHA256 verification
-  - Cached in package installation for subsequent use
+- **DuckDB Index Backend**: High-performance local search with HNSW vector indexing, now the default
+  - Automatic download of pre-built database files on first use (via Pooch with SHA256 verification)
+  - Platform-native file storage using platformdirs (OS-appropriate cache/data directories)
+  - Base contributors (4 people, 7 organizations) automatically loaded in new databases
+  - Optional remote database URLs configurable via environment variables
+  - Utilities for building/updating databases from directories of FM definitions
+- **Anatomic Locations**: Comprehensive support for anatomic location finding and management
+  - New `anatomic_locations` field in `FindingModelFull` for specifying anatomic index codes
+  - Two-agent AI search tool across anatomic_locations, RadLex, and SNOMED CT ontologies
+  - CLI commands for building, validating, and viewing statistics on anatomic location databases
+  - Demo: `notebooks/demo_anatomic_location_search.py`
+- **Ontology Concept Search Tool**: High-performance medical concept search
+  - Multi-backend support: DuckDB vector search and BioOntology.org REST API (requires `BIOONTOLOGY_API_KEY`)
+  - Protocol-based architecture for pluggable search backends
+  - Demo: `notebooks/demo_ontology_concept_match.py`
+- **Finding Model Editor Tool**: AI-assisted interactive editor with markdown and natural language workflows
 
 ### Changed
 
-- **DuckDB search client refactoring**: Eliminated hardcoded configuration values
-  - Replaced hardcoded embedding dimensions with `settings.openai_embedding_dimensions`
-  - All DuckDB operations now use common utilities from `duckdb_utils` module
-  - Improved maintainability and consistency across codebase
+- **DuckDB is now the default index backend** (MongoDB deprecated but still available via `[mongodb]` extra)
+- **Database file locations**: Files now stored in platform-native directories
+  - Auto-download mitigates migration: databases automatically download to new locations on first use
+- **Test suite reorganization**: Reduced from 17 to 12 test files, grouped by feature area
+
+### Deprecated
+
+- **MongoDB backend**: Still functional via `pip install findingmodel[mongodb]` but no longer the default
+  - DuckDB provides better performance and simpler deployment
+  - MongoDB configuration commented out in config but available if needed
 
 ### Removed
 
-- Removed `notebooks/migrate_anatomic_to_duckdb.py` (replaced by CLI commands)
+- **LanceDB dependency**: Replaced by DuckDB for better performance and consistency
 
-## [0.4.0] - 2025-09-26
+### Migration Notes
 
-### Added
+Upgrading from v0.3.x:
 
-- **Interactive finding model tools** with demos that support both natural-language and markdown-based workflows with agent-driven validation
-- **BioOntology.org API support**: Access 800+ medical ontologies via REST API (requires `BIOONTOLOGY_API_KEY`)
-- **DuckDB backend**: High-performance local search with HNSW vector indexing for anatomic locations
-- **Protocol-based search architecture**: `OntologySearchProtocol` allows pluggable search backends
-- **Cohere reranking**: Optional semantic reranking for improved relevance (disabled by default)
-
-### Changed
-
-- Renamed `search_ontology_concepts()` to `match_ontology_concepts()` to better reflect its purpose
-- Ontology searches now limited to SNOMEDCT, RADLEX, and LOINC by default (configurable via `ontologies` parameter)
-- AI categorization now prioritizes SNOMEDCT matches for standards compliance
-
-### Fixed
-
-- Fixed `SecretStr` handling in BioOntologySearchClient
-- Resolved all linting errors and reduced code complexity
-
-### Removed
-
-- LanceDB dependency (replaced by DuckDB for better performance)
-
-## [0.3.3] - 2025-09-04
-
-### Added
-
-- **Ontology Concept Search Tool**: New high-performance tool for searching medical ontologies
-  - Refactored from 70+ second searches to ~10 second searches using optimized architecture
-  - Uses programmatic query generation instead of LLM-based search for better performance
-  - Implements post-processing to guarantee exact match detection
-  - Proper Pydantic AI patterns with structured output validation
-  - Demo script in `notebooks/demo_ontology_concept_search.py`
-- **Added `anatomic_locations` to `FindingModelFull`**: Can now specify a list of index codes that 
-specifically refer to anatomy to indicate where the finding is likely to occur.
-- **Anatomic Location Search Tool**: New two-agent Pydantic AI tool for finding anatomic locations
-  - Reusable `OntologySearchClient` for LanceDB medical terminology search
-  - `OntologySearchResult` model for standardized ontology search responses
-  - Two-agent architecture: search agent (generates queries) + matching agent (selects best locations)
-  - Hybrid search across multiple ontology tables (anatomic_locations, radlex, snomedct)
-  - Production-ready with proper error handling, logging, and connection lifecycle management
-  - Demo script in `notebooks/demo_anatomic_location_search.py`
-- **Testing Improvements**: Enhanced testing infrastructure following Pydantic AI best practices
-  - Added API call prevention guards (`models.ALLOW_MODEL_REQUESTS = False`) to prevent accidental API calls during testing
-  - Implemented proper Pydantic AI testing patterns using `TestModel` and `FunctionModel`
-  - Consolidated related component tests (merged ontology_search tests into anatomic_location_search tests)
-  - Fixed pytest collection issues by moving demo scripts to `notebooks/` directory
-  - Added `testpaths = ["test"]` to pyproject.toml to restrict pytest scope
-
-### Changed
-
-- **Refactored `get_openai_model()`**: Moved from `similar_finding_models.py` to `common.py` for reusability
-- **Test Philosophy**: Shifted from testing library functionality to testing actual code behavior and workflow logic
-- **Project Conventions**: Established convention for demo scripts in `notebooks/` with `demo_*.py` naming
-- **Test Framework Consistency**: Converted all tests from unittest.TestCase to pure pytest style for consistency
-- **Ontology Concept Search Refactoring**: Major performance and architecture improvements
-  - Replaced manual retry loops with Pydantic AI's built-in validation patterns
-  - Simplified from 3 agents to 1 agent plus programmatic processing for 85% performance improvement
-  - Changed from transformation in validators to proper post-processing functions
-  - Improved text normalization to only remove trailing parenthetical content
-
-### Fixed
-
-- Fixed integration test API blocking issue where `models.ALLOW_MODEL_REQUESTS = False` was preventing integration tests from running
-- Resolved all linting errors in test files (import order, nested with statements, unused variables)
-- Fixed normalize_concept function to preserve middle parenthetical content (e.g., "Calcium (2+) level")
-- Corrected Pydantic AI anti-patterns where output validators were transforming data instead of validating
-- Fixed test organization by consolidating test_query_generator.py into test_ontology_concept_search.py
-- Cleaned up 110+ linting errors by removing temporary debug files and fixing type annotations
+- **For most users**: No action required. Databases will auto-download to platform-native locations on first use.
+- **If using MongoDB**: Your MongoDB index will continue to work, but consider migrating to DuckDB for better performance. Use `index build` CLI to create DuckDB index from your finding model definitions.
+- **If using custom database paths**: Note that default paths have changed to platform-native directories. You can continue using custom paths via CLI `--index` / `--db-path` options.
 
 ## [0.3.2] - 2025-08-20
 

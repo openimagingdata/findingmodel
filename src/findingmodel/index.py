@@ -322,6 +322,42 @@ class DuckDBIndex:
             return None
         return Organization.model_validate({"code": row[0], "name": row[1], "url": row[2]})
 
+    async def get_people(self) -> list[Person]:
+        """Retrieve all people from the index."""
+        conn = self._ensure_connection()
+        rows = conn.execute(
+            """
+            SELECT github_username, name, email, organization_code, url
+            FROM people
+            ORDER BY name
+            """
+        ).fetchall()
+        return [
+            Person.model_validate({
+                "github_username": row[0],
+                "name": row[1],
+                "email": row[2],
+                "organization_code": row[3],
+                "url": row[4],
+            })
+            for row in rows
+        ]
+
+    async def get_organizations(self) -> list[Organization]:
+        """Retrieve all organizations from the index."""
+        conn = self._ensure_connection()
+        rows = conn.execute(
+            """
+            SELECT code, name, url
+            FROM organizations
+            ORDER BY name
+            """
+        ).fetchall()
+        return [
+            Organization.model_validate({"code": row[0], "name": row[1], "url": row[2]})
+            for row in rows
+        ]
+
     async def add_or_update_entry_from_file(
         self,
         filename: str | Path,
