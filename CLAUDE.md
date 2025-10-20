@@ -83,3 +83,5 @@ Claude Code must follow these instructions when working in this repository.
 IMPORTANT! DON'T include time estimates in your planning—they're not useful.
 
 For dates, you need to use the `date` command--DON'T assume you know it.
+
+- CRITICAL--Do NOT commit without checking in first, especially with a proposed commit message.
