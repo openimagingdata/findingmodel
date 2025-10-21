@@ -24,6 +24,21 @@ tasks:
       - uv run pytest -rs {{.CLI_ARGS}}
     silent: true
 
+  evals:
+    desc: "Run all agent evaluation suites"
+    cmds:
+      - echo "Running all agent evaluations..."
+      - uv run python -m evals.model_editor
+      # Future: add other agent evals here
+    silent: true
+
+  evals:model_editor:
+    desc: "Run model_editor evaluation suite"
+    cmds:
+      - echo "Running model_editor evaluations..."
+      - uv run python -m evals.model_editor
+    silent: true
+
   check:
     desc: "Check the findingmodel library"
     cmds:
