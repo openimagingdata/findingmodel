@@ -51,6 +51,20 @@ class FindingModelConfig(BaseSettings):
     # BioOntology API
     bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
 
+    # Logfire configuration (observability platform)
+    logfire_token: QuoteStrippedSecretStr | None = Field(
+        default=None,
+        description="Logfire.dev write token for cloud tracing (optional)",
+    )
+    disable_send_to_logfire: bool = Field(
+        default=False,
+        description="Disable sending data to Logfire platform (local-only mode)",
+    )
+    logfire_verbose: bool = Field(
+        default=False,
+        description="Enable verbose Logfire console logging",
+    )
+
     # DuckDB configuration
     duckdb_anatomic_path: str = Field(
         default="anatomic_locations.duckdb",

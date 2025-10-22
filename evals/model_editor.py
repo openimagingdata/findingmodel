@@ -23,11 +23,11 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
-
-from findingmodel.finding_model import FindingModelFull
-from findingmodel.tools import model_editor
+from pydantic_evals.reporting import EvaluationReport
 
 from evals.utils import compare_models, extract_text_for_keywords, get_attribute_names
+from findingmodel.finding_model import FindingModelFull
+from findingmodel.tools import model_editor
 
 
 class ModelEditorInput(BaseModel):
@@ -761,7 +761,9 @@ model_editor_dataset = Dataset(cases=all_cases, evaluators=evaluators)
 #     return results
 
 
-async def run_model_editor_evals():
+async def run_model_editor_evals() -> EvaluationReport[
+    ModelEditorInput, ModelEditorActualOutput, ModelEditorExpectedOutput
+]:
     """Run all model editor evaluation cases using Dataset.evaluate().
 
     EVALUATOR-BASED PATTERN USAGE:
@@ -838,7 +840,7 @@ async def run_model_editor_evals():
 if __name__ == "__main__":
     import asyncio
 
-    async def main():
+    async def main() -> None:
         print("\nRunning model_editor evaluation suite...")
         print("=" * 80)
 
