@@ -815,6 +815,12 @@ async def run_model_editor_evals() -> EvaluationReport[
     5. Overall score is the average across all evaluators and cases
 
     This replaces the old pattern of custom evaluation functions.
+
+    LOGFIRE INTEGRATION:
+    - Wraps entire evaluation suite in a logfire span
+    - Logs suite start with case count and evaluator list
+    - Logs suite completion with overall score
+    - Works as no-op when Logfire token is absent
     """
 
     # Define task function wrapper that executes the agent
@@ -844,38 +850,56 @@ async def run_model_editor_evals() -> EvaluationReport[
             # Return a placeholder model with error info
             return ModelEditorActualOutput(model=model, rejections=[], changes=[], error=str(e))
 
-    # Run evaluation using Dataset.evaluate() - evaluators already passed to Dataset constructor
-    report = await model_editor_dataset.evaluate(run_model_editor_task)
+    # Wrap entire evaluation suite in Logfire span for observability
+    with logfire.span(
+        "model_editor_eval_suite",
+        total_cases=len(all_cases),
+        evaluator_count=len(evaluators),
+    ):
+        logfire.info(
+            "Starting model_editor evaluation suite",
+            cases_total=len(all_cases),
+            evaluators=[e.__class__.__name__ for e in evaluators],
+        )
 
-    # Calculate overall score manually (average of all evaluator scores across all cases)
-    all_scores = []
-    for case in report.cases:
-        for score_result in case.scores.values():
-            all_scores.append(score_result.value)
-    overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+        # Run evaluation using Dataset.evaluate() - evaluators already passed to Dataset constructor
+        report = await model_editor_dataset.evaluate(run_model_editor_task)
 
-    # Print formatted output
-    print("\n" + "=" * 80)
-    print("MODEL EDITOR EVALUATION RESULTS")
-    print("=" * 80 + "\n")
+        # Calculate overall score manually (average of all evaluator scores across all cases)
+        all_scores = []
+        for case in report.cases:
+            for score_result in case.scores.values():
+                all_scores.append(score_result.value)
+        overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
 
-    # Don't include outputs in table - they're too verbose (full FindingModelFull objects)
-    # Focus on scores which are the important metric
-    report.print(
-        include_input=False,
-        include_output=False,  # Outputs are huge FindingModelFull objects - skip them
-        include_durations=True,
-        width=120,
-    )
+        logfire.info(
+            "Evaluation suite completed",
+            overall_score=overall_score,
+            cases_total=len(report.cases),
+        )
 
-    print("\n" + "=" * 80)
-    print(f"OVERALL SCORE: {overall_score:.2f}")
-    print("=" * 80 + "\n")
+        # Print formatted output
+        print("\n" + "=" * 80)
+        print("MODEL EDITOR EVALUATION RESULTS")
+        print("=" * 80 + "\n")
 
-    # Return the report for analysis
-    # Note: When run as a pytest test, we assert threshold >= 0.95
-    # When run standalone, we just print results
-    return report
+        # Don't include outputs in table - they're too verbose (full FindingModelFull objects)
+        # Focus on scores which are the important metric
+        report.print(
+            include_input=False,
+            include_output=False,  # Outputs are huge FindingModelFull objects - skip them
+            include_durations=True,
+            width=120,
+        )
+
+        print("\n" + "=" * 80)
+        print(f"OVERALL SCORE: {overall_score:.2f}")
+        print("=" * 80 + "\n")
+
+        # Return the report for analysis
+        # Note: When run as a pytest test, we assert threshold >= 0.95
+        # When run standalone, we just print results
+        return report
 
 
 if __name__ == "__main__":
