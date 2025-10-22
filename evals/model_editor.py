@@ -16,18 +16,59 @@ EVALUATORS:
 - ContentPreservationEvaluator: Model unchanged on rejection (strict)
 
 See evals/base.py for reusable base evaluators and examples.
+
+LOGFIRE INTEGRATION:
+This module uses Pydantic Logfire for tracing and observability.
+
+- Automatically detects LOGFIRE_TOKEN from .env
+- Sends traces to cloud if token present and DISABLE_SEND_TO_LOGFIRE=false
+- Can be forced to local-only mode with DISABLE_SEND_TO_LOGFIRE=true
+- Gracefully becomes no-op when no token present
+
+Setup for Cloud Tracing:
+    1. Create account at https://logfire.pydantic.dev/
+    2. Get write token from dashboard
+    3. Add LOGFIRE_TOKEN=xxx to .env
+    4. Run evals normally - traces appear in Logfire UI
+
+Add to .env file:
+    LOGFIRE_TOKEN=pfp_your_token_here
+    DISABLE_SEND_TO_LOGFIRE=false  # or true for local-only
+    LOGFIRE_VERBOSE=false           # or true for verbose logging
+
+Environment Variables:
+- LOGFIRE_TOKEN: Write token from logfire.pydantic.dev (optional)
+- DISABLE_SEND_TO_LOGFIRE: Set to true to force local-only mode (default: false)
+- LOGFIRE_VERBOSE: Set to true for verbose console logging (default: false)
 """
 
 from pathlib import Path
 
+import logfire
+from logfire import ConsoleOptions
 from pydantic import BaseModel
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
 
 from evals.utils import compare_models, extract_text_for_keywords, get_attribute_names
+from findingmodel.config import settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.tools import model_editor
+
+# Configure Logfire
+# send_to_logfire logic: False if explicitly disabled, 'if-token-present' otherwise
+logfire.configure(
+    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
+    send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
+    console=ConsoleOptions(
+        colors="auto",
+        min_log_level="debug" if settings.logfire_verbose else "info",
+    ),
+)
+
+# Instrument Pydantic AI agents (PRIMARY instrumentation)
+logfire.instrument_pydantic_ai()
 
 
 class ModelEditorInput(BaseModel):
