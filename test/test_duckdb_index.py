@@ -423,7 +423,9 @@ def test_duplicate_name_fails_validation(session_populated_index: DuckDBIndex, f
     )
 
 
-def test_duplicate_attribute_id_fails_validation(session_populated_index: DuckDBIndex, full_model: FindingModelFull) -> None:
+def test_duplicate_attribute_id_fails_validation(
+    session_populated_index: DuckDBIndex, full_model: FindingModelFull
+) -> None:
     """Test validation fails when attribute ID is used by another model."""
     EXISTING_ATTRIBUTE_ID = "OIFMA_MSFT_898601"  # Use an existing attribute ID
     full_model.attributes[1].oifma_id = EXISTING_ATTRIBUTE_ID
@@ -862,9 +864,7 @@ async def test_get_organizations(index: DuckDBIndex, full_model: FindingModelFul
 
     # Add a finding model with contributor from new organization (code must be 3-4 chars)
     model = full_model.model_copy(deep=True)
-    model.contributors = [
-        Organization(code="NEW", name="New Organization", url=HttpUrl("https://neworg.example.com"))
-    ]
+    model.contributors = [Organization(code="NEW", name="New Organization", url=HttpUrl("https://neworg.example.com"))]
     test_file = tmp_path / "test.fm.json"
     _write_model_file(test_file, model)
     await index.add_or_update_entry_from_file(test_file, model)

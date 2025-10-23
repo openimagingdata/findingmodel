@@ -24,10 +24,9 @@ from pydantic import BaseModel
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 
+from evals.utils import compare_models, extract_text_for_keywords, get_attribute_names
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.tools import model_editor
-
-from evals.utils import compare_models, extract_text_for_keywords, get_attribute_names
 
 
 class ModelEditorInput(BaseModel):

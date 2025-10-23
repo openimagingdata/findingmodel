@@ -654,9 +654,7 @@ async def test_get_people(index: Index, sample_model: FindingModelFull, tmp_path
             email="alice@example.com",
             organization_code="MSFT",
         ),
-        Person(
-            github_username=f"user2_{timestamp}", name="Bob User", email="bob@example.com", organization_code="MGB"
-        ),
+        Person(github_username=f"user2_{timestamp}", name="Bob User", email="bob@example.com", organization_code="MGB"),
     ]
     test_file = tmp_path / "test.fm.json"
     test_file.write_text(model.model_dump_json())
@@ -685,15 +683,15 @@ async def test_get_organizations(index: Index, sample_model: FindingModelFull, t
     initial_count = len(initial_orgs)
 
     # Add a finding model with contributors from organizations (codes must be 3-4 chars, using timestamp for uniqueness)
-    import time
     import hashlib
+    import time
 
     # Generate unique 3-letter codes from timestamp hash
     timestamp = str(int(time.time() * 1000))
     hash_val = int(hashlib.md5(timestamp.encode()).hexdigest()[:6], 16)
     # Convert to 3 uppercase letters using modulo
-    code1 = ''.join([chr(65 + ((hash_val >> (i * 5)) % 26)) for i in range(3)])
-    code2 = ''.join([chr(65 + ((hash_val >> (i * 5 + 15)) % 26)) for i in range(3)])
+    code1 = "".join([chr(65 + ((hash_val >> (i * 5)) % 26)) for i in range(3)])
+    code2 = "".join([chr(65 + ((hash_val >> (i * 5 + 15)) % 26)) for i in range(3)])
     model = sample_model.model_copy(deep=True)
     model.contributors = [
         Organization(code=code1, name=f"Alpha Org {timestamp}", url=HttpUrl("https://alpha.example.com")),
