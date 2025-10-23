@@ -59,13 +59,14 @@ from findingmodel.tools import model_editor
 
 # Configure Logfire
 # send_to_logfire logic: False if explicitly disabled, 'if-token-present' otherwise
+# console: Only enable if verbose mode requested (otherwise too noisy for eval runs)
 logfire.configure(
     token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
     send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
     console=ConsoleOptions(
         colors="auto",
-        min_log_level="debug" if settings.logfire_verbose else "info",
-    ),
+        min_log_level="debug",
+    ) if settings.logfire_verbose else False,
 )
 
 # Instrument Pydantic AI agents (PRIMARY instrumentation)
