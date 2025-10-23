@@ -121,7 +121,9 @@ You can see:
 
 - `LOGFIRE_TOKEN=xxx` - Write token from logfire.pydantic.dev (optional, enables cloud tracing)
 - `DISABLE_SEND_TO_LOGFIRE=true` - Force local-only mode (default: false)
-- `LOGFIRE_VERBOSE=true` - Enable verbose logging (default: false)
+- `LOGFIRE_VERBOSE=true` - Enable verbose console logging (default: false)
+
+**Note:** By default, Logfire console output is disabled to keep eval runs clean and readable. Traces are still sent to the Logfire cloud when a token is present. Set `LOGFIRE_VERBOSE=true` to see detailed console output for debugging.
 
 ### More Information
 
