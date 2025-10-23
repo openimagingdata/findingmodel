@@ -86,6 +86,47 @@ OVERALL SCORE: 0.95
 - **0.67**: Partial credit (e.g., 2/3 keywords found)
 - **0.00**: Failed (criteria not met)
 
+## Observability with Logfire
+
+The evaluation suite integrates with [Pydantic Logfire](https://logfire.pydantic.dev/)
+for observability and debugging.
+
+### Quick Start
+
+Logfire works out of the box in local-only mode (console logging). To enable cloud tracing:
+
+```bash
+# 1. Create account at https://logfire.pydantic.dev/
+# 2. Get write token from dashboard
+# 3. Add to .env file:
+echo "LOGFIRE_TOKEN=your_token_here" >> .env
+
+# 4. Run evaluations - traces automatically appear in Logfire UI
+python -m evals.model_editor
+```
+
+### Viewing Traces
+
+When configured with a token, traces appear in your Logfire dashboard at [logfire.pydantic.dev](https://logfire.pydantic.dev/).
+
+You can see:
+
+- Evaluation suite execution timeline
+- Individual case execution spans
+- Pydantic AI agent calls with prompts and completions
+- Performance metrics and timing
+- Error traces with full context
+
+### Environment Variables (in .env)
+
+- `LOGFIRE_TOKEN=xxx` - Write token from logfire.pydantic.dev (optional, enables cloud tracing)
+- `DISABLE_SEND_TO_LOGFIRE=true` - Force local-only mode (default: false)
+- `LOGFIRE_VERBOSE=true` - Enable verbose logging (default: false)
+
+### More Information
+
+See `docs/logfire_observability_guide.md` for comprehensive documentation.
+
 ## When to Run Evals
 
 Run evals when:
