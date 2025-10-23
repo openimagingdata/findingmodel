@@ -42,6 +42,7 @@ Environment Variables:
 - LOGFIRE_VERBOSE: Set to true for verbose console logging (default: false)
 """
 
+import hashlib
 from pathlib import Path
 
 import logfire
@@ -137,7 +138,15 @@ class ModelEditorCase(Case[ModelEditorInput, ModelEditorActualOutput, ModelEdito
         super().__init__(name=name, inputs=inputs, metadata=metadata)
 
     async def _execute(self, input_data: ModelEditorInput) -> ModelEditorActualOutput:
-        """Execute the model editor with the given input."""
+        """Execute the model editor with the given input.
+
+        Note: This method is not called by Dataset.evaluate(). The pydantic-evals
+        framework calls the task function directly (run_model_editor_task), which
+        contains the Logfire instrumentation and looks up case metadata from the
+        module-level _case_metadata_map.
+
+        This method is kept for potential future use or custom evaluation patterns.
+        """
         try:
             model = FindingModelFull.model_validate_json(input_data.model_json)
 
@@ -698,6 +707,97 @@ class ContentPreservationEvaluator(Evaluator[ModelEditorInput, ModelEditorActual
 
 
 # =============================================================================
+# Task Execution Function
+# =============================================================================
+
+
+def _make_metadata_lookup_key(input_data: ModelEditorInput) -> str:
+    """Create stable lookup key for case metadata mapping.
+
+    Uses SHA-256 hash to create unique, collision-resistant keys from input data.
+    This avoids the risk of collisions from prefix-based matching and handles
+    arbitrary-length inputs robustly.
+
+    Args:
+        input_data: The model editor input to create a key from
+
+    Returns:
+        A stable SHA-256 hash string for lookup
+    """
+    content = f"{input_data.model_json}|{input_data.command}|{input_data.edit_type}"
+    return hashlib.sha256(content.encode()).hexdigest()
+
+
+async def run_model_editor_task(input_data: ModelEditorInput) -> ModelEditorActualOutput:
+    """Execute a single model_editor evaluation case with Logfire tracing.
+
+    This function is called by Dataset.evaluate() for each case. Since the
+    pydantic-evals framework only passes InputT (not the full Case), we look up
+    case metadata from the module-level _case_metadata_map to add case-specific
+    attributes to Logfire spans.
+
+    The metadata lookup uses a hash-based key (_make_metadata_lookup_key) to
+    uniquely identify each case based on its input data. This pattern is needed
+    because Dataset.evaluate() doesn't provide access to the full Case object
+    within the task function.
+
+    Args:
+        input_data: Input data for the model editor case
+
+    Returns:
+        Actual output from the model editor execution
+    """
+    # Look up case metadata for Logfire instrumentation
+    lookup_key = _make_metadata_lookup_key(input_data)
+    case_name, should_succeed = _case_metadata_map.get(lookup_key, ("unknown", True))
+
+    with logfire.span(
+        "eval_case {name}",
+        name=case_name,
+        case_name=case_name,
+        edit_type=input_data.edit_type,
+        should_succeed=should_succeed,
+    ):
+        # Log case start (verbose mode only)
+        if settings.logfire_verbose:
+            logfire.debug(
+                "Starting evaluation case",
+                case_name=case_name,
+                edit_type=input_data.edit_type,
+                should_succeed=should_succeed,
+            )
+
+        try:
+            model = FindingModelFull.model_validate_json(input_data.model_json)
+
+            with logfire.span("model_editor_execution", operation=input_data.edit_type):
+                if input_data.edit_type == "natural_language":
+                    result = await model_editor.edit_model_natural_language(model, input_data.command)
+                elif input_data.edit_type == "markdown":
+                    result = await model_editor.edit_model_markdown(model, input_data.command)
+                else:
+                    raise ValueError(f"Unknown edit_type: {input_data.edit_type}")
+
+            # Log completion
+            logfire.info(
+                "Case completed",
+                case_name=case_name,
+                success=len(result.changes) > 0,
+                changes_count=len(result.changes),
+                rejections_count=len(result.rejections),
+            )
+
+            return ModelEditorActualOutput(model=result.model, changes=result.changes, rejections=result.rejections)
+
+        except Exception as e:
+            # Log error
+            logfire.error("Case execution failed", case_name=case_name, error=str(e))
+            # Return placeholder model with error info
+            model = FindingModelFull.model_validate_json(input_data.model_json)
+            return ModelEditorActualOutput(model=model, rejections=[], changes=[], error=str(e))
+
+
+# =============================================================================
 # Dataset Creation with Evaluator-Based Pattern
 # =============================================================================
 #
@@ -723,6 +823,13 @@ evaluators = [
     ContentPreservationEvaluator(),
 ]
 model_editor_dataset = Dataset(cases=all_cases, evaluators=evaluators)
+
+# Create mapping from input data to case metadata for Logfire instrumentation
+# This allows the task function to look up case name and should_succeed
+# Uses hash-based keys to avoid collisions and handle arbitrary-length inputs
+_case_metadata_map: dict[str, tuple[str, bool]] = {
+    _make_metadata_lookup_key(case.inputs): (case.name, case.metadata.should_succeed) for case in all_cases
+}
 
 
 # NOTE: This function is no longer used after refactoring to use Dataset.evaluate()
@@ -820,36 +927,9 @@ async def run_model_editor_evals() -> EvaluationReport[
     - Wraps entire evaluation suite in a logfire span
     - Logs suite start with case count and evaluator list
     - Logs suite completion with overall score
+    - Individual case execution instrumented in run_model_editor_task()
     - Works as no-op when Logfire token is absent
     """
-
-    # Define task function wrapper that executes the agent
-    async def run_model_editor_task(input_data: ModelEditorInput) -> ModelEditorActualOutput:
-        """Execute the model editor with the given input."""
-        # Show progress indication (case-level)
-        # Note: pydantic-evals shows a progress bar, but individual cases can take 10-20s
-        # This provides visibility into which case is currently running
-        import sys
-
-        model = FindingModelFull.model_validate_json(input_data.model_json)
-        case_desc = f"{input_data.edit_type}: {model.name}"
-        print(f"  Processing: {case_desc}...", end="", flush=True, file=sys.stderr)
-
-        try:
-            if input_data.edit_type == "natural_language":
-                result = await model_editor.edit_model_natural_language(model, input_data.command)
-            elif input_data.edit_type == "markdown":
-                result = await model_editor.edit_model_markdown(model, input_data.command)
-            else:
-                raise ValueError(f"Unknown edit_type: {input_data.edit_type}")
-
-            print(" ✓", file=sys.stderr)
-            return ModelEditorActualOutput(model=result.model, rejections=result.rejections, changes=result.changes)
-        except Exception as e:
-            print(" ✗", file=sys.stderr)
-            # Return a placeholder model with error info
-            return ModelEditorActualOutput(model=model, rejections=[], changes=[], error=str(e))
-
     # Wrap entire evaluation suite in Logfire span for observability
     with logfire.span(
         "model_editor_eval_suite",
@@ -863,6 +943,7 @@ async def run_model_editor_evals() -> EvaluationReport[
         )
 
         # Run evaluation using Dataset.evaluate() - evaluators already passed to Dataset constructor
+        # Task function (run_model_editor_task) is defined at module level with Logfire instrumentation
         report = await model_editor_dataset.evaluate(run_model_editor_task)
 
         # Calculate overall score manually (average of all evaluator scores across all cases)
