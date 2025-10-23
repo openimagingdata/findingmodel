@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "finding-model-search": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "findingmodel.mcp_server"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
+    }
+  }
+}

@@ -85,6 +85,41 @@ For database maintainers, see [Database Management Guide](docs/database-manageme
 
 > **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `scripts/edit_finding_model.py`.
 
+## MCP Server
+
+The package includes a Model Context Protocol (MCP) server that allows AI agents like Claude to search and retrieve finding models. The server provides four tools:
+
+- **search_finding_models**: Hybrid search (FTS + semantic) for finding models
+- **get_finding_model**: Retrieve specific models by ID, name, or synonym
+- **list_finding_model_tags**: List all available tags
+- **count_finding_models**: Get index statistics
+
+### Quick Start
+
+Run the server:
+
+```bash
+python -m findingmodel.mcp_server
+```
+
+Configure Claude Desktop (see [MCP Server Documentation](docs/mcp_server.md) for details):
+
+```json
+{
+  "mcpServers": {
+    "finding-model-search": {
+      "command": "python",
+      "args": ["-m", "findingmodel.mcp_server"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
+    }
+  }
+}
+```
+
+For complete documentation, see [MCP Server Guide](docs/mcp_server.md).
+
 ## Models
 
 ### `FindingModelBase`
