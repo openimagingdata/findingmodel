@@ -353,10 +353,7 @@ class DuckDBIndex:
             ORDER BY name
             """
         ).fetchall()
-        return [
-            Organization.model_validate({"code": row[0], "name": row[1], "url": row[2]})
-            for row in rows
-        ]
+        return [Organization.model_validate({"code": row[0], "name": row[1], "url": row[2]}) for row in rows]
 
     async def add_or_update_entry_from_file(
         self,

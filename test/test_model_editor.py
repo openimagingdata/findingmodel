@@ -117,134 +117,24 @@ def test_export_model_for_editing_attributes_only(real_model: FindingModelFull) 
 @pytest.mark.callout
 @pytest.mark.asyncio
 async def test_edit_model_natural_language_callout_real_api(real_model: FindingModelFull) -> None:
-    """Exercise a real LLM call to demonstrate an actual edit.
-    This test is expected to run only in callout mode and will error if OpenAI is not configured.
+    """Sanity check that real API integration works.
+    Behavior validation is handled by evals; this just verifies we get a valid result.
     """
-
     # Temporarily enable model requests for this test only
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
-        model = real_model
-        base_count = len(model.attributes)
-        command = (
-            "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe. "
-            "Do not modify or remove any existing attributes or values. Preserve all existing IDs."
-        )
-        result = await model_editor.edit_model_natural_language(model, command)
+        command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
+        result = await model_editor.edit_model_natural_language(real_model, command)
 
-        # Basic validations
+        # Verify we got a valid result structure back
         assert isinstance(result.model, FindingModelFull)
-        assert result.model.oifm_id == model.oifm_id  # ID preservation
-        # Ideally, the attribute count increases and we find the new attribute
-        assert len(result.model.attributes) >= base_count
-        names = [a.name.lower() for a in result.model.attributes]
-        # The model should add 'severity'; if not, this indicates the LLM ignored the instruction
-        assert "severity" in names
-        sev = next(a for a in result.model.attributes if a.name.lower() == "severity")
-        vnames = [getattr(v, "name", "").lower() for v in getattr(sev, "values", [])]
-        assert {"mild", "moderate", "severe"}.issubset(set(vnames))
         assert isinstance(result.changes, list)
+        assert isinstance(result.rejections, list)
     finally:
         models.ALLOW_MODEL_REQUESTS = original
 
 
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_edit_model_markdown_callout_real_api(real_model: FindingModelFull) -> None:
-    """Exercise a real LLM call for the Markdown-based edit path.
-    This test runs only in callout mode and will error if OpenAI is not configured.
-    """
-
-    # Temporarily enable model requests for this test only
-    original = models.ALLOW_MODEL_REQUESTS
-    models.ALLOW_MODEL_REQUESTS = True
-    try:
-        model = real_model
-        base_count = len(model.attributes)
-
-        # Start from exported markdown and append a new attribute section
-        md = model_editor.export_model_for_editing(model)
-        md += "\n".join([
-            "### severity",
-            "- mild",
-            "- moderate",
-            "- severe",
-            "",
-        ])
-
-        result = await model_editor.edit_model_markdown(model, md)
-
-        # Basic validations
-        assert isinstance(result.model, FindingModelFull)
-        assert result.model.oifm_id == model.oifm_id  # ID preservation
-
-        # Ideally, the attribute count increases and we find the new attribute
-        assert len(result.model.attributes) >= base_count
-        names = [a.name.lower() for a in result.model.attributes]
-        assert "severity" in names
-        sev = next(a for a in result.model.attributes if a.name.lower() == "severity")
-        vnames = [getattr(v, "name", "").lower() for v in getattr(sev, "values", [])]
-        assert {"mild", "moderate", "severe"}.issubset(set(vnames))
-        assert isinstance(result.changes, list)
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_forbidden_change_nl_callout_real_api(real_model: FindingModelFull) -> None:
-    """Ask the agent to perform a forbidden change via natural language and verify it's rejected."""
-    original_flag = models.ALLOW_MODEL_REQUESTS
-    models.ALLOW_MODEL_REQUESTS = True
-    try:
-        model = real_model
-        # Attempt to rename an existing attribute (forbidden)
-        existing_name = model.attributes[0].name
-        command = f"Rename attribute '{existing_name}' to 'renamed_attr'."
-        result = await model_editor.edit_model_natural_language(model, command)
-
-        # Model should be unchanged and at least one rejection present
-        assert result.model.model_dump_json() == model.model_dump_json()
-        assert result.rejections and isinstance(result.rejections[0], str)
-        assert result.changes == []
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_flag
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_forbidden_change_markdown_callout_real_api(real_model: FindingModelFull) -> None:
-    """Ask the agent to perform a forbidden change via Markdown and verify it's rejected."""
-    original_flag = models.ALLOW_MODEL_REQUESTS
-    models.ALLOW_MODEL_REQUESTS = True
-    try:
-        model = real_model
-        md = model_editor.export_model_for_editing(model)
-        # Attempt to remove the first attribute section entirely by truncating markdown after header
-        first_attr = model.attributes[0].name
-        # Remove the '### first_attr' section and its bullets/description
-        lines = md.splitlines()
-        out_lines: list[str] = []
-        skip = False
-        for line in lines:
-            if line.strip() == f"### {first_attr}":
-                skip = True
-                continue
-            if skip and line.startswith("### "):
-                skip = False
-            if not skip:
-                out_lines.append(line)
-        edited_md = "\n".join(out_lines) + "\n"
-
-        result = await model_editor.edit_model_markdown(model, edited_md)
-
-        # Model should be unchanged and at least one rejection present
-        assert result.model.model_dump_json() == model.model_dump_json()
-        assert result.rejections and isinstance(result.rejections[0], str)
-        assert result.changes == []
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_flag
 
 
 def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch) -> None:

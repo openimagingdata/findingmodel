@@ -1,14 +1,14 @@
 # Refactor Model Editor Evaluation Suite
 
-## Status: Phase 2 Complete - Ready for Phase 3
+## Status: Phase 3 Complete - All Core Work Done
 
 **Created:** 2025-10-18
 
-**Updated:** 2025-10-18
+**Updated:** 2025-10-24
 
-**Priority:** Medium (Phase 3 is optional)
+**Priority:** Medium
 
-**Current Phase:** Phase 2 ✅ COMPLETE (all tasks including fixes)
+**Current Phase:** Phase 3 ✅ COMPLETE (including test cleanup)
 
 **Related PR:** `copilot/add-eval-case-functionality`
 
@@ -286,17 +286,67 @@ Update all documentation to reflect new patterns:
 
 ### Phase 3: Observability with Logfire
 
-**Status:** 🔲 Optional (Planning complete, ready for implementation)
+**Status:** ✅ COMPLETE
 
 **Priority:** Medium
 
-**Updated:** 2025-10-18
+**Updated:** 2025-10-24
 
 Add observability features using Pydantic Logfire for debugging, monitoring, and understanding agent behavior during evaluations.
 
 **Reference Documentation:** `docs/logfire_observability_guide.md`
 
 **Key Design Decision:** Logfire integration should be **on by default** but gracefully degrade when no token is present. This ensures developers get observability benefits without requiring setup, while production users can opt-in to cloud tracing.
+
+---
+
+#### Task 3.0: Add Configuration Fields
+
+**Files:**
+- `src/findingmodel/config.py`
+- `.env.sample`
+
+Add Logfire configuration fields to `FindingModelConfig`:
+
+```python
+class FindingModelConfig(BaseSettings):
+    """Configuration for FindingModel library."""
+
+    # ... existing fields ...
+
+    # Logfire configuration (observability platform)
+    logfire_token: QuoteStrippedSecretStr | None = Field(
+        default=None,
+        description="Logfire.dev write token for cloud tracing (optional)"
+    )
+    disable_send_to_logfire: bool = Field(
+        default=False,
+        description="Disable sending data to Logfire platform (local-only mode)"
+    )
+    logfire_verbose: bool = Field(
+        default=False,
+        description="Enable verbose Logfire console logging"
+    )
+```
+
+Update `.env.sample` to document Logfire configuration:
+
+```bash
+# Optional: Logfire observability (for eval tracing and debugging)
+# Get token from https://logfire.pydantic.dev/ after creating an account
+# LOGFIRE_TOKEN=
+# DISABLE_SEND_TO_LOGFIRE=false
+# LOGFIRE_VERBOSE=false
+```
+
+**Acceptance Criteria:**
+
+- [x] `logfire_token` field added (optional, default None, uses SecretStr)
+- [x] `disable_send_to_logfire` field added (default False)
+- [x] `logfire_verbose` field added (default False)
+- [x] Fields are read from environment variables automatically
+- [x] Settings object accessible via `from findingmodel.config import settings`
+- [x] `.env.sample` updated with Logfire configuration documentation
 
 ---
 
@@ -316,15 +366,15 @@ dev = [
 
 **Acceptance Criteria:**
 
-- [ ] Logfire added to `dev` dependencies
-- [ ] Version constraint appropriate (>=1.0.0 or compatible)
-- [ ] Dependency installs cleanly with `uv pip install -e ".[dev]"`
+- [x] Logfire added to `dev` dependencies
+- [x] Version constraint appropriate (>=1.0.0 or compatible)
+- [x] Dependency installs cleanly with `uv pip install -e ".[dev]"`
 
 ---
 
 #### Task 3.2: Configure Logfire in Model Editor Evals
 
-**Files:** `evals/test_model_editor_evals.py`
+**Files:** `evals/model_editor.py`
 
 Add Logfire configuration at module level with graceful degradation:
 
@@ -335,133 +385,109 @@ Model Editor evaluation suite with Logfire observability.
 This module uses Pydantic Logfire for tracing and observability.
 
 **Logfire Integration:**
-- Enabled by default with graceful degradation
-- Sends traces to Logfire platform if LOGFIRE_TOKEN is present
-- Falls back to local-only logging if no token
-- Can be disabled entirely with LOGFIRE_DISABLE=true
+- Automatically detects LOGFIRE_TOKEN from .env
+- Sends traces to cloud if token present and DISABLE_SEND_TO_LOGFIRE=false
+- Can be forced to local-only mode with DISABLE_SEND_TO_LOGFIRE=true
+- Gracefully becomes no-op when no token present
 
 **Setup for Cloud Tracing:**
-    1. Authenticate: logfire auth
-    2. Run evals normally - traces appear in Logfire UI
+    1. Create account at https://logfire.pydantic.dev/
+    2. Get write token from dashboard
+    3. Add LOGFIRE_TOKEN=xxx to .env
+    4. Run evals normally - traces appear in Logfire UI
 
 **Environment Variables:**
-- LOGFIRE_TOKEN: Authentication token (auto-detected from logfire auth)
-- LOGFIRE_DISABLE: Set to 'true' to completely disable Logfire
-- LOGFIRE_EVAL_VERBOSE: Set to 'true' for verbose eval logging
+- LOGFIRE_TOKEN: Write token from logfire.pydantic.dev (optional)
+- DISABLE_SEND_TO_LOGFIRE: Set to true to force local-only mode (default: false)
+- LOGFIRE_VERBOSE: Set to true for verbose console logging (default: false)
 """
 
-import os
 import logfire
-from typing import TYPE_CHECKING
+from findingmodel.config import settings
 
-# Check if Logfire should be disabled
-LOGFIRE_DISABLED = os.getenv('LOGFIRE_DISABLE', 'false').lower() == 'true'
-VERBOSE_EVALS = os.getenv('LOGFIRE_EVAL_VERBOSE', 'false').lower() == 'true'
+# Configure Logfire
+# send_to_logfire logic: False if explicitly disabled, 'if-token-present' otherwise
+logfire.configure(
+    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
+    send_to_logfire=False if settings.disable_send_to_logfire else 'if-token-present',
+    console_colors='auto',
+    console_min_log_level='debug' if settings.logfire_verbose else 'info',
+)
 
-if not LOGFIRE_DISABLED:
-    # Configure Logfire at module level
-    logfire.configure(
-        send_to_logfire='if-token-present',  # Auto-detect token, graceful degradation
-        service_name='findingmodel-model-editor-evals',
-        environment='test',
-        console=True,  # Always show console output
-        console_min_log_level='debug' if VERBOSE_EVALS else 'info',
-        console_colors='auto',  # Auto-detect terminal color support
-    )
-
-    # Log configuration status
-    if os.getenv('LOGFIRE_TOKEN'):
-        logfire.info('Logfire enabled - traces will be sent to platform')
-    else:
-        logfire.info(
-            'Logfire local-only mode - run "logfire auth" to enable cloud tracing'
-        )
-else:
-    # Disabled mode - configure no-op
-    logfire.configure(send_to_logfire=False, console=False)
-
-if TYPE_CHECKING:
-    # For type checking only
-    from logfire import Logfire
+# Instrument Pydantic AI agents (PRIMARY instrumentation)
+logfire.instrument_pydantic_ai()
 ```
 
 **Acceptance Criteria:**
 
-- [ ] Logfire configured at module level
-- [ ] Uses `send_to_logfire='if-token-present'` for graceful degradation
-- [ ] Checks `LOGFIRE_DISABLE` environment variable
-- [ ] Checks `LOGFIRE_EVAL_VERBOSE` environment variable
-- [ ] Logs configuration status on import
-- [ ] Clear docstring explaining Logfire integration
-- [ ] No errors or warnings when token is absent
-- [ ] No errors when running under pytest (auto-disables platform sending)
+- [x] Logfire configured with conditional `send_to_logfire` based on `disable_send_to_logfire` setting
+- [x] Token passed via `token=` parameter from settings
+- [x] Uses project settings system (`settings.logfire_verbose`, `settings.logfire_token`, `settings.disable_send_to_logfire`)
+- [x] Uses `ConsoleOptions` (actual Logfire 1.0+ API, not direct `console_*` parameters as plan specified)
+- [x] Console disabled by default (only enabled with `logfire_verbose=True`)
+- [x] Calls `logfire.instrument_pydantic_ai()` after configure (PRIMARY instrumentation)
+- [x] No hard-coded service names or environment metadata
+- [x] No conditional instrumentation in eval code (configuration handles behavior)
+- [x] Spans work locally without token (local-only mode)
+- [x] Can force local-only mode even with token via DISABLE_SEND_TO_LOGFIRE=true
+- [x] Clear docstring explaining Logfire integration with .env-based setup
+- [x] Consistent with project's API key management patterns
 
 ---
 
 #### Task 3.3: Instrument Evaluation Execution
 
-**Files:** `evals/test_model_editor_evals.py`
+**Files:** `evals/model_editor.py`
 
-Add Logfire tracing to the evaluation test function:
+Add Logfire tracing to the main evaluation function:
 
 ```python
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_run_model_editor_evals():
+async def run_model_editor_evals():
     """
     Run the full model_editor evaluation suite with Logfire tracing.
 
-    This test is marked with @pytest.mark.callout because it requires
-    OpenAI API access. Logfire will automatically disable cloud sending
-    during pytest runs but will still capture spans locally for debugging.
+    Returns the evaluation Report object for programmatic access.
     """
     with logfire.span(
         'model_editor_eval_suite',
         total_cases=len(all_cases),
         evaluator_count=len(evaluators),
     ):
-        # Log suite start
         logfire.info(
             'Starting model_editor evaluation suite',
             cases_total=len(all_cases),
             evaluators=[e.__class__.__name__ for e in evaluators],
         )
 
-        # Run evaluation
         report = await model_editor_dataset.evaluate(run_model_editor_task)
 
-        # Log results
+        # Calculate and log overall score
+        all_scores = [score.value for case in report.cases for score in case.scores.values()]
+        overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+
         logfire.info(
             'Evaluation suite completed',
-            overall_score=report.overall_score(),
-            cases_passed=sum(1 for r in report.results if r.score >= 0.8),
-            cases_failed=sum(1 for r in report.results if r.score < 0.8),
-            cases_total=len(report.results),
+            overall_score=overall_score,
+            cases_total=len(report.cases),
         )
 
-        # Print report
-        report.print(include_input=False, include_output=True)
-
-        # Assert threshold
-        assert report.overall_score() >= 0.85, (
-            f"Evaluation score {report.overall_score():.2f} below threshold 0.85"
-        )
+        return report
 ```
 
 **Acceptance Criteria:**
 
-- [ ] Top-level span wraps entire evaluation suite
-- [ ] Logs suite start with metadata
-- [ ] Logs suite completion with results
-- [ ] Span includes case count and evaluator count as attributes
-- [ ] No changes to test logic or assertions
-- [ ] Works with and without Logfire token
+- [x] Top-level span wraps entire evaluation suite
+- [x] Logs suite start with metadata
+- [x] Logs suite completion with overall score
+- [x] Span includes case count and evaluator count as attributes
+- [x] No changes to evaluation logic or return values
+- [x] Works with and without Logfire token (spans are no-ops when token absent)
 
 ---
 
 #### Task 3.4: Instrument Task Execution Function
 
-**Files:** `evals/test_model_editor_evals.py`
+**Files:** `evals/model_editor.py`
 
 Add tracing to individual case execution:
 
@@ -472,6 +498,8 @@ async def run_model_editor_task(case: ModelEditorCase) -> ModelEditorActualOutpu
 
     This function is called by Dataset.evaluate() for each case.
     """
+    model = FindingModelFull.model_validate_json(case.model_json)
+
     with logfire.span(
         'eval_case {name}',
         name=case.name,
@@ -479,18 +507,16 @@ async def run_model_editor_task(case: ModelEditorCase) -> ModelEditorActualOutpu
         edit_type=case.edit_type,
         should_succeed=case.should_succeed,
     ):
-        # Log case start
-        if VERBOSE_EVALS:
+        # Log case start (verbose mode only)
+        if settings.logfire_verbose:
             logfire.debug(
                 'Starting evaluation case',
                 case_name=case.name,
-                model_id=case.model_json[:50] + '...',  # Truncate for logging
+                model_id=case.model_json[:50] + '...',
                 command_length=len(case.command),
             )
 
-        # Execute case (existing logic)
-        model = FindingModelFull.model_validate_json(case.model_json)
-
+        # Execute case
         with logfire.span('model_editor_execution', operation=case.edit_type):
             if case.edit_type == 'natural_language':
                 result = await model_editor.edit_model(model, case.command)
@@ -506,23 +532,22 @@ async def run_model_editor_task(case: ModelEditorCase) -> ModelEditorActualOutpu
             rejections_count=len(result.rejections),
         )
 
-        # Return output (existing logic)
-        return ModelEditorActualOutput(
-            model=result.model,
-            changes=result.changes,
-            rejections=result.rejections,
-        )
+    return ModelEditorActualOutput(
+        model=result.model,
+        changes=result.changes,
+        rejections=result.rejections,
+    )
 ```
 
 **Acceptance Criteria:**
 
-- [ ] Each case wrapped in its own span
-- [ ] Span includes case metadata (name, type, expected outcome)
-- [ ] Logs case start (verbose mode only)
-- [ ] Logs case completion with results
-- [ ] Model editor execution in sub-span
-- [ ] No changes to core logic or return values
-- [ ] Works with existing mock and API tests
+- [x] Each case wrapped in its own span
+- [x] Span includes case metadata (name, type, expected outcome)
+- [x] Logs case start in verbose mode (`settings.logfire_verbose`)
+- [x] Logs case completion with results
+- [x] Model editor execution in sub-span
+- [x] No changes to core logic or return values
+- [x] No conditional instrumentation - spans are always used (no-op when token absent)
 
 ---
 
@@ -595,7 +620,7 @@ class KeywordMatchEvaluator(Evaluator[InputT, OutputT]):
 
 - `docs/logfire_observability_guide.md` ✅ **CREATED**
 - `evals/README.md`
-- `evals/test_model_editor_evals.py` (module docstring)
+- `evals/model_editor.py` (module docstring already updated in Task 3.2)
 
 Update documentation to explain Logfire integration:
 
@@ -611,34 +636,36 @@ for observability and debugging.
 
 ### Quick Start
 
-Logfire works out of the box in local-only mode. To enable cloud tracing:
+Logfire works out of the box in local-only mode (console logging). To enable cloud tracing:
 
 ```bash
-# Authenticate (one-time setup)
-logfire auth
+# 1. Create account at https://logfire.pydantic.dev/
+# 2. Get write token from dashboard
+# 3. Add to .env file:
+echo "LOGFIRE_TOKEN=your_token_here" >> .env
 
-# Run evaluations - traces automatically appear in Logfire UI
-pytest evals/test_model_editor_evals.py::test_run_model_editor_evals -v -s
+# 4. Run evaluations - traces automatically appear in Logfire UI
+python -m evals.model_editor
 ```
 ````
 
 ### Viewing Traces
 
-After authentication, traces appear in your Logfire dashboard at [Pydantic.dev](https://logfire.pydantic.dev/).
+When configured with a token, traces appear in your Logfire dashboard at [logfire.pydantic.dev](https://logfire.pydantic.dev/).
 
 You can see:
 
 - Evaluation suite execution timeline
 - Individual case execution spans
-- Agent LLM calls and responses
+- Pydantic AI agent calls with prompts and completions
 - Performance metrics and timing
 - Error traces with full context
 
-### Environment Variables
+### Environment Variables (in .env)
 
-- `LOGFIRE_DISABLE=true` - Completely disable Logfire
-- `LOGFIRE_EVAL_VERBOSE=true` - Enable verbose logging
-- `LOGFIRE_TOKEN=<token>` - Explicit token (alternative to `logfire auth`)
+- `LOGFIRE_TOKEN=xxx` - Write token from logfire.pydantic.dev (optional, enables cloud tracing)
+- `DISABLE_SEND_TO_LOGFIRE=true` - Force local-only mode (default: false)
+- `LOGFIRE_VERBOSE=true` - Enable verbose logging (default: false)
 
 ### More Information
 
@@ -646,12 +673,12 @@ See `docs/logfire_observability_guide.md` for comprehensive documentation.
 
 **Acceptance Criteria:**
 
-- [ ] Comprehensive guide created at `docs/logfire_observability_guide.md` ✅
-- [ ] README.md updated with Logfire section
-- [ ] Module docstring explains Logfire integration
-- [ ] Examples of viewing traces in Logfire UI
-- [ ] Environment variable documentation
-- [ ] Troubleshooting section for common issues
+- [x] Comprehensive guide created at `docs/logfire_observability_guide.md` ✅
+- [x] README.md updated with Logfire section
+- [x] Module docstring updated (completed in Task 3.2)
+- [x] Examples of viewing traces in Logfire UI
+- [x] Environment variable documentation
+- [x] Troubleshooting section for common issues
 
 ---
 
@@ -667,27 +694,30 @@ Create memory documenting Logfire best practices for the project:
 
 **Acceptance Criteria:**
 
-- [ ] Memory created via `write_memory` tool
-- [ ] Covers configuration patterns
-- [ ] Documents environment variables
-- [ ] Links to full documentation
-- [ ] Includes examples from evaluation suites
-- [ ] Notes about graceful degradation
+- [x] Memory created via `write_memory` tool
+- [x] Covers configuration patterns
+- [x] Documents environment variables
+- [x] Links to full documentation
+- [x] Includes examples from evaluation suites
+- [x] Notes about graceful degradation
 
 ---
 
 ### Phase 3 Complete When
 
-- [ ] Logfire added to dependencies
-- [ ] Module-level configuration implemented with graceful degradation
-- [ ] Evaluation suite instrumented (top-level span + logging)
-- [ ] Task execution function instrumented (per-case spans)
-- [ ] Documentation updated (README + comprehensive guide)
-- [ ] Serena memory created
-- [ ] All existing tests still pass
-- [ ] Works with and without LOGFIRE_TOKEN
-- [ ] No warnings when token absent
-- [ ] Respects LOGFIRE_DISABLE environment variable
+- [x] Logfire added to dependencies
+- [x] Configuration fields added to FindingModelConfig (logfire_token, disable_send_to_logfire, logfire_verbose)
+- [x] Module-level configuration implemented with conditional send_to_logfire
+- [x] Evaluation suite instrumented (top-level span + logging)
+- [x] Task execution function instrumented (per-case spans)
+- [x] Documentation updated (README + comprehensive guide)
+- [x] Serena memory updated
+- [x] All existing tests still pass
+- [x] Works with and without LOGFIRE_TOKEN
+- [x] DISABLE_SEND_TO_LOGFIRE=true forces local-only mode even with token
+- [x] No warnings when token absent
+- [x] No conditional instrumentation in eval code (spans always used, configuration handles behavior)
+- [x] Console output disabled by default for clean eval runs (only enabled with LOGFIRE_VERBOSE=true)
 
 **Benefits:**
 
@@ -697,6 +727,14 @@ Create memory documenting Logfire best practices for the project:
 - Optional cloud tracing for production monitoring
 - Zero friction for local development (works without setup)
 - Foundation for other agent evaluation suites
+
+**Additional Cleanup (2025-10-24):**
+
+After completing Phase 3, cleaned up `test/test_model_editor.py` to align with three-tier testing structure:
+- Removed 3 redundant callout tests (now comprehensively covered by evals)
+- Kept 1 simple integration test for basic API sanity checking
+- Simplified remaining integration test to verify result structure only (no behavioral checks)
+- Result: 7 unit tests + 1 minimal integration test
 
 ---
 
@@ -761,17 +799,18 @@ Track evaluation scores over time:
 - [x] Critical import bug fixed
 - [x] Senior review completed
 
-### Phase 3 Complete Requirements
+### Phase 3 Complete Requirements ✅
 
-- [ ] Logfire added to dependencies (pyproject.toml)
-- [ ] Module-level configuration implemented with graceful degradation
-- [ ] Evaluation suite instrumented (top-level span + logging)
-- [ ] Task execution function instrumented (per-case spans)
-- [ ] Documentation updated (README + module docstrings)
-- [ ] All existing tests still pass
-- [ ] Works with and without LOGFIRE_TOKEN
-- [ ] No warnings when token absent
-- [ ] Respects LOGFIRE_DISABLE environment variable
+- [x] Logfire added to dependencies (pyproject.toml)
+- [x] Module-level configuration implemented with graceful degradation
+- [x] Evaluation suite instrumented (top-level span + logging)
+- [x] Task execution function instrumented (per-case spans)
+- [x] Documentation updated (README + module docstrings)
+- [x] All existing tests still pass
+- [x] Works with and without LOGFIRE_TOKEN
+- [x] No warnings when token absent
+- [x] Respects DISABLE_SEND_TO_LOGFIRE environment variable
+- [x] Console output disabled by default (LOGFIRE_VERBOSE required for console logging)
 
 ### Phase 5 Complete Requirements
 
@@ -827,7 +866,8 @@ Track evaluation scores over time:
 - [x] ~~Task 2.2: Convert to Dataset pattern~~ - ✅ DONE
 - [x] ~~Task 2.3: Update documentation~~ - ✅ DONE
 - [x] ~~Fix critical import bug~~ - ✅ DONE
-- [ ] **Optional: Begin Phase 3 (observability integration)** 🔲 NEXT (if desired)
+- [x] ~~Phase 3 (observability integration)~~ - ✅ COMPLETE
+- [x] ~~Cleanup: Remove redundant callout tests from test_model_editor.py~~ - ✅ DONE
 
 ## Implementation Status Summary
 
@@ -835,8 +875,8 @@ Track evaluation scores over time:
 | ----------- | -------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Phase 1     | ✅ 100% COMPLETE     | `evals/base.py`, `evals/utils.py`                                                           | All tasks complete including tests                                  |
 | Phase 1-A   | ✅ 100% COMPLETE     | `evals/test_base_evaluators.py`                                                                  | All 25 tests passing (0.09s)                                        |
-| **Phase 2** | **✅ 100% COMPLETE** | **`evals/test_model_editor_evals.py`, `evals/README.md`, `evals/add_case_example.py`** | **5 evaluators, Dataset pattern, hybrid scoring, import bug fixed** |
-| Phase 3     | 🔲 Planning Complete | `docs/logfire_observability_guide.md`                                                                 | Observability integration (detailed plan ready)                     |
+| Phase 2     | ✅ 100% COMPLETE     | `evals/test_model_editor_evals.py`, `evals/README.md`, `evals/add_case_example.py` | 5 evaluators, Dataset pattern, hybrid scoring, import bug fixed     |
+| **Phase 3** | **✅ 100% COMPLETE** | **`evals/model_editor.py`, `src/findingmodel/config.py`, `evals/README.md`, `.env.sample`, `pyproject.toml`** | **Logfire observability, console off by default, graceful degradation** |
 | Phase 5     | 🔲 Optional          | -                                                                                                     | CI/CD integration                                                   |
 
 ## References

@@ -66,7 +66,9 @@ logfire.configure(
     console=ConsoleOptions(
         colors="auto",
         min_log_level="debug",
-    ) if settings.logfire_verbose else False,
+    )
+    if settings.logfire_verbose
+    else False,
 )
 
 # Instrument Pydantic AI agents (PRIMARY instrumentation)

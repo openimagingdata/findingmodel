@@ -6,69 +6,59 @@ Pydantic Logfire is used for observability in the FindingModel project, particul
 
 **Full Documentation:** `docs/logfire_observability_guide.md`
 
-## Key Design Principles
+## Key Design Principles - FindingModel Implementation
 
-### 1. Graceful Degradation (On by Default)
+### 1. Settings-Based Configuration (NOT os.getenv)
 
-Logfire should be **enabled by default** but work seamlessly without authentication:
+**IMPORTANT:** FindingModel uses its centralized settings system, NOT direct os.getenv calls:
 
 ```python
 import logfire
+from logfire import ConsoleOptions
+from findingmodel.config import settings
 
+# Configure Logfire using project settings
 logfire.configure(
-    send_to_logfire='if-token-present',  # Auto-detect token
-    service_name='findingmodel-evals',
-    environment='test',
-    console=True,  # Always show console output
+    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
+    send_to_logfire=False if settings.disable_send_to_logfire else 'if-token-present',
+    console=ConsoleOptions(
+        colors="auto",
+        min_log_level="debug" if settings.logfire_verbose else "info",
+    ),
 )
+
+# Instrument Pydantic AI agents (PRIMARY instrumentation)
+logfire.instrument_pydantic_ai()
 ```
 
 **Benefits:**
-- Works immediately without setup
-- Developers get local observability for free
-- Production users can opt-in to cloud tracing
-- No errors or warnings when token absent
+- Consistent with project's API key management patterns (SecretStr)
+- Automatic .env loading via pydantic-settings
+- Type safety and validation
+- No hard-coded service names or environment metadata
 
-### 2. Environment Variable Control
+### 2. Environment Variables (Managed by Settings)
 
-Support these environment variables for configuration:
+Configuration via .env file (automatically loaded by FindingModelConfig):
 
-- `LOGFIRE_TOKEN` - Authentication token (from `logfire auth`)
-- `LOGFIRE_DISABLE` - Set to `'true'` to completely disable Logfire
-- `LOGFIRE_EVAL_VERBOSE` - Set to `'true'` for verbose evaluation logging
-- `LOGFIRE_SEND_TO_LOGFIRE` - Override sending behavior
-- `LOGFIRE_SERVICE_NAME` - Service name for tracing
-- `LOGFIRE_ENVIRONMENT` - Environment (test, dev, prod)
+- `LOGFIRE_TOKEN` - Write token from logfire.pydantic.dev (optional)
+- `DISABLE_SEND_TO_LOGFIRE` - Set to `true` to force local-only mode (default: false)
+- `LOGFIRE_VERBOSE` - Set to `true` for verbose console logging (default: false)
 
-### 3. Module-Level Configuration
+### 3. ConsoleOptions for Console Configuration
 
-Configure Logfire once at the top of each module:
+Use ConsoleOptions object instead of direct console_* parameters:
 
 ```python
-"""Module with Logfire observability."""
+from logfire import ConsoleOptions
 
-import os
-import logfire
-
-# Check if disabled
-LOGFIRE_DISABLED = os.getenv('LOGFIRE_DISABLE', 'false').lower() == 'true'
-
-if not LOGFIRE_DISABLED:
-    logfire.configure(
-        send_to_logfire='if-token-present',
-        service_name='findingmodel-model-editor-evals',
-        environment='test',
-        console=True,
-    )
-    
-    # Log configuration status
-    if os.getenv('LOGFIRE_TOKEN'):
-        logfire.info('Logfire enabled - traces will be sent to platform')
-    else:
-        logfire.info('Logfire local-only mode')
-else:
-    logfire.configure(send_to_logfire=False, console=False)
+console=ConsoleOptions(
+    colors="auto",
+    min_log_level="debug" if settings.logfire_verbose else "info",
+)
 ```
+
+This matches the actual Logfire 1.0+ API.
 
 ## Structured Logging Patterns
 
@@ -86,7 +76,7 @@ logfire.info(f'Evaluated 10 cases in 5.2s')
 
 ```python
 # ✅ Good: Meaningful operations
-with logfire.span('eval_case {name}', name=case.name, case_type='success'):
+with logfire.span('eval_case {name}', name=case.name, should_succeed=True):
     result = await run_case(case)
 
 # ❌ Too granular
@@ -99,112 +89,125 @@ with logfire.span('validate_input'):
 ```python
 # ✅ Good: Rich context
 with logfire.span(
-    'model_edit',
-    model_id=model.oifm_id,
-    operation='add_attribute',
+    'eval_case {name}',
+    name=case_name,
+    case_name=case_name,
     edit_type='natural_language',
+    should_succeed=True,
 ):
-    result = editor.edit(model, command)
+    result = await execute_case()
 ```
 
-## Evaluation Suite Integration
+## Evaluation Suite Integration - Actual Implementation
 
-### Module-Level Setup
-
-At the top of evaluation test files:
+### Module-Level Setup (evals/model_editor.py pattern)
 
 ```python
-import os
 import logfire
+from logfire import ConsoleOptions
+from findingmodel.config import settings
 
-LOGFIRE_DISABLED = os.getenv('LOGFIRE_DISABLE', 'false').lower() == 'true'
-VERBOSE_EVALS = os.getenv('LOGFIRE_EVAL_VERBOSE', 'false').lower() == 'true'
+# Configure Logfire
+logfire.configure(
+    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
+    send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
+    console=ConsoleOptions(
+        colors="auto",
+        min_log_level="debug" if settings.logfire_verbose else "info",
+    ),
+)
 
-if not LOGFIRE_DISABLED:
-    logfire.configure(
-        send_to_logfire='if-token-present',
-        service_name='findingmodel-<agent>-evals',
-        environment='test',
-        console=True,
-        console_min_log_level='debug' if VERBOSE_EVALS else 'info',
-    )
+# Instrument Pydantic AI agents (PRIMARY instrumentation)
+logfire.instrument_pydantic_ai()
 ```
 
 ### Suite-Level Instrumentation
 
-Wrap entire evaluation suite:
-
 ```python
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_run_agent_evals():
-    with logfire.span('agent_eval_suite', total_cases=len(cases)):
-        logfire.info('Starting evaluation suite', cases_total=len(cases))
-        
-        report = await dataset.evaluate(task_function)
-        
+async def run_model_editor_evals():
+    """Run evaluation suite with Logfire tracing."""
+    with logfire.span(
+        'model_editor_eval_suite',
+        total_cases=len(all_cases),
+        evaluator_count=len(evaluators),
+    ):
         logfire.info(
-            'Evaluation complete',
-            overall_score=report.overall_score(),
-            cases_passed=sum(1 for r in report.results if r.score >= 0.8),
+            'Starting model_editor evaluation suite',
+            cases_total=len(all_cases),
+            evaluators=[e.__class__.__name__ for e in evaluators],
         )
+
+        report = await model_editor_dataset.evaluate(run_model_editor_task)
+
+        all_scores = [score.value for case in report.cases for score in case.scores.values()]
+        overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+
+        logfire.info(
+            'Evaluation suite completed',
+            overall_score=overall_score,
+            cases_total=len(report.cases),
+        )
+
+        return report
 ```
 
-### Case-Level Instrumentation
+### Case-Level Instrumentation with Metadata Lookup
 
-Instrument individual case execution:
+Since pydantic-evals Dataset.evaluate() only passes InputT to task functions, not full Case objects, use a metadata lookup pattern:
 
 ```python
-async def run_agent_task(case: AgentCase) -> AgentOutput:
+import hashlib
+
+def _make_metadata_lookup_key(input_data: ModelEditorInput) -> str:
+    """Create stable lookup key for case metadata mapping."""
+    content = f"{input_data.model_json}|{input_data.command}|{input_data.edit_type}"
+    return hashlib.sha256(content.encode()).hexdigest()
+
+# Module-level mapping
+_case_metadata_map: dict[str, tuple[str, bool]] = {
+    _make_metadata_lookup_key(case.inputs): (case.name, case.metadata.should_succeed)
+    for case in all_cases
+}
+
+async def run_model_editor_task(input_data: ModelEditorInput) -> ModelEditorActualOutput:
+    """Execute case with Logfire tracing."""
+    lookup_key = _make_metadata_lookup_key(input_data)
+    case_name, should_succeed = _case_metadata_map.get(lookup_key, ("unknown", False))
+
     with logfire.span(
         'eval_case {name}',
-        name=case.name,
-        case_type=case.metadata.get('category'),
-        should_succeed=case.expected.should_succeed,
+        name=case_name,
+        case_name=case_name,
+        edit_type=input_data.edit_type,
+        should_succeed=should_succeed,
     ):
-        # Execute case
-        result = await agent.process(case.input)
-        
-        # Log result
+        if settings.logfire_verbose:
+            logfire.debug(
+                'Starting evaluation case',
+                case_name=case_name,
+                edit_type=input_data.edit_type,
+            )
+
+        with logfire.span('model_editor_execution', operation=input_data.edit_type):
+            # Execute model editor
+            if input_data.edit_type == 'natural_language':
+                result = await model_editor.edit_model_natural_language(model, input_data.command)
+            else:
+                result = await model_editor.edit_model_markdown(model, input_data.command)
+
         logfire.info(
             'Case completed',
-            case_name=case.name,
-            success=result.success,
+            case_name=case_name,
+            success=len(result.changes) > 0,
+            changes_count=len(result.changes),
+            rejections_count=len(result.rejections),
         )
-        
-        return result
-```
 
-## Testing with Logfire
-
-### Using capfire Fixture
-
-```python
-from logfire.testing import CaptureLogfire
-
-def test_agent_instrumentation(capfire: CaptureLogfire):
-    """Test that agent emits expected spans."""
-    with logfire.span('agent_task'):
-        logfire.info('Processing')
-        result = agent.process()
-    
-    # Assert on captured spans
-    assert len(capfire.exporter.exported_spans) == 3
-    assert 'agent_task' in [s.name for s in capfire.exporter.exported_spans]
-```
-
-### Test Configuration
-
-Pytest automatically sets `send_to_logfire=False`. For explicit control:
-
-```python
-# In conftest.py
-import pytest
-import logfire
-
-@pytest.fixture(scope='session', autouse=True)
-def configure_logfire():
-    logfire.configure(send_to_logfire=False, console=False)
+        return ModelEditorActualOutput(
+            model=result.model,
+            changes=result.changes,
+            rejections=result.rejections,
+        )
 ```
 
 ## Best Practices
@@ -213,23 +216,24 @@ def configure_logfire():
 
 - ✅ Configure once at module level
 - ✅ Use `send_to_logfire='if-token-present'` for graceful degradation
+- ✅ Use FindingModelConfig settings (NOT os.getenv)
+- ✅ Use ConsoleOptions for console configuration
 - ✅ Use structured logging with named parameters
 - ✅ Add rich context to spans (IDs, types, metadata)
-- ✅ Log at appropriate levels (debug, info, warning, error)
-- ✅ Wrap meaningful operations in spans
+- ✅ Call `logfire.instrument_pydantic_ai()` after configure
+- ✅ Use hash-based lookup keys for metadata mapping
 - ✅ Handle exceptions in spans (auto-captured)
-- ✅ Use environment variables for configuration
-- ✅ Test instrumentation with `capfire` fixture
 
 ### DON'T
 
 - ❌ Call `configure()` multiple times
+- ❌ Use os.getenv directly (use settings.logfire_token, etc.)
+- ❌ Use direct console_* parameters (use ConsoleOptions)
+- ❌ Hard-code service names or environment metadata
 - ❌ Use f-strings instead of named parameters
 - ❌ Log sensitive data (API keys, tokens, secrets)
 - ❌ Create spans for trivial operations
-- ❌ Log in tight loops without sampling
 - ❌ Require Logfire authentication for local development
-- ❌ Fail loudly when no token present
 
 ## Setup for Developers
 
@@ -237,96 +241,40 @@ def configure_logfire():
 
 ```bash
 # Works immediately - local-only logging
-pytest test/evals/test_model_editor_evals.py -v
+python -m evals.model_editor
 ```
 
 ### Cloud Tracing (Optional)
 
 ```bash
-# One-time setup
-logfire auth
+# 1. Create account at https://logfire.pydantic.dev/
+# 2. Get write token from dashboard
+# 3. Add to .env file:
+echo "LOGFIRE_TOKEN=pfp_your_token_here" >> .env
 
-# Run evals - traces appear in Logfire UI
-pytest test/evals/test_model_editor_evals.py -v
+# 4. Run evals - traces appear in Logfire UI
+python -m evals.model_editor
 ```
 
 ### Disabling Logfire
 
 ```bash
-# Completely disable
-LOGFIRE_DISABLE=true pytest test/evals/
-
-# Or in .env
-LOGFIRE_DISABLE=true
+# In .env
+DISABLE_SEND_TO_LOGFIRE=true
 ```
-
-## Common Environment Configurations
-
-### Local Development
-```bash
-# .env (or no config - uses defaults)
-LOGFIRE_CONSOLE=true
-LOGFIRE_CONSOLE_MIN_LOG_LEVEL=info
-```
-
-### CI/CD
-```bash
-# GitHub Actions secrets
-LOGFIRE_TOKEN=${{ secrets.LOGFIRE_TOKEN }}
-LOGFIRE_SERVICE_NAME=findingmodel-evals
-LOGFIRE_ENVIRONMENT=ci
-LOGFIRE_SEND_TO_LOGFIRE=true
-```
-
-### Production
-```bash
-LOGFIRE_TOKEN=<production-token>
-LOGFIRE_SERVICE_NAME=findingmodel-production
-LOGFIRE_ENVIRONMENT=prod
-LOGFIRE_SEND_TO_LOGFIRE=true
-LOGFIRE_CONSOLE=false
-```
-
-## Troubleshooting
-
-### No traces in Logfire platform
-
-**Cause:** No token or `send_to_logfire=False`
-
-**Solution:**
-```bash
-logfire auth
-# Or set explicitly:
-export LOGFIRE_TOKEN=pfp_your_token
-```
-
-### Too many logs
-
-**Solution:**
-```python
-logfire.configure(console_min_log_level='warning')
-# Or environment variable:
-export LOGFIRE_CONSOLE_MIN_LOG_LEVEL=warning
-```
-
-### Tests failing
-
-**Cause:** Logfire configuration issues
-
-**Solution:** Pytest auto-disables sending, but ensure clean configuration in conftest.py
 
 ## Current Status in Project
 
-### Implemented
+### Implemented (Phase 3 Complete)
 - ✅ Comprehensive documentation: `docs/logfire_observability_guide.md`
-- ✅ Phase 3 plan detailed in `tasks/refactor_model_editor_evals.md`
-- ✅ Patterns established for evaluation suites
-
-### Pending Implementation
-- 🔲 Add `logfire>=1.0.0` to pyproject.toml dev dependencies
-- 🔲 Instrument `test/evals/test_model_editor_evals.py`
-- 🔲 Update `test/evals/README.md` with Logfire section
-- 🔲 Verify integration with all existing tests
+- ✅ Phase 3 tasks completed: `tasks/refactor_model_editor_evals.md:287-729`
+- ✅ Configuration fields added to FindingModelConfig (src/findingmodel/config.py:54-66)
+- ✅ Logfire dependency added (pyproject.toml:56)
+- ✅ Module-level configuration in evals/model_editor.py (lines 59-71)
+- ✅ Suite-level instrumentation (lines 898-930)
+- ✅ Case-level instrumentation with metadata lookup (lines 714-797)
+- ✅ Documentation updated (evals/README.md:89-128)
+- ✅ .env.sample updated (lines 17-21)
 
 ### Future Work
 - 🔲 Apply Logfire pattern to other agent evaluation suites
@@ -336,39 +284,44 @@ export LOGFIRE_CONSOLE_MIN_LOG_LEVEL=warning
 ## Integration Points
 
 ### Pydantic AI Evals
-Logfire works seamlessly with Pydantic Evals framework - just add spans and logging in evaluation functions.
+Logfire works seamlessly with pydantic-evals framework. Primary instrumentation via `logfire.instrument_pydantic_ai()` automatically traces agent runs.
 
-### Pytest
-Automatically disables platform sending during test runs. Use `capfire` fixture to test instrumentation.
-
-### Environment Detection
-Logfire auto-detects pytest environment and adjusts configuration accordingly.
+### Metadata Access Pattern
+Since Dataset.evaluate() only passes InputT to task functions, use hash-based metadata lookup to access case name and expected outcomes for span attributes.
 
 ## Resources
 
 - **Full guide:** `docs/logfire_observability_guide.md`
-- **Task plan:** `tasks/refactor_model_editor_evals.md` (Phase 3)
+- **Task plan:** `tasks/refactor_model_editor_evals.md:287-729` (Phase 3)
 - **Official docs:** https://logfire.pydantic.dev/docs/
 - **Configuration:** https://logfire.pydantic.dev/docs/reference/configuration/
 - **Testing:** https://logfire.pydantic.dev/docs/reference/advanced/testing/
 
 ## Key Takeaway
 
-For most evaluation suites, this simple configuration is all you need:
+For FindingModel evaluation suites, use this configuration pattern:
 
 ```python
 import logfire
+from logfire import ConsoleOptions
+from findingmodel.config import settings
 
 logfire.configure(
-    send_to_logfire='if-token-present',
-    service_name='findingmodel-<agent>-evals',
-    environment='test',
-    console=True,
+    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
+    send_to_logfire=False if settings.disable_send_to_logfire else 'if-token-present',
+    console=ConsoleOptions(
+        colors="auto",
+        min_log_level="debug" if settings.logfire_verbose else "info",
+    ),
 )
+
+logfire.instrument_pydantic_ai()
 ```
 
 This provides:
+- Integration with project settings system
 - Local observability without setup
 - Cloud tracing when authenticated
 - Graceful degradation
+- Automatic Pydantic AI instrumentation
 - Zero friction for developers
