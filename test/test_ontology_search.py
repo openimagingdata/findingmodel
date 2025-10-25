@@ -451,7 +451,8 @@ async def test_categorization_with_test_model() -> None:
 
     # Create agent and override with TestModel
     agent = create_categorization_agent()
-    test_model = TestModel(custom_output_args=test_output)
+    # TestModel requires custom_output_args to be a dict, not a Pydantic model
+    test_model = TestModel(custom_output_args=test_output.model_dump())
 
     # Create context
     context = CategorizationContext(

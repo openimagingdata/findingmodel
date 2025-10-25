@@ -18,61 +18,24 @@ EVALUATORS:
 See evals/base.py for reusable base evaluators and examples.
 
 LOGFIRE INTEGRATION:
-This module uses Pydantic Logfire for tracing and observability.
+Logfire observability is configured automatically in evals/__init__.py.
+No manual instrumentation needed in this module - automatic spans are created by:
+- Dataset.evaluate() for root and per-case spans
+- Pydantic AI instrumentation for agent/model/tool calls
 
-- Automatically detects LOGFIRE_TOKEN from .env
-- Sends traces to cloud if token present and DISABLE_SEND_TO_LOGFIRE=false
-- Can be forced to local-only mode with DISABLE_SEND_TO_LOGFIRE=true
-- Gracefully becomes no-op when no token present
-
-Setup for Cloud Tracing:
-    1. Create account at https://logfire.pydantic.dev/
-    2. Get write token from dashboard
-    3. Add LOGFIRE_TOKEN=xxx to .env
-    4. Run evals normally - traces appear in Logfire UI
-
-Add to .env file:
-    LOGFIRE_TOKEN=pfp_your_token_here
-    DISABLE_SEND_TO_LOGFIRE=false  # or true for local-only
-    LOGFIRE_VERBOSE=false           # or true for verbose logging
-
-Environment Variables:
-- LOGFIRE_TOKEN: Write token from logfire.pydantic.dev (optional)
-- DISABLE_SEND_TO_LOGFIRE: Set to true to force local-only mode (default: false)
-- LOGFIRE_VERBOSE: Set to true for verbose console logging (default: false)
+See: https://ai.pydantic.dev/evals/#integration-with-logfire
 """
 
-import hashlib
 from pathlib import Path
 
-import logfire
-from logfire import ConsoleOptions
 from pydantic import BaseModel
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
 
 from evals.utils import compare_models, extract_text_for_keywords, get_attribute_names
-from findingmodel.config import settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.tools import model_editor
-
-# Configure Logfire
-# send_to_logfire logic: False if explicitly disabled, 'if-token-present' otherwise
-# console: Only enable if verbose mode requested (otherwise too noisy for eval runs)
-logfire.configure(
-    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
-    send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
-    console=ConsoleOptions(
-        colors="auto",
-        min_log_level="debug",
-    )
-    if settings.logfire_verbose
-    else False,
-)
-
-# Instrument Pydantic AI agents (PRIMARY instrumentation)
-logfire.instrument_pydantic_ai()
 
 
 class ModelEditorInput(BaseModel):
@@ -144,9 +107,7 @@ class ModelEditorCase(Case[ModelEditorInput, ModelEditorActualOutput, ModelEdito
         """Execute the model editor with the given input.
 
         Note: This method is not called by Dataset.evaluate(). The pydantic-evals
-        framework calls the task function directly (run_model_editor_task), which
-        contains the Logfire instrumentation and looks up case metadata from the
-        module-level _case_metadata_map.
+        framework calls the task function directly (run_model_editor_task).
 
         This method is kept for potential future use or custom evaluation patterns.
         """
@@ -714,35 +675,12 @@ class ContentPreservationEvaluator(Evaluator[ModelEditorInput, ModelEditorActual
 # =============================================================================
 
 
-def _make_metadata_lookup_key(input_data: ModelEditorInput) -> str:
-    """Create stable lookup key for case metadata mapping.
-
-    Uses SHA-256 hash to create unique, collision-resistant keys from input data.
-    This avoids the risk of collisions from prefix-based matching and handles
-    arbitrary-length inputs robustly.
-
-    Args:
-        input_data: The model editor input to create a key from
-
-    Returns:
-        A stable SHA-256 hash string for lookup
-    """
-    content = f"{input_data.model_json}|{input_data.command}|{input_data.edit_type}"
-    return hashlib.sha256(content.encode()).hexdigest()
-
-
 async def run_model_editor_task(input_data: ModelEditorInput) -> ModelEditorActualOutput:
-    """Execute a single model_editor evaluation case with Logfire tracing.
+    """Execute a single model_editor evaluation case.
 
-    This function is called by Dataset.evaluate() for each case. Since the
-    pydantic-evals framework only passes InputT (not the full Case), we look up
-    case metadata from the module-level _case_metadata_map to add case-specific
-    attributes to Logfire spans.
-
-    The metadata lookup uses a hash-based key (_make_metadata_lookup_key) to
-    uniquely identify each case based on its input data. This pattern is needed
-    because Dataset.evaluate() doesn't provide access to the full Case object
-    within the task function.
+    Dataset.evaluate() automatically creates spans and captures inputs/outputs.
+    Pydantic AI instrumentation captures agent/model/tool calls.
+    No manual Logfire code needed.
 
     Args:
         input_data: Input data for the model editor case
@@ -750,54 +688,25 @@ async def run_model_editor_task(input_data: ModelEditorInput) -> ModelEditorActu
     Returns:
         Actual output from the model editor execution
     """
-    # Look up case metadata for Logfire instrumentation
-    lookup_key = _make_metadata_lookup_key(input_data)
-    case_name, should_succeed = _case_metadata_map.get(lookup_key, ("unknown", True))
+    try:
+        model = FindingModelFull.model_validate_json(input_data.model_json)
 
-    with logfire.span(
-        "eval_case {name}",
-        name=case_name,
-        case_name=case_name,
-        edit_type=input_data.edit_type,
-        should_succeed=should_succeed,
-    ):
-        # Log case start (verbose mode only)
-        if settings.logfire_verbose:
-            logfire.debug(
-                "Starting evaluation case",
-                case_name=case_name,
-                edit_type=input_data.edit_type,
-                should_succeed=should_succeed,
-            )
+        if input_data.edit_type == "natural_language":
+            result = await model_editor.edit_model_natural_language(model, input_data.command)
+        elif input_data.edit_type == "markdown":
+            result = await model_editor.edit_model_markdown(model, input_data.command)
+        else:
+            raise ValueError(f"Unknown edit_type: {input_data.edit_type}")
 
-        try:
-            model = FindingModelFull.model_validate_json(input_data.model_json)
-
-            with logfire.span("model_editor_execution", operation=input_data.edit_type):
-                if input_data.edit_type == "natural_language":
-                    result = await model_editor.edit_model_natural_language(model, input_data.command)
-                elif input_data.edit_type == "markdown":
-                    result = await model_editor.edit_model_markdown(model, input_data.command)
-                else:
-                    raise ValueError(f"Unknown edit_type: {input_data.edit_type}")
-
-            # Log completion
-            logfire.info(
-                "Case completed",
-                case_name=case_name,
-                success=len(result.changes) > 0,
-                changes_count=len(result.changes),
-                rejections_count=len(result.rejections),
-            )
-
-            return ModelEditorActualOutput(model=result.model, changes=result.changes, rejections=result.rejections)
-
-        except Exception as e:
-            # Log error
-            logfire.error("Case execution failed", case_name=case_name, error=str(e))
-            # Return placeholder model with error info
-            model = FindingModelFull.model_validate_json(input_data.model_json)
-            return ModelEditorActualOutput(model=model, rejections=[], changes=[], error=str(e))
+        return ModelEditorActualOutput(
+            model=result.model,
+            changes=result.changes,
+            rejections=result.rejections,
+        )
+    except Exception as e:
+        # Return error in output for evaluation
+        model = FindingModelFull.model_validate_json(input_data.model_json)
+        return ModelEditorActualOutput(model=model, changes=[], rejections=[], error=str(e))
 
 
 # =============================================================================
@@ -826,13 +735,6 @@ evaluators = [
     ContentPreservationEvaluator(),
 ]
 model_editor_dataset = Dataset(cases=all_cases, evaluators=evaluators)
-
-# Create mapping from input data to case metadata for Logfire instrumentation
-# This allows the task function to look up case name and should_succeed
-# Uses hash-based keys to avoid collisions and handle arbitrary-length inputs
-_case_metadata_map: dict[str, tuple[str, bool]] = {
-    _make_metadata_lookup_key(case.inputs): (case.name, case.metadata.should_succeed) for case in all_cases
-}
 
 
 # NOTE: This function is no longer used after refactoring to use Dataset.evaluate()
@@ -915,54 +817,24 @@ _case_metadata_map: dict[str, tuple[str, bool]] = {
 async def run_model_editor_evals() -> EvaluationReport[
     ModelEditorInput, ModelEditorActualOutput, ModelEditorExpectedOutput
 ]:
-    """Run all model editor evaluation cases using Dataset.evaluate().
+    """Run model_editor evaluation suite.
 
-    EVALUATOR-BASED PATTERN USAGE:
-    1. Dataset was created with cases and evaluators at module level
-    2. Call dataset.evaluate() with the task function
-    3. Each case is executed and evaluated by all evaluators
-    4. Report contains scores for each evaluator on each case
-    5. Overall score is the average across all evaluators and cases
-
-    This replaces the old pattern of custom evaluation functions.
-
-    LOGFIRE INTEGRATION:
-    - Wraps entire evaluation suite in a logfire span
-    - Logs suite start with case count and evaluator list
-    - Logs suite completion with overall score
-    - Individual case execution instrumented in run_model_editor_task()
-    - Works as no-op when Logfire token is absent
+    Dataset.evaluate() automatically creates evaluation spans and captures
+    all inputs, outputs, and scores for visualization in Logfire.
     """
-    # Wrap entire evaluation suite in Logfire span for observability
-    with logfire.span(
-        "model_editor_eval_suite",
-        total_cases=len(all_cases),
-        evaluator_count=len(evaluators),
-    ):
-        logfire.info(
-            "Starting model_editor evaluation suite",
-            cases_total=len(all_cases),
-            evaluators=[e.__class__.__name__ for e in evaluators],
-        )
+    report = await model_editor_dataset.evaluate(run_model_editor_task)
+    return report
 
-        # Run evaluation using Dataset.evaluate() - evaluators already passed to Dataset constructor
-        # Task function (run_model_editor_task) is defined at module level with Logfire instrumentation
-        report = await model_editor_dataset.evaluate(run_model_editor_task)
 
-        # Calculate overall score manually (average of all evaluator scores across all cases)
-        all_scores = []
-        for case in report.cases:
-            for score_result in case.scores.values():
-                all_scores.append(score_result.value)
-        overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+if __name__ == "__main__":
+    import asyncio
 
-        logfire.info(
-            "Evaluation suite completed",
-            overall_score=overall_score,
-            cases_total=len(report.cases),
-        )
+    async def main() -> None:
+        print("\nRunning model_editor evaluation suite...")
+        print("=" * 80)
 
-        # Print formatted output
+        report = await run_model_editor_evals()
+
         print("\n" + "=" * 80)
         print("MODEL EDITOR EVALUATION RESULTS")
         print("=" * 80 + "\n")
@@ -976,27 +848,12 @@ async def run_model_editor_evals() -> EvaluationReport[
             width=120,
         )
 
+        # Calculate overall score manually (average of all evaluator scores across all cases)
+        all_scores = [score.value for case in report.cases for score in case.scores.values()]
+        overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+
         print("\n" + "=" * 80)
         print(f"OVERALL SCORE: {overall_score:.2f}")
         print("=" * 80 + "\n")
-
-        # Return the report for analysis
-        # Note: When run as a pytest test, we assert threshold >= 0.95
-        # When run standalone, we just print results
-        return report
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main() -> None:
-        print("\nRunning model_editor evaluation suite...")
-        print("=" * 80)
-
-        # run_model_editor_evals() already prints results and overall score
-        await run_model_editor_evals()
-
-        # Future Phase 3: Logfire integration via pydantic-evals
-        # Future: Save report to file, compare to baseline, etc.
 
     asyncio.run(main())

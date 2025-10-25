@@ -44,7 +44,8 @@ async def test_edit_model_natural_language_add_attribute(real_model: FindingMode
         rejections=[],
         changes=["Added severity attribute with values mild, moderate, severe"],
     )
-    with agent.override(model=TestModel(custom_output_args=mock_output)):
+    # TestModel requires custom_output_args to be a dict, not a Pydantic model
+    with agent.override(model=TestModel(custom_output_args=mock_output.model_dump())):
         result = await model_editor.edit_model_natural_language(model, command, agent=agent)
     assert hasattr(result, "model")
     assert isinstance(result.model, FindingModelFull)
@@ -133,8 +134,6 @@ async def test_edit_model_natural_language_callout_real_api(real_model: FindingM
         assert isinstance(result.rejections, list)
     finally:
         models.ALLOW_MODEL_REQUESTS = original
-
-
 
 
 def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch) -> None:
