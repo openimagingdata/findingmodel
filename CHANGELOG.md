@@ -6,11 +6,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased (presumed 0.4.1)]
+## [Unreleased (presumed 0.5.0)]
 
 ### Added
 
+- **Enhanced Index API Methods** - Complete pagination and search capabilities without breaking abstraction:
+  - `list(limit, offset, order_by, order_dir)` - Paginated browsing of all finding models
+  - `search_by_slug(pattern, match_type, limit, offset)` - Pattern-based search with relevance ranking
+  - `count()` and `count_search()` - Efficient counting for pagination UI
+  - `get_full(oifm_id)` and `get_full_batch(oifm_ids)` - Retrieve complete FindingModelFull objects
+- **Manifest-Based Database Downloads** - Runtime database version discovery:
+  - Databases auto-update from remote manifest.json (no library release needed)
+  - Graceful fallback to direct URL/hash for offline scenarios
+  - CLI command: `db-info` to check database versions and status
+- **Self-Contained Databases** - Full JSON storage in DuckDB:
+  - Single .duckdb file contains metadata + embeddings + full JSON models
+  - Separate `finding_model_json` table with automatic compression
+  - No external JSONL files needed
+- **Local ID Generation** - Database-backed OIFM/OIFMA ID generation:
+  - `generate_next_id(source)` - Random generation with collision checking
+  - `generate_attribute_id(model_oifm_id, source)` - Attribute ID generation with source inference
+  - No GitHub dependency, thread-safe via DuckDB
+  - Prevents ID collisions when multiple users independently create models
+
 ### Changed
+
+- **Index schema**: Added separate `finding_model_json` table for blob storage
+- **Index schema**: Added index on `slug_name` for efficient LIKE queries
+- **Code organization**: Shared helper methods eliminate duplication in list/search/count operations
+
+### Deprecated
+
+- Direct access to `Index._ensure_connection()` - use new API methods instead (see migration guide)
+- GitHub-based ID generation (`tools/add_ids.py`) - replaced by Index-based generation
 
 ### Fixed
 
