@@ -333,12 +333,25 @@ async def test_single_case_mock():
     mock_result = MyAgentResult(attributes=[...])
 
     # Use TestModel to mock agent
-    with my_agent.override(model=TestModel(custom_output_args=mock_result)):
+    # IMPORTANT: Convert Pydantic model to dict with .model_dump()
+    with my_agent.override(model=TestModel(custom_output_args=mock_result.model_dump())):
         result = await run_agent_task(AgentInput(query="test"))
 
         assert result.error is None
         assert len(result.result.attributes) > 0
 ```
+
+**Critical Note:** TestModel requires `custom_output_args` to be a dict, not a Pydantic model. Always use `.model_dump()`:
+
+```python
+# ❌ Wrong - fails with Logfire instrumentation active
+TestModel(custom_output_args=my_pydantic_model)
+
+# ✅ Correct - always works
+TestModel(custom_output_args=my_pydantic_model.model_dump())
+```
+
+**Why:** `ToolCallPart.args` is typed as `str | dict[str, Any] | None`. When Logfire instrumentation is enabled (which happens automatically in the `evals/` package), it tries to serialize tool arguments by calling `.items()` on them, which Pydantic models don't have. This will cause an `AttributeError` at runtime.
 
 ## Best Practices
 
@@ -471,22 +484,28 @@ async def test_full_evals():
     assert overall_score >= 0.9
 ```
 
-### 7. Add Observability
+### 7. Observability (Automatic)
 
-Enable Logfire for deep debugging:
+Logfire observability is configured automatically in `evals/__init__.py`.
+
+**No Logfire code needed** in individual eval modules. Just write your eval logic:
 
 ```python
-import logfire
+# No logfire imports
+# No configuration
+# No manual spans
 
-logfire.configure(
-    send_to_logfire='if-token-present',
-    environment='test',
-    service_name='findingmodel-evals',
-)
+dataset = Dataset(cases=..., evaluators=...)
+
+async def run_tool_name_evals():
+    report = await dataset.evaluate(task_function)
+    return report
 
 # All evaluation traces automatically sent to Logfire
 # View execution paths, token usage, durations
 ```
+
+Observability happens automatically via package-level configuration.
 
 ## Reusable Patterns
 

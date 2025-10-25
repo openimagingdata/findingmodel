@@ -88,12 +88,23 @@ OVERALL SCORE: 0.95
 
 ## Observability with Logfire
 
-The evaluation suite integrates with [Pydantic Logfire](https://logfire.pydantic.dev/)
-for observability and debugging.
+Logfire observability is **configured automatically** - no setup needed per eval suite.
 
-### Quick Start
+### How It Works
 
-Logfire works out of the box in local-only mode (console logging). To enable cloud tracing:
+- **Automatic configuration** in `evals/__init__.py`
+- **Zero Logfire code** required in individual eval modules
+- **Automatic instrumentation** via Pydantic Evals + Pydantic AI
+
+When you run an eval suite, Logfire automatically captures:
+- Evaluation root span and per-case execution spans
+- Agent run spans with prompts/completions
+- Model call spans and tool execution spans
+- Evaluation scores and results
+
+### Setup (Optional - Cloud Tracing)
+
+Logfire works in local-only mode by default. For cloud tracing:
 
 ```bash
 # 1. Create account at https://logfire.pydantic.dev/
@@ -105,27 +116,17 @@ echo "LOGFIRE_TOKEN=your_token_here" >> .env
 python -m evals.model_editor
 ```
 
-### Viewing Traces
+### Environment Variables
 
-When configured with a token, traces appear in your Logfire dashboard at [logfire.pydantic.dev](https://logfire.pydantic.dev/).
+- `LOGFIRE_TOKEN` - Write token (optional, enables cloud tracing)
+- `DISABLE_SEND_TO_LOGFIRE` - Force local-only mode (default: false)
+- `LOGFIRE_VERBOSE` - Enable console logging (default: false)
 
-You can see:
+**Note:** By default, Logfire console output is disabled to keep eval runs clean. Traces are still sent to the cloud when a token is present.
 
-- Evaluation suite execution timeline
-- Individual case execution spans
-- Pydantic AI agent calls with prompts and completions
-- Performance metrics and timing
-- Error traces with full context
+### For New Eval Suites
 
-### Environment Variables (in .env)
-
-- `LOGFIRE_TOKEN=xxx` - Write token from logfire.pydantic.dev (optional, enables cloud tracing)
-- `DISABLE_SEND_TO_LOGFIRE=true` - Force local-only mode (default: false)
-- `LOGFIRE_VERBOSE=true` - Enable verbose console logging (default: false)
-
-**Note:** By default, Logfire console output is disabled to keep eval runs clean and readable. Traces are still sent to the Logfire cloud when a token is present. Set `LOGFIRE_VERBOSE=true` to see detailed console output for debugging.
-
-### More Information
+**No Logfire code needed.** Observability happens automatically via package-level configuration.
 
 See `docs/logfire_observability_guide.md` for comprehensive documentation.
 

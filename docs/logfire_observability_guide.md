@@ -50,15 +50,64 @@ logfire auth
 
 ## Configuration Patterns
 
-### Pattern 1: Conditional Configuration (Recommended for Evals)
+### Pattern 1: Package-Level Configuration (Recommended for Evals)
 
-Use this pattern in evaluation suites to enable Logfire only when a token is present:
+**PREFERRED APPROACH**: Configure Logfire once at package level in `__init__.py`.
+
+This follows Python logging best practices and eliminates code duplication.
+
+```python
+# evals/__init__.py
+"""Evaluation suites for findingmodel agents.
+
+Logfire observability configured automatically for entire package.
+Individual eval modules require NO Logfire code.
+"""
+
+import logfire
+from logfire import ConsoleOptions
+
+from findingmodel.config import settings
+
+# Configure Logfire once for entire evals package
+logfire.configure(
+    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
+    send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
+    console=ConsoleOptions(
+        colors="auto",
+        min_log_level="debug",
+    )
+    if settings.logfire_verbose
+    else False,
+)
+
+# Instrument Pydantic AI once for automatic agent/model/tool tracing
+logfire.instrument_pydantic_ai()
+
+__all__ = []  # No public exports - configuration only
+```
+
+**Benefits:**
+- **DRY principle**: Configuration in ONE place
+- **Zero code per eval**: Individual modules need no Logfire imports
+- **Automatic instrumentation**: Pydantic Evals + Pydantic AI handle everything
+- **Scalable**: Add new eval suites without duplicating configuration
+
+**How it works:**
+- Python guarantees `__init__.py` executes before any child module imports
+- Configuration happens automatically on first import of any eval module
+- Dataset.evaluate() automatically creates spans
+- Pydantic AI instrumentation captures agent/model/tool calls
+
+### Pattern 2: Module-Level Configuration (Legacy)
+
+**NOTE:** This pattern is shown for reference only. Use Package-Level Configuration instead.
 
 ```python
 import logfire
 from typing import TYPE_CHECKING
 
-# Configure at module level
+# Configure at module level (NOT RECOMMENDED - use package-level instead)
 logfire.configure(
     send_to_logfire='if-token-present',  # Only send if LOGFIRE_TOKEN exists
     service_name='findingmodel-evals',
@@ -138,19 +187,65 @@ def test_my_instrumented_code(capfire: CaptureLogfire):
 
 ## Using Logfire in Evaluation Suites
 
-### Basic Instrumentation
+### Automatic Instrumentation (Recommended)
 
-Add Logfire tracing to evaluation runs:
+**PREFERRED APPROACH**: Use package-level configuration in `evals/__init__.py`.
+
+Individual eval modules require **ZERO Logfire code**. Automatic instrumentation provides:
+
+```python
+# evals/my_agent.py - NO Logfire imports needed!
+from pydantic_evals import Dataset, Case
+from findingmodel.tools import my_agent
+
+# 1. Define data models
+class MyInput(BaseModel): ...
+class MyOutput(BaseModel): ...
+
+# 2. Create evaluators
+evaluators = [MyEvaluator(), ...]
+
+# 3. Create dataset
+dataset = Dataset(cases=all_cases, evaluators=evaluators)
+
+# 4. Task function - NO manual spans needed
+async def run_my_agent_task(input_data: MyInput) -> MyOutput:
+    """Execute task - automatic instrumentation captures everything."""
+    result = await my_agent.process(input_data)
+    return MyOutput(result=result)
+
+# 5. Main eval function - NO manual spans needed
+async def run_my_agent_evals():
+    """Dataset.evaluate() automatically creates spans."""
+    report = await dataset.evaluate(run_my_agent_task)
+    return report
+```
+
+**What gets traced automatically:**
+- Evaluation root span (from Dataset.evaluate())
+- Per-case execution spans (from Dataset.evaluate())
+- Agent run spans (from logfire.instrument_pydantic_ai())
+- Model call spans with prompts/completions
+- Tool execution spans
+- Evaluation scores and results
+
+**Benefits:**
+- Zero Logfire code per eval module
+- No risk of forgetting to add spans
+- Consistent tracing across all evals
+- Easier to maintain and refactor
+
+### Manual Instrumentation (Legacy)
+
+**NOTE:** Manual spans are shown for reference only. Use automatic instrumentation instead.
 
 ```python
 import logfire
 from pydantic_evals import Dataset, Case
 
-# Configure at module level
-logfire.configure(send_to_logfire='if-token-present')
-
+# NOT RECOMMENDED - use automatic instrumentation instead
 async def run_evaluation_case(case: Case) -> dict:
-    """Run a single evaluation case with tracing."""
+    """Run a single evaluation case with manual tracing."""
     with logfire.span(
         'eval_case {name}',
         name=case.name,
