@@ -30,6 +30,7 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
                 settings.duckdb_anatomic_path,
                 settings.remote_anatomic_db_url,
                 settings.remote_anatomic_db_hash,
+                manifest_key="anatomic_locations",
             )
         self.conn: duckdb.DuckDBPyConnection | None = None
         self._openai_client: AsyncOpenAI | None = None

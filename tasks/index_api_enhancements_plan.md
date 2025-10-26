@@ -1274,6 +1274,54 @@ models, total = index.search_by_slug(
 3. **Future-Proof** - API stable even if backend changes
 4. **Better Performance** - Index can optimize internally
 
+## Index Connection Patterns
+
+DuckDBIndex supports two usage patterns for connection management:
+
+### Pattern 1: Async Context Manager (Explicit Cleanup)
+
+```python
+async with Index() as index:
+    # Get models
+    result = await index.get("abdominal abscess")
+    full = await index.get_full(result.oifm_id)
+
+    # Get count
+    count = await index.count()
+# Connection automatically closed when exiting the async with block
+```
+
+**When to use:**
+- When you want explicit control over connection lifecycle
+- In long-running applications where you want to free resources
+- When performing a discrete set of operations
+
+### Pattern 2: Direct Instantiation (Lazy Cleanup)
+
+```python
+index = Index()
+
+# Each method call ensures connection is open
+result = await index.get("abdominal abscess")
+full = await index.get_full(result.oifm_id)
+count = await index.count()
+
+# Connection stays open until index object is garbage collected
+```
+
+**When to use:**
+- In scripts or notebooks where connection cleanup isn't critical
+- When you'll be making many calls over time
+- Default pattern for simplicity
+
+**How it works:**
+- Each method (get, get_full, count, etc.) calls `_ensure_connection()` internally
+- Connections are read-only by default (lightweight, safe to keep open)
+- DuckDB connections are single-file, no server processes
+- Garbage collection will eventually close connections
+
+**Both patterns are valid** - choose based on your needs. The context manager gives explicit control, while direct instantiation is simpler for most use cases.
+
 ## Deprecation Timeline
 
 - v0.4.1: New API methods available, old patterns still work

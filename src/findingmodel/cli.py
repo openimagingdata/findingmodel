@@ -250,6 +250,7 @@ def update(directory: Path, index: Path | None) -> None:
                 settings.duckdb_index_path,
                 settings.remote_index_db_url,
                 settings.remote_index_db_hash,
+                manifest_key="finding_models",
             )
         )
 
@@ -381,6 +382,7 @@ def stats(index: Path | None) -> None:
                 settings.duckdb_index_path,
                 settings.remote_index_db_url,
                 settings.remote_index_db_hash,
+                manifest_key="finding_models",
             )
 
         console.print(f"[bold green]Index Statistics for [yellow]{db_path}\n")
@@ -472,6 +474,7 @@ def anatomic_build(source: str | None, output: Path | None, force: bool) -> None
                 settings.duckdb_anatomic_path,
                 settings.remote_anatomic_db_url,
                 settings.remote_anatomic_db_hash,
+                manifest_key="anatomic_locations",
             )
         )
 
@@ -589,6 +592,7 @@ def anatomic_stats(db_path: Path | None) -> None:
             settings.duckdb_anatomic_path,
             settings.remote_anatomic_db_url,
             settings.remote_anatomic_db_hash,
+            manifest_key="anatomic_locations",
         )
     )
 

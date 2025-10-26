@@ -216,6 +216,7 @@ class DuckDBIndex:
                 settings.duckdb_index_path,
                 settings.remote_index_db_url,
                 settings.remote_index_db_hash,
+                manifest_key="finding_models",
             )
         self.read_only = read_only
         self.conn: duckdb.DuckDBPyConnection | None = None

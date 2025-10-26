@@ -96,3 +96,6 @@ mcp.json
 # Development DuckDB databases (too large to commit)
 data/*.duckdb
 data/*.duckdb.wal
+
+# Temporary/scratch files
+tmp/

@@ -87,19 +87,19 @@ class FindingModelConfig(BaseSettings):
 
     # Optional remote DuckDB download URLs
     remote_anatomic_db_url: str | None = Field(
-        default="https://findingmodelsdata.t3.storage.dev/anatomic_locations_20251016.duckdb",
+        default=None,
         description="URL to download anatomic locations database",
     )
     remote_anatomic_db_hash: str | None = Field(
-        default="sha256:b69c9b072b3661241e858abb307c4eff7d5d074d27fdda61fb87b0efec0dd65b",
+        default=None,
         description="SHA256 hash for anatomic DB (e.g. 'sha256:abc...')",
     )
     remote_index_db_url: str | None = Field(
-        default="https://findingmodelsdata.t3.storage.dev/finding_models_20251017.duckdb",
+        default=None,
         description="URL to download finding models index database",
     )
     remote_index_db_hash: str | None = Field(
-        default="sha256:86e52f7cddfa015464f6b8f0947dd8c63d50d55b9e0376c6bdc15be66fcee25f",
+        default=None,
         description="SHA256 hash for index DB (e.g. 'sha256:def...')",
     )
     remote_manifest_url: str | None = Field(
@@ -128,7 +128,7 @@ def ensure_db_file(
     filename: str,
     remote_url: str | None,
     remote_hash: str | None,
-    manifest_key: str | None = None,
+    manifest_key: str,
 ) -> Path:
     """Download DB file to user data directory with manifest support.
 
@@ -136,21 +136,24 @@ def ensure_db_file(
 
     Priority:
         1. Use existing local file if present and hash matches (Pooch verifies this)
-        2. Try manifest fetch if manifest_key provided
-        3. Fall back to direct URL/hash
-        4. Error if all methods fail
+        2. Try manifest fetch (always attempted, manifest_key always provided)
+        3. Fall back to explicit environment config (remote_url/remote_hash) if not None
+        4. Error if manifest fails and no explicit environment config
 
     Args:
         filename: Database filename (e.g., 'anatomic_locations.duckdb')
-        remote_url: Optional direct URL to download from (fallback/backward compat)
+        remote_url: Optional direct URL to download from (explicit env config fallback)
         remote_hash: Optional hash for verification (e.g., 'sha256:abc...')
-        manifest_key: Optional key in manifest JSON (e.g., 'finding_models')
+        manifest_key: Key in manifest JSON databases section (e.g., 'finding_models')
 
     Returns:
         Path to the database file (may not exist if download not configured)
 
+    Raises:
+        ConfigurationError: If manifest fails and no explicit environment config provided
+
     Example:
-        # Prefer manifest, fall back to direct URL
+        # Prefer manifest, fall back to explicit env config
         db_path = ensure_db_file(
             "finding_models.duckdb",
             remote_url="https://example.com/db.duckdb",
@@ -164,24 +167,33 @@ def ensure_db_file(
     data_dir = Path(user_data_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
     db_path = data_dir / filename
 
-    # Try manifest first if key provided
-    url_to_use = remote_url
-    hash_to_use = remote_hash
+    # Always try manifest first (manifest_key always provided now)
+    url_to_use = None
+    hash_to_use = None
+    version = None
 
-    if manifest_key:
-        try:
-            manifest = fetch_manifest()
-            db_info = manifest.get(manifest_key)
-            if db_info:
-                url_to_use = db_info["url"]
-                hash_to_use = db_info["hash"]
-                version = db_info.get("version", "unknown")
-                logger.info(f"Using manifest version {version} for {manifest_key}")
-            else:
-                logger.warning(f"Manifest key '{manifest_key}' not found, falling back to direct URL")
-        except Exception as e:
-            logger.warning(f"Manifest fetch failed for '{manifest_key}', falling back to direct URL: {e}")
-            # Fall through to use direct URL/hash
+    try:
+        manifest = fetch_manifest()
+        db_info = manifest["databases"][manifest_key]
+        url_to_use = db_info["url"]
+        hash_to_use = db_info["hash"]
+        version = db_info.get("version")
+        version_str = version if version else "unknown"
+        logger.info(f"Using manifest version {version_str} for {manifest_key}")
+    except Exception as e:
+        # Manifest failed - check for explicit environment config
+        if remote_url is None or remote_hash is None:
+            raise ConfigurationError(
+                f"Cannot download {filename}: manifest fetch failed ({e}) "
+                f"and no explicit REMOTE_*_DB_URL/REMOTE_*_DB_HASH configured in environment. "
+                f"Either fix manifest connectivity or set explicit environment variables."
+            ) from e
+        # User explicitly configured URL/hash - use as fallback
+        logger.warning(
+            f"Manifest fetch failed ({e}), using explicit environment config: url={remote_url}, hash={remote_hash}"
+        )
+        url_to_use = remote_url
+        hash_to_use = remote_hash
 
     # Download using Pooch if URL/hash available
     if url_to_use and hash_to_use:
@@ -241,9 +253,10 @@ def fetch_manifest() -> dict[str, Any]:
     response = httpx.get(settings.remote_manifest_url, timeout=10.0)
     response.raise_for_status()
 
-    _manifest_cache = response.json()
-    logger.debug(f"Manifest cached with keys: {list(_manifest_cache.keys())}")
-    return _manifest_cache
+    manifest_data: dict[str, Any] = response.json()
+    _manifest_cache = manifest_data
+    logger.debug(f"Manifest cached with keys: {list(manifest_data.keys())}")
+    return manifest_data
 
 
 def clear_manifest_cache() -> None:

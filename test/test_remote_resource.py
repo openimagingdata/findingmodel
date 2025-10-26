@@ -25,7 +25,12 @@ class TestEnsureDbFileMocked:
                 # Mock pooch to return the existing file path
                 mock_pooch_retrieve.return_value = str(test_file)
 
-                result = ensure_db_file("test.duckdb", "http://example.com/test.duckdb", "sha256:abc123")
+                result = ensure_db_file(
+                    "test.duckdb",
+                    "http://example.com/test.duckdb",
+                    "sha256:abc123",
+                    manifest_key="test",
+                )
 
                 # Should call pooch to verify hash (even for existing files)
                 mock_pooch_retrieve.assert_called_once_with(
@@ -55,7 +60,12 @@ class TestEnsureDbFileMocked:
 
                 mock_pooch_retrieve.side_effect = create_file_and_return
 
-                result = ensure_db_file("test.duckdb", "http://example.com/test.duckdb", "sha256:abc123def456")
+                result = ensure_db_file(
+                    "test.duckdb",
+                    "http://example.com/test.duckdb",
+                    "sha256:abc123def456",
+                    manifest_key="test",
+                )
 
                 # Should call pooch with correct parameters
                 mock_pooch_retrieve.assert_called_once_with(
@@ -70,20 +80,28 @@ class TestEnsureDbFileMocked:
                 assert result.exists()
 
     def test_returns_path_when_no_url_configured(self, tmp_path: Path) -> None:
-        """Test that function returns path even when file doesn't exist and no URL configured."""
+        """Test that function raises error when manifest fails and no URL configured."""
         data_dir = tmp_path
 
-        with patch("findingmodel.config.user_data_dir") as mock_user_data_dir:
+        with (
+            patch("findingmodel.config.user_data_dir") as mock_user_data_dir,
+            patch("pooch.retrieve") as mock_pooch_retrieve,
+            patch("findingmodel.config.fetch_manifest", side_effect=Exception("Network error")),
+        ):
             mock_user_data_dir.return_value = str(data_dir)
-            with patch("pooch.retrieve") as mock_pooch_retrieve:
-                result = ensure_db_file("missing.duckdb", None, None)
+            # Should raise ConfigurationError when manifest fails and no fallback config
+            from findingmodel.config import ConfigurationError
 
-                # Should return path (even though file doesn't exist)
-                assert result == data_dir / "missing.duckdb"
-                assert not result.exists()  # File doesn't exist
+            with pytest.raises(ConfigurationError, match="manifest fetch failed"):
+                ensure_db_file(
+                    "missing.duckdb",
+                    None,
+                    None,
+                    manifest_key="test",
+                )
 
-                # Should not call pooch
-                mock_pooch_retrieve.assert_not_called()
+            # Should not call pooch
+            mock_pooch_retrieve.assert_not_called()
 
     def test_creates_parent_directory_before_download(self, tmp_path: Path) -> None:
         """Test that parent directory is created before download."""
@@ -101,37 +119,64 @@ class TestEnsureDbFileMocked:
 
                 mock_pooch_retrieve.side_effect = create_file_and_return
 
-                result = ensure_db_file("test.duckdb", "http://example.com/test.duckdb", "sha256:hash")
+                result = ensure_db_file(
+                    "test.duckdb",
+                    "http://example.com/test.duckdb",
+                    "sha256:hash",
+                    manifest_key="test",
+                )
 
                 # Verify directory exists and file was created
                 assert data_dir.exists()
                 assert result == downloaded_file
 
     def test_handles_only_url_without_hash(self, tmp_path: Path) -> None:
-        """Test that function doesn't download if only URL is provided without hash."""
+        """Test that function raises error when manifest fails and only URL provided without hash."""
         data_dir = tmp_path
 
-        with patch("findingmodel.config.user_data_dir") as mock_user_data_dir:
+        with (
+            patch("findingmodel.config.user_data_dir") as mock_user_data_dir,
+            patch("pooch.retrieve") as mock_pooch_retrieve,
+            patch("findingmodel.config.fetch_manifest", side_effect=Exception("Network error")),
+        ):
             mock_user_data_dir.return_value = str(data_dir)
-            with patch("pooch.retrieve") as mock_pooch_retrieve:
-                result = ensure_db_file("test.duckdb", "http://example.com/test.duckdb", None)
+            from findingmodel.config import ConfigurationError
 
-                # Should not download (both URL and hash required)
-                mock_pooch_retrieve.assert_not_called()
-                assert result == data_dir / "test.duckdb"
+            # Should raise ConfigurationError (hash required for fallback)
+            with pytest.raises(ConfigurationError, match="manifest fetch failed"):
+                ensure_db_file(
+                    "test.duckdb",
+                    "http://example.com/test.duckdb",
+                    None,
+                    manifest_key="test",
+                )
+
+            # Should not download (both URL and hash required)
+            mock_pooch_retrieve.assert_not_called()
 
     def test_handles_only_hash_without_url(self, tmp_path: Path) -> None:
-        """Test that function doesn't download if only hash is provided without URL."""
+        """Test that function raises error when manifest fails and only hash provided without URL."""
         data_dir = tmp_path
 
-        with patch("findingmodel.config.user_data_dir") as mock_user_data_dir:
+        with (
+            patch("findingmodel.config.user_data_dir") as mock_user_data_dir,
+            patch("pooch.retrieve") as mock_pooch_retrieve,
+            patch("findingmodel.config.fetch_manifest", side_effect=Exception("Network error")),
+        ):
             mock_user_data_dir.return_value = str(data_dir)
-            with patch("pooch.retrieve") as mock_pooch_retrieve:
-                result = ensure_db_file("test.duckdb", None, "sha256:abc123")
+            from findingmodel.config import ConfigurationError
 
-                # Should not download (both URL and hash required)
-                mock_pooch_retrieve.assert_not_called()
-                assert result == data_dir / "test.duckdb"
+            # Should raise ConfigurationError (URL required for fallback)
+            with pytest.raises(ConfigurationError, match="manifest fetch failed"):
+                ensure_db_file(
+                    "test.duckdb",
+                    None,
+                    "sha256:abc123",
+                    manifest_key="test",
+                )
+
+            # Should not download (both URL and hash required)
+            mock_pooch_retrieve.assert_not_called()
 
 
 @pytest.mark.callout
@@ -149,7 +194,12 @@ class TestEnsureDbFileRealDownload:
             mock_user_data_dir.return_value = str(data_dir)
 
             # First call - should download
-            result = ensure_db_file("findingmodels-test.duckdb", url, file_hash)
+            result = ensure_db_file(
+                "findingmodels-test.duckdb",
+                url,
+                file_hash,
+                manifest_key="test",
+            )
 
             # Should return valid path
             assert result.exists()
@@ -161,7 +211,12 @@ class TestEnsureDbFileRealDownload:
 
             # Second call - should reuse cached file without re-download
             original_mtime = result.stat().st_mtime
-            result2 = ensure_db_file("findingmodels-test.duckdb", url, file_hash)
+            result2 = ensure_db_file(
+                "findingmodels-test.duckdb",
+                url,
+                file_hash,
+                manifest_key="test",
+            )
 
             # Should return same file
             assert result2 == result
