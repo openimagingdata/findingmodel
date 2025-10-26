@@ -1,10 +1,14 @@
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
+import httpx
 import openai
 from platformdirs import user_data_dir
 from pydantic import BeforeValidator, Field, HttpUrl, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Module-level cache for manifest (cleared on process restart)
+_manifest_cache: dict[str, Any] | None = None
 
 
 class ConfigurationError(RuntimeError):
@@ -98,6 +102,10 @@ class FindingModelConfig(BaseSettings):
         default="sha256:86e52f7cddfa015464f6b8f0947dd8c63d50d55b9e0376c6bdc15be66fcee25f",
         description="SHA256 hash for index DB (e.g. 'sha256:def...')",
     )
+    remote_manifest_url: str | None = Field(
+        default="https://findingmodelsdata.t3.storage.dev/manifest.json",
+        description="URL to JSON manifest for database versions",
+    )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -116,18 +124,39 @@ settings = FindingModelConfig()
 openai.api_key = settings.openai_api_key.get_secret_value()
 
 
-def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | None) -> Path:
-    """Download DB file to user data directory if it doesn't exist and remote URL is configured.
+def ensure_db_file(
+    filename: str,
+    remote_url: str | None,
+    remote_hash: str | None,
+    manifest_key: str | None = None,
+) -> Path:
+    """Download DB file to user data directory with manifest support.
 
     Pooch will automatically re-download if the local file's hash doesn't match the expected hash.
 
+    Priority:
+        1. Use existing local file if present and hash matches (Pooch verifies this)
+        2. Try manifest fetch if manifest_key provided
+        3. Fall back to direct URL/hash
+        4. Error if all methods fail
+
     Args:
         filename: Database filename (e.g., 'anatomic_locations.duckdb')
-        remote_url: Optional URL to download from
+        remote_url: Optional direct URL to download from (fallback/backward compat)
         remote_hash: Optional hash for verification (e.g., 'sha256:abc...')
+        manifest_key: Optional key in manifest JSON (e.g., 'finding_models')
 
     Returns:
         Path to the database file (may not exist if download not configured)
+
+    Example:
+        # Prefer manifest, fall back to direct URL
+        db_path = ensure_db_file(
+            "finding_models.duckdb",
+            remote_url="https://example.com/db.duckdb",
+            remote_hash="sha256:abc123...",
+            manifest_key="finding_models"
+        )
     """
     from findingmodel import logger
 
@@ -135,7 +164,27 @@ def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | Non
     data_dir = Path(user_data_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
     db_path = data_dir / filename
 
-    if remote_url and remote_hash:
+    # Try manifest first if key provided
+    url_to_use = remote_url
+    hash_to_use = remote_hash
+
+    if manifest_key:
+        try:
+            manifest = fetch_manifest()
+            db_info = manifest.get(manifest_key)
+            if db_info:
+                url_to_use = db_info["url"]
+                hash_to_use = db_info["hash"]
+                version = db_info.get("version", "unknown")
+                logger.info(f"Using manifest version {version} for {manifest_key}")
+            else:
+                logger.warning(f"Manifest key '{manifest_key}' not found, falling back to direct URL")
+        except Exception as e:
+            logger.warning(f"Manifest fetch failed for '{manifest_key}', falling back to direct URL: {e}")
+            # Fall through to use direct URL/hash
+
+    # Download using Pooch if URL/hash available
+    if url_to_use and hash_to_use:
         import pooch
 
         # Pooch will check if file exists and verify hash
@@ -144,7 +193,7 @@ def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | Non
         data_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            downloaded = pooch.retrieve(url=remote_url, known_hash=remote_hash, path=data_dir, fname=filename)
+            downloaded = pooch.retrieve(url=url_to_use, known_hash=hash_to_use, path=data_dir, fname=filename)
             logger.info(f"Database file ready at {downloaded}")
             return Path(downloaded)
         except Exception as e:
@@ -157,4 +206,47 @@ def ensure_db_file(filename: str, remote_url: str | None, remote_hash: str | Non
         return db_path
 
     logger.debug(f"No remote URL configured for '{filename}', returning local path: {db_path}")
-    return db_path  # Return path even if doesn't exist (existing error handling will catch it)  # Return path even if doesn't exist (existing error handling will catch it)
+    return db_path  # Return path even if doesn't exist (existing error handling will catch it)
+
+
+def fetch_manifest() -> dict[str, Any]:
+    """Fetch and parse the remote manifest JSON with session caching.
+
+    Returns:
+        Parsed manifest with database version info
+
+    Raises:
+        ConfigurationError: If manifest URL not configured
+        httpx.HTTPError: If fetch fails
+
+    Example:
+        manifest = fetch_manifest()
+        db_info = manifest["finding_models"]
+        # {"version": "2025-01-24", "url": "...", "hash": "sha256:..."}
+    """
+    from findingmodel import logger
+
+    global _manifest_cache
+
+    # Return cached manifest if available
+    if _manifest_cache is not None:
+        logger.debug("Using cached manifest")
+        return _manifest_cache
+
+    settings = FindingModelConfig()
+    if not settings.remote_manifest_url:
+        raise ConfigurationError("Manifest URL not configured")
+
+    logger.info(f"Fetching manifest from {settings.remote_manifest_url}")
+    response = httpx.get(settings.remote_manifest_url, timeout=10.0)
+    response.raise_for_status()
+
+    _manifest_cache = response.json()
+    logger.debug(f"Manifest cached with keys: {list(_manifest_cache.keys())}")
+    return _manifest_cache
+
+
+def clear_manifest_cache() -> None:
+    """Clear the manifest cache (for testing)."""
+    global _manifest_cache
+    _manifest_cache = None

@@ -83,6 +83,7 @@ class _BatchPayload:
     model_people_rows: list[tuple[str, str, str, int]]
     organization_rows: list[tuple[str, str, str | None]]
     model_organization_rows: list[tuple[str, str, str, int]]
+    json_rows: list[tuple[str, str]]
     ids_to_delete: list[str]
 
 
@@ -96,6 +97,7 @@ class _RowData:
     model_people_rows: list[tuple[str, str, str, int]]
     organization_rows: list[tuple[str, str, str | None]]
     model_organization_rows: list[tuple[str, str, str, int]]
+    json_rows: list[tuple[str, str]]
 
 
 _SCHEMA_STATEMENTS: tuple[str, ...] = (
@@ -172,6 +174,12 @@ _SCHEMA_STATEMENTS: tuple[str, ...] = (
         oifm_id VARCHAR NOT NULL,
         tag VARCHAR NOT NULL,
         PRIMARY KEY (oifm_id, tag)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS finding_model_json (
+        oifm_id VARCHAR PRIMARY KEY,
+        model_json TEXT NOT NULL
     )
     """,
 )
@@ -262,6 +270,59 @@ class DuckDBIndex:
         if oifm_id is None:
             return None
         return self._fetch_index_entry(conn, oifm_id)
+
+    async def get_full(self, oifm_id: str) -> FindingModelFull:
+        """Get full FindingModelFull object by ID.
+
+        Args:
+            oifm_id: The OIFM ID to retrieve
+
+        Returns:
+            Full FindingModelFull object parsed from stored JSON
+
+        Raises:
+            KeyError: If model not found
+
+        Example:
+            >>> index = DuckDBIndex()
+            >>> await index.setup()
+            >>> model = await index.get_full("OIFM_RADLEX_000001")
+            >>> # Returns complete FindingModelFull with all attributes
+        """
+        conn = self._ensure_connection()
+        result = conn.execute("SELECT model_json FROM finding_model_json WHERE oifm_id = ?", [oifm_id]).fetchone()
+
+        if not result:
+            raise KeyError(f"Model not found: {oifm_id}")
+
+        json_text = result[0]
+        return FindingModelFull.model_validate_json(json_text)
+
+    async def get_full_batch(self, oifm_ids: list[str]) -> dict[str, FindingModelFull]:
+        """Get multiple full models efficiently.
+
+        Args:
+            oifm_ids: List of OIFM IDs to retrieve
+
+        Returns:
+            Dict mapping OIFM ID to FindingModelFull object. Only includes models that were found.
+
+        Example:
+            >>> index = DuckDBIndex()
+            >>> await index.setup()
+            >>> models = await index.get_full_batch(["OIFM_RADLEX_000001", "OIFM_CUSTOM_000042"])
+            >>> # Returns {oifm_id: FindingModelFull, ...}
+        """
+        if not oifm_ids:
+            return {}
+
+        conn = self._ensure_connection()
+        placeholders = ", ".join(["?"] * len(oifm_ids))
+        results = conn.execute(
+            f"SELECT oifm_id, model_json FROM finding_model_json WHERE oifm_id IN ({placeholders})", oifm_ids
+        ).fetchall()
+
+        return {oifm_id: FindingModelFull.model_validate_json(json_text) for oifm_id, json_text in results}
 
     async def count(self) -> int:
         """Return the number of finding models in the index."""
@@ -372,8 +433,14 @@ class DuckDBIndex:
             raise ValueError("Expect filename to end with '.fm.json'")
 
         file_hash = self._calculate_file_hash(file_path)
+
+        # Capture JSON text before parsing for storage in finding_model_json table
         if model is None:
-            model = FindingModelFull.model_validate_json(file_path.read_text())
+            json_text = file_path.read_text(encoding="utf-8")
+            model = FindingModelFull.model_validate_json(json_text)
+        else:
+            # Model was provided, serialize it to JSON text
+            json_text = model.model_dump_json(indent=2, exclude_none=True)
 
         existing_rows = conn.execute(
             """
@@ -444,6 +511,17 @@ class DuckDBIndex:
                     search_text,
                     embedding,
                 ),
+            )
+
+            # Store full JSON in separate table
+            conn.execute(
+                """
+                INSERT INTO finding_model_json (oifm_id, model_json)
+                VALUES (?, ?)
+                ON CONFLICT (oifm_id) DO UPDATE SET
+                    model_json = EXCLUDED.model_json
+                """,
+                (model.oifm_id, json_text),
             )
 
             self._upsert_contributors(conn, model)
@@ -545,6 +623,7 @@ class DuckDBIndex:
             model_people_rows=row_data.model_people_rows,
             organization_rows=row_data.organization_rows,
             model_organization_rows=row_data.model_organization_rows,
+            json_rows=row_data.json_rows,
             ids_to_delete=sorted(ids_to_delete_set),
         )
 
@@ -640,6 +719,7 @@ class DuckDBIndex:
                 model_people_rows=payload.model_people_rows,
                 organization_rows=payload.organization_rows,
                 model_organization_rows=payload.model_organization_rows,
+                json_rows=payload.json_rows,
                 ids_to_delete=[],
             )
             self._apply_batch_mutations(conn, no_delete_payload)
@@ -663,6 +743,7 @@ class DuckDBIndex:
         ]  # oifm_id is second element
         chunk_model_people_rows = [row for row in payload.model_people_rows if row[0] in chunk_oifm_ids]
         chunk_model_organization_rows = [row for row in payload.model_organization_rows if row[0] in chunk_oifm_ids]
+        chunk_json_rows = [row for row in payload.json_rows if row[0] in chunk_oifm_ids]
 
         # For people and organizations, we need to include all that are referenced
         # (even if they're not in this chunk, to avoid conflicts)
@@ -676,6 +757,7 @@ class DuckDBIndex:
             model_people_rows=chunk_model_people_rows,
             organization_rows=payload.organization_rows,  # Include all organizations
             model_organization_rows=chunk_model_organization_rows,
+            json_rows=chunk_json_rows,
             ids_to_delete=[],  # Only delete in first chunk
         )
 
@@ -686,15 +768,16 @@ class DuckDBIndex:
         updated_entries: Mapping[str, str],
         *,
         allow_duplicate_synonyms: bool = False,
-    ) -> tuple[list[tuple[FindingModelFull, str, str, str]], list[str]]:
-        metadata: list[tuple[FindingModelFull, str, str, str]] = []
+    ) -> tuple[list[tuple[FindingModelFull, str, str, str, str]], list[str]]:
+        metadata: list[tuple[FindingModelFull, str, str, str, str]] = []
         embedding_payloads: list[str] = []
 
         for filename in filenames_to_process:
             if filename not in files_by_name:
                 raise FileNotFoundError(f"File {filename} not found during directory ingestion")
             file_hash, file_path = files_by_name[filename]
-            model = FindingModelFull.model_validate_json(file_path.read_text())
+            json_text = file_path.read_text(encoding="utf-8")
+            model = FindingModelFull.model_validate_json(json_text)
             # Only validate new models (not updates of existing models)
             if filename not in updated_entries and not allow_duplicate_synonyms:
                 validation_errors = self._validate_model(model)
@@ -702,7 +785,7 @@ class DuckDBIndex:
                     joined = "; ".join(validation_errors)
                     raise ValueError(f"Model validation failed for {filename}: {joined}")
             search_text = self._build_search_text(model)
-            metadata.append((model, filename, file_hash, search_text))
+            metadata.append((model, filename, file_hash, search_text, json_text))
             embedding_payloads.append(self._build_embedding_text(model))
 
         return metadata, embedding_payloads
@@ -723,7 +806,7 @@ class DuckDBIndex:
 
     def _build_row_data(
         self,
-        metadata: Sequence[tuple[FindingModelFull, str, str, str]],
+        metadata: Sequence[tuple[FindingModelFull, str, str, str, str]],
         embeddings: Sequence[list[float]],
     ) -> _RowData:
         model_rows: list[tuple[object, ...]] = []
@@ -734,8 +817,9 @@ class DuckDBIndex:
         model_people_rows: list[tuple[str, str, str, int]] = []
         organization_rows_dict: dict[str, tuple[str, str, str | None]] = {}
         model_organization_rows: list[tuple[str, str, str, int]] = []
+        json_rows: list[tuple[str, str]] = []
 
-        for (model, filename, file_hash, search_text), embedding in zip(metadata, embeddings, strict=True):
+        for (model, filename, file_hash, search_text, json_text), embedding in zip(metadata, embeddings, strict=True):
             model_rows.append((
                 model.oifm_id,
                 normalize_name(model.name),
@@ -746,6 +830,7 @@ class DuckDBIndex:
                 search_text,
                 embedding,
             ))
+            json_rows.append((model.oifm_id, json_text))
 
             # Deduplicate to avoid PRIMARY KEY violations
             unique_synonyms = list(dict.fromkeys(model.synonyms or []))
@@ -800,6 +885,7 @@ class DuckDBIndex:
             model_people_rows=model_people_rows,
             organization_rows=list(organization_rows_dict.values()),
             model_organization_rows=model_organization_rows,
+            json_rows=json_rows,
         )
 
     def _apply_batch_mutations(self, conn: duckdb.DuckDBPyConnection, payload: _BatchPayload) -> None:
@@ -915,6 +1001,17 @@ class DuckDBIndex:
                 ON CONFLICT (oifm_id, organization_id, role) DO UPDATE SET display_order = EXCLUDED.display_order
                 """,
                 payload.model_organization_rows,
+            ),
+            (
+                "finding_model_json",
+                "upserted",
+                """
+                INSERT INTO finding_model_json (oifm_id, model_json)
+                VALUES (?, ?)
+                ON CONFLICT (oifm_id) DO UPDATE SET
+                    model_json = EXCLUDED.model_json
+                """,
+                payload.json_rows,
             ),
         ]
 
@@ -1555,7 +1652,7 @@ class DuckDBIndex:
         if not unique_ids:
             return
 
-        tables = ("model_people", "model_organizations", "synonyms", "attributes", "tags")
+        tables = ("model_people", "model_organizations", "synonyms", "attributes", "tags", "finding_model_json")
         placeholders = ", ".join("?" for _ in unique_ids)
         for table in tables:
             conn.execute(
