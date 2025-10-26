@@ -4,6 +4,7 @@ import inspect
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
 
 from findingmodel.config import settings
@@ -22,6 +23,10 @@ from findingmodel.tools.ontology_search import (
     BioOntologySearchResult,
     OntologySearchResult,
 )
+
+# Prevent accidental model requests in unit tests
+# Tests marked with @pytest.mark.callout can enable this as needed
+models.ALLOW_MODEL_REQUESTS = False
 
 # ==============================================================================
 # BioOntology Protocol & Client Tests
@@ -656,136 +661,34 @@ async def test_match_ontology_concepts_missing_api_key() -> None:
 
 @pytest.mark.callout
 @pytest.mark.asyncio
-async def test_bioontology_search_pneumonia() -> None:
-    """Integration test: search for pneumonia concepts."""
-    # Skip if no API key configured
+async def test_match_ontology_concepts_basic_wiring() -> None:
+    """Sanity check: Verify basic wiring with real API.
+
+    All comprehensive behavioral testing is in evals/ontology_match.py.
+    This test only verifies the tool can be called successfully.
+    """
+    # Skip if API key not configured
     if not getattr(settings, "bioontology_api_key", None):
         pytest.skip("BioOntology API key not configured")
 
-    async with BioOntologySearchClient() as client:
-        results = await client.search_bioontology(
-            query="pneumonia",
-            ontologies=["SNOMEDCT", "RADLEX"],
-            page_size=10,
-        )
+    # Enable model requests for this callout test
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
 
-        assert results.query == "pneumonia"
-        assert results.total_count > 0
-        assert len(results.results) > 0
+    try:
+        # Call with simplest valid input
+        result = await match_ontology_concepts(finding_name="pneumonia")
 
-        # Check first result has expected fields
-        first_result = results.results[0]
-        assert first_result.concept_id
-        assert first_result.ontology in ["SNOMEDCT", "RADLEX"]
-        assert first_result.pref_label
-        assert first_result.ui_link
+        # Assert only on structure, not behavior
+        assert result is not None
+        assert hasattr(result, "exact_matches")
+        assert hasattr(result, "should_include")
+        assert hasattr(result, "marginal_concepts")
+        assert isinstance(result.exact_matches, list)
+        assert isinstance(result.should_include, list)
+        assert isinstance(result.marginal_concepts, list)
 
-        # Check that we get results from both ontologies if available
-        ontologies_found = {r.ontology for r in results.results}
-        assert len(ontologies_found) > 0  # At least one ontology represented
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_bioontology_search_all_pages() -> None:
-    """Integration test: search with pagination."""
-    # Skip if no API key configured
-    if not getattr(settings, "bioontology_api_key", None):
-        pytest.skip("BioOntology API key not configured")
-
-    async with BioOntologySearchClient() as client:
-        results = await client.search_all_pages(
-            query="fracture",
-            ontologies=["SNOMEDCT"],
-            max_results=25,  # Get more than one page
-        )
-
-        assert len(results) <= 25
-        assert all(r.ontology == "SNOMEDCT" for r in results)
-        assert all(
-            "fracture" in r.pref_label.lower() or any("fracture" in s.lower() for s in r.synonyms) for r in results
-        )
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_bioontology_search_as_ontology_results() -> None:
-    """Integration test: test conversion to OntologySearchResult format."""
-    # Skip if no API key configured
-    if not getattr(settings, "bioontology_api_key", None):
-        pytest.skip("BioOntology API key not configured")
-
-    async with BioOntologySearchClient() as client:
-        results = await client.search_as_ontology_results(
-            query="hepatic metastasis",
-            ontologies=["SNOMEDCT", "RADLEX"],
-            max_results=10,
-        )
-
-        assert len(results) <= 10
-        # Check results are in OntologySearchResult format
-        if results:
-            first_result = results[0]
-            assert hasattr(first_result, "concept_id")
-            assert hasattr(first_result, "concept_text")
-            assert hasattr(first_result, "table_name")
-            assert hasattr(first_result, "score")
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_bioontology_semantic_type_filter() -> None:
-    """Integration test: test filtering by semantic type."""
-    # Skip if no API key configured
-    if not getattr(settings, "bioontology_api_key", None):
-        pytest.skip("BioOntology API key not configured")
-
-    async with BioOntologySearchClient() as client:
-        results = await client.search_bioontology(
-            query="liver",
-            ontologies=["SNOMEDCT"],
-            semantic_types=["T047"],  # Disease or syndrome
-            page_size=10,
-        )
-
-        # Results should be disease-related liver concepts, not anatomical
-        if results.results:
-            # Check that results are disease-related
-            for result in results.results[:5]:
-                assert (
-                    any(
-                        keyword in result.pref_label.lower()
-                        for keyword in ["disease", "disorder", "syndrome", "failure", "cirrhosis", "hepatitis"]
-                    )
-                    or "T047" in result.semantic_types
-                )
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_bioontology_integration() -> None:
-    """Integration test: Use real BioOntologySearchClient."""
-    # Skip if no BioOntology API key
-    if not getattr(settings, "bioontology_api_key", None):
-        pytest.skip("BioOntology API key not configured")
-
-    # Test with real search - use simplified API (no search_clients parameter)
-    result = await match_ontology_concepts(
-        finding_name="fracture",
-        finding_description="bone break",
-        max_exact_matches=3,
-        max_should_include=5,
-    )
-
-    # Verify we got results
-    assert result is not None
-    # At minimum, we should have some categorized results
-    total_results = len(result.exact_matches) + len(result.should_include) + len(result.marginal_concepts)
-    assert total_results > 0, "Should find some ontology concepts for fracture"
-
-    # Verify result contains OntologySearchResult objects with expected fields
-    for code in result.exact_matches:
-        assert hasattr(code, "concept_id")
-        assert hasattr(code, "concept_text")
-        assert hasattr(code, "score")
-        assert hasattr(code, "table_name")
+        # NO behavioral assertions - those belong in evals
+    finally:
+        # Restore original state
+        models.ALLOW_MODEL_REQUESTS = original

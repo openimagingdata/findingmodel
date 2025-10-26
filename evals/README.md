@@ -33,8 +33,12 @@ task evals
 
 ```bash
 task evals:model_editor
+task evals:similar_models
+task evals:ontology_match
+
 # Or directly:
 python -m evals.model_editor
+python -m evals.ontology_match
 ```
 
 ### From Python
@@ -144,6 +148,15 @@ Run evals when:
 - **model_editor** - AI-powered model editing (natural language and markdown)
   - 12 cases (successful edits, rejections, markdown edits)
   - 5 evaluators (ID preservation, attribute addition, change tracking, rejection accuracy, content preservation)
+
+- **similar_models** - Finding similar models via DuckDB vector search and AI analysis
+  - 23 cases (exact duplicates, semantic similarity, edge cases, performance)
+  - 6 evaluators (duplicate detection, ranking quality, precision@K, semantic similarity, exclusion, performance)
+
+- **ontology_match** - Matching findings to medical ontology concepts
+  - 22 cases (success, synonyms, edge cases, ranking, rejection, performance)
+  - 6 evaluators (concept match accuracy, ranking quality, backend consistency, synonym handling, error handling, performance)
+  - Requires BioOntology API key
 
 ## Learn More
 

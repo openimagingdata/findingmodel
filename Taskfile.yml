@@ -30,6 +30,7 @@ tasks:
       - echo "Running all agent evaluations..."
       - uv run python -m evals.model_editor
       - uv run python -m evals.similar_models
+      - uv run python -m evals.ontology_match
       # Future: add other agent evals here
     silent: true
 
@@ -45,6 +46,13 @@ tasks:
     cmds:
       - echo "Running similar_models evaluations..."
       - uv run python -m evals.similar_models
+    silent: true
+
+  evals:ontology_match:
+    desc: "Run ontology_match evaluation suite"
+    cmds:
+      - echo "Running ontology_match evaluations..."
+      - uv run python -m evals.ontology_match
     silent: true
 
   check:
