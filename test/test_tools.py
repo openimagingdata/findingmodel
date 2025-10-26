@@ -2,6 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from pydantic_ai import models
 
 import findingmodel.tools
 import findingmodel.tools.finding_description as finding_description
@@ -9,6 +10,10 @@ from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, logger
 from findingmodel.config import settings
 from findingmodel.finding_model import AttributeType, ChoiceAttribute, ChoiceAttributeIded
 from findingmodel.index_code import IndexCode
+
+# Prevent accidental model requests in unit tests
+# Tests marked with @pytest.mark.callout can enable this as needed
+models.ALLOW_MODEL_REQUESTS = False
 
 HAS_PERPLEXITY_API_KEY = bool(settings.perplexity_api_key.get_secret_value())
 
@@ -481,31 +486,39 @@ def test_find_similar_models_basic_functionality() -> None:
             raise
 
 
+# Comprehensive behavioral testing in evals/similar_models.py
+# This sanity check verifies basic wiring only
 @pytest.mark.callout
 @pytest.mark.asyncio
-async def test_find_similar_models_integration() -> None:
-    """Integration test for find_similar_models with real OpenAI API."""
+async def test_find_similar_models_basic_wiring() -> None:
+    """Sanity check: Verify basic wiring with real API.
+
+    All comprehensive behavioral testing is in evals/similar_models.py.
+    This test only verifies the tool can be called successfully.
+    """
     from findingmodel.tools import find_similar_models
     from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
 
-    # Test with a common medical finding
-    result = await find_similar_models(
-        finding_name="pneumothorax", description="Presence of air in the pleural space causing lung collapse"
-    )
+    # Skip if API key not configured
+    if not settings.openai_api_key:
+        pytest.skip("OPENAI_API_KEY not configured")
 
-    # Verify structure
+    # Skip if MongoDB not available
+    if not HAS_MONGODB:
+        pytest.skip("MongoDB not available")
+
+    # Call with simplest valid input
+    result = await find_similar_models(finding_name="pneumothorax", description="Presence of air in the pleural space")
+
+    # Assert only on structure, not behavior
     assert isinstance(result, SimilarModelAnalysis)
-
-    # Should have the required fields
     assert hasattr(result, "similar_models")
     assert hasattr(result, "recommendation")
     assert hasattr(result, "confidence")
-
-    # The result should be valid
     assert result.recommendation in ["edit_existing", "create_new"]
     assert 0.0 <= result.confidence <= 1.0
-    assert isinstance(result.similar_models, list)
 
+<<<<<<< HEAD
 
 @pytest.mark.callout
 @pytest.mark.asyncio
@@ -536,6 +549,7 @@ async def test_find_similar_models_edge_cases() -> None:
         finding_name=long_name, search_model=small_model, analysis_model=analysis_model
     )
     assert isinstance(result_long, SimilarModelAnalysis)
+    # NO behavioral assertions - those belong in evals
 
 
 def test_tools_import_failures() -> None:

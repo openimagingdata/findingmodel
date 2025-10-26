@@ -29,6 +29,7 @@ tasks:
     cmds:
       - echo "Running all agent evaluations..."
       - uv run python -m evals.model_editor
+      - uv run python -m evals.similar_models
       # Future: add other agent evals here
     silent: true
 
@@ -37,6 +38,13 @@ tasks:
     cmds:
       - echo "Running model_editor evaluations..."
       - uv run python -m evals.model_editor
+    silent: true
+
+  evals:similar_models:
+    desc: "Run similar_models evaluation suite"
+    cmds:
+      - echo "Running similar_models evaluations..."
+      - uv run python -m evals.similar_models
     silent: true
 
   check:
