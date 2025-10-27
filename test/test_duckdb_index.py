@@ -1680,3 +1680,387 @@ async def test_remove_entry_when_not_exists(index: DuckDBIndex) -> None:
     """Test removing an entry that doesn't exist returns False."""
     removed = await index.remove_entry("OIFM_NONEXISTENT_999999")
     assert removed is False
+
+
+# ============================================================================
+# Phase 2: Enhanced API Methods Tests
+# ============================================================================
+
+
+# ----------------------------------------------------------------------------
+# all() Method Tests
+# ----------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_all_pagination(session_populated_index: DuckDBIndex) -> None:
+    """Test that all() respects limit and offset."""
+    # Get first page
+    page1, total1 = await session_populated_index.all(limit=3, offset=0)
+    assert len(page1) == 3
+    assert total1 >= len(OIFM_IDS_IN_DEFS_DIR)
+
+    # Get second page
+    page2, total2 = await session_populated_index.all(limit=3, offset=3)
+    assert len(page2) <= 3  # May be fewer if total < 6
+    assert total2 == total1  # Total should be same
+
+    # Verify no overlap
+    page1_ids = {e.oifm_id for e in page1}
+    page2_ids = {e.oifm_id for e in page2}
+    assert page1_ids.isdisjoint(page2_ids)
+
+    # Verify offset beyond total returns empty list
+    page_beyond, total_beyond = await session_populated_index.all(limit=10, offset=total1)
+    assert len(page_beyond) == 0
+    assert total_beyond == total1
+
+
+@pytest.mark.asyncio
+async def test_all_sorting_all_fields(session_populated_index: DuckDBIndex) -> None:
+    """Test all valid fields for ordering (name, oifm_id, created_at, updated_at, slug_name)."""
+    # Test name sorting (ascending)
+    results_name_asc, _ = await session_populated_index.all(order_by="name", order_dir="asc", limit=100)
+    names_asc = [e.name for e in results_name_asc]
+    assert names_asc == sorted(names_asc, key=str.lower)
+
+    # Test name sorting (descending)
+    results_name_desc, _ = await session_populated_index.all(order_by="name", order_dir="desc", limit=100)
+    names_desc = [e.name for e in results_name_desc]
+    assert names_desc == sorted(names_desc, key=str.lower, reverse=True)
+
+    # Test oifm_id sorting
+    results_id, _ = await session_populated_index.all(order_by="oifm_id", order_dir="asc", limit=100)
+    ids = [e.oifm_id for e in results_id]
+    assert ids == sorted(ids)
+
+    # Test slug_name sorting
+    results_slug, _ = await session_populated_index.all(order_by="slug_name", order_dir="asc", limit=100)
+    slugs = [e.slug_name for e in results_slug]
+    assert slugs == sorted(slugs, key=str.lower)
+
+    # Test created_at sorting (all should have timestamps)
+    results_created, _ = await session_populated_index.all(order_by="created_at", order_dir="asc", limit=100)
+    assert all(e.created_at is not None for e in results_created)
+    created_times = [e.created_at for e in results_created if e.created_at is not None]
+    assert created_times == sorted(created_times)
+
+    # Test updated_at sorting
+    results_updated, _ = await session_populated_index.all(order_by="updated_at", order_dir="asc", limit=100)
+    assert all(e.updated_at is not None for e in results_updated)
+    updated_times = [e.updated_at for e in results_updated if e.updated_at is not None]
+    assert updated_times == sorted(updated_times)
+
+
+@pytest.mark.asyncio
+async def test_all_case_insensitive_sorting(session_populated_index: DuckDBIndex) -> None:
+    """Verify LOWER() works for name/slug_name."""
+    # Get results sorted by name
+    results, _ = await session_populated_index.all(order_by="name", order_dir="asc", limit=100)
+    names = [e.name for e in results]
+
+    # Verify case-insensitive sorting: "Abdominal" should come before "aortic"
+    # regardless of case
+    lower_names = [n.lower() for n in names]
+    assert lower_names == sorted(lower_names)
+
+    # Same for slug_name
+    results_slug, _ = await session_populated_index.all(order_by="slug_name", order_dir="asc", limit=100)
+    slugs = [e.slug_name for e in results_slug]
+    lower_slugs = [s.lower() for s in slugs]
+    assert lower_slugs == sorted(lower_slugs)
+
+
+@pytest.mark.asyncio
+async def test_all_invalid_order_by(session_populated_index: DuckDBIndex) -> None:
+    """Verify ValueError raised for invalid order_by."""
+    with pytest.raises(ValueError, match="Invalid order_by field"):
+        await session_populated_index.all(order_by="invalid_field")
+
+    with pytest.raises(ValueError, match="Invalid order_by field"):
+        await session_populated_index.all(order_by="description")  # Not a valid field
+
+    with pytest.raises(ValueError, match="Invalid order_by field"):
+        await session_populated_index.all(order_by="")
+
+
+@pytest.mark.asyncio
+async def test_all_invalid_order_dir(session_populated_index: DuckDBIndex) -> None:
+    """Verify ValueError raised for invalid order_dir."""
+    with pytest.raises(ValueError, match="Invalid order_dir"):
+        await session_populated_index.all(order_dir="invalid")  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid order_dir"):
+        await session_populated_index.all(order_dir="ASC")  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid order_dir"):
+        await session_populated_index.all(order_dir="")  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_all_empty_database(index: DuckDBIndex) -> None:
+    """Verify returns ([], 0) for empty database."""
+    results, total = await index.all()
+    assert results == []
+    assert total == 0
+
+
+@pytest.mark.asyncio
+async def test_all_single_page(session_populated_index: DuckDBIndex) -> None:
+    """Verify works with results < limit."""
+    # Get total count first
+    total_count = await session_populated_index.count()
+
+    # Request more than total
+    results, total = await session_populated_index.all(limit=total_count + 100, offset=0)
+    assert len(results) == total_count
+    assert total == total_count
+
+
+# ----------------------------------------------------------------------------
+# search_by_slug() Method Tests
+# ----------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_search_by_slug_exact_match(session_populated_index: DuckDBIndex) -> None:
+    """Verify exact match type finds only exact matches."""
+    # "abdominal_aortic_aneurysm" exists in test data
+    results, total = await session_populated_index.search_by_slug("abdominal aortic aneurysm", match_type="exact")
+    assert total == 1
+    assert len(results) == 1
+    assert results[0].slug_name == "abdominal_aortic_aneurysm"
+
+    # Partial match should not find anything with exact match type
+    results, total = await session_populated_index.search_by_slug("abdominal", match_type="exact")
+    assert total == 0
+    assert len(results) == 0
+
+
+@pytest.mark.asyncio
+async def test_search_by_slug_prefix_match(session_populated_index: DuckDBIndex) -> None:
+    """Verify prefix match type finds slug_name.startswith(pattern)."""
+    # Search for "aortic" - should find "aortic_dissection" and potentially others starting with "aortic"
+    results, total = await session_populated_index.search_by_slug("aortic", match_type="prefix")
+    assert total >= 1
+    assert len(results) >= 1
+    # All results should start with "aortic"
+    assert all(e.slug_name.startswith("aortic") for e in results)
+
+    # Find "abdominal" prefix
+    results, total = await session_populated_index.search_by_slug("abdominal", match_type="prefix")
+    assert total >= 1
+    assert all(e.slug_name.startswith("abdominal") for e in results)
+
+
+@pytest.mark.asyncio
+async def test_search_by_slug_contains_match(session_populated_index: DuckDBIndex) -> None:
+    """Verify contains match type finds slug_name.__contains__(pattern)."""
+    # Search for "aortic" - should find both "abdominal_aortic_aneurysm" and "aortic_dissection"
+    results, total = await session_populated_index.search_by_slug("aortic", match_type="contains")
+    assert total >= 2
+    assert len(results) >= 2
+    # All results should contain "aortic"
+    assert all("aortic" in e.slug_name for e in results)
+
+    # Search for "embolism"
+    results, total = await session_populated_index.search_by_slug("embolism", match_type="contains")
+    assert total >= 1
+    assert all("embolism" in e.slug_name for e in results)
+
+
+@pytest.mark.asyncio
+async def test_search_by_slug_relevance_ranking() -> None:
+    """Verify exact > prefix > contains, then alphabetical."""
+    # Add models with predictable slug patterns
+    # We'll use populated_index (not session) since we need to add entries
+    # Get a fresh index for this test
+    import tempfile
+
+    from findingmodel.finding_model import FindingModelFull, NumericAttributeIded
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = Path(tmp_dir)
+
+        # Create test index with mocked embeddings
+        import asyncio
+
+        from findingmodel import index as duckdb_index
+
+        async def fake_embedding(
+            text: str,
+            *,
+            client: object | None = None,
+            model: str | None = None,
+            dimensions: int | None = None,
+        ) -> list[float]:  # pragma: no cover - test helper
+            _ = (text, client, model)
+            target_dims = dimensions or settings.openai_embedding_dimensions
+            await asyncio.sleep(0)
+            hash_val = sum(ord(c) for c in text)
+            return [(hash_val % 100) / 100.0] * target_dims
+
+        # Temporarily patch embeddings
+        original_get_embedding = duckdb_index.get_embedding_for_duckdb  # type: ignore[attr-defined]
+        original_batch_embeddings = duckdb_index.batch_embeddings_for_duckdb  # type: ignore[attr-defined]
+
+        duckdb_index.get_embedding_for_duckdb = fake_embedding  # type: ignore[attr-defined]
+        duckdb_index.batch_embeddings_for_duckdb = lambda texts, client: asyncio.gather(  # type: ignore[attr-defined,assignment,misc]
+            *[fake_embedding(t, client=client) for t in texts]
+        )
+
+        try:
+            db_path = tmp_path / "relevance_test.duckdb"
+            test_index = DuckDBIndex(db_path, read_only=False)
+            await test_index.setup()
+
+            # Create models with slug names: "testmodel", "testmodel_prefix", "contains_testmodel"
+            # When searching for "testmodel", ranking should be: exact > prefix > contains
+            model1 = FindingModelFull(
+                oifm_id="OIFM_TEST_000001",
+                name="TestModel",  # slug: "testmodel" (5+ chars, normalized)
+                description="Test model for relevance ranking",
+                attributes=[
+                    NumericAttributeIded(
+                        oifma_id="OIFMA_TEST_000001", name="Size", minimum=1, maximum=10, unit="cm", required=False
+                    )
+                ],
+            )
+            model2 = FindingModelFull(
+                oifm_id="OIFM_TEST_000002",
+                name="TestModel Prefix",  # slug: "testmodel_prefix"
+                description="Test model with prefix match",
+                attributes=[
+                    NumericAttributeIded(
+                        oifma_id="OIFMA_TEST_000002", name="Size", minimum=1, maximum=10, unit="cm", required=False
+                    )
+                ],
+            )
+            model3 = FindingModelFull(
+                oifm_id="OIFM_TEST_000003",
+                name="Contains TestModel",  # slug: "contains_testmodel"
+                description="Test model with contains match",
+                attributes=[
+                    NumericAttributeIded(
+                        oifma_id="OIFMA_TEST_000003", name="Size", minimum=1, maximum=10, unit="cm", required=False
+                    )
+                ],
+            )
+
+            file1 = tmp_path / "test1.fm.json"
+            file2 = tmp_path / "test2.fm.json"
+            file3 = tmp_path / "test3.fm.json"
+
+            _write_model_file(file1, model1)
+            _write_model_file(file2, model2)
+            _write_model_file(file3, model3)
+
+            await test_index.add_or_update_entry_from_file(file1, model1)
+            await test_index.add_or_update_entry_from_file(file2, model2)
+            await test_index.add_or_update_entry_from_file(file3, model3)
+
+            # Search for "testmodel" - should rank exact > prefix > contains
+            results, total = await test_index.search_by_slug("testmodel", match_type="contains")
+            assert total == 3
+            assert len(results) == 3
+
+            # Verify ranking
+            assert results[0].slug_name == "testmodel"  # Exact match first
+            assert results[1].slug_name == "testmodel_prefix"  # Prefix match second
+            assert results[2].slug_name == "contains_testmodel"  # Contains match third
+
+            if test_index.conn is not None:
+                test_index.conn.close()
+
+        finally:
+            # Restore original functions
+            duckdb_index.get_embedding_for_duckdb = original_get_embedding  # type: ignore[attr-defined]
+            duckdb_index.batch_embeddings_for_duckdb = original_batch_embeddings  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_search_by_slug_pattern_normalization(session_populated_index: DuckDBIndex) -> None:
+    """Verify normalize_name() called on pattern."""
+    # Search with uppercase and spaces - should normalize to lowercase with underscores
+    results1, total1 = await session_populated_index.search_by_slug("Abdominal Aortic Aneurysm", match_type="exact")
+    results2, total2 = await session_populated_index.search_by_slug("abdominal aortic aneurysm", match_type="exact")
+
+    # Should return same results since pattern is normalized
+    assert total1 == total2
+    assert len(results1) == len(results2)
+    if results1:
+        assert results1[0].oifm_id == results2[0].oifm_id
+
+
+@pytest.mark.asyncio
+async def test_search_by_slug_pagination(session_populated_index: DuckDBIndex) -> None:
+    """Verify limit/offset work."""
+    # Search for common term "aortic" (appears in multiple models)
+    page1, total1 = await session_populated_index.search_by_slug("aortic", match_type="contains", limit=1, offset=0)
+    page2, total2 = await session_populated_index.search_by_slug("aortic", match_type="contains", limit=1, offset=1)
+
+    assert total1 == total2  # Total should be same
+    assert len(page1) <= 1
+    assert len(page2) <= 1
+
+    # Verify no overlap if both pages have results
+    if len(page1) > 0 and len(page2) > 0:
+        page1_ids = {e.oifm_id for e in page1}
+        page2_ids = {e.oifm_id for e in page2}
+        assert page1_ids.isdisjoint(page2_ids)
+
+
+@pytest.mark.asyncio
+async def test_search_by_slug_no_matches(session_populated_index: DuckDBIndex) -> None:
+    """Verify returns ([], 0) for no matches."""
+    results, total = await session_populated_index.search_by_slug("zzzznonexistentpatternzzz", match_type="contains")
+    assert results == []
+    assert total == 0
+
+
+# ----------------------------------------------------------------------------
+# count_search() Method Tests
+# ----------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_count_search_exact_match(session_populated_index: DuckDBIndex) -> None:
+    """Verify count with exact match type."""
+    # Count exact match for "abdominal_aortic_aneurysm"
+    count = await session_populated_index.count_search("abdominal aortic aneurysm", match_type="exact")
+    assert count == 1
+
+    # Count non-existent exact match
+    count = await session_populated_index.count_search("nonexistent", match_type="exact")
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_count_search_prefix_match(session_populated_index: DuckDBIndex) -> None:
+    """Verify count with prefix match type."""
+    # Count models with slug starting with "aortic"
+    count = await session_populated_index.count_search("aortic", match_type="prefix")
+    assert count >= 1
+
+    # Count models with slug starting with "abdominal"
+    count = await session_populated_index.count_search("abdominal", match_type="prefix")
+    assert count >= 1
+
+
+@pytest.mark.asyncio
+async def test_count_search_contains_match(session_populated_index: DuckDBIndex) -> None:
+    """Verify count with contains match type."""
+    # Count models containing "aortic"
+    count = await session_populated_index.count_search("aortic", match_type="contains")
+    assert count >= 2  # Should find both "abdominal_aortic_aneurysm" and "aortic_dissection"
+
+    # Count models containing "embolism"
+    count = await session_populated_index.count_search("embolism", match_type="contains")
+    assert count >= 1
+
+
+@pytest.mark.asyncio
+async def test_count_search_empty_database(index: DuckDBIndex) -> None:
+    """Verify returns 0 for empty database."""
+    count = await index.count_search("anything", match_type="contains")
+    assert count == 0

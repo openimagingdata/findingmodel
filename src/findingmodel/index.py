@@ -5,9 +5,11 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 from types import TracebackType
+from typing import Literal
 
 import duckdb
 from openai import AsyncOpenAI
@@ -53,7 +55,9 @@ class IndexEntry(BaseModel):
     synonyms: list[str] | None = None
     tags: list[str] | None = None
     contributors: list[str] | None = None
-    attributes: list[AttributeInfo] = Field(default_factory=list, min_length=1)
+    attributes: list[AttributeInfo] | None = Field(default=None, min_length=1)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def match(self, identifier: str) -> bool:
         """Check if the identifier matches the ID, name, or synonyms."""
@@ -416,6 +420,208 @@ class DuckDBIndex:
             """
         ).fetchall()
         return [Organization.model_validate({"code": row[0], "name": row[1], "url": row[2]}) for row in rows]
+
+    async def all(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        order_by: str = "name",
+        order_dir: Literal["asc", "desc"] = "asc",
+    ) -> tuple[list[IndexEntry], int]:
+        """Get all finding models with pagination.
+
+        Args:
+            limit: Maximum number of results to return
+            offset: Number of results to skip (for pagination)
+            order_by: Field to sort by ("name", "oifm_id", "created_at", "updated_at", "slug_name")
+            order_dir: Sort direction ("asc" or "desc")
+
+        Returns:
+            Tuple of (list of IndexEntry objects, total count)
+
+        Raises:
+            ValueError: If order_by field is invalid
+
+        Example:
+            # Get page 3 (items 41-60) sorted by name
+            models, total = index.all(limit=20, offset=40, order_by="name")
+            print(f"Showing {len(models)} of {total} total models")
+        """
+        # Validate order_by field
+        valid_fields = {"name", "oifm_id", "created_at", "updated_at", "slug_name"}
+        if order_by not in valid_fields:
+            raise ValueError(f"Invalid order_by field: {order_by}")
+
+        # Validate order_dir
+        if order_dir not in {"asc", "desc"}:
+            raise ValueError(f"Invalid order_dir: {order_dir}")
+
+        # Build order clause (use LOWER() for case-insensitive sorting on text fields)
+        order_clause = f"LOWER({order_by})" if order_by in {"name", "slug_name"} else order_by
+        order_clause = f"{order_clause} {order_dir.upper()}"
+
+        # Use helper to execute query (no WHERE clause for list all)
+        return self._execute_paginated_query(order_clause=order_clause, limit=limit, offset=offset)
+
+    async def search_by_slug(
+        self,
+        pattern: str,
+        limit: int = 100,
+        offset: int = 0,
+        match_type: Literal["exact", "prefix", "contains"] = "contains",
+    ) -> tuple[list[IndexEntry], int]:
+        """Search finding models by slug name pattern.
+
+        Args:
+            pattern: Search pattern (will be normalized via normalize_name)
+            limit: Maximum number of results to return
+            offset: Number of results to skip (for pagination)
+            match_type: How to match the pattern:
+                - "exact": Exact match on slug_name
+                - "prefix": slug_name starts with pattern
+                - "contains": slug_name contains pattern (default)
+
+        Returns:
+            Tuple of (list of matching IndexEntry objects, total count)
+
+        Example:
+            # User searches for "abscess" - find all models with "abscess" in slug
+            models, total = index.search_by_slug("abscess", limit=20, offset=0)
+            # Internally: WHERE slug_name LIKE '%abscess%' LIMIT 20 OFFSET 0
+        """
+        # Build WHERE clause using helper
+        where_clause, sql_pattern, normalized = self._build_slug_search_clause(pattern, match_type)
+
+        # Build ORDER BY clause for relevance ranking
+        order_clause = """
+            CASE
+                WHEN slug_name = ? THEN 0
+                WHEN slug_name LIKE ? THEN 1
+                ELSE 2
+            END,
+            LOWER(name)
+        """
+
+        # Use helper to execute query
+        return self._execute_paginated_query(
+            where_clause=where_clause,
+            where_params=[sql_pattern],
+            order_clause=order_clause,
+            order_params=[normalized, f"{normalized}%"],
+            limit=limit,
+            offset=offset,
+        )
+
+    async def count_search(self, pattern: str, match_type: Literal["exact", "prefix", "contains"] = "contains") -> int:
+        """Get count of finding models matching search pattern.
+
+        Args:
+            pattern: Search pattern (will be normalized)
+            match_type: How to match the pattern
+
+        Returns:
+            Number of matching finding models
+
+        Example:
+            count = index.count_search("abscess", match_type="contains")
+            print(f"Found {count} models matching 'abscess'")
+        """
+        # Build WHERE clause using helper
+        where_clause, sql_pattern, _ = self._build_slug_search_clause(pattern, match_type)
+
+        conn = self._ensure_connection()
+        result = conn.execute(f"SELECT COUNT(*) FROM finding_models WHERE {where_clause}", [sql_pattern]).fetchone()
+
+        return int(result[0]) if result else 0
+
+    def _build_slug_search_clause(
+        self, pattern: str, match_type: Literal["exact", "prefix", "contains"]
+    ) -> tuple[str, str, str]:
+        """Build WHERE clause and patterns for slug matching.
+
+        Args:
+            pattern: Search pattern (will be normalized)
+            match_type: How to match the pattern
+
+        Returns:
+            (where_clause, sql_pattern, normalized_pattern) tuple
+
+        Example:
+            where, sql_pat, norm = self._build_slug_search_clause("abscess", "contains")
+            # ("slug_name LIKE ?", "%abscess%", "abscess")
+        """
+        normalized = normalize_name(pattern)
+
+        if match_type == "exact":
+            return ("slug_name = ?", normalized, normalized)
+        elif match_type == "prefix":
+            return ("slug_name LIKE ?", f"{normalized}%", normalized)
+        else:  # contains
+            return ("slug_name LIKE ?", f"%{normalized}%", normalized)
+
+    def _execute_paginated_query(
+        self,
+        where_clause: str = "",
+        where_params: list[object] | None = None,
+        order_clause: str = "LOWER(name)",
+        order_params: list[object] | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[IndexEntry], int]:
+        """Execute paginated query with count and result fetching.
+
+        Shared by list() and search_by_slug() to eliminate duplication.
+
+        Args:
+            where_clause: SQL WHERE clause (without WHERE keyword)
+            where_params: Parameters for WHERE clause
+            order_clause: SQL ORDER BY clause (without ORDER BY keyword)
+            order_params: Parameters for ORDER BY clause (e.g., for CASE expressions)
+            limit: Maximum results to return
+            offset: Number of results to skip
+
+        Returns:
+            (list of IndexEntry objects, total count) tuple
+        """
+        where_params = where_params or []
+        order_params = order_params or []
+        where_sql = f"WHERE {where_clause}" if where_clause else ""
+
+        conn = self._ensure_connection()
+
+        # Get total count (only uses WHERE params)
+        count_result = conn.execute(f"SELECT COUNT(*) FROM finding_models {where_sql}", where_params).fetchone()
+        total = int(count_result[0]) if count_result else 0
+
+        # Get paginated results (uses WHERE + ORDER + pagination params)
+        results = conn.execute(
+            f"""
+            SELECT oifm_id, name, slug_name, filename, file_hash_sha256, description, created_at, updated_at
+            FROM finding_models
+            {where_sql}
+            ORDER BY {order_clause}
+            LIMIT ? OFFSET ?
+        """,
+            where_params + order_params + [limit, offset],
+        ).fetchall()
+
+        # Build IndexEntry objects (note: no synonyms, tags, contributors, or attributes for performance)
+        entries = [
+            IndexEntry(
+                oifm_id=row[0],
+                name=row[1],
+                slug_name=row[2],
+                filename=row[3],
+                file_hash_sha256=row[4],
+                description=row[5],
+                created_at=row[6],
+                updated_at=row[7],
+                attributes=None,  # Not fetched for list operations
+            )
+            for row in results
+        ]
+
+        return entries, total
 
     async def add_or_update_entry_from_file(
         self,
@@ -1213,6 +1419,7 @@ class DuckDBIndex:
         embeddings = await batch_embeddings_for_duckdb(queries, client=client)
 
         results: dict[str, list[IndexEntry]] = {}
+        query: str
         for query, embedding in zip(queries, embeddings, strict=True):
             # Check for exact match first
             exact_matches = self._search_exact(conn, query, tags=None)
@@ -1275,7 +1482,7 @@ class DuckDBIndex:
     def _fetch_index_entry(self, conn: duckdb.DuckDBPyConnection, oifm_id: str) -> IndexEntry | None:
         row = conn.execute(
             """
-            SELECT oifm_id, name, slug_name, filename, file_hash_sha256, description
+            SELECT oifm_id, name, slug_name, filename, file_hash_sha256, description, created_at, updated_at
             FROM finding_models
             WHERE oifm_id = ?
             """,
@@ -1313,10 +1520,12 @@ class DuckDBIndex:
             filename=row[3],
             file_hash_sha256=row[4],
             description=row[5],
+            created_at=row[6],
+            updated_at=row[7],
             synonyms=synonyms or None,
             tags=tags or None,
             contributors=contributors or None,
-            attributes=attributes,
+            attributes=attributes or None,
         )
 
     def _collect_contributors(self, conn: duckdb.DuckDBPyConnection, oifm_id: str) -> list[str]:

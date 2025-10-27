@@ -11,12 +11,12 @@
 ## Overview
 
 Enhance the DuckDB Index implementation with four major improvements:
-1. **Enhanced API Methods** - Add list/search/count methods requested by FindingModelForge
-2. **Manifest-Based Downloads** - Enable database updates without library releases
-3. **Self-Contained Databases** - Store full JSON models in DuckDB (separate table)
-4. **Local ID Generation** - Move OIFM ID generation from GitHub to Index (random, collision-checked)
+1. **✅ Enhanced API Methods** - Add all/search/count methods requested by FindingModelForge
+2. **✅ Manifest-Based Downloads** - Enable database updates without library releases
+3. **✅ Self-Contained Databases** - Store full JSON models in DuckDB (separate table)
+4. **⏸️ Local ID Generation** - Move OIFM ID generation from GitHub to Index (deferred to future release)
 
-These changes address real-world production needs from FindingModelForge and improve the overall developer experience.
+**Current Status**: Phases 1 and 2 completed and tested. These changes address real-world production needs from FindingModelForge and improve the overall developer experience.
 
 ## Key Architecture Decisions
 
@@ -70,6 +70,7 @@ This is a code smell indicating our API is incomplete for real-world UI needs.
 
 ### Phase 1: Foundation - Manifest Pattern & JSON Storage
 
+**Status**: ✅ COMPLETED
 **Priority**: Critical (blocks other phases)
 
 #### Task 1.1: Add httpx Dependency
@@ -92,8 +93,8 @@ dependencies = [
 - Similar API to requests
 
 **Acceptance Criteria**:
-- [ ] httpx added to dependencies
-- [ ] `uv sync` installs cleanly
+- [x] httpx added to dependencies
+- [x] `uv sync` installs cleanly
 
 ---
 
@@ -237,11 +238,11 @@ def clear_manifest_cache() -> None:
 ```
 
 **Acceptance Criteria**:
-- [ ] fetch_manifest() successfully fetches and parses JSON
-- [ ] Session caching prevents repeated network calls
-- [ ] clear_manifest_cache() works for testing
-- [ ] Proper error messages for network failures
-- [ ] Type hints throughout
+- [x] fetch_manifest() successfully fetches and parses JSON
+- [x] Session caching prevents repeated network calls
+- [x] clear_manifest_cache() works for testing
+- [x] Proper error messages for network failures
+- [x] Type hints throughout
 
 ---
 
@@ -320,11 +321,11 @@ def ensure_db_file(
 ```
 
 **Acceptance Criteria**:
-- [ ] Manifest lookup attempted first when manifest_key provided
-- [ ] Graceful fallback to direct URL/hash
-- [ ] Clear logging shows which method succeeded
-- [ ] Error message helpful when all methods fail
-- [ ] Backward compatible (manifest_key optional)
+- [x] Manifest lookup attempted first when manifest_key provided
+- [x] Graceful fallback to direct URL/hash
+- [x] Clear logging shows which method succeeded
+- [x] Error message helpful when all methods fail
+- [x] Manifest key now required (not optional) - manifest is primary source
 
 ---
 
@@ -388,11 +389,11 @@ def _create_schema(self) -> None:
 - **No JOIN needed** - simple primary key lookup
 
 **Acceptance Criteria**:
-- [ ] Schema creates both tables successfully
-- [ ] finding_model_json table accepts TEXT
-- [ ] Index on slug_name created
-- [ ] Can store/retrieve full JSON from separate table
-- [ ] Doesn't break existing tests
+- [x] Schema creates both tables successfully
+- [x] finding_model_json table accepts TEXT
+- [x] Index on slug_name created
+- [x] Can store/retrieve full JSON from separate table
+- [x] Doesn't break existing tests
 
 ---
 
@@ -447,11 +448,11 @@ def add_or_update_entry_from_file(self, json_file: Path) -> None:
 ```
 
 **Acceptance Criteria**:
-- [ ] JSON stored in separate table on insert
-- [ ] JSON updated in separate table on model update
-- [ ] Main table operations don't load JSON
-- [ ] All existing tests pass
-- [ ] No performance regression
+- [x] JSON stored in separate table on insert
+- [x] JSON updated in separate table on model update
+- [x] Main table operations don't load JSON
+- [x] All existing tests pass
+- [x] No performance regression
 
 ---
 
@@ -518,17 +519,20 @@ def get_full_batch(self, oifm_ids: list[str]) -> dict[str, FindingModelFull]:
 ```
 
 **Acceptance Criteria**:
-- [ ] get_full() returns correct FindingModelFull
-- [ ] Raises KeyError for missing models
-- [ ] get_full_batch() handles empty list
-- [ ] Batch method is more efficient than loop
-- [ ] Tests verify JSON roundtrip integrity
+- [x] get_full() returns correct FindingModelFull
+- [x] Raises KeyError for missing models
+- [x] get_full_batch() handles empty list
+- [x] Batch method is more efficient than loop
+- [x] Tests verify JSON roundtrip integrity
 
 ---
 
 ### Phase 2: Enhanced API Methods
 
+**Status**: ✅ COMPLETED
 **Priority**: High (unblocks FindingModelForge)
+
+**Note**: Method `list()` renamed to `all()` to avoid shadowing Python's built-in `list` type.
 
 #### Task 2.0: Implement Shared Helper Methods
 
@@ -629,31 +633,31 @@ def _execute_paginated_query(
 - `_build_slug_search_clause()` - eliminates duplicate pattern building
 - `_execute_paginated_query()` - eliminates duplicate COUNT + SELECT + IndexEntry building
 - Proper separation of WHERE params vs ORDER BY params
-- Used by list(), search_by_slug(), and indirectly by count_search()
+- Used by all(), search_by_slug(), and indirectly by count_search()
 
 **Acceptance Criteria**:
-- [ ] Both helper methods implemented
-- [ ] Proper parameter separation (where vs order)
-- [ ] No duplication in subsequent methods
-- [ ] Clear documentation of return types
+- [x] Both helper methods implemented
+- [x] Proper parameter separation (where vs order)
+- [x] No duplication in subsequent methods
+- [x] Clear documentation of return types
 
 ---
 
-#### Task 2.1: Implement list() Method
+#### Task 2.1: Implement all() Method
 
 **File**: `src/findingmodel/duckdb_index.py`
 
 Add paginated listing using `_execute_paginated_query()` helper:
 
 ```python
-def list(
+def all(
     self,
     limit: int = 100,
     offset: int = 0,
     order_by: str = "name",
     order_dir: Literal["asc", "desc"] = "asc"
 ) -> tuple[list[IndexEntry], int]:
-    """List finding models with pagination.
+    """Get all finding models with pagination.
 
     Args:
         limit: Maximum number of results to return
@@ -669,7 +673,7 @@ def list(
 
     Example:
         # Get page 3 (items 41-60) sorted by name
-        models, total = index.list(limit=20, offset=40, order_by="name")
+        models, total = index.all(limit=20, offset=40, order_by="name")
         print(f"Showing {len(models)} of {total} total models")
     """
     # Validate order_by field
@@ -685,7 +689,7 @@ def list(
     order_clause = f"LOWER({order_by})" if order_by in {"name", "slug_name"} else order_by
     order_clause = f"{order_clause} {order_dir.upper()}"
 
-    # Use helper to execute query (no WHERE clause for list all)
+    # Use helper to execute query (no WHERE clause for all)
     return self._execute_paginated_query(
         order_clause=order_clause,
         limit=limit,
@@ -696,13 +700,13 @@ def list(
 **Security Note**: order_by is validated against whitelist, not directly interpolated, to prevent SQL injection.
 
 **Acceptance Criteria**:
-- [ ] Returns correct paginated results
-- [ ] Total count accurate
-- [ ] Sorting works for all valid fields
-- [ ] Case-insensitive sorting for name/slug
-- [ ] Raises ValueError for invalid parameters
-- [ ] Works with empty database
-- [ ] Works with single page of results
+- [x] Returns correct paginated results
+- [x] Total count accurate
+- [x] Sorting works for all valid fields
+- [x] Case-insensitive sorting for name/slug
+- [x] Raises ValueError for invalid parameters
+- [x] Works with empty database
+- [x] Works with single page of results
 
 ---
 
@@ -764,13 +768,13 @@ def search_by_slug(
 ```
 
 **Acceptance Criteria**:
-- [ ] Exact match works correctly
-- [ ] Prefix match works correctly
-- [ ] Contains match works correctly
-- [ ] Results ranked by relevance (exact > prefix > contains)
-- [ ] Pattern normalized before matching
-- [ ] Pagination works correctly
-- [ ] Returns empty list for no matches
+- [x] Exact match works correctly
+- [x] Prefix match works correctly
+- [x] Contains match works correctly
+- [x] Results ranked by relevance (exact > prefix > contains)
+- [x] Pattern normalized before matching
+- [x] Pagination works correctly
+- [x] Returns empty list for no matches
 
 ---
 
@@ -826,15 +830,16 @@ def count_search(
 ```
 
 **Acceptance Criteria**:
-- [ ] count() returns correct total
-- [ ] count_search() works with all match types
-- [ ] Returns 0 for empty database
-- [ ] Efficient (doesn't fetch all rows)
+- [x] count() returns correct total (already existed, async)
+- [x] count_search() works with all match types
+- [x] Returns 0 for empty database
+- [x] Efficient (doesn't fetch all rows)
 
 ---
 
 ### Phase 3: ID Generation
 
+**Status**: ⏸️ NOT STARTED (deferred to future release)
 **Priority**: Medium (nice to have)
 
 **Purpose**: Replace GitHub-based ID registry with Index database queries. The DuckDB Index already contains all existing models and attributes, so it IS the authoritative registry of used IDs.
@@ -1068,6 +1073,7 @@ class DuckDBIndex:
 
 ### Phase 4: Testing
 
+**Status**: ✅ COMPLETED for Phases 1 & 2 (18 new tests added)
 **Priority**: Critical (quality gate)
 
 **Test Strategy**: Focus on testing our logic and integration sanity checks. We don't need to test DuckDB's internals, just ensure our code is wired up correctly. Local DB files make this much easier than MongoDB testing.
@@ -1144,6 +1150,7 @@ class DuckDBIndex:
 
 ### Phase 5: Documentation
 
+**Status**: ✅ COMPLETED for Phases 1 & 2 (README.md updated, .env.sample updated)
 **Priority**: High (required for adoption)
 
 **Approach**: Propose documentation with code snippets during implementation. Flesh out comprehensive docs after features are validated and working.

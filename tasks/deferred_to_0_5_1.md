@@ -352,3 +352,44 @@ duckdb_use_remote_access: bool = Field(
 - `src/findingmodel/index.py` - DuckDBIndex connection initialization
 - `src/findingmodel/config.py` - Configuration option
 - DuckDB httpfs extension documentation
+
+---
+
+## 4. Synchronous Index API Methods
+
+**Priority**: Low
+**Complexity**: Low
+**Deferred from**: v0.5.0 Phase 2
+
+### Description
+
+Add synchronous versions of async Index methods for simpler usage patterns when async/await is not needed.
+
+### Current Gap
+
+All Index API methods are async (count, all, search_by_slug, count_search) even though DuckDB operations are synchronous. This forces callers to use async/await syntax unnecessarily.
+
+### Proposed Solution
+
+Add synchronous versions with `_sync` suffix:
+```python
+def all_sync(...) -> tuple[list[IndexEntry], int]:
+    """Synchronous version of all()."""
+
+def search_by_slug_sync(...) -> tuple[list[IndexEntry], int]:
+    """Synchronous version of search_by_slug()."""
+
+def count_sync() -> int:
+    """Synchronous version of count()."""
+
+def count_search_sync(...) -> int:
+    """Synchronous version of count_search()."""
+```
+
+**Benefits**:
+- Simpler API for synchronous contexts (CLI, notebooks, simple scripts)
+- No async/await overhead when not needed
+- Maintains backward compatibility with existing async methods
+
+### Related Files
+- src/findingmodel/index.py

@@ -127,6 +127,45 @@ async def main():
 asyncio.run(main())
 ```
 
+### Listing and Filtering
+
+```python
+async def browse_models():
+    async with Index() as index:
+        # Get all models with pagination
+        models, total = await index.all(limit=20, offset=0, order_by="name", order_dir="asc")
+        print(f"Showing {len(models)} of {total} total models:")
+        for model in models:
+            print(f"  - {model.name} ({model.oifm_id})")
+
+        # Search by slug name pattern (exact match)
+        results, count = await index.search_by_slug("pneumothorax", match_type="exact")
+        print(f"\nExact matches: {count}")
+
+        # Search by slug name pattern (prefix match - starts with)
+        results, count = await index.search_by_slug("aortic", match_type="prefix", limit=10)
+        print(f"\nModels starting with 'aortic': {count}")
+        for result in results:
+            print(f"  - {result.name}")
+
+        # Search by slug name pattern (contains - default)
+        results, count = await index.search_by_slug("abscess", limit=10)
+        print(f"\nModels containing 'abscess': {count}")
+
+        # Count models matching a pattern
+        exact_count = await index.count_search("lung_nodule", match_type="exact")
+        contains_count = await index.count_search("lung", match_type="contains")
+        print(f"\nExact 'lung_nodule': {exact_count}")
+        print(f"Contains 'lung': {contains_count}")
+
+asyncio.run(browse_models())
+```
+
+**Available methods:**
+- `all(limit, offset, order_by, order_dir)` - Get paginated list of all models with sorting
+- `search_by_slug(pattern, match_type, limit, offset)` - Search by slug name with exact/prefix/contains matching
+- `count_search(pattern, match_type)` - Count models matching a slug name pattern
+
 ### Working with Contributors
 
 ```python
