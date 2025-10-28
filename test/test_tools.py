@@ -1,4 +1,3 @@
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -8,7 +7,7 @@ import findingmodel.tools
 import findingmodel.tools.finding_description as finding_description
 from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, logger
 from findingmodel.config import settings
-from findingmodel.finding_model import AttributeType, ChoiceAttribute, ChoiceAttributeIded
+from findingmodel.finding_model import AttributeType, ChoiceAttributeIded
 from findingmodel.index_code import IndexCode
 
 # Prevent accidental model requests in unit tests
@@ -313,104 +312,46 @@ async def test_add_details_to_info_integration() -> None:
 
 @pytest.mark.callout
 @pytest.mark.asyncio
-async def test_create_model_from_markdown_integration() -> None:
-    """Integration test for create_model_from_markdown with real OpenAI API."""
+async def test_create_model_from_markdown_basic_wiring() -> None:
+    """Sanity check: Verify basic wiring with real API.
+
+    All comprehensive behavioral testing is in evals/markdown_in.py.
+    This test only verifies the tool can be called successfully.
+    """
+    # Skip if no API key configured
+    if not settings.openai_api_key:
+        pytest.skip("OpenAI API key not configured")
+
     from findingmodel.finding_model import FindingModelBase
     from findingmodel.tools import create_info_from_name, create_model_from_markdown
 
-    # First create basic info
-    finding_info = await create_info_from_name("pneumothorax")
+    # Save and restore ALLOW_MODEL_REQUESTS state
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
 
-    # Define markdown outline
-    markdown_text = """
-    # Pneumothorax Attributes
-    
-    ## Size
-    - Small: Less than 2cm
-    - Moderate: 2-4cm  
-    - Large: Greater than 4cm
-    
-    ## Location
-    - Apical
-    - Basilar
-    - Complete
-    
-    ## Tension
-    - Present
-    - Absent
-    """
+    try:
+        # Create basic info
+        finding_info = await create_info_from_name("pneumothorax")
 
-    # Create model from markdown
-    model = await create_model_from_markdown(finding_info, markdown_text=markdown_text)
+        # Simple markdown outline
+        markdown_text = """
+        # Pneumothorax Attributes
 
-    assert isinstance(model, FindingModelBase)
-    # Compare names case-insensitively to account for LLM casing variability
-    assert model.name.strip().lower() == finding_info.name.strip().lower()
-    # AI may generate slightly different descriptions, so check that both contain key concepts
-    assert model.description is not None
-    assert finding_info.description is not None
-    # Both should mention pneumothorax and lung/pleural concepts
-    model_desc_lower = model.description.lower()
-    # info_desc_lower = finding_info.description.lower()
-    assert "pneumothorax" in model_desc_lower or "air" in model_desc_lower
-    assert "lung" in model_desc_lower or "pleural" in model_desc_lower
-    assert model.synonyms == finding_info.synonyms
+        ## Size
+        - Small
+        - Large
+        """
 
-    # Should have created attributes
-    assert len(model.attributes) >= 3  # Size, Location, Tension
+        # Create model from markdown
+        model = await create_model_from_markdown(finding_info, markdown_text=markdown_text)
 
-    # Check attribute names - use flexible matching for semantically equivalent terms
-    attr_names = [attr.name.lower() for attr in model.attributes]
-    assert any("size" in name for name in attr_names), f"Expected size-related attribute, got: {attr_names}"
-    assert any("location" in name for name in attr_names), f"Expected location-related attribute, got: {attr_names}"
-    assert any("tension" in name for name in attr_names), f"Expected tension-related attribute, got: {attr_names}"
-
-    # Check that choice attributes have values
-    for attr in model.attributes:
-        if attr.type.value == "choice":
-            assert isinstance(attr, ChoiceAttribute)
-            assert len(attr.values) > 0
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_create_model_from_markdown_file_integration(tmp_path: Path) -> None:
-    """Integration test for create_model_from_markdown using file input."""
-    from findingmodel.tools import create_info_from_name, create_model_from_markdown
-
-    # Create markdown file
-    markdown_content = """
-    # Heart Murmur Assessment
-    
-    ## Intensity
-    - Grade 1: Very faint
-    - Grade 2: Soft but audible
-    - Grade 3: Moderately loud
-    - Grade 4: Loud with thrill
-    
-    ## Timing
-    - Systolic
-    - Diastolic
-    - Continuous
-    """
-
-    markdown_file = tmp_path / "heart_murmur.md"
-    markdown_file.write_text(markdown_content)
-
-    # Create finding info
-    finding_info = await create_info_from_name("heart murmur")
-
-    # Create model from file
-    model = await create_model_from_markdown(finding_info, markdown_path=markdown_file)
-
-    # Compare names case-insensitively (AI might normalize case differently)
-    assert model.name.lower() == finding_info.name.lower()
-    assert len(model.attributes) >= 2  # Intensity, Timing
-
-    # Check for specific attributes
-    attr_names = [attr.name.lower() for attr in model.attributes]
-    assert "intensity" in attr_names
-    assert "timing" in attr_names
+        # Only structural assertions - no behavioral validation
+        assert isinstance(model, FindingModelBase)
+        assert hasattr(model, "name")
+        assert hasattr(model, "description")
+        assert hasattr(model, "attributes")
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
 
 
 @pytest.mark.callout

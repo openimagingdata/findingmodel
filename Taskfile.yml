@@ -32,6 +32,7 @@ tasks:
       - uv run python -m evals.similar_models
       - uv run python -m evals.ontology_match
       - uv run python -m evals.anatomic_search
+      - uv run python -m evals.markdown_in
       # Future: add other agent evals here
     silent: true
 
@@ -61,6 +62,13 @@ tasks:
     cmds:
       - echo "Running anatomic_search evaluations..."
       - uv run python -m evals.anatomic_search
+    silent: true
+
+  evals:markdown_in:
+    desc: "Run markdown_in evaluation suite"
+    cmds:
+      - echo "Running markdown_in evaluations..."
+      - uv run python -m evals.markdown_in
     silent: true
 
   check:

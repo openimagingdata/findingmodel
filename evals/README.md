@@ -35,10 +35,12 @@ task evals
 task evals:model_editor
 task evals:similar_models
 task evals:ontology_match
+task evals:markdown_in
 
 # Or directly:
 python -m evals.model_editor
 python -m evals.ontology_match
+python -m evals.markdown_in
 ```
 
 ### From Python
@@ -157,6 +159,11 @@ Run evals when:
   - 22 cases (success, synonyms, edge cases, ranking, rejection, performance)
   - 6 evaluators (concept match accuracy, ranking quality, backend consistency, synonym handling, error handling, performance)
   - Requires BioOntology API key
+
+- **markdown_in** - Parsing markdown text into finding model structure
+  - 18 cases (success, edge cases, error handling, complex structures)
+  - 6 evaluators (structural validity, attribute preservation, type correctness, error message quality, round-trip preservation, performance)
+  - Requires OpenAI API key
 
 ## Learn More
 
