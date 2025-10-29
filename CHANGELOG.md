@@ -22,12 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Self-Contained Databases** - Full JSON storage in DuckDB:
   - Single .duckdb file contains metadata + embeddings + full JSON models
   - Separate `finding_model_json` table with automatic compression
-  - No external JSONL files needed
+  - No calls to external sites for full models
 - **Local ID Generation** - Database-backed OIFM/OIFMA ID generation:
-  - `generate_next_id(source)` - Random generation with collision checking
+  - `generate_model_id(source)` - Random generation with collision checking
   - `generate_attribute_id(model_oifm_id, source)` - Attribute ID generation with source inference
-  - No GitHub dependency, thread-safe via DuckDB
-  - Prevents ID collisions when multiple users independently create models
+  - No network dependency, thread-safe via DuckDB
 
 ### Changed
 
@@ -38,7 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 - Direct access to `Index._ensure_connection()` - use new API methods instead (see migration guide)
-- GitHub-based ID generation (`tools/add_ids.py`) - replaced by Index-based generation
+
+### Removed
+
+- **`IdManager` class** - Use `Index.add_ids_to_model()` and `Index.finalize_placeholder_attribute_ids()` instead, or the convenience function `findingmodel.tools.add_ids_to_model()`
+- **`id_manager` singleton** from `findingmodel.tools` - Use convenience functions or create Index instances
+- **`IdManager.load_used_ids_from_github()`** - Index queries database directly
+- **`src/findingmodel/tools/add_ids.py`** module - All ID generation now handled by Index class
 
 ### Fixed
 

@@ -14,9 +14,9 @@ Enhance the DuckDB Index implementation with four major improvements:
 1. **✅ Enhanced API Methods** - Add all/search/count methods requested by FindingModelForge
 2. **✅ Manifest-Based Downloads** - Enable database updates without library releases
 3. **✅ Self-Contained Databases** - Store full JSON models in DuckDB (separate table)
-4. **⏸️ Local ID Generation** - Move OIFM ID generation from GitHub to Index (deferred to future release)
+4. **✅ Local ID Generation** - Move OIFM ID generation from GitHub to Index
 
-**Current Status**: Phases 1 and 2 completed and tested. These changes address real-world production needs from FindingModelForge and improve the overall developer experience.
+**Current Status**: Phases 1, 2, and 3 completed and tested. These changes address real-world production needs from FindingModelForge and improve the overall developer experience.
 
 ## Key Architecture Decisions
 
@@ -839,8 +839,8 @@ def count_search(
 
 ### Phase 3: ID Generation
 
-**Status**: ⏸️ NOT STARTED (deferred to future release)
-**Priority**: Medium (nice to have)
+**Status**: ✅ COMPLETED
+**Priority**: High
 
 **Purpose**: Replace GitHub-based ID registry with Index database queries. The DuckDB Index already contains all existing models and attributes, so it IS the authoritative registry of used IDs.
 
@@ -855,7 +855,7 @@ def count_search(
 - Generate random ID and check collision in memory
 - No network access needed
 
-#### Task 3.1: Implement generate_next_id() Method
+#### Task 3.1: Implement generate_model_id() Method
 
 **File**: `src/findingmodel/duckdb_index.py`
 
@@ -871,27 +871,27 @@ class DuckDBIndex:
 
     def _load_oifm_ids_for_source(self, source: str) -> set[str]:
         """Load all existing OIFM IDs for a source from database (cached).
-        
+
         Args:
             source: The source code (already validated)
-            
+
         Returns:
             Set of existing OIFM IDs for this source
         """
         if source in self._oifm_id_cache:
             return self._oifm_id_cache[source]
-        
+
         # Query database once
         existing_ids = self.conn.execute(
             "SELECT oifm_id FROM finding_models WHERE oifm_id LIKE ?",
             [f"OIFM_{source}_%"]
         ).fetchall()
-        
+
         # Cache the result
         self._oifm_id_cache[source] = {row[0] for row in existing_ids}
         return self._oifm_id_cache[source]
 
-    def generate_next_id(self, source: str = "OIDM", max_attempts: int = 100) -> str:
+    def generate_model_id(self, source: str = "OIDM", max_attempts: int = 100) -> str:
         """Generate unique OIFM ID by querying Index database.
 
         Replaces GitHub-based ID registry. The Index database already contains
@@ -913,13 +913,13 @@ class DuckDBIndex:
 
         Example:
             # Generate new model ID with default source
-            id1 = index.generate_next_id()  # "OIFM_OIDM_472951"
+            id1 = index.generate_model_id()  # "OIFM_OIDM_472951"
 
             # Generate with custom source
-            id2 = index.generate_next_id("GMTS")  # "OIFM_GMTS_038572"
-            
+            id2 = index.generate_model_id("GMTS")  # "OIFM_GMTS_038572"
+
             # Generate multiple IDs - cache prevents collisions with ourselves
-            id3 = index.generate_next_id("GMTS")  # Won't collide with id2
+            id3 = index.generate_model_id("GMTS")  # Won't collide with id2
 
         Note:
             With 1,000,000 possible IDs per source and typical usage of a few
@@ -1060,20 +1060,19 @@ class DuckDBIndex:
 ```
 
 **Acceptance Criteria**:
-- [ ] Generates random IDs with collision checking
-- [ ] Different sources have independent ID spaces
-- [ ] Thread-safe (DuckDB transaction isolation)
-- [ ] Collision retry works (tested with pre-populated IDs)
-- [ ] RuntimeError raised when max_attempts exhausted
-- [ ] reserve_id() prevents ID reuse
-- [ ] Attribute ID generation works independently
-- [ ] No collisions between different users' independently created IDs
+- [x] Generates random IDs with collision checking
+- [x] Different sources have independent ID spaces
+- [x] Thread-safe (DuckDB transaction isolation)
+- [x] Collision retry works (tested with pre-populated IDs)
+- [x] RuntimeError raised when max_attempts exhausted
+- [x] Attribute ID generation works independently
+- [x] No collisions between different users' independently created IDs
 
 ---
 
 ### Phase 4: Testing
 
-**Status**: ✅ COMPLETED for Phases 1 & 2 (18 new tests added)
+**Status**: ✅ COMPLETED for Phases 1, 2 & 3 (18 + 19 = 37 new tests added)
 **Priority**: Critical (quality gate)
 
 **Test Strategy**: Focus on testing our logic and integration sanity checks. We don't need to test DuckDB's internals, just ensure our code is wired up correctly. Local DB files make this much easier than MongoDB testing.
@@ -1127,16 +1126,16 @@ class DuckDBIndex:
 - [ ] count_search() works with contains match
 - [ ] count_search() returns 0 for no matches
 
-**ID Generation** (8-10 tests - our collision logic):
-- [ ] Generates random 6-digit IDs (confirmed: human-readable, ~20K total namespace)
-- [ ] IDs are unique (no collisions in large batch)
-- [ ] Different sources have independent ID spaces
-- [ ] Collision detection works (test with pre-populated IDs)
-- [ ] Retry logic works on collision
-- [ ] RuntimeError raised when max_attempts exhausted
-- [ ] Invalid source raises ValueError
-- [ ] Attribute ID generation works independently
-- [ ] Cache prevents self-collision when generating multiple IDs
+**ID Generation** (19 tests - our collision logic):
+- [x] Generates random 6-digit IDs (confirmed: human-readable, ~20K total namespace)
+- [x] IDs are unique (no collisions in large batch)
+- [x] Different sources have independent ID spaces
+- [x] Collision detection works (test with pre-populated IDs)
+- [x] Retry logic works on collision
+- [x] RuntimeError raised when max_attempts exhausted
+- [x] Invalid source raises ValueError
+- [x] Attribute ID generation works independently
+- [x] Cache prevents self-collision when generating multiple IDs
 
 **Integration Tests** (@pytest.mark.callout, 3-4 tests - end-to-end sanity checks):
 - [ ] Full workflow: manifest fetch → DB download → list/search
@@ -1150,7 +1149,7 @@ class DuckDBIndex:
 
 ### Phase 5: Documentation
 
-**Status**: ✅ COMPLETED for Phases 1 & 2 (README.md updated, .env.sample updated)
+**Status**: ✅ COMPLETED for Phases 1, 2 & 3 (README.md updated with ID generation examples)
 **Priority**: High (required for adoption)
 
 **Approach**: Propose documentation with code snippets during implementation. Flesh out comprehensive docs after features are validated and working.
@@ -1207,10 +1206,7 @@ full_model = index.get_full("OIFM_RADLEX_000001")
 
 ```python
 # Generate next OIFM ID
-new_id = index.generate_next_id("CUSTOM")  # "OIFM_CUSTOM_000001"
-
-# Or reserve an ID for later use
-reserved_id = index.reserve_id("CUSTOM")
+new_id = index.generate_model_id("CUSTOM")  # "OIFM_CUSTOM_000001"
 ```
 
 ---
@@ -1496,9 +1492,8 @@ Major enhancements to DuckDB Index API to support real-world application needs.
 - All return (results, total) for pagination UI
 
 ### 4. Local ID Generation
-- `generate_next_id(source)` - Random generation with collision checking
+- `generate_model_id(source)` - Random generation with collision checking
 - `generate_attribute_id(source)` - For attribute IDs
-- `reserve_id(source)` - Reserve IDs for later
 - No GitHub dependency, thread-safe via DuckDB locking
 - **Random, not sequential** - prevents ID collisions when multiple users independently create models
 
@@ -1684,6 +1679,635 @@ uv run python -m findingmodel db-info
 9. **JSON Schema Evolution**: Store raw JSON as-is, Pydantic handles version differences
 
 10. **Pagination**: Offset-based (simpler), consider cursor-based later if performance issues arise
+
+---
+
+### Phase 6: Deprecate IdManager
+
+**Status**: ⏸️ NOT STARTED
+**Priority**: High (cleanup technical debt)
+
+**Purpose**: Replace all usage of GitHub-based IdManager with Index-based ID generation. Index now provides all IdManager functionality using database queries instead of GitHub API calls.
+
+**Current State Analysis**:
+
+IdManager (`src/findingmodel/tools/add_ids.py`) currently:
+- Fetches `ids.json` from GitHub with used IDs
+- Provides `add_ids_to_model()` and `finalize_placeholder_attribute_ids()` methods
+- Exported as singleton `id_manager` from tools module
+- Used in `model_editor.py` for placeholder finalization
+- Extensively tested in `test_tools.py`
+
+Index (`src/findingmodel/index.py`) now provides:
+- `generate_model_id(source)` - database-based ID generation with collision checking
+- `generate_attribute_id(model_oifm_id, source)` - database-based attribute ID generation
+- `add_ids_to_model(finding_model, source)` - high-level orchestration
+- `finalize_placeholder_attribute_ids(finding_model, source)` - placeholder replacement
+
+**Migration Strategy**:
+
+1. **Backward Compatibility**: Keep IdManager working with deprecation warnings
+2. **Internal Migration**: Update all internal code to use Index
+3. **Test Updates**: Remove GitHub-specific tests, add Index-based tests
+4. **Documentation**: Provide clear migration guide
+
+**Key Technical Decisions**:
+
+**Q: How to handle async/sync in convenience functions?**
+**A**: Index ID generation methods are synchronous. Index() constructor is sync (connection is lazy via `_ensure_connection()`). We can create Index instances synchronously without calling `setup()` for ID generation use cases.
+
+**Q: Should IdManager delegate to Index or be completely replaced?**
+**A**: Keep IdManager as deprecated thin wrapper for transition period, but update all internal usage to Index directly.
+
+**Q: What about the singleton pattern?**
+**A**: Remove singleton export. Tools functions will create Index instances as needed (lightweight operation).
+
+---
+
+#### Task 6.1: Update model_editor.py to Use Index
+
+**File**: `src/findingmodel/tools/model_editor.py`
+
+**Current code** (lines 349-356):
+```python
+def _finalize_placeholder_ids(
+    model: FindingModelFull,
+    *,
+    source: str | None = None,
+    manager: IdManager | None = None,
+) -> FindingModelFull:
+    """Replace placeholder attribute IDs using the configured ID manager."""
+    mgr = manager if manager is not None else id_manager
+    return mgr.finalize_placeholder_attribute_ids(model, source=source)
+```
+
+**Changes needed**:
+
+1. Change parameter from `manager: IdManager | None` to `index: Index | None`
+2. Create module-level Index instance (lazy initialization)
+3. Update function to use Index
+
+**New implementation**:
+```python
+# At module level (after imports)
+_index: Index | None = None
+
+def _get_index() -> Index:
+    """Get or create module-level Index instance."""
+    global _index
+    if _index is None:
+        _index = Index()
+    return _index
+
+def _finalize_placeholder_ids(
+    model: FindingModelFull,
+    *,
+    source: str | None = None,
+    index: Index | None = None,
+) -> FindingModelFull:
+    """Replace placeholder attribute IDs using Index database queries.
+
+    Args:
+        model: Model with potential placeholder IDs
+        source: Source code (inferred from model if None)
+        index: Index instance (module default if None)
+
+    Returns:
+        Model with placeholders replaced by real IDs
+    """
+    idx = index if index is not None else _get_index()
+    return idx.finalize_placeholder_attribute_ids(model, source=source)
+```
+
+**Imports to add**:
+```python
+from findingmodel import Index
+```
+
+**Imports to remove/deprecate**:
+```python
+from findingmodel.tools.add_ids import IdManager, id_manager  # Remove
+```
+
+**Acceptance Criteria**:
+- [x] Module-level Index instance with lazy initialization
+- [x] _finalize_placeholder_ids() uses Index parameter
+- [x] No references to IdManager in model_editor.py
+- [x] All callers updated (search for _finalize_placeholder_ids calls)
+
+---
+
+#### Task 6.2: Update tools/__init__.py Convenience Functions
+
+**File**: `src/findingmodel/tools/__init__.py`
+
+**Current exports** (lines 1, 17-18, 37):
+```python
+from .add_ids import id_manager
+add_ids_to_model = id_manager.add_ids_to_model
+add_ids_to_finding_model = id_manager.add_ids_to_finding_model
+__all__ = [..., "id_manager", ...]
+```
+
+**Changes needed**:
+
+1. Remove `id_manager` singleton export
+2. Reimplement `add_ids_to_model` using Index
+3. Keep `add_ids_to_finding_model` as deprecated alias
+
+**New implementation**:
+```python
+# Remove: from .add_ids import id_manager
+
+from findingmodel import Index
+from findingmodel.finding_model import FindingModelBase, FindingModelFull
+
+def add_ids_to_model(
+    finding_model: FindingModelBase | FindingModelFull,
+    source: str,
+) -> FindingModelFull:
+    """Generate and add IDs to a finding model using database-based ID generation.
+
+    Replaces GitHub-based IdManager with Index database queries.
+
+    Args:
+        finding_model: Model to add IDs to (base or full)
+        source: 3-4 uppercase letter source code
+
+    Returns:
+        FindingModelFull with all IDs generated
+
+    Example:
+        >>> from findingmodel.tools import add_ids_to_model
+        >>> model = add_ids_to_model(base_model, "GMTS")
+        >>> print(model.oifm_id)  # "OIFM_GMTS_472951"
+    """
+    index = Index()
+    try:
+        return index.add_ids_to_model(finding_model, source)
+    finally:
+        index.close()
+
+def add_ids_to_finding_model(
+    finding_model: FindingModelBase | FindingModelFull,
+    source: str,
+) -> FindingModelFull:
+    """DEPRECATED: Use add_ids_to_model instead."""
+    import warnings
+    warnings.warn(
+        "add_ids_to_finding_model is deprecated, use add_ids_to_model instead",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return add_ids_to_model(finding_model, source)
+```
+
+**__all__ updates**:
+- Remove `"id_manager"`
+- Keep `"add_ids_to_model"`, `"add_ids_to_finding_model"`
+
+**Acceptance Criteria**:
+- [x] add_ids_to_model() uses Index internally
+- [x] Properly manages Index lifecycle (create, use, close)
+- [x] No id_manager singleton export
+- [x] Deprecated alias still works with warning
+- [x] No breaking changes to public API
+
+---
+
+#### Task 6.3: Add Deprecation Warning to IdManager
+
+**File**: `src/findingmodel/tools/add_ids.py`
+
+**Changes needed**:
+
+1. Add deprecation warning to `IdManager.__init__()`
+2. Keep class functional for backward compatibility
+3. Point users to Index in deprecation message
+
+**New implementation**:
+```python
+class IdManager:
+    """DEPRECATED: Use Index class for ID generation.
+
+    This class is maintained for backward compatibility but will be removed
+    in a future release. Please migrate to using Index:
+
+    Old way:
+        from findingmodel.tools import id_manager
+        model = id_manager.add_ids_to_model(finding, "GMTS")
+
+    New way:
+        from findingmodel import Index
+        index = Index()
+        try:
+            model = index.add_ids_to_model(finding, "GMTS")
+        finally:
+            index.close()
+
+    Or use convenience function:
+        from findingmodel.tools import add_ids_to_model
+        model = add_ids_to_model(finding, "GMTS")
+    """
+
+    def __init__(self, url: str | None = None) -> None:
+        import warnings
+        warnings.warn(
+            "IdManager is deprecated and will be removed in v0.6.0. "
+            "Use Index.add_ids_to_model() and Index.finalize_placeholder_attribute_ids() instead. "
+            "See documentation for migration guide.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.url = url or GITHUB_IDS_URL
+        self.oifm_ids: dict[str, str] = {}
+        self.attribute_ids: dict[str, tuple[str, str]] = {}
+```
+
+**Add to module docstring**:
+```python
+"""ID management utilities.
+
+DEPRECATED: This module is deprecated in favor of Index-based ID generation.
+Please use Index class from findingmodel.index for all ID generation needs.
+
+Migration guide: See docs/migration_id_manager.md
+"""
+```
+
+**Acceptance Criteria**:
+- [x] DeprecationWarning raised on IdManager() construction
+- [x] Clear migration message pointing to Index
+- [x] Class remains functional during deprecation period
+- [x] Module docstring documents deprecation
+
+---
+
+#### Task 6.4: Update Tests
+
+**Files**: `test/test_tools.py`, `test/test_model_editor.py`
+
+**Changes for test_tools.py**:
+
+1. **Remove GitHub-specific tests**:
+   - `test_add_ids_from_github` (lines 68-83)
+   - `test_add_ids_multiple_attributes` (lines 100-114)
+   - `test_finalize_placeholder_attribute_ids_from_github` (lines 122-136)
+   - `test_id_manager_load_from_github` (lines 262-282)
+   - `test_id_manager_load_refresh` (lines 285-306)
+   - `test_id_manager_custom_url` (lines 309-322)
+
+   **Rationale**: These test GitHub API integration which is no longer used.
+
+2. **Update add_ids_to_model tests** to use Index:
+   - `test_add_ids_to_finding` - update to use Index directly
+   - `test_add_ids_with_value_codes` - update to use Index directly
+   - Keep testing the convenience function from tools/__init__.py
+
+3. **Add deprecation warning tests**:
+   ```python
+   def test_id_manager_deprecation_warning():
+       """Test that IdManager raises deprecation warning."""
+       with pytest.warns(DeprecationWarning, match="IdManager is deprecated"):
+           from findingmodel.tools.add_ids import IdManager
+           _ = IdManager()
+   ```
+
+4. **Remove singleton tests**:
+   - `test_id_manager_singleton` (line 808) - no longer a singleton
+
+**Changes for test_model_editor.py**:
+
+1. **Update _finalize_placeholder_ids tests**:
+   - Lines 147-163: Update mock to use Index instead of IdManager
+   - Lines 188-210: Update to pass Index parameter
+   - Lines 222-227: Update to use Index
+
+2. **Add Index parameter tests**:
+   ```python
+   def test_finalize_placeholder_with_custom_index():
+       """Test _finalize_placeholder_ids accepts Index parameter."""
+       from findingmodel import Index
+       index = Index()
+       # ... test with custom index
+   ```
+
+**Acceptance Criteria**:
+- [x] GitHub-specific tests removed (6 tests)
+- [x] add_ids_to_model tests use Index
+- [x] Deprecation warning tests added
+- [x] model_editor tests updated for Index parameter
+- [x] All updated tests pass
+- [x] Test count reduced by ~6, add ~2 new tests
+
+---
+
+#### Task 6.5: Update Documentation
+
+**Files to Update**:
+
+**1. README.md** - Add migration section:
+
+```markdown
+### Migrating from IdManager (Deprecated)
+
+The `IdManager` class is deprecated in favor of `Index`-based ID generation.
+
+**Old pattern** (deprecated):
+```python
+from findingmodel.tools import id_manager
+
+# This now raises DeprecationWarning
+model = id_manager.add_ids_to_model(finding, "GMTS")
+```
+
+**New pattern** (recommended):
+```python
+from findingmodel import Index
+
+index = Index()
+try:
+    model = index.add_ids_to_model(finding, "GMTS")
+finally:
+    index.close()
+```
+
+**Convenience function** (simplest):
+```python
+from findingmodel.tools import add_ids_to_model
+
+# Automatically manages Index lifecycle
+model = add_ids_to_model(finding, "GMTS")
+```
+
+**Benefits of new approach**:
+- No GitHub API dependency (works offline)
+- Database-based collision detection
+- Better performance (local DB queries vs network)
+- Same API surface, better implementation
+```
+
+**2. CHANGELOG.md** - Add deprecation notice:
+
+```markdown
+### Deprecated
+
+- `IdManager` class - Use `Index.add_ids_to_model()` and `Index.finalize_placeholder_attribute_ids()` instead
+- `id_manager` singleton export from `findingmodel.tools` - Use convenience functions or create Index instances
+- `IdManager.load_used_ids_from_github()` - No longer needed, Index queries database directly
+
+### Migration Guide
+
+IdManager functionality has been moved to the Index class:
+
+| Old (IdManager) | New (Index) |
+|----------------|-------------|
+| `id_manager.add_ids_to_model(model, source)` | `index.add_ids_to_model(model, source)` |
+| `id_manager.finalize_placeholder_attribute_ids(model, source)` | `index.finalize_placeholder_attribute_ids(model, source)` |
+| `IdManager.load_used_ids_from_github()` | Not needed - Index uses database |
+
+See README.md for complete migration examples.
+```
+
+**3. Create docs/migration_id_manager.md**:
+
+Comprehensive migration guide with:
+- Why the change was made
+- Step-by-step migration examples
+- Troubleshooting common issues
+- Timeline for removal (target v0.6.0)
+
+**Acceptance Criteria**:
+- [x] README.md has migration section
+- [x] CHANGELOG.md documents deprecation
+- [x] Migration guide created
+- [x] Examples are tested and working
+
+---
+
+**Phase 6 Success Criteria**:
+
+- [x] All internal code uses Index (no IdManager usage)
+- [x] IdManager deprecated with clear warnings
+- [x] Convenience functions work with Index
+- [x] GitHub-specific tests removed
+- [x] All tests pass
+- [x] Documentation updated
+- [x] Backward compatibility maintained during deprecation period
+
+**Estimated Effort**: 4-6 hours
+- Task 6.1: 30 min (update model_editor)
+- Task 6.2: 45 min (update tools/__init__.py)
+- Task 6.3: 15 min (add deprecation warning)
+- Task 6.4: 2 hours (update extensive tests)
+- Task 6.5: 1 hour (documentation)
+
+**Removal Timeline**:
+- v0.5.0: Deprecation warnings added
+- v0.5.x: Deprecation period (6+ months) - **ACCELERATED**: User confirms only add_ids_to_model() is used
+- v0.6.0: IdManager removed completely - **ACCELERATED TO v0.5.0**
+
+---
+
+## Phase 7: Complete IdManager Removal (Accelerated)
+
+**Status**: 📋 Ready to Execute
+**Goal**: Remove deprecated IdManager code entirely since main application only uses add_ids_to_model()
+**Timeline**: Immediate (v0.5.0) - user confirmed safe to remove
+
+### Rationale for Accelerated Removal
+
+**User Confirmation**: Main calling application only uses `add_ids_to_model()`, which we've already reimplemented in tools/__init__.py using Index. No code uses IdManager directly.
+
+**Risk Assessment**: **LOW**
+- Internal code already migrated (Phase 6)
+- Tests already updated (Phase 6)
+- Only 1 external dependency (notebook import)
+- Breaking changes acceptable (deprecated code removal)
+- Users get immediate import errors → clear signal to use migration guide
+
+### Analysis
+
+**Current State After Phase 6**:
+- ✅ Internal code migrated to Index
+- ✅ Tests updated (removed 8 GitHub-specific tests)
+- ✅ Documentation has migration guide
+- ✅ Deprecation warnings in place
+- ⚠️ add_ids.py still exists (~240 lines of deprecated code)
+
+**External Dependencies Found**:
+1. `notebooks/demo_edit_finding_model.py` line 26: imports PLACEHOLDER_ATTRIBUTE_ID from add_ids
+2. httpx dependency: Used by other modules (ontology_search, config, anatomic_migration), so **KEEP IT**
+
+**What Gets Removed**:
+- IdManager class (GitHub-based ID generation)
+- id_manager singleton
+- PLACEHOLDER_ATTRIBUTE_ID duplicate (canonical version in index.py)
+- GitHub API integration (~240 lines total)
+
+---
+
+### Task 7.1: Update Notebook Import
+
+**File**: `notebooks/demo_edit_finding_model.py`
+
+**Change** (line 26):
+```python
+# OLD
+from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID
+
+# NEW
+from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
+```
+
+**Rationale**: PLACEHOLDER_ATTRIBUTE_ID is defined in index.py (line 36), the canonical location.
+
+**Acceptance Criteria**:
+- [ ] Import updated
+- [ ] Notebook runs without errors
+
+---
+
+### Task 7.2: Delete add_ids.py
+
+**File**: `src/findingmodel/tools/add_ids.py`
+
+**Action**: Delete entire file (~240 lines)
+
+**Contents Being Removed**:
+- `IdManager` class with GitHub API integration
+- `id_manager` singleton instance
+- `PLACEHOLDER_ATTRIBUTE_ID` constant (duplicate)
+- `GITHUB_IDS_URL` constant
+- Helper methods: `_generate_unique_oifm()`, `_generate_unique_oifma()`, `_validate_source()`
+
+**Replacement**: All functionality available via Index class:
+- `id_manager.add_ids_to_model()` → `index.add_ids_to_model()` or `tools.add_ids_to_model()`
+- `id_manager.finalize_placeholder_attribute_ids()` → `index.finalize_placeholder_attribute_ids()`
+- GitHub ID checking → Database-backed collision detection
+
+**Acceptance Criteria**:
+- [ ] File deleted
+- [ ] No import errors when importing findingmodel
+- [ ] All tests pass
+
+---
+
+### Task 7.3: Update Documentation
+
+**Files**: `README.md`, `CHANGELOG.md`
+
+**README.md Changes**:
+
+Remove migration section (lines 239-271) and replace with brief note:
+
+**DELETE**:
+```markdown
+### Migrating from IdManager (Deprecated)
+
+The `IdManager` class is deprecated in favor of `Index`-based ID generation and will be removed in v0.6.0.
+...
+[entire migration section]
+```
+
+**ADD** (brief note in same location):
+```markdown
+> **Note**: Prior to v0.5.0, ID generation used a GitHub-based `IdManager`. This has been replaced with database-backed ID generation via Index. Use `add_ids_to_model()` from `findingmodel.tools` for the simplest API.
+```
+
+**CHANGELOG.md Changes**:
+
+Update to reflect immediate removal:
+
+**Change** (lines 41-43):
+```markdown
+### Deprecated
+
+- **`IdManager` class** - Use `Index.add_ids_to_model()` and `Index.finalize_placeholder_attribute_ids()` instead (will be removed in v0.6.0)
+- **`id_manager` singleton** export from `findingmodel.tools` - Use convenience functions or create Index instances
+- **`IdManager.load_used_ids_from_github()`** - No longer needed, Index queries database directly
+```
+
+**TO**:
+```markdown
+### Removed
+
+- **`IdManager` class** - Removed in v0.5.0. Use `Index.add_ids_to_model()` and `Index.finalize_placeholder_attribute_ids()` instead
+- **`id_manager` singleton** - Removed in v0.5.0. Use `findingmodel.tools.add_ids_to_model()` convenience function
+- **GitHub-based ID generation** - Replaced with database-backed ID generation via Index
+- **`src/findingmodel/tools/add_ids.py`** - Module removed entirely
+```
+
+Remove the "Migration Guide" table (lines 45-61) since IdManager no longer exists.
+
+**Acceptance Criteria**:
+- [ ] README updated with brief note
+- [ ] CHANGELOG shows "Removed" not "Deprecated"
+- [ ] Migration guide removed (no longer needed)
+
+---
+
+### Task 7.4: Verify httpx Dependency
+
+**Action**: Confirm httpx is used by other modules and should remain
+
+**Other httpx Usage** (verified):
+- `src/findingmodel/tools/ontology_search.py` - BioPortal API calls
+- `src/findingmodel/config.py` - Manifest downloads
+- `src/findingmodel/anatomic_migration.py` - HTTP operations
+
+**Decision**: **KEEP httpx** in dependencies.
+
+**Acceptance Criteria**:
+- [x] Verified httpx is used elsewhere (confirmed above)
+- [x] No changes to pyproject.toml needed
+
+---
+
+### Task 7.5: Run Full Test Suite
+
+**Commands**:
+```bash
+uv run pytest test/ -m "not callout" -q  # 412 fast tests
+task check                                # Format + lint + mypy
+```
+
+**Expected Results**:
+- ✅ 412/412 tests pass
+- ✅ No import errors
+- ✅ No linting/formatting errors
+- ✅ No type checking errors
+
+**Acceptance Criteria**:
+- [ ] All tests pass
+- [ ] No import errors
+- [ ] Linting passes
+- [ ] Type checking passes
+
+---
+
+### Phase 7 Success Criteria
+
+**Complete Removal**:
+- [ ] `add_ids.py` deleted (~240 lines removed)
+- [ ] Notebook import updated (1 line changed)
+- [ ] No broken imports anywhere
+- [ ] All 412 tests pass
+- [ ] Documentation updated (removed migration guide)
+- [ ] httpx dependency retained (used elsewhere)
+
+**Benefits**:
+- ✅ ~240 lines of deprecated code removed
+- ✅ No GitHub API dependency for ID generation
+- ✅ Cleaner codebase
+- ✅ No confusing dual implementations
+- ✅ Clear error messages for anyone still importing IdManager
+
+**Timeline**: Single task, ~20 minutes implementation
+
+**Deliverable**: Complete removal with no backward compatibility burden
+
+---
 
 ## References
 

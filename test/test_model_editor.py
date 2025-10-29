@@ -4,9 +4,10 @@ import pytest
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
 
+from findingmodel import Index
 from findingmodel.finding_model import FindingModelFull
+from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel.tools import model_editor
-from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID, IdManager
 
 
 @pytest.fixture(autouse=True)
@@ -136,24 +137,8 @@ async def test_edit_model_natural_language_callout_real_api(real_model: FindingM
         models.ALLOW_MODEL_REQUESTS = original
 
 
-def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch) -> None:
-    counters: dict[str, int] = {}
-
-    def _fake_generate(src: str, existing: set[str]) -> str:
-        counters[src] = counters.get(src, 0) + 1
-        return f"OIFMA_{src}_{counters[src]:06d}"
-
-    monkeypatch.setattr(
-        IdManager,
-        "_generate_unique_oifma",
-        staticmethod(_fake_generate),
-    )
-    monkeypatch.setattr(
-        IdManager,
-        "load_used_ids_from_github",
-        lambda self, refresh_cache=False: None,
-    )
-
+def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull) -> None:
+    """Test that assign_real_attribute_ids infers source from model's OIFM ID."""
     base_data = real_model.model_dump()
     base_data["attributes"].append({
         "oifma_id": PLACEHOLDER_ATTRIBUTE_ID,
@@ -164,37 +149,22 @@ def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull, m
     })
     with_placeholder = FindingModelFull.model_validate(base_data)
 
-    manager = IdManager()
-    updated = model_editor.assign_real_attribute_ids(with_placeholder, manager=manager)
+    index = Index()
+    updated = model_editor.assign_real_attribute_ids(with_placeholder, index=index)
 
     attr = next(a for a in updated.attributes if a.name == "severity")
     assert getattr(attr, "type", None) == "choice"
     values = list(getattr(attr, "values", []))
+    # Should infer MSFT from model's OIFM_MSFT_932618
     assert attr.oifma_id.startswith("OIFMA_MSFT_")
     assert [v.value_code for v in values] == [f"{attr.oifma_id}.{i}" for i in range(3)]
     assert PLACEHOLDER_ATTRIBUTE_ID not in {a.oifma_id for a in updated.attributes}
 
 
 def test_assign_real_attribute_ids_uses_explicit_source(
-    real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+    real_model: FindingModelFull,
 ) -> None:
-    counters: dict[str, int] = {}
-
-    def _fake_generate(src: str, existing: set[str]) -> str:
-        counters[src] = counters.get(src, 0) + 1
-        return f"OIFMA_{src}_{counters[src]:06d}"
-
-    monkeypatch.setattr(
-        IdManager,
-        "_generate_unique_oifma",
-        staticmethod(_fake_generate),
-    )
-    monkeypatch.setattr(
-        IdManager,
-        "load_used_ids_from_github",
-        lambda self, refresh_cache=False: None,
-    )
-
+    """Test that assign_real_attribute_ids uses explicitly provided source code."""
     base_data = real_model.model_dump()
     base_data["attributes"].append({
         "oifma_id": PLACEHOLDER_ATTRIBUTE_ID,
@@ -205,24 +175,21 @@ def test_assign_real_attribute_ids_uses_explicit_source(
     })
     with_placeholder = FindingModelFull.model_validate(base_data)
 
-    manager = IdManager()
-    updated = model_editor.assign_real_attribute_ids(with_placeholder, source="abc", manager=manager)
+    index = Index()
+    updated = model_editor.assign_real_attribute_ids(with_placeholder, source="ABC", index=index)
 
     attr = next(a for a in updated.attributes if a.name == "pattern")
     assert getattr(attr, "type", None) == "choice"
     values = list(getattr(attr, "values", []))
+    # Should use explicit source ABC instead of inferring MSFT
     assert attr.oifma_id.startswith("OIFMA_ABC_")
     assert [v.value_code for v in values] == [f"{attr.oifma_id}.{i}" for i in range(2)]
 
 
 def test_assign_real_attribute_ids_no_placeholders_returns_same_object(
-    real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+    real_model: FindingModelFull,
 ) -> None:
-    monkeypatch.setattr(
-        IdManager,
-        "load_used_ids_from_github",
-        lambda self, refresh_cache=False: None,
-    )
-    manager = IdManager()
-    result = model_editor.assign_real_attribute_ids(real_model, manager=manager)
+    """Test that when no placeholders exist, the original model is returned unchanged."""
+    index = Index()
+    result = model_editor.assign_real_attribute_ids(real_model, index=index)
     assert result is real_model

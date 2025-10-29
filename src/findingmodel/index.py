@@ -19,7 +19,7 @@ from findingmodel import logger
 from findingmodel.common import normalize_name
 from findingmodel.config import settings
 from findingmodel.contributor import Organization, Person
-from findingmodel.finding_model import FindingModelFull
+from findingmodel.finding_model import FindingModelBase, FindingModelFull
 from findingmodel.tools.duckdb_utils import (
     batch_embeddings_for_duckdb,
     create_fts_index,
@@ -33,6 +33,7 @@ from findingmodel.tools.duckdb_utils import (
 )
 
 DEFAULT_CONTRIBUTOR_ROLE = "contributor"
+PLACEHOLDER_ATTRIBUTE_ID: str = "OIFMA_XXXX_000000"
 
 
 class AttributeInfo(BaseModel):
@@ -225,6 +226,8 @@ class DuckDBIndex:
         self.read_only = read_only
         self.conn: duckdb.DuckDBPyConnection | None = None
         self._openai_client: AsyncOpenAI | None = None
+        self._oifm_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
+        self._oifma_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
 
     async def setup(self) -> None:
         """Ensure the database exists, connection opened, and schema ready."""
@@ -1460,6 +1463,305 @@ class DuckDBIndex:
             results[query] = query_results
 
         return results
+
+    def _load_oifm_ids_for_source(self, source: str) -> set[str]:
+        """Load all existing OIFM IDs for a source from database (cached).
+
+        Results are cached per-instance to avoid repeated database queries.
+        Cache is updated when new IDs are generated to prevent self-collision.
+
+        Args:
+            source: The source code (already validated)
+
+        Returns:
+            Set of existing OIFM IDs for this source
+        """
+        if source in self._oifm_id_cache:
+            return self._oifm_id_cache[source]
+
+        conn = self._ensure_connection()
+        pattern = f"OIFM_{source}_%"
+        rows = conn.execute("SELECT oifm_id FROM finding_models WHERE oifm_id LIKE ?", [pattern]).fetchall()
+        ids = {row[0] for row in rows}
+        self._oifm_id_cache[source] = ids
+        logger.debug(f"Loaded {len(ids)} existing OIFM IDs for source {source}")
+        return ids
+
+    def _load_oifma_ids_for_source(self, source: str) -> set[str]:
+        """Load all existing OIFMA IDs for a source from database (cached).
+
+        Results are cached per-instance to avoid repeated database queries.
+        Cache is updated when new IDs are generated to prevent self-collision.
+
+        Args:
+            source: The source code (already validated)
+
+        Returns:
+            Set of existing OIFMA IDs for this source
+        """
+        if source in self._oifma_id_cache:
+            return self._oifma_id_cache[source]
+
+        conn = self._ensure_connection()
+        pattern = f"OIFMA_{source}_%"
+        rows = conn.execute("SELECT attribute_id FROM attributes WHERE attribute_id LIKE ?", [pattern]).fetchall()
+        ids = {row[0] for row in rows}
+        self._oifma_id_cache[source] = ids
+        logger.debug(f"Loaded {len(ids)} existing OIFMA IDs for source {source}")
+        return ids
+
+    def generate_model_id(self, source: str = "OIDM", max_attempts: int = 100) -> str:
+        """Generate unique OIFM ID by querying Index database.
+
+        Replaces GitHub-based ID registry. The Index database already contains
+        all existing models, so we query it to get used IDs and check collisions
+        in memory. The ID set is cached per source and updated as we generate
+        new IDs to avoid stepping on our own feet.
+
+        Args:
+            source: 3-4 uppercase letter code for originating organization
+                    (default: "OIDM" for Open Imaging Data Model)
+            max_attempts: Maximum collision retry attempts
+
+        Returns:
+            Unique OIFM ID in format: OIFM_{SOURCE}_{6_DIGITS}
+
+        Raises:
+            ValueError: If source is invalid
+            RuntimeError: If unable to generate unique ID after max_attempts
+
+        Example:
+            >>> index = DuckDBIndex(read_only=False)
+            >>> await index.setup()
+            >>> oifm_id = index.generate_model_id("GMTS")
+            >>> # Returns "OIFM_GMTS_123456"
+        """
+        # Validate and normalize source
+        source_upper = source.strip().upper()
+        if not (3 <= len(source_upper) <= 4 and source_upper.isalpha()):
+            raise ValueError(f"Source must be 3-4 uppercase letters, got: {source_upper}")
+
+        # Load existing IDs for source (cached)
+        from findingmodel.finding_model import _random_digits
+
+        existing_ids = self._load_oifm_ids_for_source(source_upper)
+
+        # Generate random ID with collision checking
+        for attempt in range(max_attempts):
+            candidate_id = f"OIFM_{source_upper}_{_random_digits(6)}"
+            if candidate_id not in existing_ids:
+                # Add to cache to prevent self-collision
+                existing_ids.add(candidate_id)
+                logger.debug(f"Generated new OIFM ID: {candidate_id} (attempt {attempt + 1})")
+                return candidate_id
+            logger.debug(f"Collision detected for {candidate_id}, retrying...")
+
+        raise RuntimeError(f"Unable to generate unique OIFM ID for source {source_upper} after {max_attempts} attempts")
+
+    def generate_attribute_id(
+        self,
+        model_oifm_id: str | None = None,
+        source: str | None = None,
+        max_attempts: int = 100,
+    ) -> str:
+        """Generate unique OIFMA ID by querying Index database.
+
+        Replaces GitHub-based ID registry. Attribute IDs (OIFMA) identify
+        individual attributes within finding models. Source can be inferred
+        from the parent model's OIFM ID or provided explicitly.
+
+        The ID set is cached per source and updated as we generate new IDs
+        to avoid stepping on our own feet when generating multiple IDs.
+
+        Args:
+            model_oifm_id: Parent model's OIFM ID (source will be inferred)
+            source: Explicit 3-4 uppercase letter source code (overrides inference)
+            max_attempts: Maximum collision retry attempts
+
+        Returns:
+            Unique OIFMA ID in format: OIFMA_{SOURCE}_{6_DIGITS}
+
+        Raises:
+            ValueError: If source is invalid or cannot be inferred
+            RuntimeError: If unable to generate unique ID after max_attempts
+
+        Note:
+            Value codes (OIFMA_XXX_NNNNNN.0, OIFMA_XXX_NNNNNN.1, etc.) are
+            automatically generated from attribute IDs by the model editor.
+            This method only generates the base attribute ID.
+
+        Example:
+            >>> index = DuckDBIndex(read_only=False)
+            >>> await index.setup()
+            >>> # Infer source from model
+            >>> oifma_id = index.generate_attribute_id(model_oifm_id="OIFM_GMTS_123456")
+            >>> # Returns "OIFMA_GMTS_234567"
+            >>> # Or use explicit source
+            >>> oifma_id = index.generate_attribute_id(source="GMTS")
+        """
+        # Determine source (explicit > infer from model_oifm_id > default "OIDM")
+        if source is not None:
+            resolved_source = source.strip().upper()
+        elif model_oifm_id is not None:
+            # Infer source from model_oifm_id: "OIFM_GMTS_123456" → "GMTS"
+            parts = model_oifm_id.split("_")
+            if len(parts) != 3 or parts[0] != "OIFM":
+                raise ValueError(f"Cannot infer source from invalid model ID: {model_oifm_id}")
+            resolved_source = parts[1]
+        else:
+            resolved_source = "OIDM"
+
+        # Validate resolved_source (3-4 uppercase letters)
+        if not (3 <= len(resolved_source) <= 4 and resolved_source.isalpha()):
+            raise ValueError(f"Source must be 3-4 uppercase letters, got: {resolved_source}")
+
+        # Load existing attribute IDs for source (cached)
+        from findingmodel.finding_model import _random_digits
+
+        existing_ids = self._load_oifma_ids_for_source(resolved_source)
+
+        # Generate random ID with collision checking
+        for attempt in range(max_attempts):
+            candidate_id = f"OIFMA_{resolved_source}_{_random_digits(6)}"
+            if candidate_id not in existing_ids:
+                # Add to cache to prevent self-collision
+                existing_ids.add(candidate_id)
+                logger.debug(f"Generated new OIFMA ID: {candidate_id} (attempt {attempt + 1})")
+                return candidate_id
+            logger.debug(f"Collision detected for {candidate_id}, retrying...")
+
+        raise RuntimeError(
+            f"Unable to generate unique OIFMA ID for source {resolved_source} after {max_attempts} attempts"
+        )
+
+    def add_ids_to_model(
+        self,
+        finding_model: FindingModelBase | FindingModelFull,
+        source: str,
+    ) -> FindingModelFull:
+        """Generate and add OIFM and OIFMA IDs to a finding model.
+
+        Takes a FindingModelBase (which may lack IDs) and generates:
+        - OIFM ID for the model if missing
+        - OIFMA ID for each attribute that lacks one
+
+        Args:
+            finding_model: The finding model to add IDs to (FindingModelBase or FindingModelFull)
+            source: 3-4 uppercase letter code for the originating organization
+
+        Returns:
+            FindingModelFull with all IDs populated
+
+        Example:
+            # Create model without IDs
+            base_model = FindingModelBase(
+                name="Pneumothorax",
+                description="Air in pleural space",
+                attributes=[...]
+            )
+
+            # Generate and add IDs
+            index = Index()
+            await index.setup()
+            full_model = index.add_ids_to_model(base_model, "GMTS")
+            print(full_model.oifm_id)  # "OIFM_GMTS_472951"
+        """
+        finding_model_dict = finding_model.model_dump()
+
+        # Generate OIFM ID if missing
+        if "oifm_id" not in finding_model_dict:
+            finding_model_dict["oifm_id"] = self.generate_model_id(source)
+            logger.debug(f"Generated OIFM ID: {finding_model_dict['oifm_id']}")
+
+        # Generate OIFMA IDs for attributes that lack them
+        for attribute in finding_model_dict.get("attributes", []):
+            if "oifma_id" not in attribute:
+                attribute["oifma_id"] = self.generate_attribute_id(
+                    model_oifm_id=finding_model_dict["oifm_id"], source=source
+                )
+                logger.debug(f"Generated OIFMA ID: {attribute['oifma_id']} for attribute {attribute.get('name')}")
+
+        logger.info(f"Added IDs to finding model {finding_model.name} from source {source}")
+        return FindingModelFull.model_validate(finding_model_dict)
+
+    def finalize_placeholder_attribute_ids(
+        self,
+        finding_model: FindingModelFull,
+        source: str | None = None,
+    ) -> FindingModelFull:
+        """Replace placeholder attribute IDs with generated IDs and renumber value codes.
+
+        Looks for attributes with ID "OIFMA_XXXX_000000" and replaces them with
+        unique generated IDs. Also renumbers value codes for choice attributes.
+
+        Args:
+            finding_model: Model containing attributes to update
+            source: Optional 3-4 uppercase code identifying the source organization.
+                    When omitted, the code is inferred from the model's OIFM ID.
+
+        Returns:
+            FindingModelFull with unique attribute IDs for all placeholders.
+            If no placeholders were present, the original model is returned unchanged.
+
+        Example:
+            # Model with placeholder IDs
+            model = FindingModelFull(
+                oifm_id="OIFM_GMTS_123456",
+                attributes=[
+                    {"name": "Size", "oifma_id": "OIFMA_XXXX_000000", ...},
+                    {"name": "Shape", "oifma_id": "OIFMA_GMTS_789012", ...}  # Keep this
+                ]
+            )
+
+            index = Index()
+            await index.setup()
+            updated = index.finalize_placeholder_attribute_ids(model)
+            # First attribute gets real ID, second unchanged
+        """
+        # Resolve source (explicit or infer from model ID)
+        if source:
+            resolved_source = source.strip().upper()
+            if not (3 <= len(resolved_source) <= 4 and resolved_source.isalpha()):
+                raise ValueError(f"Source must be 3-4 uppercase letters, got: {source}")
+        else:
+            # Infer from model OIFM ID
+            parts = finding_model.oifm_id.split("_")
+            if len(parts) != 3 or parts[0] != "OIFM":
+                raise ValueError(f"Cannot infer source from model ID: {finding_model.oifm_id}")
+            resolved_source = parts[1]
+
+        model_dict = finding_model.model_dump()
+
+        # Track existing IDs to prevent collisions when generating multiple new IDs
+        existing_ids: set[str] = set()
+        existing_ids.update(
+            attr.get("oifma_id")
+            for attr in model_dict.get("attributes", [])
+            if attr.get("oifma_id") and attr.get("oifma_id") != PLACEHOLDER_ATTRIBUTE_ID
+        )
+
+        updated = False
+
+        for attr in model_dict.get("attributes", []):
+            if attr.get("oifma_id") != PLACEHOLDER_ATTRIBUTE_ID:
+                continue
+
+            # Generate new unique ID
+            new_id = self.generate_attribute_id(model_oifm_id=finding_model.oifm_id, source=resolved_source)
+            attr["oifma_id"] = new_id
+            existing_ids.add(new_id)
+            updated = True
+            logger.debug(f"Replaced placeholder with {new_id} for attribute {attr.get('name')}")
+
+            # Renumber value codes for choice attributes
+            if attr.get("type") == "choice":
+                for idx, value in enumerate(attr.get("values", []) or []):
+                    value["value_code"] = f"{new_id}.{idx}"
+
+        if not updated:
+            return finding_model
+
+        return FindingModelFull.model_validate(model_dict)
 
     def _ensure_connection(self) -> duckdb.DuckDBPyConnection:
         if self.conn is None:

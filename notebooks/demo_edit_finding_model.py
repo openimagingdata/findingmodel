@@ -20,7 +20,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 
 from findingmodel.finding_model import FindingModelFull
-from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID
+from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel.tools.model_editor import (
     EditResult,
     assign_real_attribute_ids,

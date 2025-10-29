@@ -1,8 +1,6 @@
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
 
-import httpx
 import pytest
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
@@ -13,7 +11,6 @@ from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, logger
 from findingmodel.config import settings
 from findingmodel.finding_model import AttributeType, ChoiceAttribute, ChoiceAttributeIded
 from findingmodel.index_code import IndexCode
-from findingmodel.tools.add_ids import IdManager
 
 HAS_PERPLEXITY_API_KEY = bool(settings.perplexity_api_key.get_secret_value())
 
@@ -65,82 +62,6 @@ def test_add_ids_to_finding_model(base_model: FindingModelBase) -> None:
 
 
 IdsJsonType = dict[str, dict[str, str] | dict[str, tuple[str, str]]]
-
-
-def test_add_ids_with_empty_cache(base_model: FindingModelBase) -> None:
-    """Test adding IDs when cache is empty (first call)."""
-    mock_data: IdsJsonType = {"oifm_ids": {}, "attribute_ids": {}}
-
-    with patch("httpx.Client") as mock_client:
-        mock_response = MagicMock()
-        mock_response.json.return_value = mock_data
-        mock_response.raise_for_status.return_value = None
-        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-        # Clear the cache before testing
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
-
-        assert isinstance(updated_model, FindingModelFull)
-        assert updated_model.oifm_id is not None
-        assert updated_model.oifm_id.startswith("OIFM_")
-        assert "TEST" in updated_model.oifm_id
-
-        # Verify HTTP call was made
-        mock_client.return_value.__enter__.return_value.get.assert_called_once()
-
-
-def test_add_ids_with_populated_cache(base_model: FindingModelBase) -> None:
-    """Test adding IDs when cache already has data (avoids duplicate IDs)."""
-    existing_oifm_id = "OIFM_TEST_12345"
-    existing_attr_id = "OIFMA_TEST_67890"
-
-    mock_data = {
-        "oifm_ids": {existing_oifm_id: "Existing Model"},
-        "attribute_ids": {existing_attr_id: ("OIFM_TEST_12345", "existing_attr")},
-    }
-
-    with patch("httpx.Client") as mock_client:
-        mock_response = MagicMock()
-        mock_response.json.return_value = mock_data
-        mock_response.raise_for_status.return_value = None
-        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-        # Clear and populate cache
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
-
-        # Ensure new IDs don't conflict with existing ones
-        assert updated_model.oifm_id != existing_oifm_id
-        for attr in updated_model.attributes:
-            assert attr.oifma_id != existing_attr_id
-
-
-def test_add_ids_uses_cache_on_second_call(base_model: FindingModelBase) -> None:
-    """Test that second call uses cache and doesn't make HTTP request."""
-    mock_data: IdsJsonType = {"oifm_ids": {}, "attribute_ids": {}}
-
-    with patch("httpx.Client") as mock_client:
-        mock_response = MagicMock()
-        mock_response.json.return_value = mock_data
-        mock_response.raise_for_status.return_value = None
-        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-        # Clear cache first
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        # First call - should make HTTP request
-        findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
-        assert mock_client.return_value.__enter__.return_value.get.call_count == 1
-
-        # Second call - should use cache
-        findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
-        assert mock_client.return_value.__enter__.return_value.get.call_count == 1  # Still 1
 
 
 class _StubFindingInfoAgent:
@@ -226,101 +147,6 @@ async def test_create_info_from_name_preserves_name_without_logging(monkeypatch:
     assert result.name == "pneumothorax"
     assert result.synonyms == ["pneumothorax", "PTX"]
     assert not logged
-
-
-def test_add_ids_handles_http_timeout(base_model: FindingModelBase) -> None:
-    """Test that function handles HTTP timeout gracefully."""
-    with patch("httpx.Client") as mock_client:
-        mock_client.return_value.__enter__.return_value.get.side_effect = httpx.TimeoutException("Timeout")
-
-        # Clear cache
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        # Should still work with empty cache when HTTP fails
-        updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
-
-        assert isinstance(updated_model, FindingModelFull)
-        assert updated_model.oifm_id is not None
-
-
-def test_add_ids_handles_http_error(base_model: FindingModelBase) -> None:
-    """Test that function handles HTTP errors gracefully."""
-    with patch("httpx.Client") as mock_client:
-        mock_client.return_value.__enter__.return_value.get.side_effect = httpx.HTTPError("HTTP Error")
-
-        # Clear cache
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        # Should still work with empty cache when HTTP fails
-        updated_model = findingmodel.tools.add_ids_to_finding_model(base_model, source="TEST")
-
-        assert isinstance(updated_model, FindingModelFull)
-        assert updated_model.oifm_id is not None
-
-
-def test_add_ids_refresh_cache(base_model: FindingModelBase) -> None:
-    """Test forcing cache refresh."""
-    mock_data = {"oifm_ids": {"OIFM_REFRESH_TEST": "Test Model"}, "attribute_ids": {}}
-
-    with patch("httpx.Client") as mock_client:
-        mock_response = MagicMock()
-        mock_response.json.return_value = mock_data
-        mock_response.raise_for_status.return_value = None
-        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-        # Populate cache first
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.oifm_ids.update({"existing": "model"})
-        findingmodel.tools.id_manager.attribute_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.update({"existing": ("oifm", "attr")})
-
-        # Force refresh by calling load_used_ids_from_github with refresh_cache=True
-        findingmodel.tools.id_manager.load_used_ids_from_github(refresh_cache=True)
-        assert "OIFM_REFRESH_TEST" in findingmodel.tools.id_manager.oifm_ids
-
-
-def test_load_used_ids_from_github_directly() -> None:
-    """Test the load_used_ids_from_github function directly."""
-    mock_data = {
-        "oifm_ids": {"OIFM_TEST_123": "Test Model"},
-        "attribute_ids": {"OIFMA_TEST_456": ["OIFM_TEST_123", "test_attr"]},
-    }
-
-    with patch("httpx.Client") as mock_client:
-        mock_response = MagicMock()
-        mock_response.json.return_value = mock_data
-        mock_response.raise_for_status.return_value = None
-        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-        # Clear cache
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        findingmodel.tools.id_manager.load_used_ids_from_github(refresh_cache=True)
-
-        assert "OIFM_TEST_123" in findingmodel.tools.id_manager.oifm_ids
-        assert "OIFMA_TEST_456" in findingmodel.tools.id_manager.attribute_ids
-        assert findingmodel.tools.id_manager.attribute_ids["OIFMA_TEST_456"] == ("OIFM_TEST_123", "test_attr")
-
-
-def test_load_used_ids_with_custom_url() -> None:
-    """Test load_used_ids_from_github with custom URL."""
-    custom_url = "https://example.com/custom-ids.json"
-    mock_data: IdsJsonType = {"oifm_ids": {}, "attribute_ids": {}}
-
-    custom_id_manager = IdManager(url=custom_url)
-
-    with patch("httpx.Client") as mock_client:
-        mock_response = MagicMock()
-        mock_response.json.return_value = mock_data
-        mock_response.raise_for_status.return_value = None
-        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-        custom_id_manager.load_used_ids_from_github(refresh_cache=True)
-
-        mock_client.return_value.__enter__.return_value.get.assert_called_with(custom_url, timeout=5.0)
 
 
 def test_add_index_codes_to_finding_model(full_model: FindingModelFull) -> None:
@@ -733,68 +559,9 @@ async def test_find_similar_models_edge_cases() -> None:
     assert isinstance(result_long, SimilarModelAnalysis)
 
 
-# Network and API failure tests
-def test_add_ids_network_timeout_handling(base_model: FindingModelBase) -> None:
-    """Test ID generation when GitHub API is unreachable."""
-    with patch("httpx.Client") as mock_client:
-        # Simulate network timeout
-        mock_client.return_value.__enter__.return_value.get.side_effect = httpx.TimeoutException("Request timeout")
-
-        # Clear cache to force network call
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        # Should still generate IDs using fallback method
-        result = findingmodel.tools.add_ids_to_model(base_model, source="TEST")
-
-        assert isinstance(result, FindingModelFull)
-        assert result.oifm_id is not None
-        assert result.oifm_id.startswith("OIFM_")
-        assert "TEST" in result.oifm_id
-
-
-def test_add_ids_http_error_handling(base_model: FindingModelBase) -> None:
-    """Test ID generation when GitHub API returns HTTP error."""
-    with patch("httpx.Client") as mock_client:
-        # Simulate HTTP error
-        mock_client.return_value.__enter__.return_value.get.side_effect = httpx.HTTPStatusError(
-            "404 Not Found", request=MagicMock(), response=MagicMock()
-        )
-
-        # Clear cache to force network call
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        # Should still generate IDs using fallback method
-        result = findingmodel.tools.add_ids_to_model(base_model, source="TEST")
-
-        assert isinstance(result, FindingModelFull)
-        assert result.oifm_id is not None
-
-
-def test_add_ids_invalid_response_data(base_model: FindingModelBase) -> None:
-    """Test ID generation when GitHub API returns invalid data."""
-    with patch("httpx.Client") as mock_client:
-        # Mock response with invalid JSON structure
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"invalid": "structure"}  # Missing expected keys
-        mock_response.raise_for_status.return_value = None
-        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
-
-        # Clear cache to force network call
-        findingmodel.tools.id_manager.oifm_ids.clear()
-        findingmodel.tools.id_manager.attribute_ids.clear()
-
-        # This should raise an AssertionError due to invalid response structure
-        with pytest.raises(AssertionError):
-            findingmodel.tools.add_ids_to_model(base_model, source="TEST")
-
-
 def test_tools_import_failures() -> None:
     """Test graceful handling when optional dependencies are missing."""
     # This tests the robustness of the import system
-    # Most of these should succeed, but we test the error handling
-
     try:
         import findingmodel.tools.create_stub
 
@@ -802,21 +569,10 @@ def test_tools_import_failures() -> None:
     except ImportError:
         pytest.skip("create_stub module not available")
 
-    try:
-        import findingmodel.tools.add_ids
-
-        assert hasattr(findingmodel.tools.add_ids, "id_manager")
-    except ImportError:
-        pytest.skip("add_ids module not available")
-
 
 def test_concurrent_id_generation(base_model: FindingModelBase) -> None:
     """Test ID generation under concurrent access."""
     import concurrent.futures
-
-    # Clear cache
-    findingmodel.tools.id_manager.oifm_ids.clear()
-    findingmodel.tools.id_manager.attribute_ids.clear()
 
     def generate_ids(source_suffix: int) -> FindingModelFull:
         # Use valid 3-character source codes
