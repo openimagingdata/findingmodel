@@ -43,15 +43,6 @@ class FindingModelConfig(BaseSettings):
     perplexity_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
     perplexity_default_model: str = Field(default="sonar-pro")
 
-    # DEPRECATED: MongoDB is no longer the default index backend
-    # Use DuckDB instead (see duckdb_* settings below)
-    # To use MongoDB, install with: pip install findingmodel[mongodb]
-    # mongodb_uri: QuoteStrippedSecretStr = Field(default=SecretStr("mongodb://localhost:27017"))
-    # mongodb_db: str = Field(default="findingmodels")
-    # mongodb_index_collection_base: str = Field(default="index_entries")
-    # mongodb_organizations_collection_base: str = Field(default="organizations")
-    # mongodb_people_collection_base: str = Field(default="people")
-
     # BioOntology API
     bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
 

@@ -40,7 +40,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mongodb = ["motor>=3.7.1"]  # Deprecated, use DuckDB index instead
 
 [project.urls]
 Homepage = "https://github.com/openimagingdata/findingmodel"

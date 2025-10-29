@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`id_manager` singleton** from `findingmodel.tools` - Use convenience functions or create Index instances
 - **`IdManager.load_used_ids_from_github()`** - Index queries database directly
 - **`src/findingmodel/tools/add_ids.py`** module - All ID generation now handled by Index class
+- **MongoDB Index backend** - DuckDB is now the only Index implementation
+- **`MongoDBIndex` class** - Use `Index` (aliased to `DuckDBIndex`) instead
 
 ### Fixed
 

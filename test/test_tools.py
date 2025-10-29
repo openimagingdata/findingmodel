@@ -2,8 +2,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
 
 import findingmodel.tools
 import findingmodel.tools.finding_description as finding_description
@@ -13,22 +11,6 @@ from findingmodel.finding_model import AttributeType, ChoiceAttribute, ChoiceAtt
 from findingmodel.index_code import IndexCode
 
 HAS_PERPLEXITY_API_KEY = bool(settings.perplexity_api_key.get_secret_value())
-
-
-def _mongodb_available(uri: str) -> bool:
-    client: MongoClient | None = None  # type: ignore[type-arg]
-    try:
-        client = MongoClient(uri, serverSelectionTimeoutMS=1000, connectTimeoutMS=1000)
-        client.admin.command("ping")
-        return True
-    except (PyMongoError, OSError):
-        return False
-    finally:
-        if client is not None:
-            client.close()
-
-
-HAS_MONGODB = _mongodb_available("mongodb://localhost:27017")
 
 
 def test_create_stub(finding_info: FindingInfo) -> None:
@@ -469,7 +451,6 @@ async def test_ai_tools_error_handling() -> None:
 
 
 # Tests for find_similar_models function
-@pytest.mark.skipif(not HAS_MONGODB, reason="MongoDB not available for find_similar_models tests")
 def test_find_similar_models_basic_functionality() -> None:
     """Test basic functionality of find_similar_models without API calls."""
     from findingmodel.tools import find_similar_models
@@ -501,7 +482,6 @@ def test_find_similar_models_basic_functionality() -> None:
 
 
 @pytest.mark.callout
-@pytest.mark.skipif(not HAS_MONGODB, reason="MongoDB not available for find_similar_models tests")
 @pytest.mark.asyncio
 async def test_find_similar_models_integration() -> None:
     """Integration test for find_similar_models with real OpenAI API."""
@@ -528,7 +508,6 @@ async def test_find_similar_models_integration() -> None:
 
 
 @pytest.mark.callout
-@pytest.mark.skipif(not HAS_MONGODB, reason="MongoDB not available for find_similar_models tests")
 @pytest.mark.asyncio
 async def test_find_similar_models_edge_cases() -> None:
     """Test find_similar_models with edge cases."""

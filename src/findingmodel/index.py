@@ -2323,9 +2323,13 @@ class DuckDBIndex:
         return [(entry, score) for entry, score in paired]
 
 
+# Alias for backward compatibility
+Index = DuckDBIndex
+
 __all__ = [
     "AttributeInfo",
     "DuckDBIndex",
+    "Index",
     "IndexEntry",
     "IndexReturnType",
 ]

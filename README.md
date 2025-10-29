@@ -540,7 +540,7 @@ from findingmodel.tools import find_similar_models
 from findingmodel.index import Index
 
 async def check_for_similar_models():
-    # Initialize index (connects to MongoDB)
+    # Initialize index (DuckDB backend)
     index = Index()
     
     # Search for models similar to a proposed finding
