@@ -69,8 +69,7 @@ tests/
 All code goes in the existing `src/findingmodel/tools/` directory. No new submodules unless absolutely necessary.
 
 **Demo scripts:**
-- `notebooks/demo_edit_model_from_command.py`: Demonstrates natural language editing mode on a .fm.json file.
-- `notebooks/demo_edit_model_from_markdown.py`: Demonstrates markdown editing mode on a .fm.json file.
+- `scripts/edit_finding_model.py`: Demonstrates both natural language and markdown editing modes on a .fm.json file.
 
 ## Implementation Approach
 
@@ -80,7 +79,7 @@ All code goes in the existing `src/findingmodel/tools/` directory. No new submod
    - Only allows: add attribute, add values, edit descriptions (non-semantic), safe renames.
    - Uses existing ID manager for new IDs.
    - See contract: `contracts/natural_language_api.md`
-   - **Demo script**: `notebooks/demo_edit_model_from_command.py` — Loads a .fm.json file, applies a natural language command, and saves the result.
+   - **Demo script**: `scripts/edit_finding_model.py` — Loads a .fm.json file, applies a natural language command, and saves the result.
 
 2. **Markdown Editing**
    - Function: `export_model_for_editing(model: FindingModelFull) -> str`
@@ -88,7 +87,7 @@ All code goes in the existing `src/findingmodel/tools/` directory. No new submod
    - Function: `edit_model_markdown(model: FindingModelFull, edited_markdown: str) -> EditResult`
    - Compares the edited Markdown to the original, and applies changes to the model (attributes only).
    - See contract: `contracts/markdown_api.md`
-   - **Demo script**: `notebooks/demo_edit_model_from_markdown.py` — Loads a .fm.json file, exports/imports attributes as markdown, and saves the result.
+   - **Demo script**: `scripts/edit_finding_model.py` — Loads a .fm.json file, exports/imports attributes as markdown, and saves the result.
 
 ## Testing
 - Use pytest for all new functions

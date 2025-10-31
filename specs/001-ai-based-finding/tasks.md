@@ -36,14 +36,14 @@
 - Status: Implemented with agent factories and validation (source param removed, export function renamed)
 
 ### T006. Demo Script: Natural Language Editing ✅ COMPLETED
-- Create `notebooks/demo_edit_model_from_command.py` to demonstrate natural language editing
-- Path: `notebooks/demo_edit_model_from_command.py`
+- Create `scripts/edit_finding_model.py` to demonstrate natural language editing
+- Path: `scripts/edit_finding_model.py`
 - Depends on: T004
 - Status: Demo script created and updated to show rejections
 
 ### T007. Demo Script: Markdown Editing ✅ COMPLETED
-- Create `notebooks/demo_edit_model_from_markdown.py` to demonstrate markdown editing
-- Path: `notebooks/demo_edit_model_from_markdown.py`
+- Create `scripts/edit_finding_model.py` to demonstrate markdown editing
+- Path: `scripts/edit_finding_model.py`
 - Depends on: T005
 - Status: Demo script created with proper editable Markdown format and rejection display
 

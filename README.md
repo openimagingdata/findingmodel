@@ -50,7 +50,7 @@ $ python -m findingmodel --help
 
 For database maintainers, see [Database Management Guide](docs/database-management.md) for detailed information on building and updating databases.
 
-> **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `notebooks/demo_edit_finding_model.py`.
+> **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `scripts/edit_finding_model.py`.
 
 ## Models
 

@@ -63,11 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `anatomic_locations` field in `FindingModelFull` for specifying anatomic index codes
   - Two-agent AI search tool across anatomic_locations, RadLex, and SNOMED CT ontologies
   - CLI commands for building, validating, and viewing statistics on anatomic location databases
-  - Demo: `notebooks/demo_anatomic_location_search.py`
+  - Demo: `scripts/anatomic_location_search.py`
 - **Ontology Concept Search Tool**: High-performance medical concept search
   - Multi-backend support: DuckDB vector search and BioOntology.org REST API (requires `BIOONTOLOGY_API_KEY`)
   - Protocol-based architecture for pluggable search backends
-  - Demo: `notebooks/demo_ontology_concept_match.py`
+  - Demo: `scripts/ontology_concept_match.py`
 - **Finding Model Editor Tool**: AI-assisted interactive editor with markdown and natural language workflows
 - **Index API enhancements**:
   - `get_people()` method to retrieve all people from Index (sorted by name)

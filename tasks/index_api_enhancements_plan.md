@@ -2136,7 +2136,7 @@ Comprehensive migration guide with:
 - ⚠️ add_ids.py still exists (~240 lines of deprecated code)
 
 **External Dependencies Found**:
-1. `notebooks/demo_edit_finding_model.py` line 26: imports PLACEHOLDER_ATTRIBUTE_ID from add_ids
+1. `scripts/edit_finding_model.py` line 26: imports PLACEHOLDER_ATTRIBUTE_ID from add_ids
 2. httpx dependency: Used by other modules (ontology_search, config, anatomic_migration), so **KEEP IT**
 
 **What Gets Removed**:
@@ -2149,7 +2149,7 @@ Comprehensive migration guide with:
 
 ### Task 7.1: Update Notebook Import
 
-**File**: `notebooks/demo_edit_finding_model.py`
+**File**: `scripts/edit_finding_model.py`
 
 **Change** (line 26):
 ```python
