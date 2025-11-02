@@ -1,14 +1,26 @@
 # Agent Evaluation Best Practices - 2025
 
+**Last Updated:** 2025-10-29 (Updated for evaluator architecture refactoring)
+
 ## Framework: Pydantic AI Evals
 
 Use [Pydantic AI Evals](https://ai.pydantic.dev/evals/) for all agent evaluation suites. It provides type-safe, observable evaluation of non-deterministic functions.
+
+## Evaluator Architecture
+
+See `.serena/memories/evaluator_architecture_2025.md` for complete guidance on where evaluators live and when to use built-in vs. custom evaluators.
+
+**Quick Summary:**
+1. **Prefer Pydantic Evals built-ins** (EqualsExpected, Contains, IsInstance, LLMJudge)
+2. **Keep evaluators inline** in eval scripts (agent-specific, < 20 lines, single-use)
+3. **Extract to `src/findingmodel/tools/evaluators.py`** ONLY if truly reusable (used 2+ times AND complex)
 
 ## Core Pattern
 
 ```python
 from pydantic_evals import Case, Dataset
-from pydantic_evals.evaluators import Evaluator, EvaluatorContext
+from pydantic_evals.evaluators import Evaluator, EvaluatorContext, EqualsExpected, Contains
+from findingmodel.tools.evaluators import PerformanceEvaluator  # If needed
 
 # 1. Define data models
 class AgentInput(BaseModel): ...
@@ -16,13 +28,18 @@ class AgentExpectedOutput(BaseModel): ...
 class AgentActualOutput(BaseModel): ...
 
 # 2. Create focused evaluators (return 0.0-1.0)
+@dataclass
 class MyEvaluator(Evaluator[AgentInput, AgentActualOutput, AgentExpectedOutput]):
     def evaluate(self, ctx: EvaluatorContext[...]) -> float:
         # Return continuous score
         return score
 
 # 3. Build dataset AT MODULE LEVEL with evaluators
-evaluators = [MyEvaluator(), OtherEvaluator()]
+evaluators = [
+    EqualsExpected(),  # Built-in from Pydantic Evals
+    PerformanceEvaluator(time_limit=5.0),  # From src/findingmodel/tools/evaluators.py
+    MyEvaluator(),  # Inline evaluator
+]
 dataset = Dataset(cases=[...], evaluators=evaluators)
 
 # 4. Run evaluation (evaluators already in Dataset)
@@ -34,18 +51,18 @@ assert report.overall_score() >= threshold
 **IMPORTANT API Details:**
 - Method is `evaluate()` NOT `evaluate_async()`
 - Evaluators passed to `Dataset()` constructor, NOT to `evaluate()` method
-- Use absolute imports in eval files: `from evals.base import ...` NOT `from .base import ...`
+- Use absolute imports in eval files: `from evals.utils import ...` NOT `from .utils import ...`
 
 ## Logfire Integration (Automatic)
 
-Logfire observability is configured ONCE at package level in `evals/__init__.py`.
-Individual eval modules require ZERO Logfire code.
+Logfire observability is configured via `ensure_instrumented()` called in each eval script's `__main__` block.
+Individual eval modules require minimal Logfire code.
 
-### What Happens Automatically
+### What Happens When `ensure_instrumented()` Is Called
 
-When `evals/__init__.py` is imported (automatically on first eval module import):
-1. logfire.configure() is called with settings from .env
-2. logfire.instrument_pydantic_ai() enables automatic agent tracing
+When `ensure_instrumented()` is called in `__main__`:
+1. logfire.configure() is called with settings from .env (idempotent)
+2. logfire.instrument_pydantic_ai() enables automatic agent tracing (idempotent)
 
 When Dataset.evaluate() is called:
 1. Root span created for evaluation suite (automatic)
@@ -55,14 +72,31 @@ When Dataset.evaluate() is called:
 
 ### For New Eval Suites
 
-NO Logfire code required. Just define:
+Minimal Logfire code required - just call `ensure_instrumented()` in `__main__`:
+
+```python
+if __name__ == "__main__":
+    import asyncio
+
+    from evals import ensure_instrumented
+
+    ensure_instrumented()  # Explicit instrumentation for eval run
+
+    async def main() -> None:
+        report = await run_X_evals()
+        # Print report...
+
+    asyncio.run(main())
+```
+
+Then define:
 - Data models
-- Evaluators
+- Evaluators (prefer built-ins → inline → reusable)
 - Cases
 - Dataset
 - Main function calling dataset.evaluate()
 
-Observability happens automatically via package-level configuration.
+Observability happens automatically via instrumentation.
 
 ### Package-Level Configuration Pattern
 
@@ -70,37 +104,44 @@ Observability happens automatically via package-level configuration.
 # evals/__init__.py
 """Evaluation suites for findingmodel agents.
 
-Logfire observability configured automatically for entire package.
+This module provides Logfire instrumentation configuration for eval suites.
 """
 
 import logfire
 from logfire import ConsoleOptions
 from findingmodel.config import settings
 
-# Configure Logfire once for entire evals package
-logfire.configure(
-    token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
-    send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
-    console=ConsoleOptions(
-        colors="auto",
-        min_log_level="debug",
+_instrumented = False
+
+def ensure_instrumented() -> None:
+    """Ensure Logfire is configured and Pydantic AI is instrumented.
+    
+    This function is idempotent - safe to call multiple times.
+    Call this explicitly in eval suite __main__ blocks before running evals.
+    """
+    global _instrumented
+    
+    if _instrumented:
+        return
+    
+    logfire.configure(
+        token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
+        send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
+        console=ConsoleOptions(colors="auto", min_log_level="debug")
+        if settings.logfire_verbose
+        else False,
     )
-    if settings.logfire_verbose
-    else False,
-)
+    
+    logfire.instrument_pydantic_ai()
+    _instrumented = True
 
-# Instrument Pydantic AI once for automatic agent/model/tool tracing
-logfire.instrument_pydantic_ai()
-
-__all__ = []  # No public exports - configuration only
+__all__ = ["ensure_instrumented"]
 ```
 
 **Benefits:**
-- DRY principle: Configuration in ONE place
-- Zero Logfire code per eval suite
-- Prevents ~80 lines of duplication per new suite
-- Follows Python logging best practices
-- Automatic instrumentation leveraged fully
+- Idempotent configuration (safe to call multiple times)
+- Prevents instrumentation at import time (doesn't affect unit tests)
+- Minimal Logfire code per eval suite (~3 lines in __main__)
 
 ## Key Principles
 
@@ -110,7 +151,7 @@ __all__ = []  # No public exports - configuration only
 
 Each evaluator tests ONE thing and returns 0.0-1.0 score.
 
-### 2. Hybrid Scoring Approach ⭐️ NEW
+### 2. Hybrid Scoring Approach ⭐️
 Combine strict and partial credit scoring based on requirement type:
 
 **Strict (0.0 or 1.0):** Non-negotiables that must always pass
@@ -158,31 +199,30 @@ Load actual finding models from `test/data/defs/*.fm.json` rather than synthetic
 - For integration tests requiring APIs, use `@pytest.mark.callout` (in test/ not evals/)
 - Provide mock tests using `TestModel` for quick validation without API
 
-## Reusable Components
+## Reusable Evaluators
 
-### Base Evaluator Library (`evals/base.py`)
+### From Pydantic Evals (Prefer These First)
+- `EqualsExpected` - Exact match comparison
+- `Contains` - Substring/membership checks
+- `IsInstance` - Type validation
+- `LLMJudge` - AI-assisted evaluation
 
-Generic reusable evaluators for any agent:
-- `ExactMatchEvaluator[InputT, str]`: Exact string match
-- `ContainsEvaluator[InputT, str]`: Substring match with case sensitivity option
-- `KeywordMatchEvaluator[InputT, OutputT]`: Multiple keyword matching with partial credit
-- `StructuralValidityEvaluator[InputT, BaseModel]`: Check Pydantic model has required fields
-- `ErrorHandlingEvaluator[InputT, OutputT]`: Verify errors handled as expected
+See: https://github.com/pydantic/pydantic-ai/blob/main/docs/evals/evaluators/built-in.md
 
-All base evaluators are unit tested in `test/test_base_evaluators.py` (25 tests).
+### From `src/findingmodel/tools/evaluators.py`
+- `PerformanceEvaluator` - Validates execution time against configurable threshold (used by 5 eval suites)
 
-### Agent-Specific Evaluators
+**When to add here:** ONLY if used 2+ times AND complex logic AND non-trivial
+**See:** `.serena/memories/evaluator_architecture_2025.md` for decision framework
 
-Create specialized evaluators in the agent's eval file for domain-specific checks.
-
-**Example: model_editor evaluators** (`evals/model_editor.py`):
-```python
-# 1. IDPreservationEvaluator (strict) - Model IDs must never change
-# 2. AttributeAdditionEvaluator (partial) - Proportional score for attributes added
-# 3. ChangeTrackingEvaluator (hybrid) - Changes must be recorded + keyword quality
-# 4. RejectionAccuracyEvaluator (hybrid) - Rejections must be recorded + keyword quality
-# 5. ContentPreservationEvaluator (strict) - Model unchanged when edits rejected
-```
+### Inline in Eval Scripts
+Most evaluators should remain inline for clarity and context. Examples:
+- `IDPreservationEvaluator` - Model IDs must never change (model_editor.py)
+- `AttributeAdditionEvaluator` - Proportional score for attributes added (model_editor.py)
+- `ChangeTrackingEvaluator` - Changes recorded + keyword quality (model_editor.py)
+- `DuplicateDetectionEvaluator` - Duplicate detection scoring (similar_models.py)
+- `RankingQualityEvaluator` - Ranking quality assessment (similar_models.py)
+- And 30+ more agent-specific evaluators across eval suites
 
 ## Running Evaluations
 
@@ -192,6 +232,7 @@ task evals
 
 # Run specific suite
 task evals:model_editor
+task evals:similar_models
 python -m evals.model_editor
 
 # From Python
@@ -204,25 +245,28 @@ report = await run_model_editor_evals()
 ```
 evals/                               # Root-level directory (NOT in test/)
 ├── __init__.py                      # Package-level Logfire configuration
-├── base.py                          # Reusable evaluators & base classes
 ├── utils.py                         # Shared helpers
 ├── model_editor.py                  # ✅ model_editor evaluation (COMPLETE)
+├── similar_models.py                # ✅ similar_models evaluation (COMPLETE)
+├── ontology_match.py                # ✅ ontology_match evaluation (COMPLETE)
+├── anatomic_search.py               # ✅ anatomic_search evaluation (COMPLETE)
+├── markdown_in.py                   # ✅ markdown_in evaluation (COMPLETE)
+├── finding_description.py           # ✅ finding_description evaluation (COMPLETE)
 ├── README.md                        # Quick-start guide for humans
 ├── evals_guide.md                   # Comprehensive how-to-write guide
 └── CLAUDE.md                        # Lightweight pointer to this memory
 
-Future eval suites (flat structure for now):
-├── anatomic_search.py               # Anatomic location search evals
-├── ontology_match.py                # Ontology concept match evals
-└── ... (add more as needed)
+src/findingmodel/tools/
+└── evaluators.py                    # ONLY truly reusable evaluators
 
 test/                                # Test directory (pytest discovers here)
-├── test_base_evaluators.py          # Unit tests for evaluator library
+├── tools/
+│   └── test_evaluators.py          # Unit tests for src/findingmodel/tools/evaluators.py
 ├── data/defs/                       # Test data (finding models, etc.)
 └── test_*.py                        # Unit and integration tests
 ```
 
-**Important:** Directory structure is currently flat. Nest into subdirectories only when complexity demands it (e.g., >10 eval suites).
+**Important:** Unit tests NEVER import from `evals/` - only from `src/findingmodel/`
 
 **Key distinction:** Evals assess behavioral quality (0.0-1.0 scores), tests verify correctness (pass/fail).
 
@@ -261,42 +305,48 @@ Do NOT create evals for:
 ### File Structure
 - **Filename**: `evals/tool_name.py` (NOT `test_tool_name.py`)
 - **Main function**: `run_tool_name_evals()` (NOT `test_run_tool_name_evals()`)
-- **Imports**: Absolute (`from evals.base import ...`)
-- **NO Logfire imports needed** (automatic via evals/__init__.py)
+- **Imports**: Absolute (`from evals.utils import ...`)
+- **Minimal Logfire**: Just call `ensure_instrumented()` in `__main__`
 
 ### Required Components
 
 1. **Define data models** (input, expected output, actual output)
-2. **Create focused evaluators** inheriting from `Evaluator` base class
+2. **Create focused evaluators** (prefer built-ins → inline → reusable)
 3. **Build dataset** with cases and evaluators at module level
 4. **Main eval function** that runs `dataset.evaluate()` and returns Report
-5. **`__main__` block** for standalone execution
+5. **`__main__` block** with `ensure_instrumented()` call for standalone execution
 
-### Template (NO Logfire Code Needed)
+### Template
 
 ```python
 """Evaluation suite for {tool_name} agent.
 
-NO Logfire configuration needed - automatic instrumentation via evals/__init__.py.
+Minimal Logfire configuration - just call ensure_instrumented() in __main__.
 """
 
-from evals.base import ExactMatchEvaluator, KeywordMatchEvaluator
-from evals.utils import load_fm_json
 from pydantic_evals import Case, Dataset
+from pydantic_evals.evaluators import Evaluator, EvaluatorContext, EqualsExpected, Contains
+from evals.utils import load_fm_json
+from findingmodel.tools.evaluators import PerformanceEvaluator
 
 # 1. Data models
 class ToolInput(BaseModel): ...
 class ToolExpected(BaseModel): ...
 class ToolOutput(BaseModel): ...
 
-# 2. Evaluators (focused, hybrid scoring)
+# 2. Inline evaluators (agent-specific, focused)
+@dataclass
 class CustomEvaluator(Evaluator[ToolInput, ToolOutput, ToolExpected]):
     def evaluate(self, ctx: EvaluatorContext[...]) -> float:
         # Return 0.0-1.0 score
         return score
 
 # 3. Dataset (at module level)
-evaluators = [CustomEvaluator(), KeywordMatchEvaluator(...)]
+evaluators = [
+    EqualsExpected(),  # Built-in
+    PerformanceEvaluator(time_limit=5.0),  # Reusable
+    CustomEvaluator(),  # Inline
+]
 dataset = Dataset(
     cases=[
         Case(input=..., expected_output=..., metadata=...),
@@ -305,13 +355,13 @@ dataset = Dataset(
     evaluators=evaluators,
 )
 
-# 4. Task function (NO manual Logfire spans needed)
+# 4. Task function (automatic instrumentation)
 async def run_tool_name_task(input_data: ToolInput) -> ToolOutput:
     """Execute task - automatic instrumentation captures everything."""
     result = await tool.process(input_data)
     return ToolOutput(result=result)
 
-# 5. Main eval function (NO manual Logfire spans needed)
+# 5. Main eval function (automatic instrumentation)
 async def run_tool_name_evals() -> Report:
     """Run evaluation suite.
     
@@ -324,22 +374,26 @@ async def run_tool_name_evals() -> Report:
 if __name__ == "__main__":
     import asyncio
 
+    from evals import ensure_instrumented
+
+    ensure_instrumented()  # Explicit instrumentation for eval run
+
     async def main():
-        print("\nRunning {tool_name} evaluation suite...")
+        print("\\nRunning {tool_name} evaluation suite...")
         print("=" * 80)
         
         report = await run_tool_name_evals()
         
-        print("\n" + "=" * 80)
+        print("\\n" + "=" * 80)
         print("{TOOL_NAME} EVALUATION RESULTS")
-        print("=" * 80 + "\n")
+        print("=" * 80 + "\\n")
         report.print(include_input=False, include_output=True)
         
         # Calculate overall score
         all_scores = [score.value for case in report.cases for score in case.scores.values()]
         overall_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
-        print(f"\nOVERALL SCORE: {overall_score:.2f}")
-        print("=" * 80 + "\n")
+        print(f"\\nOVERALL SCORE: {overall_score:.2f}")
+        print("=" * 80 + "\\n")
     
     asyncio.run(main())
 ```
@@ -350,12 +404,12 @@ Always use absolute imports, never relative:
 
 ```python
 # ✅ Correct
-from evals.base import ExactMatchEvaluator, KeywordMatchEvaluator
+from pydantic_evals.evaluators import EqualsExpected, Contains, IsInstance
+from findingmodel.tools.evaluators import PerformanceEvaluator
 from evals.utils import load_fm_json, compare_models
 from findingmodel.tools import model_editor
 
 # ❌ Wrong (old test convention)
-from .base import ExactMatchEvaluator
 from .utils import load_fm_json
 ```
 
@@ -395,13 +449,18 @@ all_cases = create_successful_cases() + create_rejection_cases() + create_edge_c
 Define dataset at module level with evaluators:
 
 ```python
-# Define evaluators
+# Define evaluators (prefer built-ins → inline → reusable)
 evaluators = [
+    # Built-ins from Pydantic Evals
+    EqualsExpected(),
+    Contains(expected="keyword"),
+    
+    # Reusable from src/
+    PerformanceEvaluator(time_limit=5.0),
+    
+    # Inline evaluators
     IDPreservationEvaluator(),
     AttributeAdditionEvaluator(),
-    ChangeTrackingEvaluator(),
-    RejectionAccuracyEvaluator(),
-    ContentPreservationEvaluator(),
 ]
 
 # Create dataset with cases and evaluators
@@ -426,59 +485,32 @@ def load_fm_json(filename: str) -> str:
     return (test_data_dir / filename).read_text()
 ```
 
-### Converting from Pytest-Based Evals
+## Current Status (Updated 2025-10-29)
 
-If migrating from pytest-based eval tests, apply these transformations:
-
-1. **Remove pytest decorators**: Delete `@pytest.mark.callout`, `@pytest.mark.asyncio`
-2. **Rename function**: `test_run_X_evals()` → `run_X_evals()`
-3. **Change imports**: Relative (`from .base`) → Absolute (`from evals.base`)
-4. **Remove Logfire code**: Delete all logfire imports, configure(), spans
-5. **Return Report**: Function returns Report object instead of using assertions
-6. **Add `__main__` block**: Enable standalone execution via `python -m evals.X`
-
-See `evals/model_editor.py` for complete working example.
-
-## Agents Needing Evaluation Suites
-
-Priority order for creating eval suites:
-1. **model_editor** ✅ **COMPLETE** - 12 cases, 5 evaluators, hybrid scoring, automatic Logfire
-2. **anatomic_location_search** - Two-agent architecture
-3. **ontology_concept_match** - Multi-backend
-4. **finding_description** - LLM-generated content
-5. **similar_finding_models** - Similarity/ranking
-6. **markdown_in** - Parsing accuracy
-
-## Current Status (Updated 2025-10-24)
+### ✅ Evaluator Architecture Refactoring Complete (October 2025)
+- Deleted unused `evals/base.py` (~350 lines) - evaluators were never used by eval scripts
+- Deleted `test/test_base_evaluators.py` (~600 lines) - testing unused code
+- Created `src/findingmodel/tools/evaluators.py` with ONLY PerformanceEvaluator
+- Created `test/tools/test_evaluators.py` with 20 unit tests
+- Updated 5 eval scripts to use centralized PerformanceEvaluator (~190 lines duplication removed)
+- Net result: ~1,010 lines deleted, ~130 lines added
+- Clean architecture: unit tests never import from `evals/`
+- See: `.serena/memories/evaluator_architecture_2025.md` for complete details
 
 ### ✅ Eval/Test Separation Complete (October 2025)
 - Moved eval suites from `test/evals/` to root `evals/` directory
 - Pytest no longer discovers eval suites during normal test runs
 - Clear three-tier structure: unit tests, integration tests, evals
-- Added `task evals` and `task evals:model_editor` commands
+- Added `task evals` and `task evals:X` commands
 - Documentation: `evals/README.md`, `evals/evals_guide.md`, `evals/CLAUDE.md`
 
-### ✅ Phase 1 Complete
-- Base evaluator library (`evals/base.py`) - 5 generic evaluators
-- Shared utilities (`evals/utils.py`)
-- Unit tests for evaluators (`test/test_base_evaluators.py`)
-
-### ✅ Phase 2 Complete
-- Refactored model_editor evals to use Evaluator classes
-- 5 focused evaluators with hybrid scoring approach
-- Using `Dataset.evaluate()` pattern correctly
-- All 12 test cases passing
-- Standalone execution via `python -m evals.model_editor`
-
-### ✅ Phase 0 Complete (October 2025)
-- Package-level Logfire configuration in `evals/__init__.py`
-- Zero Logfire code required in individual eval modules
-- Automatic instrumentation via Pydantic Evals + Pydantic AI
-- Reduced model_editor.py by ~160 lines
-- Fixed TestModel bug in tests (convert Pydantic models to dicts)
-- All 325 tests passing with Logfire instrumentation enabled
-- Documentation consolidated (CLAUDE.md → memory, added TestModel warning to evals_guide.md)
-- DRY principle maintained, scalable architecture
+### ✅ Six Eval Suites Complete
+1. **model_editor** ✅ - 12 cases, 5 inline evaluators, hybrid scoring
+2. **similar_models** ✅ - Uses PerformanceEvaluator from src/
+3. **ontology_match** ✅ - Uses PerformanceEvaluator from src/
+4. **anatomic_search** ✅ - Uses PerformanceEvaluator from src/
+5. **markdown_in** ✅ - Uses PerformanceEvaluator from src/
+6. **finding_description** ✅ - Uses PerformanceEvaluator from src/
 
 ## Anti-Patterns to Avoid
 
@@ -491,13 +523,15 @@ Priority order for creating eval suites:
 ❌ Using `evaluate_async()` method (doesn't exist, use `evaluate()`)
 ❌ Passing evaluators to `evaluate()` method (pass to Dataset constructor)
 ❌ Using pytest decorators in eval suites (evals run standalone, not via pytest)
-❌ Relative imports in eval files (use `from evals.base` not `from .base`)
+❌ Relative imports in eval files (use `from evals.utils` not `from .utils`)
 ❌ Naming eval files with `test_` prefix (use `tool_name.py`)
-❌ Adding logfire.configure() to individual eval modules (configure once in __init__.py)
 ❌ Creating manual spans in eval modules (Dataset.evaluate() does this automatically)
 ❌ Manual logging in task functions (automatic instrumentation captures everything)
 ❌ Passing Pydantic models to TestModel custom_output_args (must use `.model_dump()`)
 ❌ Missing __main__ block in eval suites (prevents standalone execution)
+❌ Missing ensure_instrumented() call in __main__ (Logfire won't instrument)
+❌ Extracting evaluators to src/ prematurely (prefer inline, extract only if used 2+ times AND complex)
+❌ Duplicating Pydantic Evals built-ins (use EqualsExpected, Contains, IsInstance first)
 
 ## Lessons Learned
 
@@ -508,7 +542,7 @@ Non-negotiables (ID preservation, error recording) must be strict (0.0 or 1.0). 
 Linting passes doesn't mean code works. Critical import bug prevented tests from running at all until senior review actually executed them.
 
 ### 3. Absolute Imports in Eval Files
-Use `from evals.base import ...` NOT `from .base import ...` since eval files are modules, not test files.
+Use `from evals.utils import ...` NOT `from .utils import ...` since eval files are modules, not test files.
 
 ### 4. Evaluators in Dataset Constructor
 Evaluators passed to `Dataset(cases=..., evaluators=...)` constructor, NOT to `evaluate()` method.
@@ -521,8 +555,8 @@ The method name is `evaluate()` despite being async. There is no `evaluate_async
 - **Evals** (in `evals/`): Assess quality with 0.0-1.0 scores, run standalone
 - Keeping them separate prevents slow expensive evals from running during normal testing
 
-### 7. Package-Level Configuration Prevents Duplication
-Configuring Logfire in `evals/__init__.py` eliminates ~80 lines per eval suite and follows Python logging best practices. Automatic instrumentation from Pydantic Evals + Pydantic AI captures everything manual spans were capturing.
+### 7. Idempotent Instrumentation Prevents Duplication
+Using `ensure_instrumented()` eliminates duplication while keeping instrumentation explicit. Automatic instrumentation from Pydantic Evals + Pydantic AI captures everything manual spans were capturing.
 
 ### 8. TestModel Requires Dicts Not Pydantic Models
 When using TestModel with `custom_output_args`, you MUST pass a dict, not a Pydantic model.
@@ -542,14 +576,19 @@ mock_output = EditResult(model=..., changes=[...])
 TestModel(custom_output_args=mock_output.model_dump())
 ```
 
-**Discovered:** October 2025 during Phase 0 implementation. Two tests failed when Logfire instrumentation was added to `evals/__init__.py`, exposing this latent bug that existed in the test code.
+### 9. Most Evaluators Should Stay Inline
+Phase 0 research revealed that Pydantic Evals philosophy is: built-ins → inline → reusable (in that order). Most evaluators belong inline in eval scripts for clarity and context. Only extract to src/ if truly reusable (used 2+ times) AND complex AND non-trivial.
+
+### 10. Wheel Reinvention Wastes Effort
+Before creating custom evaluators, check Pydantic Evals built-ins (EqualsExpected, Contains, IsInstance, LLMJudge). Don't duplicate what already exists.
 
 ## Resources
 
+- **Architecture reference:** `.serena/memories/evaluator_architecture_2025.md`
 - **Quick start:** `evals/README.md`
 - **Full guide:** `evals/evals_guide.md`
 - **AI reference:** `evals/CLAUDE.md`
-- **Example implementation:** `evals/model_editor.py`
-- **Logfire observability:** `docs/logfire_observability_guide.md`
+- **Example implementations:** `evals/model_editor.py`, `evals/similar_models.py`
 - **Pydantic AI Evals:** https://ai.pydantic.dev/evals/
+- **Built-in Evaluators:** https://github.com/pydantic/pydantic-ai/blob/main/docs/evals/evaluators/built-in.md
 - **Related memories:** `pydantic_ai_testing_best_practices`, `test_suite_improvements_2025`

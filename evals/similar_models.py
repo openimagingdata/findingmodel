@@ -60,6 +60,7 @@ from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
 
 from findingmodel.index import DuckDBIndex as Index
+from findingmodel.tools.evaluators import PerformanceEvaluator
 from findingmodel.tools.similar_finding_models import SimilarModelAnalysis, find_similar_models
 
 
@@ -421,46 +422,6 @@ class ExclusionEvaluator(Evaluator[SimilarModelsInput, SimilarModelsActualOutput
         unexpected_found = actual_ids & set(ctx.metadata.unexpected_similar_ids)
 
         return 0.0 if unexpected_found else 1.0
-
-
-class PerformanceEvaluator(Evaluator[SimilarModelsInput, SimilarModelsActualOutput, SimilarModelsExpectedOutput]):
-    """Evaluate query performance (execution time).
-
-    Uses strict scoring because performance is critical for user experience.
-    Queries should complete within acceptable time bounds.
-
-    Returns:
-        1.0 if query time under threshold
-        0.0 if query time exceeds threshold
-    """
-
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[SimilarModelsInput, SimilarModelsActualOutput, SimilarModelsExpectedOutput],
-    ) -> float:
-        """Evaluate query performance.
-
-        Args:
-            ctx: Evaluation context containing case inputs, output, and metadata
-
-        Returns:
-            1.0 if performance acceptable, 0.0 if too slow
-
-        Note:
-            Execution errors receive 1.0 since performance evaluation is N/A when errors occur.
-            The error is captured and scored separately by other evaluators.
-        """
-        # Handle missing metadata - N/A case, return 1.0
-        if ctx.metadata is None:
-            return 1.0
-
-        # Skip if execution error occurred - N/A for performance, return 1.0
-        # (error handling is evaluated separately)
-        if ctx.output.error:
-            return 1.0
-
-        # Strict check: query time must be under threshold
-        return 1.0 if ctx.output.query_time <= ctx.metadata.max_query_time else 0.0
 
 
 # =============================================================================
@@ -938,6 +899,10 @@ async def run_similar_models_evals() -> EvaluationReport[
 
 if __name__ == "__main__":
     import asyncio
+
+    from evals import ensure_instrumented
+
+    ensure_instrumented()  # Explicit instrumentation for eval run
 
     async def main() -> None:
         print("\nRunning similar_finding_models evaluation suite...")

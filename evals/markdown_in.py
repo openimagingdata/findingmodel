@@ -71,6 +71,7 @@ from pydantic_evals.reporting import EvaluationReport
 
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase
+from findingmodel.tools.evaluators import PerformanceEvaluator
 from findingmodel.tools.markdown_in import create_model_from_markdown
 
 
@@ -425,46 +426,6 @@ class RoundTripEvaluator(Evaluator[MarkdownInInput, MarkdownInActualOutput, Mark
         if len(original_attrs) == 0:
             return 1.0  # No attributes to preserve
         return preserved_count / len(original_attrs)
-
-
-class PerformanceEvaluator(Evaluator[MarkdownInInput, MarkdownInActualOutput, MarkdownInExpectedOutput]):
-    """Evaluate query performance (execution time).
-
-    Uses strict scoring because performance is critical for user experience.
-    Queries should complete within acceptable time bounds.
-
-    Returns:
-        1.0 if query time under threshold
-        0.0 if query time exceeds threshold
-    """
-
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[MarkdownInInput, MarkdownInActualOutput, MarkdownInExpectedOutput],
-    ) -> float:
-        """Evaluate query performance.
-
-        Args:
-            ctx: Evaluation context containing case inputs, output, and metadata
-
-        Returns:
-            1.0 if performance acceptable, 0.0 if too slow
-
-        Note:
-            Execution errors receive 1.0 since performance evaluation is N/A when errors occur.
-            The error is captured and scored separately by other evaluators.
-        """
-        # Handle missing metadata - N/A case, return 1.0
-        if ctx.metadata is None:
-            return 1.0
-
-        # Skip if execution error occurred - N/A for performance, return 1.0
-        # (error handling is evaluated separately)
-        if ctx.output.error:
-            return 1.0
-
-        # Strict check: query time must be under threshold
-        return 1.0 if ctx.output.query_time <= ctx.metadata.max_query_time else 0.0
 
 
 # =============================================================================
@@ -1080,6 +1041,8 @@ async def run_markdown_in_task(input_data: MarkdownInInput) -> MarkdownInActualO
     Raises:
         Exception: Any errors are caught and returned in the error field
     """
+    # Time the query
+    start_time = time.time()
     try:
         # Create FindingInfo from inputs
         finding_info = FindingInfo(
@@ -1088,8 +1051,6 @@ async def run_markdown_in_task(input_data: MarkdownInInput) -> MarkdownInActualO
             synonyms=input_data.synonyms,
         )
 
-        # Time the query
-        start_time = time.time()
         model = await create_model_from_markdown(
             finding_info,
             markdown_text=input_data.markdown_text,
@@ -1124,7 +1085,7 @@ evaluators = [
     TypeCorrectnessEvaluator(),
     ErrorMessageQualityEvaluator(),
     RoundTripEvaluator(),
-    PerformanceEvaluator(),
+    PerformanceEvaluator(time_limit=30.0),
 ]
 
 markdown_in_dataset = Dataset(cases=all_cases, evaluators=evaluators)
@@ -1144,6 +1105,10 @@ async def run_markdown_in_evals() -> EvaluationReport[
 
 if __name__ == "__main__":
     import asyncio
+
+    from evals import ensure_instrumented
+
+    ensure_instrumented()  # Explicit instrumentation for eval run
 
     async def main() -> None:
         print("\nRunning create_model_from_markdown evaluation suite...")

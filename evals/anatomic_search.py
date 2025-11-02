@@ -48,6 +48,7 @@ EVALUATORS:
 - HierarchyEvaluator: Verifies hierarchical relationships preserved (partial credit)
 - BackendFallbackEvaluator: Tests MongoDB → DuckDB fallback (strict)
 - RankingQualityEvaluator: Assesses result ranking quality using MRR (partial credit)
+- PerformanceEvaluator: Query performance under threshold (strict)
 
 LOGFIRE INTEGRATION:
 Logfire observability is configured automatically in evals/__init__.py.
@@ -66,6 +67,7 @@ from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
 
 from findingmodel.tools.anatomic_location_search import LocationSearchResponse, find_anatomic_locations
+from findingmodel.tools.evaluators import PerformanceEvaluator
 
 
 class AnatomicSearchInput(BaseModel):
@@ -928,6 +930,7 @@ evaluators = [
     HierarchyEvaluator(),
     BackendFallbackEvaluator(),
     RankingQualityEvaluator(),
+    PerformanceEvaluator(),
 ]
 
 anatomic_search_dataset = Dataset(cases=all_cases, evaluators=evaluators)
@@ -953,6 +956,10 @@ async def run_anatomic_search_evals() -> EvaluationReport[
 
 if __name__ == "__main__":
     import asyncio
+
+    from evals import ensure_instrumented
+
+    ensure_instrumented()  # Explicit instrumentation for eval run
 
     async def main() -> None:
         print("\nRunning anatomic_location_search evaluation suite...")

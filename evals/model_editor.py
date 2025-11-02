@@ -829,6 +829,10 @@ async def run_model_editor_evals() -> EvaluationReport[
 if __name__ == "__main__":
     import asyncio
 
+    from evals import ensure_instrumented
+
+    ensure_instrumented()  # Explicit instrumentation for eval run
+
     async def main() -> None:
         print("\nRunning model_editor evaluation suite...")
         print("=" * 80)
