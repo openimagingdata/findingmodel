@@ -33,6 +33,7 @@ tasks:
       - uv run python -m evals.ontology_match
       - uv run python -m evals.anatomic_search
       - uv run python -m evals.markdown_in
+      - uv run python -m evals.finding_description
       # Future: add other agent evals here
     silent: true
 
@@ -69,6 +70,13 @@ tasks:
     cmds:
       - echo "Running markdown_in evaluations..."
       - uv run python -m evals.markdown_in
+    silent: true
+
+  evals:finding_description:
+    desc: "Run finding_description evaluation suite"
+    cmds:
+      - echo "Running finding_description evaluations..."
+      - uv run python -m evals.finding_description
     silent: true
 
   check:
