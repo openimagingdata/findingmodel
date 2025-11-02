@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comprehensive Agent Evaluation Suites** (2025-10-18 to 2025-11-02) - Five new eval suites for AI agent quality assessment:
+  - `evals/similar_models.py` - Similarity search and duplicate detection (8 cases)
+  - `evals/ontology_match.py` - Multi-backend ontology concept matching (12 cases)
+  - `evals/anatomic_search.py` - Two-agent anatomic location search (10 cases)
+  - `evals/markdown_in.py` - Markdown to finding model parsing (8 cases)
+  - `evals/finding_description.py` - Clinical description quality with LLMJudge (15 cases)
+  - All use Pydantic Evals Dataset.evaluate() pattern with focused evaluators
+  - Logfire observability via lazy instrumentation pattern
+  - Taskfile commands: `task evals` or `task evals:agent_name`
+- **LLMJudge Evaluator Support** (2025-11-02) - Built-in LLM-based quality assessment:
+  - Configured for clinical description quality scoring
+  - Uses cost-effective gpt-5-nano model
+  - Workaround for Pydantic Evals API key bug documented
+- **PerformanceEvaluator** (2025-10-29) - Reusable evaluator in `src/findingmodel/tools/evaluators.py`:
+  - Configurable time limits for agent performance testing
+  - Comprehensive unit tests in `test/tools/test_evaluators.py`
+  - Used across all 5+ eval suites (eliminates ~190 lines duplication)
 - **Enhanced Index API Methods** - Complete pagination and search capabilities without breaking abstraction:
   - `list(limit, offset, order_by, order_dir)` - Paginated browsing of all finding models
   - `search_by_slug(pattern, match_type, limit, offset)` - Pattern-based search with relevance ranking
@@ -33,6 +50,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **GPT-5 Model Adoption** (2025-11-02) - Updated default OpenAI models:
+  - `openai_default_model`: gpt-4o-mini → gpt-5-mini (better capability)
+  - `openai_default_model_small`: gpt-4.1-nano → gpt-5-nano (cost-effective)
+  - `openai_default_model_full`: gpt-5 (unchanged)
+- **Test Performance Optimization** (2025-11-02) - Integration tests 54% faster:
+  - Tests explicitly use gpt-4o-mini for speed (278s → 127s total test suite)
+  - Production code uses GPT-5 models for capability
+  - Clear separation: fast models for CI/CD, capable models for production
+- **Evaluator Architecture** (2025-10-29) - Clean separation of concerns:
+  - Inline evaluators in eval scripts (35+ agent-specific evaluators)
+  - Reusable evaluators in src/ only when genuinely shared (PerformanceEvaluator)
+  - Lazy instrumentation pattern prevents Logfire noise in unit tests
+- **Anatomic Location Search Enhancement** (2025-11-02) - Added model parameter:
+  - `find_anatomic_locations()` accepts optional `model` parameter
+  - Allows per-call model override for performance tuning
 - **Index schema**: Added separate `finding_model_json` table for blob storage
 - **Index schema**: Added index on `slug_name` for efficient LIKE queries
 - **Code organization**: Shared helper methods eliminate duplication in list/search/count operations
@@ -51,7 +83,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MongoDB Index backend** - DuckDB is now the only Index implementation
 - **`MongoDBIndex` class** - Use `Index` (aliased to `DuckDBIndex`) instead
 
+### Removed
+
+- **evals/base.py** (2025-10-29) - Unused evaluators (~350 lines):
+  - All 5 evaluators duplicated Pydantic Evals built-ins or were never used
+  - Replaced by centralized PerformanceEvaluator and inline evaluators
+- **test/test_base_evaluators.py** (2025-10-29) - Tests for removed code (~600 lines)
+
 ### Fixed
+
+- **LLMJudge API Key Configuration** (2025-11-02) - Workaround for Pydantic Evals bug:
+  - LLMJudge now reads OpenAI API key from environment variable
+  - Documented workaround until upstream fix available
 
 ## [0.4.0] - 2025-10-20
 
