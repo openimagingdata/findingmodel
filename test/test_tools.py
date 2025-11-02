@@ -89,7 +89,13 @@ async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.Mon
 
     monkeypatch.setattr(logger, "info", fake_info)
 
-    result = await finding_description.create_info_from_name("left lower lobe opacity", model_name="stub-model")
+    # Temporarily enable for stub agent call (Logfire instruments before reaching stub)
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
+    try:
+        result = await finding_description.create_info_from_name("left lower lobe opacity", model_name="stub-model")
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
 
     assert result.name == "pulmonary opacity"
     assert result.synonyms == [
@@ -128,7 +134,13 @@ async def test_create_info_from_name_preserves_name_without_logging(monkeypatch:
         lambda message, *args, **kwargs: logged.append(message),
     )
 
-    result = await finding_description.create_info_from_name("pneumothorax")
+    # Temporarily enable for stub agent call (Logfire instruments before reaching stub)
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
+    try:
+        result = await finding_description.create_info_from_name("pneumothorax")
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
 
     assert result.name == "pneumothorax"
     assert result.synonyms == ["pneumothorax", "PTX"]
@@ -236,78 +248,70 @@ def test_add_standard_codes_to_model_no_duplicates_new_api(full_model: FindingMo
 # Integration tests requiring external API access
 @pytest.mark.callout
 @pytest.mark.asyncio
-async def test_create_info_from_name_integration() -> None:
-    """Integration test for create_info_from_name with real OpenAI API."""
+async def test_create_info_from_name_basic_wiring() -> None:
+    """Sanity check: Verify basic wiring with real API.
+
+    All comprehensive behavioral testing is in evals/finding_description.py.
+    This test only verifies the tool can be called successfully.
+    """
+    # Skip if no API key configured
+    if not settings.openai_api_key or not settings.openai_api_key.get_secret_value():
+        pytest.skip("OpenAI API key not configured")
+
     from findingmodel.finding_info import FindingInfo
     from findingmodel.tools import create_info_from_name
 
-    # Test with a common medical finding
-    result = await create_info_from_name("pneumothorax")
+    # Save and restore ALLOW_MODEL_REQUESTS state
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
 
-    assert isinstance(result, FindingInfo)
-    assert result.name.lower() == "pneumothorax"
-    assert result.description is not None
-    assert len(result.description) > 10  # Should have meaningful description
+    try:
+        # Single API call with simple input - use fast model for integration test
+        result = await create_info_from_name("pneumothorax", model_name="gpt-4o-mini")
 
-    # Should typically have synonyms for pneumothorax
-    assert result.synonyms is not None
-    assert len(result.synonyms) > 0
-
-    # Common synonyms for pneumothorax - accept any of these valid alternatives
-    synonyms_lower = [s.lower() for s in result.synonyms]
-    common_synonyms = ["ptx", "collapsed lung", "pneumo"]
-    assert any(syn in synonyms_lower for syn in common_synonyms), (
-        f"Expected one of {common_synonyms}, got: {synonyms_lower}"
-    )
+        # Only structural assertions - no behavioral validation
+        assert isinstance(result, FindingInfo)
+        assert hasattr(result, "name")
+        assert hasattr(result, "description")
+        assert hasattr(result, "synonyms")
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
 
 
 @pytest.mark.callout
 @pytest.mark.asyncio
-async def test_create_info_from_name_edge_cases() -> None:
-    """Test create_info_from_name with edge cases."""
-    from findingmodel.tools import create_info_from_name
+async def test_add_details_to_info_basic_wiring() -> None:
+    """Sanity check: Verify basic wiring with real API.
 
-    # Test with less common finding
-    result = await create_info_from_name("thyroid nodule")
-    assert result.name.lower() == "thyroid nodule"
-    assert result.description is not None
+    All comprehensive behavioral testing is in evals/finding_description.py.
+    This test only verifies the tool can be called successfully.
+    """
+    # Skip if Perplexity API key not configured
+    if not settings.perplexity_api_key or not settings.perplexity_api_key.get_secret_value():
+        pytest.skip("Perplexity API key not configured")
 
-    # Test with very specific finding
-    result = await create_info_from_name("pulmonary embolism")
-    assert result.name.lower() == "pulmonary embolism"
-    assert result.description is not None
-
-
-@pytest.mark.callout
-@pytest.mark.skipif(not HAS_PERPLEXITY_API_KEY, reason="Perplexity API key not configured")
-@pytest.mark.asyncio
-async def test_add_details_to_info_integration() -> None:
-    """Integration test for add_details_to_info with real Perplexity API."""
     from findingmodel.finding_info import FindingInfo
     from findingmodel.tools import add_details_to_info
 
-    # Start with basic finding info
-    basic_info = FindingInfo(name="pneumothorax", description="Presence of air in the pleural space", synonyms=["PTX"])
+    # Save and restore ALLOW_MODEL_REQUESTS state
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
 
-    # Add detailed information
-    detailed_info = await add_details_to_info(basic_info)
+    try:
+        # Start with basic finding info
+        basic_info = FindingInfo(
+            name="pneumothorax", description="Presence of air in the pleural space", synonyms=["PTX"]
+        )
 
-    assert isinstance(detailed_info, FindingInfo)
-    assert detailed_info.name == basic_info.name
-    assert detailed_info.description == basic_info.description
-    assert detailed_info.synonyms == basic_info.synonyms
+        # Single API call
+        result = await add_details_to_info(basic_info)
 
-    # Should have added detailed information
-    assert detailed_info.detail is not None
-    assert len(detailed_info.detail) > len(basic_info.description or "")
-
-    # Should have citations
-    assert detailed_info.citations is not None
-    assert len(detailed_info.citations) > 0
-
-    # Citations should be valid URLs
-    for citation in detailed_info.citations:
-        assert citation.startswith(("http://", "https://")) or "http" in citation
+        # Only structural assertions - no behavioral validation
+        assert isinstance(result, FindingInfo)
+        assert hasattr(result, "detail")
+        assert hasattr(result, "citations")
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
 
 
 @pytest.mark.callout
@@ -319,7 +323,7 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
     This test only verifies the tool can be called successfully.
     """
     # Skip if no API key configured
-    if not settings.openai_api_key:
+    if not settings.openai_api_key or not settings.openai_api_key.get_secret_value():
         pytest.skip("OpenAI API key not configured")
 
     from findingmodel.finding_model import FindingModelBase
@@ -330,8 +334,8 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
     models.ALLOW_MODEL_REQUESTS = True
 
     try:
-        # Create basic info
-        finding_info = await create_info_from_name("pneumothorax")
+        # Create basic info - use fast model for integration test
+        finding_info = await create_info_from_name("pneumothorax", model_name="gpt-4o-mini")
 
         # Simple markdown outline
         markdown_text = """
@@ -342,8 +346,8 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
         - Large
         """
 
-        # Create model from markdown
-        model = await create_model_from_markdown(finding_info, markdown_text=markdown_text)
+        # Create model from markdown - use fast model for integration test
+        model = await create_model_from_markdown(finding_info, markdown_text=markdown_text, openai_model="gpt-4o-mini")
 
         # Only structural assertions - no behavioral validation
         assert isinstance(model, FindingModelBase)
@@ -352,79 +356,6 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
         assert hasattr(model, "attributes")
     finally:
         models.ALLOW_MODEL_REQUESTS = original
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_create_info_from_name_integration_normalizes_output() -> None:
-    """Ensure create_info_from_name returns normalized data when using the real API."""
-    from findingmodel.tools import create_info_from_name
-
-    raw_input = " PCL tear "
-    result = await create_info_from_name(raw_input)
-
-    assert result.name == result.name.strip()
-    assert result.name, "Finding name should not be empty"
-
-    synonyms = result.synonyms or []
-    assert all(syn == syn.strip() for syn in synonyms)
-    assert len({syn.casefold() for syn in synonyms}) == len(synonyms)
-
-    original_term = raw_input.strip()
-    if result.name.casefold() != original_term.casefold():
-        assert original_term in synonyms
-
-
-@pytest.mark.callout
-@pytest.mark.skipif(not HAS_PERPLEXITY_API_KEY, reason="Perplexity API key not configured")
-@pytest.mark.asyncio
-async def test_ai_tools_error_handling() -> None:
-    """Test AI tools error handling with invalid inputs."""
-    from findingmodel.finding_info import FindingInfo
-    from findingmodel.tools import add_details_to_info, create_info_from_name
-
-    # Test with very unusual/nonsensical input
-    result = await create_info_from_name("xyznonsensicalmedicalterm")
-    # Should still return a FindingInfo object, even if description is generic
-    assert isinstance(result, FindingInfo)
-    assert result.name == "xyznonsensicalmedicalterm"
-
-    # Test add_details_to_info with minimal input
-    minimal_info = FindingInfo(name="test", description="test description")
-    detailed = await add_details_to_info(minimal_info)
-    assert isinstance(detailed, FindingInfo)
-    assert detailed.name == minimal_info.name
-
-
-# Tests for find_similar_models function
-def test_find_similar_models_basic_functionality() -> None:
-    """Test basic functionality of find_similar_models without API calls."""
-    from findingmodel.tools import find_similar_models
-
-    # Test the function exists and has the correct signature
-    # This test will skip if it requires API calls or database doesn't exist
-    try:
-        import asyncio
-
-        # Call with minimal parameters to test existence
-        result = asyncio.run(find_similar_models("pneumothorax"))
-
-        # Should return a SimilarModelAnalysis object
-        from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
-
-        assert isinstance(result, SimilarModelAnalysis)
-
-    except Exception as e:
-        # If it requires API calls or database doesn't exist, we'll handle that in the callout tests
-        if (
-            "API" in str(e)
-            or "key" in str(e).lower()
-            or "openai" in str(e).lower()
-            or "database does not exist" in str(e).lower()
-        ):
-            pytest.skip(f"Skipping test that requires API access or database: {e}")
-        else:
-            raise
 
 
 # Comprehensive behavioral testing in evals/similar_models.py
@@ -441,56 +372,28 @@ async def test_find_similar_models_basic_wiring() -> None:
     from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
 
     # Skip if API key not configured
-    if not settings.openai_api_key:
+    if not settings.openai_api_key or not settings.openai_api_key.get_secret_value():
         pytest.skip("OPENAI_API_KEY not configured")
 
-    # Skip if MongoDB not available
-    if not HAS_MONGODB:
-        pytest.skip("MongoDB not available")
+    # Save and restore ALLOW_MODEL_REQUESTS state
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
 
-    # Call with simplest valid input
-    result = await find_similar_models(finding_name="pneumothorax", description="Presence of air in the pleural space")
+    try:
+        # Call with simplest valid input
+        result = await find_similar_models(
+            finding_name="pneumothorax", description="Presence of air in the pleural space"
+        )
 
-    # Assert only on structure, not behavior
-    assert isinstance(result, SimilarModelAnalysis)
-    assert hasattr(result, "similar_models")
-    assert hasattr(result, "recommendation")
-    assert hasattr(result, "confidence")
-    assert result.recommendation in ["edit_existing", "create_new"]
-    assert 0.0 <= result.confidence <= 1.0
+        # Assert only on structure, not behavior
+        assert isinstance(result, SimilarModelAnalysis)
+        assert hasattr(result, "similar_models")
+        assert hasattr(result, "recommendation")
+        assert hasattr(result, "confidence")
 
-<<<<<<< HEAD
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_find_similar_models_edge_cases() -> None:
-    """Test find_similar_models with edge cases."""
-    from findingmodel.tools import find_similar_models
-    from findingmodel.tools.similar_finding_models import SimilarModelAnalysis
-
-    # Use faster models for edge case testing
-    small_model = "gpt-4o-mini"  # Use faster model for edge cases
-    analysis_model = "gpt-4o-mini"  # Use faster model for analysis too
-
-    # Test with minimal input
-    result = await find_similar_models(
-        finding_name="test finding", search_model=small_model, analysis_model=analysis_model
-    )
-    assert isinstance(result, SimilarModelAnalysis)
-
-    # Test with empty description
-    result_empty_desc = await find_similar_models(
-        finding_name="test", description="", search_model=small_model, analysis_model=analysis_model
-    )
-    assert isinstance(result_empty_desc, SimilarModelAnalysis)
-
-    # Test with very long finding name
-    long_name = "very long finding name " * 20
-    result_long = await find_similar_models(
-        finding_name=long_name, search_model=small_model, analysis_model=analysis_model
-    )
-    assert isinstance(result_long, SimilarModelAnalysis)
-    # NO behavioral assertions - those belong in evals
+        # NO behavioral assertions - those belong in evals
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
 
 
 def test_tools_import_failures() -> None:

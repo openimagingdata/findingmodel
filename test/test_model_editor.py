@@ -126,8 +126,14 @@ async def test_edit_model_natural_language_callout_real_api(real_model: FindingM
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
+        # Create agent with fast model for integration test
+        from findingmodel.tools.common import get_openai_model
+
+        fast_agent = model_editor.create_edit_agent()
+        fast_agent.model = get_openai_model("gpt-4o-mini")
+
         command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
-        result = await model_editor.edit_model_natural_language(real_model, command)
+        result = await model_editor.edit_model_natural_language(real_model, command, agent=fast_agent)
 
         # Verify we got a valid result structure back
         assert isinstance(result.model, FindingModelFull)

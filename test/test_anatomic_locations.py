@@ -1105,9 +1105,12 @@ async def test_find_anatomic_locations_basic_wiring() -> None:
     models.ALLOW_MODEL_REQUESTS = True
 
     try:
-        # Single API call with simple input
+        # Single API call with simple input - use fast model for integration test
         result = await find_anatomic_locations(
-            finding_name="pneumonia", description="Infection of the lung parenchyma", use_duckdb=True
+            finding_name="pneumonia",
+            description="Infection of the lung parenchyma",
+            use_duckdb=True,
+            model="gpt-4o-mini",
         )
 
         # Assert only on structure, not behavior
