@@ -54,6 +54,8 @@ def test_duckdb_index_uses_manifest_when_no_db_path_provided() -> None:
     with (
         patch("findingmodel.config.fetch_manifest", return_value=test_manifest) as mock_fetch,
         patch("pooch.retrieve") as mock_retrieve,
+        # Mock Path.exists to return False so manifest will be called
+        patch("pathlib.Path.exists", return_value=False),
     ):
         # Configure mock to return a fake path
         mock_db_path = Path("/fake/path/finding_models.duckdb")
@@ -187,6 +189,8 @@ async def test_manifest_integration_with_mock_download(tmp_path: Path) -> None:
     with (
         patch("findingmodel.config.fetch_manifest", return_value=test_manifest) as mock_fetch,
         patch("pooch.retrieve", return_value=str(real_db_path)) as mock_retrieve,
+        # Mock Path.exists to return False so manifest will be called
+        patch("pathlib.Path.exists", return_value=False),
     ):
         # Create index without explicit path - should use manifest
         index = DuckDBIndex(db_path=None, read_only=True)
@@ -236,12 +240,14 @@ def test_ensure_db_file_with_manifest_key_fetches_manifest() -> None:
     with (
         patch("findingmodel.config.fetch_manifest", return_value=test_manifest) as mock_fetch,
         patch("pooch.retrieve") as mock_retrieve,
+        # Mock Path.exists to return False so manifest will be called
+        patch("pathlib.Path.exists", return_value=False),
     ):
         mock_retrieve.return_value = "/fake/db.duckdb"
 
         # Call ensure_db_file WITH manifest_key (correct behavior)
         ensure_db_file(
-            filename="finding_models.duckdb",
+            file_path="finding_models.duckdb",
             remote_url=settings.remote_index_db_url,
             remote_hash=settings.remote_index_db_hash,
             manifest_key="finding_models",  # CORRECT: Provide manifest_key

@@ -4,8 +4,9 @@ from typing import Annotated, Any, Literal
 import httpx
 import openai
 from platformdirs import user_data_dir
-from pydantic import BeforeValidator, Field, HttpUrl, SecretStr
+from pydantic import BeforeValidator, Field, HttpUrl, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing_extensions import Self
 
 # Module-level cache for manifest (cleared on process restart)
 _manifest_cache: dict[str, Any] | None = None
@@ -61,13 +62,13 @@ class FindingModelConfig(BaseSettings):
     )
 
     # DuckDB configuration
-    duckdb_anatomic_path: str = Field(
-        default="anatomic_locations.duckdb",
-        description="Filename for anatomic locations database in user data directory",
+    duckdb_anatomic_path: str | None = Field(
+        default=None,
+        description="Path to anatomic locations database (absolute, relative to user data dir, or None for default)",
     )
-    duckdb_index_path: str = Field(
-        default="finding_models.duckdb",
-        description="Filename for finding models index database in user data directory",
+    duckdb_index_path: str | None = Field(
+        default=None,
+        description="Path to finding models index database (absolute, relative to user data dir, or None for default)",
     )
     openai_embedding_model: str = Field(
         default="text-embedding-3-small", description="OpenAI model for generating embeddings"
@@ -100,6 +101,27 @@ class FindingModelConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    @model_validator(mode="after")
+    def validate_remote_db_config(self) -> Self:
+        """Validate that remote URL and hash are provided together (or neither)."""
+        # Check anatomic database config
+        if (self.remote_anatomic_db_url is None) != (self.remote_anatomic_db_hash is None):
+            raise ValueError(
+                "Must provide both REMOTE_ANATOMIC_DB_URL and REMOTE_ANATOMIC_DB_HASH, or neither. "
+                f"Got URL={'set' if self.remote_anatomic_db_url else 'unset'}, "
+                f"hash={'set' if self.remote_anatomic_db_hash else 'unset'}"
+            )
+
+        # Check index database config
+        if (self.remote_index_db_url is None) != (self.remote_index_db_hash is None):
+            raise ValueError(
+                "Must provide both REMOTE_INDEX_DB_URL and REMOTE_INDEX_DB_HASH, or neither. "
+                f"Got URL={'set' if self.remote_index_db_url else 'unset'}, "
+                f"hash={'set' if self.remote_index_db_hash else 'unset'}"
+            )
+
+        return self
+
     def check_ready_for_openai(self) -> Literal[True]:
         if not self.openai_api_key.get_secret_value():
             raise ConfigurationError("OpenAI API key is not set")
@@ -115,101 +137,185 @@ settings = FindingModelConfig()
 openai.api_key = settings.openai_api_key.get_secret_value()
 
 
-def ensure_db_file(
-    filename: str,
-    remote_url: str | None,
-    remote_hash: str | None,
-    manifest_key: str,
-) -> Path:
-    """Download DB file to user data directory with manifest support.
-
-    Pooch will automatically re-download if the local file's hash doesn't match the expected hash.
-
-    Priority:
-        1. Use existing local file if present and hash matches (Pooch verifies this)
-        2. Try manifest fetch (always attempted, manifest_key always provided)
-        3. Fall back to explicit environment config (remote_url/remote_hash) if not None
-        4. Error if manifest fails and no explicit environment config
+def _resolve_target_path(file_path: str | Path | None, manifest_key: str) -> Path:
+    """Resolve database file path to absolute Path.
 
     Args:
-        filename: Database filename (e.g., 'anatomic_locations.duckdb')
-        remote_url: Optional direct URL to download from (explicit env config fallback)
-        remote_hash: Optional hash for verification (e.g., 'sha256:abc...')
-        manifest_key: Key in manifest JSON databases section (e.g., 'finding_models')
+        file_path: User-specified path (absolute, relative, or None)
+        manifest_key: Key in manifest for default filename (e.g., 'finding_models')
 
     Returns:
-        Path to the database file (may not exist if download not configured)
+        Resolved absolute Path
+    """
+    data_dir = Path(user_data_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
+
+    if file_path is None:
+        # Default: {manifest_key}.duckdb in user data dir
+        return data_dir / f"{manifest_key}.duckdb"
+
+    path = Path(file_path)
+    if path.is_absolute():
+        return path
+    else:
+        # Relative path: resolve to user_data_dir
+        return data_dir / path
+
+
+def _verify_file_hash(file_path: Path, expected_hash: str) -> bool:
+    """Verify file hash matches expected value using Pooch.
+
+    Args:
+        file_path: Path to file to verify
+        expected_hash: Expected hash in format "algorithm:hexdigest" (e.g., "sha256:abc123...")
+
+    Returns:
+        True if hash matches, False otherwise
+    """
+    import pooch
+
+    # Parse "algorithm:hexdigest" format
+    algorithm, expected_digest = expected_hash.split(":", 1)
+
+    # Use Pooch's file_hash function
+    actual_digest: str = pooch.file_hash(str(file_path), alg=algorithm)
+
+    return actual_digest == expected_digest
+
+
+def _download_file(target_path: Path, url: str, hash_value: str) -> Path:
+    """Download file using Pooch with hash verification.
+
+    Args:
+        target_path: Target path for downloaded file
+        url: Download URL
+        hash_value: Expected hash in format "algorithm:hexdigest"
+
+    Returns:
+        Path to downloaded file
 
     Raises:
-        ConfigurationError: If manifest fails and no explicit environment config provided
-
-    Example:
-        # Prefer manifest, fall back to explicit env config
-        db_path = ensure_db_file(
-            "finding_models.duckdb",
-            remote_url="https://example.com/db.duckdb",
-            remote_hash="sha256:abc123...",
-            manifest_key="finding_models"
-        )
+        Exception: If download or verification fails
     """
+    import pooch
+
     from findingmodel import logger
 
-    # Get user data directory (platform-specific)
-    data_dir = Path(user_data_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True))
-    db_path = data_dir / filename
+    # Ensure parent directory exists
+    target_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Always try manifest first (manifest_key always provided now)
-    url_to_use = None
-    hash_to_use = None
-    version = None
+    logger.info(f"Downloading database file from {url}")
+    downloaded = pooch.retrieve(url=url, known_hash=hash_value, path=target_path.parent, fname=target_path.name)
+    logger.info(f"Database file ready at {downloaded}")
+    return Path(downloaded)
+
+
+def _download_from_manifest(target_path: Path, manifest_key: str) -> Path:
+    """Download file using manifest information.
+
+    Args:
+        target_path: Target path for downloaded file
+        manifest_key: Key in manifest databases section
+
+    Returns:
+        Path to downloaded file
+
+    Raises:
+        ConfigurationError: If manifest fetch or download fails
+    """
+    from findingmodel import logger
 
     try:
         manifest = fetch_manifest()
         db_info = manifest["databases"][manifest_key]
-        url_to_use = db_info["url"]
-        hash_to_use = db_info["hash"]
-        version = db_info.get("version")
-        version_str = version if version else "unknown"
-        logger.info(f"Using manifest version {version_str} for {manifest_key}")
+        url = db_info["url"]
+        hash_value = db_info["hash"]
+        version = db_info.get("version", "unknown")
+        logger.info(f"Using manifest version {version} for {manifest_key}")
+        return _download_file(target_path, url, hash_value)
     except Exception as e:
-        # Manifest failed - check for explicit environment config
-        if remote_url is None or remote_hash is None:
-            raise ConfigurationError(
-                f"Cannot download {filename}: manifest fetch failed ({e}) "
-                f"and no explicit REMOTE_*_DB_URL/REMOTE_*_DB_HASH configured in environment. "
-                f"Either fix manifest connectivity or set explicit environment variables."
-            ) from e
-        # User explicitly configured URL/hash - use as fallback
-        logger.warning(
-            f"Manifest fetch failed ({e}), using explicit environment config: url={remote_url}, hash={remote_hash}"
+        raise ConfigurationError(
+            f"Cannot download {target_path.name}: manifest fetch/download failed ({e}). "
+            f"Either fix manifest connectivity or set explicit DUCKDB_*_PATH and REMOTE_*_DB_URL/HASH."
+        ) from e
+
+
+def ensure_db_file(
+    file_path: str | Path | None,
+    remote_url: str | None,
+    remote_hash: str | None,
+    manifest_key: str,
+) -> Path:
+    """Ensure database file is available with flexible configuration priority.
+
+    Priority logic:
+        1. If file_path exists and no URL/hash: use file directly (no verification)
+        2. If file_path exists and URL/hash provided: verify hash
+           - Hash matches: use file
+           - Hash mismatch: download from URL
+        3. If file doesn't exist and URL/hash provided: download using URL/hash
+        4. If file doesn't exist and no URL/hash: download using manifest (fallback)
+
+    Args:
+        file_path: Database file path (absolute, relative to user data dir, or None for default)
+        remote_url: Optional download URL (must provide both URL and hash, or neither)
+        remote_hash: Optional hash for verification (e.g., 'sha256:abc...')
+        manifest_key: Key in manifest JSON databases section (e.g., 'finding_models', 'anatomic_locations')
+
+    Returns:
+        Path to the database file
+
+    Raises:
+        ConfigurationError: If configuration is invalid or download fails
+
+    Examples:
+        # Docker production: use pre-mounted file
+        db_path = ensure_db_file("/mnt/data/finding_models.duckdb", None, None, "finding_models")
+
+        # Development: use manifest
+        db_path = ensure_db_file(None, None, None, "finding_models")
+
+        # Custom URL with verification
+        db_path = ensure_db_file(
+            "my_db.duckdb",
+            "https://example.com/db.duckdb",
+            "sha256:abc123...",
+            "finding_models"
         )
-        url_to_use = remote_url
-        hash_to_use = remote_hash
+    """
+    from findingmodel import logger
 
-    # Download using Pooch if URL/hash available
-    if url_to_use and hash_to_use:
-        import pooch
+    # Resolve target path
+    target = _resolve_target_path(file_path, manifest_key)
 
-        # Pooch will check if file exists and verify hash
-        # If hash mismatches, it will automatically re-download
-        logger.info(f"Ensuring database file '{filename}' is available (will download/update if needed)")
-        data_dir.mkdir(parents=True, exist_ok=True)
+    # Check if we have explicit remote config
+    has_explicit_remote = remote_url is not None and remote_hash is not None
 
-        try:
-            downloaded = pooch.retrieve(url=url_to_use, known_hash=hash_to_use, path=data_dir, fname=filename)
-            logger.info(f"Database file ready at {downloaded}")
-            return Path(downloaded)
-        except Exception as e:
-            logger.error(f"Failed to download/verify database file '{filename}': {e}")
-            raise
+    # Check if file exists
+    if target.exists():
+        if has_explicit_remote:
+            # Type narrowing: has_explicit_remote means both are not None
+            assert remote_url is not None and remote_hash is not None
+            # Verify hash
+            logger.info(f"Verifying existing file {target}")
+            if _verify_file_hash(target, remote_hash):
+                logger.info(f"File hash verified, using existing file: {target}")
+                return target
+            else:
+                logger.warning(f"File hash mismatch, re-downloading from {remote_url}")
+                return _download_file(target, remote_url, remote_hash)
+        else:
+            # No hash to verify, use file as-is
+            logger.debug(f"Using existing database file: {target}")
+            return target
 
-    # No remote URL configured - check if local file exists
-    if db_path.exists():
-        logger.debug(f"Using local database file: {db_path}")
-        return db_path
-
-    logger.debug(f"No remote URL configured for '{filename}', returning local path: {db_path}")
-    return db_path  # Return path even if doesn't exist (existing error handling will catch it)
+    # File doesn't exist, need to download
+    if has_explicit_remote:
+        # Type narrowing: has_explicit_remote means both are not None
+        assert remote_url is not None and remote_hash is not None
+        return _download_file(target, remote_url, remote_hash)
+    else:
+        # Fall back to manifest
+        return _download_from_manifest(target, manifest_key)
 
 
 def fetch_manifest() -> dict[str, Any]:

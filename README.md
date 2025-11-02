@@ -19,18 +19,51 @@ A Python library for managing Open Imaging Finding Models - structured data mode
 pip install findingmodel
 ```
 
-### Required API Keys
+## Configuration
 
-Create a `.env` file with your API keys:
+Configure the library by creating a `.env` file in your project root. See `.env.sample` for all available options.
+
+### API Keys (Required/Optional by Feature)
+
+Different features require different API keys:
+
+| Feature | Required Key | Purpose |
+|---------|--------------|---------|
+| **Core AI Features** | `OPENAI_API_KEY` | Generate descriptions, synonyms, create models from markdown |
+| **Detailed Finding Info** | `PERPLEXITY_API_KEY` | Add citations and detailed descriptions (requires OpenAI key too) |
+| **800+ Medical Ontologies** | `BIOONTOLOGY_API_KEY` | Access BioOntology.org for SNOMED-CT, ICD-10, LOINC, etc. |
 
 ```bash
-# Required for AI features
+# Required for most features
 OPENAI_API_KEY=your_key_here
 
-# Optional for enhanced features
-PERPLEXITY_API_KEY=your_key_here  # For detailed web lookups
-BIOONTOLOGY_API_KEY=your_key_here  # For BioOntology.org access (800+ ontologies)
+# Optional - only needed for add_details_to_info()
+PERPLEXITY_API_KEY=your_key_here
+
+# Optional - only needed for BioOntology backend in ontology searches
+BIOONTOLOGY_API_KEY=your_key_here
 ```
+
+**Note:** The Index and anatomic location search work without any API keys (DuckDB backend). OpenAI is only needed when using AI-powered tools.
+
+### Local Database Configuration
+
+By default, the up-to-date finding models index database from the [GitHub repository](https://github.com/openimagingdata/findingmodels) is automatically downloaded to a data directory based on an online manifest. To use a pre-downloaded version (e.g., in production/Docker deployments), you can specify its path:
+
+```bash
+# Production: use pre-mounted files
+DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
+```
+
+Alternatively, you can also lock to a specific version of the index database by specifying a download URL and its hash.
+
+**Configuration Priority:**
+1. If file exists and no URL/hash specified → uses file directly (no download)
+2. If file exists with URL/hash → verifies hash, re-downloads if mismatch
+3. If file doesn't exist with URL/hash → downloads from URL
+4. If nothing specified → downloads from manifest.json (default)
+
+The anatomic locations database for ontologic lookups works similarly. See `.env.sample` for more configuration options including custom download URLs and relative paths.
 
 ## CLI
 

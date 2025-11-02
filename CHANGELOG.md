@@ -27,12 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `generate_model_id(source)` - Random generation with collision checking
   - `generate_attribute_id(model_oifm_id, source)` - Attribute ID generation with source inference
   - No network dependency, thread-safe via DuckDB
+- **Database Path Configuration** - Specify database file paths for production/Docker deployments:
+  - Set `DUCKDB_INDEX_PATH` or `DUCKDB_ANATOMIC_PATH` to use pre-mounted database files
+  - Default behavior unchanged (automatic manifest-based downloads)
 
 ### Changed
 
 - **Index schema**: Added separate `finding_model_json` table for blob storage
 - **Index schema**: Added index on `slug_name` for efficient LIKE queries
 - **Code organization**: Shared helper methods eliminate duplication in list/search/count operations
+- **Database configuration defaults** changed to enable custom paths (previously auto-downloaded only)
 
 ### Deprecated
 

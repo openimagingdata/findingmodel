@@ -207,7 +207,18 @@ def build(directory: Path, output: Path | None) -> None:
     console = Console()
 
     async def _do_build(directory: Path, output: Path | None) -> None:
-        db_path = output if output else Path(settings.duckdb_index_path)
+        from findingmodel.config import ensure_db_file
+
+        db_path = (
+            output
+            if output
+            else ensure_db_file(
+                settings.duckdb_index_path,
+                settings.remote_index_db_url,
+                settings.remote_index_db_hash,
+                manifest_key="finding_models",
+            )
+        )
         console.print(f"[bold green]Building index at [yellow]{db_path}")
         console.print(f"[gray]Source directory: [yellow]{directory.absolute()}")
 
