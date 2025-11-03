@@ -6,7 +6,88 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - 2025-11-03
+
+### Added
+
+- **Enhanced Index API Methods** - Complete pagination and search capabilities without breaking abstraction:
+  - `list(limit, offset, order_by, order_dir)` - Paginated browsing of all finding models
+  - `search_by_slug(pattern, match_type, limit, offset)` - Pattern-based search with relevance ranking
+  - `count()` and `count_search()` - Efficient counting for pagination UI
+  - `get_full(oifm_id)` and `get_full_batch(oifm_ids)` - Retrieve complete FindingModelFull objects
+- **Manifest-Based Database Downloads** - Runtime database version discovery:
+  - Databases auto-update from remote manifest.json (no library release needed)
+  - Graceful fallback to direct URL/hash for offline scenarios
+  - CLI command: `db-info` to check database versions and status
+- **Self-Contained Databases** - Full JSON storage in DuckDB:
+  - Single .duckdb file contains metadata + embeddings + full JSON models
+  - Separate `finding_model_json` table with automatic compression
+  - No calls to external sites for full models
+- **Local ID Generation** - Database-backed OIFM/OIFMA ID generation:
+  - `generate_model_id(source)` - Random generation with collision checking
+  - `generate_attribute_id(model_oifm_id, source)` - Attribute ID generation with source inference
+  - No network dependency, thread-safe via DuckDB
+- **Database Path Configuration** - Specify database file paths for production/Docker deployments:
+  - Set `DUCKDB_INDEX_PATH` or `DUCKDB_ANATOMIC_PATH` to use pre-mounted database files
+  - Default behavior unchanged (automatic manifest-based downloads)
+- **Comprehensive Agent Evaluation Suites** (2025-10-18 to 2025-11-02) - Five new eval suites for AI agent quality assessment:
+  - `evals/similar_models.py` - Similarity search and duplicate detection (8 cases)
+  - `evals/ontology_match.py` - Multi-backend ontology concept matching (12 cases)
+  - `evals/anatomic_search.py` - Two-agent anatomic location search (10 cases)
+  - `evals/markdown_in.py` - Markdown to finding model parsing (8 cases)
+  - `evals/finding_description.py` - Clinical description quality with LLMJudge (15 cases)
+  - All use Pydantic Evals Dataset.evaluate() pattern with focused evaluators
+  - Logfire observability via lazy instrumentation pattern
+  - Taskfile commands: `task evals` or `task evals:agent_name`
+  - **LLMJudge Evaluator Support** (2025-11-02) - Built-in LLM-based quality assessment:
+    - Configured for clinical description quality scoring
+    - Uses cost-effective gpt-5-nano model
+    - Workaround for Pydantic Evals API key bug documented
+  - **PerformanceEvaluator** (2025-10-29) - Reusable evaluator in `src/findingmodel/tools/evaluators.py`:
+    - Configurable time limits for agent performance testing
+    - Comprehensive unit tests in `test/tools/test_evaluators.py`
+    - Used across all 5+ eval suites (eliminates ~190 lines duplication)
+
+### Changed
+
+- **GPT-5 Model Adoption** (2025-11-02) - Updated default OpenAI models:
+  - `openai_default_model`: gpt-4o-mini → gpt-5-mini (better capability)
+  - `openai_default_model_small`: gpt-4.1-nano → gpt-5-nano (cost-effective)
+  - `openai_default_model_full`: gpt-5 (unchanged)
+- **Test Performance Optimization** (2025-11-02) - Integration tests 54% faster:
+  - Tests explicitly use gpt-4o-mini for speed (278s → 127s total test suite)
+  - Production code uses GPT-5 models for capability
+  - Clear separation: fast models for CI/CD, capable models for production
+- **Evaluator Architecture** (2025-10-29) - Clean separation of concerns:
+  - Inline evaluators in eval scripts (35+ agent-specific evaluators)
+  - Reusable evaluators in src/ only when genuinely shared (PerformanceEvaluator)
+  - Lazy instrumentation pattern prevents Logfire noise in unit tests
+- **Anatomic Location Search Enhancement** (2025-11-02) - Added model parameter:
+  - `find_anatomic_locations()` accepts optional `model` parameter
+  - Allows per-call model override for performance tuning
+- **Index schema**: Added separate `finding_model_json` table for blob storage
+- **Index schema**: Added index on `slug_name` for efficient LIKE queries
+- **Code organization**: Shared helper methods eliminate duplication in list/search/count operations
+- **Database configuration defaults** changed to enable custom paths (previously auto-downloaded only)
+
+### Deprecated
+
+- Direct access to `Index._ensure_connection()` - use new API methods instead (see migration guide)
+
+### Removed
+
+- **`IdManager` class** - Use `Index.add_ids_to_model()` and `Index.finalize_placeholder_attribute_ids()` instead, or the convenience function `findingmodel.tools.add_ids_to_model()`
+- **`id_manager` singleton** from `findingmodel.tools` - Use convenience functions or create Index instances
+- **`IdManager.load_used_ids_from_github()`** - Index queries database directly
+- **`src/findingmodel/tools/add_ids.py`** module - All ID generation now handled by Index class
+- **MongoDB Index backend** - DuckDB is now the only Index implementation
+- **`MongoDBIndex` class** - Use `Index` (aliased to `DuckDBIndex`) instead
+
+### Fixed
+
+- **LLMJudge API Key Configuration** (2025-11-02) - Workaround for Pydantic Evals bug:
+  - LLMJudge now reads OpenAI API key from environment variable
+  - Documented workaround until upstream fix available
 
 ## [0.4.0] - 2025-10-20
 
@@ -22,11 +103,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `anatomic_locations` field in `FindingModelFull` for specifying anatomic index codes
   - Two-agent AI search tool across anatomic_locations, RadLex, and SNOMED CT ontologies
   - CLI commands for building, validating, and viewing statistics on anatomic location databases
-  - Demo: `notebooks/demo_anatomic_location_search.py`
+  - Demo: `scripts/anatomic_location_search.py`
 - **Ontology Concept Search Tool**: High-performance medical concept search
   - Multi-backend support: DuckDB vector search and BioOntology.org REST API (requires `BIOONTOLOGY_API_KEY`)
   - Protocol-based architecture for pluggable search backends
-  - Demo: `notebooks/demo_ontology_concept_match.py`
+  - Demo: `scripts/ontology_concept_match.py`
 - **Finding Model Editor Tool**: AI-assisted interactive editor with markdown and natural language workflows
 - **Index API enhancements**:
   - `get_people()` method to retrieve all people from Index (sorted by name)

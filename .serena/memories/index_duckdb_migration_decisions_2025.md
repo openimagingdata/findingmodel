@@ -67,26 +67,64 @@
 - FLOAT[512] embeddings from text-embedding-3-small (same as anatomic locations)
 
 ### Remote Database Downloads (2025-10-11)
-**Decision**: Optional automatic download of pre-built DuckDB files via Pooch integration.
+**Decision**: Optional automatic download of pre-built DuckDB files with flexible configuration.
+
+**NEW Configuration Priority (2025-11-02)**:
+1. If `DUCKDB_*_PATH` exists and no URL/hash: use file directly (no verification, no manifest)
+2. If `DUCKDB_*_PATH` exists AND URL/hash set: verify hash
+   - Hash matches: use file
+   - Hash mismatch: download from URL
+3. If `DUCKDB_*_PATH` doesn't exist AND URL/hash set: download using URL/hash
+4. If nothing specified: download from manifest.json (fallback)
+
 **Configuration**:
 ```python
-# In config.py
-duckdb_index_path: str = Field(default="finding_models.duckdb")  # filename only
+# In config.py (all None by default except manifest URL)
+duckdb_index_path: str | None = Field(default=None)
+duckdb_anatomic_path: str | None = Field(default=None)
 remote_index_db_url: str | None = Field(default=None)
 remote_index_db_hash: str | None = Field(default=None)
+remote_anatomic_db_url: str | None = Field(default=None)
+remote_anatomic_db_hash: str | None = Field(default=None)
+remote_manifest_url: str | None = Field(default="https://findingmodelsdata.t3.storage.dev/manifest.json")
 ```
 
-**Implementation**:
-- Uses `importlib.resources.files('findingmodel') / 'data'` to locate package data directory
-- Helper: `ensure_db_file(filename, url, hash)` downloads if missing and both URL/hash provided
-- Files cached in package installation directory
+**Path Resolution**:
+- `None` → `{user_data_dir}/{manifest_key}.duckdb` (default location)
+- Relative path → `{user_data_dir}/{relative_path}`
+- Absolute path → used as-is
+
+**Implementation Details**:
+- Helper: `ensure_db_file(file_path, remote_url, remote_hash, manifest_key)` handles all logic
+- Hash verification: `_verify_file_hash()` uses `pooch.file_hash()` for SHA256 verification
+- Download: `_download_file()` uses Pooch for hash-verified downloads
+- Manifest fallback: `_download_from_manifest()` fetches from manifest.json
+- User data dir: `platformdirs.user_data_dir("findingmodel", "openimagingdata")`
 - SHA256 verification via Pooch library
-- Explicit paths still honored (for dev/testing)
+- Must provide both URL and hash together, or neither (validated by `@model_validator`)
+
+**Validation** (2025-11-02):
+- Pydantic `@model_validator(mode="after")` in `FindingModelConfig` ensures URL/hash pairs
+- Raises `ValidationError` at Settings instantiation if only URL or only hash provided
+- Tests in `test/test_config.py` verify all validation scenarios
+
+**Production/Docker Use Case** (2025-11-02):
+```bash
+# Pre-mount database files
+# docker-compose.yml:
+volumes:
+  - ./databases/finding_models.duckdb:/mnt/data/finding_models.duckdb:ro
+
+# .env:
+DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
+# No URL/hash specified → uses file directly, no manifest check
+```
 
 **Rationale**:
 - Simplifies distribution (no need to bundle large DB files in package)
-- Users can opt-in to pre-built databases
-- Development still uses local builds
+- Production flexibility: pre-mount files without network dependencies
+- Development: defaults to manifest download
+- Hash verification ensures integrity when needed
 - Follows YAGNI (simple config-driven downloads, no versioning/update checking)
 
 ## Two-Phase Approach (2025-10-09)
@@ -146,14 +184,15 @@ remote_index_db_hash: str | None = Field(default=None)
 
 **L2→Cosine conversion**: `cosine_sim = 1 - (l2_distance / 2)` (DuckDB uses L2, not cosine metric)
 
-## Configuration Changes
+## Configuration Changes (2025-11-02)
 
-**Remove**: All MongoDB settings (uri, db, collections, use_atlas_search)
-**Add**: 
-- duckdb_index_path: str = "finding_models.duckdb" (filename only, not full path)
-- hybrid_search_bm25_weight: float = 0.3
-- hybrid_search_semantic_weight: float = 0.7
-- remote_index_db_url: str | None = None (optional download URL)
-- remote_index_db_hash: str | None = None (optional SHA256 for verification)
+**Environment Variables**:
+- `DUCKDB_INDEX_PATH`: Path to finding models database (absolute/relative/None)
+- `DUCKDB_ANATOMIC_PATH`: Path to anatomic locations database (absolute/relative/None)
+- `REMOTE_INDEX_DB_URL`: Download URL for finding models database (optional)
+- `REMOTE_INDEX_DB_HASH`: SHA256 hash for finding models database (optional, requires URL)
+- `REMOTE_ANATOMIC_DB_URL`: Download URL for anatomic locations database (optional)
+- `REMOTE_ANATOMIC_DB_HASH`: SHA256 hash for anatomic locations database (optional, requires URL)
+- `REMOTE_MANIFEST_URL`: URL to manifest.json (default: https://findingmodelsdata.t3.storage.dev/manifest.json)
 
 **Reuse**: openai_embedding_model, openai_embedding_dimensions (already in config)

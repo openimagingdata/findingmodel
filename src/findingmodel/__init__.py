@@ -16,9 +16,6 @@ from .index import DuckDBIndex as DuckDBIndex
 from .index import DuckDBIndex as Index  # DuckDB is now the default Index
 from .index_code import IndexCode as IndexCode
 
-# Backward compatibility - deprecated MongoDB implementation
-from .mongodb_index import Index as MongoDBIndex  # deprecated - use DuckDBIndex or Index instead
-
 __all__ = [
     "DuckDBIndex",
     "FindingInfo",
@@ -26,7 +23,6 @@ __all__ = [
     "FindingModelFull",
     "Index",
     "IndexCode",
-    "MongoDBIndex",
     "logger",
     "settings",
     "tools",

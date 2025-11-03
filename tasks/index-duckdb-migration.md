@@ -1497,3 +1497,271 @@ After these optimizations, proceed with:
 - Current Index: `src/findingmodel/index.py` (789 lines)
 - Test suite: `test/test_index.py` (635 lines, 34 tests)
 - Anatomic migration: `notebooks/migrate_anatomic_to_duckdb.py` (458 lines)
+
+## Phase 8: Complete MongoDB Index Removal
+
+**Status**: ✅ COMPLETE
+**Goal**: Remove deprecated MongoDB Index entirely since DuckDB is now the default and fully functional
+**Timeline**: Immediate (v0.5.0) - same approach as IdManager removal
+**Completed**: 2025-10-29
+
+### Rationale for Immediate Removal
+
+**User Confirmation**: Systems that need MongoDB can stay on v0.4.x. DuckDB Index is fully functional with 67 passing tests.
+
+**Risk Assessment**: **LOW**
+- DuckDB Index fully implemented and tested (Phase 1 complete)
+- All 67 tests passing (66 fast + 1 callout)
+- MongoDB already marked as deprecated in docs
+- Breaking change acceptable (deprecated backend removal)
+- Optional dependency - users explicitly opt-in to MongoDB
+
+### Analysis
+
+**Current State**:
+- mongodb_index.py exists (~810 lines of deprecated code)
+- test_index_mongodb.py exists (37 passing tests)
+- MongoDBIndex REMOVED from __init__.py exports (already done)
+- MongoDB config fields commented out in config.py
+- Optional dependency: `mongodb = ["motor>=3.7.1"]` in pyproject.toml
+- Documentation mentions MongoDB as deprecated backend
+
+**External Dependencies Found**:
+1. test/test_index_mongodb.py - Only file importing from mongodb_index
+2. test/test_model_editor.py - Imports `from findingmodel import Index` (already aliased to DuckDBIndex, will work correctly)
+3. docs/database-management.md - Has MongoDB section (lines 248-271)
+4. README.md - Has MongoDB comment (line 543)
+
+**What Gets Removed**:
+- MongoDB Index class (~810 lines)
+- MongoDB-specific tests (37 tests)
+- motor optional dependency
+- MongoDB documentation sections
+- Commented MongoDB config fields
+
+**What Gets Kept**:
+- index_validation.py - Shared validation using Protocol pattern, works with any backend
+
+---
+
+### Task 8.1: Delete MongoDB Implementation Files
+
+**Files to Delete**:
+1. `src/findingmodel/mongodb_index.py` (~810 lines)
+2. `test/test_index_mongodb.py` (37 tests)
+
+**Rationale**: These files are only used by each other. No external dependencies beyond the test file.
+
+**Acceptance Criteria**:
+- [x] Both files deleted
+- [x] No import errors when importing findingmodel
+- [x] Remaining tests still pass
+
+---
+
+### Task 8.2: Remove MongoDB from pyproject.toml
+
+**File**: `pyproject.toml`
+
+**Change** (line 43):
+```toml
+# DELETE this line:
+mongodb = ["motor>=3.7.1"]  # Deprecated, use DuckDB index instead
+```
+
+**Rationale**: Remove optional MongoDB dependency since backend no longer exists.
+
+**Acceptance Criteria**:
+- [x] mongodb optional dependency removed
+- [x] No motor/pymongo in dependencies
+- [x] `uv sync` runs without errors
+
+---
+
+### Task 8.3: Clean Up config.py
+
+**File**: `src/findingmodel/config.py`
+
+**Change** (lines 46-53):
+```python
+# DELETE these commented lines:
+    # DEPRECATED: MongoDB is no longer the default index backend
+    # Use DuckDB instead (see duckdb_* settings below)
+    # To use MongoDB, install with: pip install findingmodel[mongodb]
+    # mongodb_uri: QuoteStrippedSecretStr = Field(default=SecretStr("mongodb://localhost:27017"))
+    # mongodb_db: str = Field(default="findingmodels")
+    # mongodb_index_collection_base: str = Field(default="index_entries")
+    # mongodb_organizations_collection_base: str = Field(default="organizations")
+    # mongodb_people_collection_base: str = Field(default="people")
+```
+
+**Rationale**: Remove commented MongoDB config since backend no longer exists.
+
+**Acceptance Criteria**:
+- [x] Commented MongoDB config removed
+- [x] No MongoDB references in config.py
+- [x] DuckDB config remains intact
+
+---
+
+### Task 8.4: Update Documentation
+
+**Files**: `README.md`, `docs/database-management.md`, `CHANGELOG.md`
+
+**README.md Changes** (line 543):
+```python
+# DELETE or UPDATE:
+    # Initialize index (connects to MongoDB)
+
+# TO:
+    # Initialize index (DuckDB backend)
+```
+
+**docs/database-management.md Changes** (lines 248-271):
+```markdown
+# DELETE entire section:
+## MongoDB Backend (Deprecated)
+
+MongoDB is still available but deprecated. To use MongoDB:
+
+1. Install with MongoDB support:
+   ```
+   pip install findingmodel[mongodb]
+   ```
+
+2. Configure connection:
+   ```
+   MONGODB_URI=mongodb://localhost:27017
+   ```
+
+3. Use the `MongoDBIndex` class:
+   ```python
+   from findingmodel.mongodb_index import MongoDBIndex
+
+   async with MongoDBIndex() as index:
+       ...
+   ```
+
+**Migration from MongoDB to DuckDB**: Use `index build` to create a DuckDB index from your finding model definition files. MongoDB and DuckDB indexes are maintained separately.
+```
+
+**ADD** (brief historical note in same location):
+```markdown
+> **Historical Note**: Prior to v0.5.0, a MongoDB-based Index implementation was available. This was replaced with DuckDB in v0.5.0. Users needing MongoDB should use findingmodel v0.4.x.
+```
+
+**CHANGELOG.md Changes**:
+
+Add to "Removed" section:
+```markdown
+### Removed
+
+... (existing IdManager entries) ...
+
+- **MongoDB Index backend** (`mongodb_index.py`) - Removed in v0.5.0. DuckDB is now the only Index implementation.
+- **`MongoDBIndex` class export** - No longer available. Use `Index` (aliased to `DuckDBIndex`) instead.
+- **motor optional dependency** - MongoDB backend no longer available
+- **MongoDB configuration fields** - Removed from config (mongodb_uri, mongodb_db, mongodb_*_collection_base)
+- **test_index_mongodb.py** - 37 MongoDB-specific tests removed
+```
+
+**Acceptance Criteria**:
+- [x] README MongoDB comment updated
+- [x] database-management.md MongoDB section replaced with historical note
+- [x] CHANGELOG.md "Removed" section updated
+- [x] Documentation accurately reflects DuckDB-only implementation
+
+---
+
+### Task 8.5: Verify index_validation.py is NOT MongoDB-Specific
+
+**File**: `src/findingmodel/index_validation.py`
+
+**Action**: VERIFY that this file is shared validation using Protocol pattern
+
+**Expected State**:
+- Uses `ValidationContext` Protocol
+- Works with any index backend (DuckDB, MongoDB, future backends)
+- Currently used by DuckDBIndex
+- Should be KEPT (not deleted)
+
+**Verification**:
+```python
+# File should contain:
+class ValidationContext(Protocol):
+    async def get_existing_oifm_ids(self) -> set[str]: ...
+    async def get_existing_names(self) -> set[str]: ...
+    async def get_attribute_ids_by_model(self) -> dict[str, str]: ...
+
+# NOT contain MongoDB-specific imports like:
+# from motor.motor_asyncio import AsyncIOMotorClient
+```
+
+**Acceptance Criteria**:
+- [x] Confirmed index_validation.py uses Protocol pattern (VERIFIED)
+- [x] No MongoDB-specific imports found (VERIFIED)
+- [x] File is shared infrastructure, not MongoDB-specific (VERIFIED)
+- [x] Decision: KEEP this file (CONFIRMED)
+
+---
+
+### Task 8.6: Run Full Test Suite
+
+**Commands**:
+```bash
+uv run pytest test/ -m "not callout" -q  # Should pass (37 fewer tests than before)
+task check                                # Format + lint + mypy
+```
+
+**Expected Results**:
+- ✅ 375 tests pass (412 - 37 MongoDB tests = 375)
+- ✅ No import errors
+- ✅ No linting/formatting errors
+- ✅ No type checking errors
+
+**Acceptance Criteria**:
+- [x] All non-MongoDB tests pass (375/375 passing)
+- [x] Test count reduced by exactly 37 (MongoDB tests): 412 → 375
+- [x] No import errors
+- [x] Linting passes
+- [x] Type checking passes
+
+---
+
+### Phase 8 Success Criteria
+
+**Complete Removal**:
+- [x] `mongodb_index.py` deleted (~810 lines removed)
+- [x] `test_index_mongodb.py` deleted (37 tests removed)
+- [x] motor optional dependency removed
+- [x] MongoDB config cleaned up
+- [x] Documentation updated (historical notes only)
+- [x] index_validation.py confirmed as shared (kept)
+- [x] All 375 remaining tests pass
+
+**Benefits**:
+- ✅ ~810 lines of deprecated code removed
+- ✅ No MongoDB server dependency
+- ✅ Cleaner codebase
+- ✅ No confusing dual implementations
+- ✅ Clear error messages for anyone trying to import MongoDBIndex
+
+**Timeline**: Single orchestrated execution, ~30 minutes ✅ COMPLETED
+
+**Deliverable**: Complete removal with no backward compatibility burden ✅ DELIVERED
+
+---
+
+## Post-Phase 8: v0.5.0 is Complete
+
+After Phase 8, all major migrations for v0.5.0 are complete:
+
+**✅ Phase 1-3**: DuckDB Index fully implemented (67 passing tests)
+**✅ Phase 6**: IdManager deprecated and migrated to Index
+**✅ Phase 7**: IdManager completely removed (~240 lines)
+**✅ Phase 8**: MongoDB Index completely removed (~810 lines)
+
+**Total Lines Removed in v0.5.0**: ~1050 lines of deprecated code
+
+**Ready for Release**: Single DuckDB-based Index implementation, clean architecture, all tests passing.
+

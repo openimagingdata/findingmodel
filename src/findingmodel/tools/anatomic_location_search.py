@@ -200,6 +200,7 @@ async def find_anatomic_locations(
     finding_name: str,
     description: str | None = None,
     use_duckdb: bool = True,
+    model: str | None = None,
 ) -> LocationSearchResponse:
     """Find relevant anatomic locations for a finding using 3-stage pipeline.
 
@@ -212,6 +213,7 @@ async def find_anatomic_locations(
         finding_name: Name of the finding (e.g., "PCL tear")
         description: Optional detailed description
         use_duckdb: Use DuckDB client if True, LanceDB if False (default True)
+        model: OpenAI model to use (defaults to small model from settings)
 
     Returns:
         LocationSearchResponse with selected locations and reasoning
@@ -219,7 +221,7 @@ async def find_anatomic_locations(
     logger.info(f"Starting anatomic location search for: {finding_name}")
 
     # Stage 1: Generate query terms
-    query_info = await generate_anatomic_query_terms(finding_name, description)
+    query_info = await generate_anatomic_query_terms(finding_name, description, model=model)
     logger.info(f"Generated query terms: {query_info.terms}, region: {query_info.region}")
 
     # Stage 2: Execute search with DuckDB client
@@ -246,7 +248,7 @@ async def find_anatomic_locations(
         )
 
     # Stage 3: Selection using AI agent
-    selection_agent = create_location_selection_agent()
+    selection_agent = create_location_selection_agent(model=model)
 
     # Build structured prompt for the agent
     prompt = f"""

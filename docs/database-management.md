@@ -245,30 +245,7 @@ Fresh databases automatically include base contributors:
 
 These are loaded from package data files (`src/findingmodel/data/base_*.jsonl`) during database setup.
 
-## MongoDB Backend (Deprecated)
-
-MongoDB is still available but deprecated. To use MongoDB:
-
-1. Install with MongoDB support:
-   ```bash
-   pip install findingmodel[mongodb]
-   ```
-
-2. Configure in `.env`:
-   ```bash
-   MONGODB_URI=mongodb://localhost:27017
-   ```
-
-3. Use the `MongoDBIndex` class:
-   ```python
-   from findingmodel.mongodb_index import MongoDBIndex
-
-   async with MongoDBIndex() as index:
-       # Same API as DuckDB Index
-       results = await index.search("pneumonia")
-   ```
-
-**Migration from MongoDB to DuckDB**: Use `index build` to create a DuckDB index from your finding model definition files. MongoDB and DuckDB indexes are maintained separately.
+> **Historical Note**: Prior to v0.5.0, a MongoDB-based Index implementation was available. This was replaced with DuckDB in v0.5.0. Users needing MongoDB should use findingmodel v0.4.x.
 
 ## Troubleshooting
 

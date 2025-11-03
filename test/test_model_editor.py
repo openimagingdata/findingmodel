@@ -4,9 +4,10 @@ import pytest
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
 
+from findingmodel import Index
 from findingmodel.finding_model import FindingModelFull
+from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel.tools import model_editor
-from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID, IdManager
 
 
 @pytest.fixture(autouse=True)
@@ -44,7 +45,8 @@ async def test_edit_model_natural_language_add_attribute(real_model: FindingMode
         rejections=[],
         changes=["Added severity attribute with values mild, moderate, severe"],
     )
-    with agent.override(model=TestModel(custom_output_args=mock_output)):
+    # TestModel requires custom_output_args to be a dict, not a Pydantic model
+    with agent.override(model=TestModel(custom_output_args=mock_output.model_dump())):
         result = await model_editor.edit_model_natural_language(model, command, agent=agent)
     assert hasattr(result, "model")
     assert isinstance(result.model, FindingModelFull)
@@ -117,154 +119,32 @@ def test_export_model_for_editing_attributes_only(real_model: FindingModelFull) 
 @pytest.mark.callout
 @pytest.mark.asyncio
 async def test_edit_model_natural_language_callout_real_api(real_model: FindingModelFull) -> None:
-    """Exercise a real LLM call to demonstrate an actual edit.
-    This test is expected to run only in callout mode and will error if OpenAI is not configured.
+    """Sanity check that real API integration works.
+    Behavior validation is handled by evals; this just verifies we get a valid result.
     """
-
     # Temporarily enable model requests for this test only
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
-        model = real_model
-        base_count = len(model.attributes)
-        command = (
-            "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe. "
-            "Do not modify or remove any existing attributes or values. Preserve all existing IDs."
-        )
-        result = await model_editor.edit_model_natural_language(model, command)
+        # Create agent with fast model for integration test
+        from findingmodel.tools.common import get_openai_model
 
-        # Basic validations
+        fast_agent = model_editor.create_edit_agent()
+        fast_agent.model = get_openai_model("gpt-4o-mini")
+
+        command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
+        result = await model_editor.edit_model_natural_language(real_model, command, agent=fast_agent)
+
+        # Verify we got a valid result structure back
         assert isinstance(result.model, FindingModelFull)
-        assert result.model.oifm_id == model.oifm_id  # ID preservation
-        # Ideally, the attribute count increases and we find the new attribute
-        assert len(result.model.attributes) >= base_count
-        names = [a.name.lower() for a in result.model.attributes]
-        # The model should add 'severity'; if not, this indicates the LLM ignored the instruction
-        assert "severity" in names
-        sev = next(a for a in result.model.attributes if a.name.lower() == "severity")
-        vnames = [getattr(v, "name", "").lower() for v in getattr(sev, "values", [])]
-        assert {"mild", "moderate", "severe"}.issubset(set(vnames))
         assert isinstance(result.changes, list)
+        assert isinstance(result.rejections, list)
     finally:
         models.ALLOW_MODEL_REQUESTS = original
 
 
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_edit_model_markdown_callout_real_api(real_model: FindingModelFull) -> None:
-    """Exercise a real LLM call for the Markdown-based edit path.
-    This test runs only in callout mode and will error if OpenAI is not configured.
-    """
-
-    # Temporarily enable model requests for this test only
-    original = models.ALLOW_MODEL_REQUESTS
-    models.ALLOW_MODEL_REQUESTS = True
-    try:
-        model = real_model
-        base_count = len(model.attributes)
-
-        # Start from exported markdown and append a new attribute section
-        md = model_editor.export_model_for_editing(model)
-        md += "\n".join([
-            "### severity",
-            "- mild",
-            "- moderate",
-            "- severe",
-            "",
-        ])
-
-        result = await model_editor.edit_model_markdown(model, md)
-
-        # Basic validations
-        assert isinstance(result.model, FindingModelFull)
-        assert result.model.oifm_id == model.oifm_id  # ID preservation
-
-        # Ideally, the attribute count increases and we find the new attribute
-        assert len(result.model.attributes) >= base_count
-        names = [a.name.lower() for a in result.model.attributes]
-        assert "severity" in names
-        sev = next(a for a in result.model.attributes if a.name.lower() == "severity")
-        vnames = [getattr(v, "name", "").lower() for v in getattr(sev, "values", [])]
-        assert {"mild", "moderate", "severe"}.issubset(set(vnames))
-        assert isinstance(result.changes, list)
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_forbidden_change_nl_callout_real_api(real_model: FindingModelFull) -> None:
-    """Ask the agent to perform a forbidden change via natural language and verify it's rejected."""
-    original_flag = models.ALLOW_MODEL_REQUESTS
-    models.ALLOW_MODEL_REQUESTS = True
-    try:
-        model = real_model
-        # Attempt to rename an existing attribute (forbidden)
-        existing_name = model.attributes[0].name
-        command = f"Rename attribute '{existing_name}' to 'renamed_attr'."
-        result = await model_editor.edit_model_natural_language(model, command)
-
-        # Model should be unchanged and at least one rejection present
-        assert result.model.model_dump_json() == model.model_dump_json()
-        assert result.rejections and isinstance(result.rejections[0], str)
-        assert result.changes == []
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_flag
-
-
-@pytest.mark.callout
-@pytest.mark.asyncio
-async def test_forbidden_change_markdown_callout_real_api(real_model: FindingModelFull) -> None:
-    """Ask the agent to perform a forbidden change via Markdown and verify it's rejected."""
-    original_flag = models.ALLOW_MODEL_REQUESTS
-    models.ALLOW_MODEL_REQUESTS = True
-    try:
-        model = real_model
-        md = model_editor.export_model_for_editing(model)
-        # Attempt to remove the first attribute section entirely by truncating markdown after header
-        first_attr = model.attributes[0].name
-        # Remove the '### first_attr' section and its bullets/description
-        lines = md.splitlines()
-        out_lines: list[str] = []
-        skip = False
-        for line in lines:
-            if line.strip() == f"### {first_attr}":
-                skip = True
-                continue
-            if skip and line.startswith("### "):
-                skip = False
-            if not skip:
-                out_lines.append(line)
-        edited_md = "\n".join(out_lines) + "\n"
-
-        result = await model_editor.edit_model_markdown(model, edited_md)
-
-        # Model should be unchanged and at least one rejection present
-        assert result.model.model_dump_json() == model.model_dump_json()
-        assert result.rejections and isinstance(result.rejections[0], str)
-        assert result.changes == []
-    finally:
-        models.ALLOW_MODEL_REQUESTS = original_flag
-
-
-def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch) -> None:
-    counters: dict[str, int] = {}
-
-    def _fake_generate(src: str, existing: set[str]) -> str:
-        counters[src] = counters.get(src, 0) + 1
-        return f"OIFMA_{src}_{counters[src]:06d}"
-
-    monkeypatch.setattr(
-        IdManager,
-        "_generate_unique_oifma",
-        staticmethod(_fake_generate),
-    )
-    monkeypatch.setattr(
-        IdManager,
-        "load_used_ids_from_github",
-        lambda self, refresh_cache=False: None,
-    )
-
+def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull) -> None:
+    """Test that assign_real_attribute_ids infers source from model's OIFM ID."""
     base_data = real_model.model_dump()
     base_data["attributes"].append({
         "oifma_id": PLACEHOLDER_ATTRIBUTE_ID,
@@ -275,37 +155,22 @@ def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull, m
     })
     with_placeholder = FindingModelFull.model_validate(base_data)
 
-    manager = IdManager()
-    updated = model_editor.assign_real_attribute_ids(with_placeholder, manager=manager)
+    index = Index()
+    updated = model_editor.assign_real_attribute_ids(with_placeholder, index=index)
 
     attr = next(a for a in updated.attributes if a.name == "severity")
     assert getattr(attr, "type", None) == "choice"
     values = list(getattr(attr, "values", []))
+    # Should infer MSFT from model's OIFM_MSFT_932618
     assert attr.oifma_id.startswith("OIFMA_MSFT_")
     assert [v.value_code for v in values] == [f"{attr.oifma_id}.{i}" for i in range(3)]
     assert PLACEHOLDER_ATTRIBUTE_ID not in {a.oifma_id for a in updated.attributes}
 
 
 def test_assign_real_attribute_ids_uses_explicit_source(
-    real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+    real_model: FindingModelFull,
 ) -> None:
-    counters: dict[str, int] = {}
-
-    def _fake_generate(src: str, existing: set[str]) -> str:
-        counters[src] = counters.get(src, 0) + 1
-        return f"OIFMA_{src}_{counters[src]:06d}"
-
-    monkeypatch.setattr(
-        IdManager,
-        "_generate_unique_oifma",
-        staticmethod(_fake_generate),
-    )
-    monkeypatch.setattr(
-        IdManager,
-        "load_used_ids_from_github",
-        lambda self, refresh_cache=False: None,
-    )
-
+    """Test that assign_real_attribute_ids uses explicitly provided source code."""
     base_data = real_model.model_dump()
     base_data["attributes"].append({
         "oifma_id": PLACEHOLDER_ATTRIBUTE_ID,
@@ -316,24 +181,21 @@ def test_assign_real_attribute_ids_uses_explicit_source(
     })
     with_placeholder = FindingModelFull.model_validate(base_data)
 
-    manager = IdManager()
-    updated = model_editor.assign_real_attribute_ids(with_placeholder, source="abc", manager=manager)
+    index = Index()
+    updated = model_editor.assign_real_attribute_ids(with_placeholder, source="ABC", index=index)
 
     attr = next(a for a in updated.attributes if a.name == "pattern")
     assert getattr(attr, "type", None) == "choice"
     values = list(getattr(attr, "values", []))
+    # Should use explicit source ABC instead of inferring MSFT
     assert attr.oifma_id.startswith("OIFMA_ABC_")
     assert [v.value_code for v in values] == [f"{attr.oifma_id}.{i}" for i in range(2)]
 
 
 def test_assign_real_attribute_ids_no_placeholders_returns_same_object(
-    real_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+    real_model: FindingModelFull,
 ) -> None:
-    monkeypatch.setattr(
-        IdManager,
-        "load_used_ids_from_github",
-        lambda self, refresh_cache=False: None,
-    )
-    manager = IdManager()
-    result = model_editor.assign_real_attribute_ids(real_model, manager=manager)
+    """Test that when no placeholders exist, the original model is returned unchanged."""
+    index = Index()
+    result = model_editor.assign_real_attribute_ids(real_model, index=index)
     assert result is real_model

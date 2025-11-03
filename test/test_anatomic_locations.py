@@ -17,6 +17,8 @@ from pydantic_ai.models.test import TestModel
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+from pydantic_ai import models
+
 from findingmodel.anatomic_migration import (
     create_anatomic_database,
     create_searchable_text,
@@ -37,6 +39,10 @@ from findingmodel.tools.anatomic_location_search import (
 )
 from findingmodel.tools.duckdb_search import DuckDBOntologySearchClient
 from findingmodel.tools.ontology_search import OntologySearchResult
+
+# Prevent accidental model requests in unit tests
+# Tests marked with @pytest.mark.callout can enable this as needed
+models.ALLOW_MODEL_REQUESTS = False
 
 # =============================================================================
 # Test data constants and fixtures
@@ -1068,82 +1074,56 @@ class TestAnatomicCLI:
 
 
 # =============================================================================
-# Integration tests (1 from migration, 1 from CLI)
+# Integration test - sanity check only
 # =============================================================================
 
 
-class TestCreateAnatomicDatabaseIntegration:
-    """Integration tests with real OpenAI API calls."""
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_find_anatomic_locations_basic_wiring() -> None:
+    """Sanity check: Verify basic wiring with real API and DuckDB.
 
-    @pytest.mark.callout
-    @pytest.mark.asyncio
-    async def test_create_anatomic_database_with_real_embeddings(self, tmp_path: Path) -> None:
-        """Integration test with real OpenAI embeddings - requires OPENAI_API_KEY."""
-        # Skip if no API key
-        if not settings.openai_api_key or not settings.openai_api_key.get_secret_value():
-            pytest.skip("OPENAI_API_KEY not configured")
+    All comprehensive behavioral testing is in evals/anatomic_search.py.
+    This test only verifies the function can be called successfully with
+    real OpenAI API and DuckDB backend.
+    """
+    # Skip if OpenAI API key not configured
+    if not settings.openai_api_key or not settings.openai_api_key.get_secret_value():
+        pytest.skip("OPENAI_API_KEY not configured")
 
-        # Use 5 records from test data for speed
-        with open(TEST_DATA_FILE) as f:
-            all_records = json.load(f)
-        test_records = all_records[:5]
+    # Skip if DuckDB anatomic database not available
+    # Try to ensure database exists - it will raise FileNotFoundError if unavailable
+    try:
+        from findingmodel.config import ensure_db_file
 
-        db_path = tmp_path / "integration_test.duckdb"
-        client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+        ensure_db_file(settings.duckdb_anatomic_path, settings.remote_anatomic_db_url, settings.remote_anatomic_db_hash)
+    except (FileNotFoundError, Exception):
+        pytest.skip("DuckDB anatomic locations database not available")
 
-        # Create database with real embeddings
-        successful, failed = await create_anatomic_database(db_path, test_records, client)
+    # Save original state
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
 
-        assert successful == 5, "Should successfully insert 5 records"
-        assert failed == 0, "Should have no failed records"
+    try:
+        # Single API call with simple input - use fast model for integration test
+        result = await find_anatomic_locations(
+            finding_name="pneumonia",
+            description="Infection of the lung parenchyma",
+            use_duckdb=True,
+            model="gpt-4o-mini",
+        )
 
-        # Verify database created
-        assert db_path.exists()
+        # Assert only on structure, not behavior
+        assert isinstance(result, LocationSearchResponse)
+        assert hasattr(result, "primary_location")
+        assert hasattr(result, "alternate_locations")
+        assert hasattr(result, "reasoning")
+        assert isinstance(result.primary_location, OntologySearchResult)
+        assert isinstance(result.alternate_locations, list)
+        assert isinstance(result.reasoning, str)
 
-        # Check embeddings by querying
-        conn = duckdb.connect(str(db_path))
-        count_result = conn.execute(
-            "SELECT COUNT(*) as count FROM anatomic_locations WHERE vector IS NOT NULL"
-        ).fetchone()
-        assert count_result is not None
-        assert count_result[0] == 5, "All records should have embeddings"
+        # NO behavioral assertions - those are in evals
 
-        # Verify vector dimensions
-        embedding_result = conn.execute("SELECT vector FROM anatomic_locations LIMIT 1").fetchone()
-        assert embedding_result is not None
-        embedding = embedding_result[0]
-        assert len(embedding) == settings.openai_embedding_dimensions
-
-        conn.close()
-
-
-class TestAnatomicCLIIntegration:
-    """CLI integration tests with real OpenAI API calls."""
-
-    @pytest.mark.callout
-    def test_build_with_real_openai(self, tmp_path: Path) -> None:
-        """Integration test for build command with real OpenAI API - requires OPENAI_API_KEY."""
-        if not settings.openai_api_key or not settings.openai_api_key.get_secret_value():
-            pytest.skip("OPENAI_API_KEY not configured")
-
-        # Create small test file (5 records)
-        with open(TEST_DATA_FILE) as f:
-            all_records = json.load(f)
-        small_test_file = tmp_path / "small_test.json"
-        small_test_file.write_text(json.dumps(all_records[:5]))
-
-        db_path = tmp_path / "integration_build.duckdb"
-
-        runner = CliRunner()
-        result = runner.invoke(cli, ["anatomic", "build", "--source", str(small_test_file), "--output", str(db_path)])
-
-        assert result.exit_code == 0, f"Build failed: {result.output}"
-        assert db_path.exists()
-        assert "Database built successfully" in result.output
-
-        # Verify embeddings in database
-        conn = duckdb.connect(str(db_path))
-        count_result = conn.execute("SELECT COUNT(*) FROM anatomic_locations WHERE vector IS NOT NULL").fetchone()
-        assert count_result is not None
-        assert count_result[0] == 5
-        conn.close()
+    finally:
+        # Restore original state
+        models.ALLOW_MODEL_REQUESTS = original

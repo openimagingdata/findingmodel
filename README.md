@@ -19,18 +19,51 @@ A Python library for managing Open Imaging Finding Models - structured data mode
 pip install findingmodel
 ```
 
-### Required API Keys
+## Configuration
 
-Create a `.env` file with your API keys:
+Configure the library by creating a `.env` file in your project root. See `.env.sample` for all available options.
+
+### API Keys (Required/Optional by Feature)
+
+Different features require different API keys:
+
+| Feature | Required Key | Purpose |
+|---------|--------------|---------|
+| **Core AI Features** | `OPENAI_API_KEY` | Generate descriptions, synonyms, create models from markdown |
+| **Detailed Finding Info** | `PERPLEXITY_API_KEY` | Add citations and detailed descriptions (requires OpenAI key too) |
+| **800+ Medical Ontologies** | `BIOONTOLOGY_API_KEY` | Access BioOntology.org for SNOMED-CT, ICD-10, LOINC, etc. |
 
 ```bash
-# Required for AI features
+# Required for most features
 OPENAI_API_KEY=your_key_here
 
-# Optional for enhanced features
-PERPLEXITY_API_KEY=your_key_here  # For detailed web lookups
-BIOONTOLOGY_API_KEY=your_key_here  # For BioOntology.org access (800+ ontologies)
+# Optional - only needed for add_details_to_info()
+PERPLEXITY_API_KEY=your_key_here
+
+# Optional - only needed for BioOntology backend in ontology searches
+BIOONTOLOGY_API_KEY=your_key_here
 ```
+
+**Note:** The Index and anatomic location search work without any API keys (DuckDB backend). OpenAI is only needed when using AI-powered tools.
+
+### Local Database Configuration
+
+By default, the up-to-date finding models index database from the [GitHub repository](https://github.com/openimagingdata/findingmodels) is automatically downloaded to a data directory based on an online manifest. To use a pre-downloaded version (e.g., in production/Docker deployments), you can specify its path:
+
+```bash
+# Production: use pre-mounted files
+DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
+```
+
+Alternatively, you can also lock to a specific version of the index database by specifying a download URL and its hash.
+
+**Configuration Priority:**
+1. If file exists and no URL/hash specified → uses file directly (no download)
+2. If file exists with URL/hash → verifies hash, re-downloads if mismatch
+3. If file doesn't exist with URL/hash → downloads from URL
+4. If nothing specified → downloads from manifest.json (default)
+
+The anatomic locations database for ontologic lookups works similarly. See `.env.sample` for more configuration options including custom download URLs and relative paths.
 
 ## CLI
 
@@ -50,7 +83,7 @@ $ python -m findingmodel --help
 
 For database maintainers, see [Database Management Guide](docs/database-management.md) for detailed information on building and updating databases.
 
-> **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `notebooks/demo_edit_finding_model.py`.
+> **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `scripts/edit_finding_model.py`.
 
 ## Models
 
@@ -126,6 +159,45 @@ async def main():
 
 asyncio.run(main())
 ```
+
+### Listing and Filtering
+
+```python
+async def browse_models():
+    async with Index() as index:
+        # Get all models with pagination
+        models, total = await index.all(limit=20, offset=0, order_by="name", order_dir="asc")
+        print(f"Showing {len(models)} of {total} total models:")
+        for model in models:
+            print(f"  - {model.name} ({model.oifm_id})")
+
+        # Search by slug name pattern (exact match)
+        results, count = await index.search_by_slug("pneumothorax", match_type="exact")
+        print(f"\nExact matches: {count}")
+
+        # Search by slug name pattern (prefix match - starts with)
+        results, count = await index.search_by_slug("aortic", match_type="prefix", limit=10)
+        print(f"\nModels starting with 'aortic': {count}")
+        for result in results:
+            print(f"  - {result.name}")
+
+        # Search by slug name pattern (contains - default)
+        results, count = await index.search_by_slug("abscess", limit=10)
+        print(f"\nModels containing 'abscess': {count}")
+
+        # Count models matching a pattern
+        exact_count = await index.count_search("lung_nodule", match_type="exact")
+        contains_count = await index.count_search("lung", match_type="contains")
+        print(f"\nExact 'lung_nodule': {exact_count}")
+        print(f"Contains 'lung': {contains_count}")
+
+asyncio.run(browse_models())
+```
+
+**Available methods:**
+- `all(limit, offset, order_by, order_dir)` - Get paginated list of all models with sorting
+- `search_by_slug(pattern, match_type, limit, offset)` - Search by slug name with exact/prefix/contains matching
+- `count_search(pattern, match_type)` - Count models matching a slug name pattern
 
 ### Working with Contributors
 
@@ -501,7 +573,7 @@ from findingmodel.tools import find_similar_models
 from findingmodel.index import Index
 
 async def check_for_similar_models():
-    # Initialize index (connects to MongoDB)
+    # Initialize index (DuckDB backend)
     index = Index()
     
     # Search for models similar to a proposed finding

@@ -5,10 +5,22 @@ from pydantic import BaseModel, Field
 from pydantic_ai import ModelRetry, RunContext
 from pydantic_ai.agent import Agent
 
+from findingmodel import Index
 from findingmodel.config import settings
 from findingmodel.finding_model import FindingModelFull
-from findingmodel.tools.add_ids import PLACEHOLDER_ATTRIBUTE_ID, IdManager, id_manager
+from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel.tools.common import get_openai_model
+
+# Module-level Index instance with lazy initialization
+_index: Index | None = None
+
+
+def _get_index() -> Index:
+    """Get or create module-level Index instance."""
+    global _index
+    if _index is None:
+        _index = Index()
+    return _index
 
 
 class EditResult(BaseModel):
@@ -348,12 +360,20 @@ def assign_real_attribute_ids(
     model: FindingModelFull,
     *,
     source: str | None = None,
-    manager: IdManager | None = None,
+    index: Index | None = None,
 ) -> FindingModelFull:
-    """Replace placeholder attribute IDs using the configured ID manager."""
+    """Replace placeholder attribute IDs using Index database queries.
 
-    mgr = manager if manager is not None else id_manager
-    return mgr.finalize_placeholder_attribute_ids(model, source=source)
+    Args:
+        model: Model with potential placeholder attribute IDs.
+        source: Source code (3-4 uppercase letters). When omitted, inferred from the model's OIFM ID.
+        index: Index instance to use for ID generation. When omitted, uses the module-level instance.
+
+    Returns:
+        Model with all placeholder IDs replaced by unique attribute IDs.
+    """
+    idx = index if index is not None else _get_index()
+    return idx.finalize_placeholder_attribute_ids(model, source=source)
 
 
 def _validate_model_id(original: FindingModelFull, updated: FindingModelFull) -> list[str]:

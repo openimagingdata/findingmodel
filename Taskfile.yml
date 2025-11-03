@@ -24,6 +24,61 @@ tasks:
       - uv run pytest -rs {{.CLI_ARGS}}
     silent: true
 
+  evals:
+    desc: "Run all agent evaluation suites"
+    cmds:
+      - echo "Running all agent evaluations..."
+      - uv run python -m evals.model_editor
+      - uv run python -m evals.similar_models
+      - uv run python -m evals.ontology_match
+      - uv run python -m evals.anatomic_search
+      - uv run python -m evals.markdown_in
+      - uv run python -m evals.finding_description
+      # Future: add other agent evals here
+    silent: true
+
+  evals:model_editor:
+    desc: "Run model_editor evaluation suite"
+    cmds:
+      - echo "Running model_editor evaluations..."
+      - uv run python -m evals.model_editor
+    silent: true
+
+  evals:similar_models:
+    desc: "Run similar_models evaluation suite"
+    cmds:
+      - echo "Running similar_models evaluations..."
+      - uv run python -m evals.similar_models
+    silent: true
+
+  evals:ontology_match:
+    desc: "Run ontology_match evaluation suite"
+    cmds:
+      - echo "Running ontology_match evaluations..."
+      - uv run python -m evals.ontology_match
+    silent: true
+
+  evals:anatomic_search:
+    desc: "Run anatomic_search evaluation suite"
+    cmds:
+      - echo "Running anatomic_search evaluations..."
+      - uv run python -m evals.anatomic_search
+    silent: true
+
+  evals:markdown_in:
+    desc: "Run markdown_in evaluation suite"
+    cmds:
+      - echo "Running markdown_in evaluations..."
+      - uv run python -m evals.markdown_in
+    silent: true
+
+  evals:finding_description:
+    desc: "Run finding_description evaluation suite"
+    cmds:
+      - echo "Running finding_description evaluations..."
+      - uv run python -m evals.finding_description
+    silent: true
+
   check:
     desc: "Check the findingmodel library"
     cmds:
