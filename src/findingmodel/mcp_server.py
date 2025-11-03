@@ -111,7 +111,7 @@ async def search_finding_models(
                         name=attr.name,
                         type=attr.type,
                     )
-                    for attr in entry.attributes
+                    for attr in (entry.attributes or [])
                 ],
             )
             for entry in entries
@@ -173,7 +173,7 @@ async def get_finding_model(identifier: str) -> SearchResult | None:
                     name=attr.name,
                     type=attr.type,
                 )
-                for attr in entry.attributes
+                for attr in (entry.attributes or [])
             ],
         )
 
