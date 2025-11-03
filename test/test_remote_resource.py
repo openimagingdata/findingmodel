@@ -231,3 +231,59 @@ class TestEnsureDbFileRealDownload:
 
             # File should not have been modified (no re-download)
             assert result2.stat().st_mtime == original_mtime
+
+
+class TestWrapperFunctions:
+    """Tests for ensure_index_db() and ensure_anatomic_db() wrappers."""
+
+    def test_ensure_index_db_calls_ensure_db_file_correctly(self, tmp_path: Path) -> None:
+        """Test that ensure_index_db() calls ensure_db_file() with correct parameters."""
+        from unittest.mock import patch
+
+        from findingmodel.config import ensure_index_db
+
+        with (
+            patch("findingmodel.config.ensure_db_file") as mock_ensure,
+            patch("findingmodel.config.settings") as mock_settings,
+        ):
+            mock_settings.duckdb_index_path = "test.duckdb"
+            mock_settings.remote_index_db_url = "http://example.com/index.duckdb"
+            mock_settings.remote_index_db_hash = "sha256:abc123"
+            mock_ensure.return_value = tmp_path / "test.duckdb"
+
+            result = ensure_index_db()
+
+            # Verify ensure_db_file was called with correct parameters
+            mock_ensure.assert_called_once_with(
+                "test.duckdb",
+                "http://example.com/index.duckdb",
+                "sha256:abc123",
+                manifest_key="finding_models",
+            )
+            assert result == tmp_path / "test.duckdb"
+
+    def test_ensure_anatomic_db_calls_ensure_db_file_correctly(self, tmp_path: Path) -> None:
+        """Test that ensure_anatomic_db() calls ensure_db_file() with correct parameters."""
+        from unittest.mock import patch
+
+        from findingmodel.config import ensure_anatomic_db
+
+        with (
+            patch("findingmodel.config.ensure_db_file") as mock_ensure,
+            patch("findingmodel.config.settings") as mock_settings,
+        ):
+            mock_settings.duckdb_anatomic_path = "anatomic.duckdb"
+            mock_settings.remote_anatomic_db_url = "http://example.com/anatomic.duckdb"
+            mock_settings.remote_anatomic_db_hash = "sha256:def456"
+            mock_ensure.return_value = tmp_path / "anatomic.duckdb"
+
+            result = ensure_anatomic_db()
+
+            # Verify ensure_db_file was called with correct parameters
+            mock_ensure.assert_called_once_with(
+                "anatomic.duckdb",
+                "http://example.com/anatomic.duckdb",
+                "sha256:def456",
+                manifest_key="anatomic_locations",
+            )
+            assert result == tmp_path / "anatomic.duckdb"

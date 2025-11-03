@@ -318,6 +318,40 @@ def ensure_db_file(
         return _download_from_manifest(target, manifest_key)
 
 
+def ensure_index_db() -> Path:
+    """Ensure finding models index database is available.
+
+    Uses settings to determine path, URL, and hash configuration.
+    Automatically downloads from manifest if no local file exists.
+
+    Returns:
+        Path to the finding models index database
+    """
+    return ensure_db_file(
+        settings.duckdb_index_path,
+        settings.remote_index_db_url,
+        settings.remote_index_db_hash,
+        manifest_key="finding_models",
+    )
+
+
+def ensure_anatomic_db() -> Path:
+    """Ensure anatomic locations database is available.
+
+    Uses settings to determine path, URL, and hash configuration.
+    Automatically downloads from manifest if no local file exists.
+
+    Returns:
+        Path to the anatomic locations database
+    """
+    return ensure_db_file(
+        settings.duckdb_anatomic_path,
+        settings.remote_anatomic_db_url,
+        settings.remote_anatomic_db_hash,
+        manifest_key="anatomic_locations",
+    )
+
+
 def fetch_manifest() -> dict[str, Any]:
     """Fetch and parse the remote manifest JSON with session caching.
 

@@ -207,18 +207,9 @@ def build(directory: Path, output: Path | None) -> None:
     console = Console()
 
     async def _do_build(directory: Path, output: Path | None) -> None:
-        from findingmodel.config import ensure_db_file
+        from findingmodel.config import ensure_index_db
 
-        db_path = (
-            output
-            if output
-            else ensure_db_file(
-                settings.duckdb_index_path,
-                settings.remote_index_db_url,
-                settings.remote_index_db_hash,
-                manifest_key="finding_models",
-            )
-        )
+        db_path = output or ensure_index_db()
         console.print(f"[bold green]Building index at [yellow]{db_path}")
         console.print(f"[gray]Source directory: [yellow]{directory.absolute()}")
 
@@ -252,18 +243,9 @@ def update(directory: Path, index: Path | None) -> None:
     console = Console()
 
     async def _do_update(directory: Path, index: Path | None) -> None:
-        from findingmodel.config import ensure_db_file
+        from findingmodel.config import ensure_index_db
 
-        db_path = (
-            index
-            if index
-            else ensure_db_file(
-                settings.duckdb_index_path,
-                settings.remote_index_db_url,
-                settings.remote_index_db_hash,
-                manifest_key="finding_models",
-            )
-        )
+        db_path = index or ensure_index_db()
 
         console.print(f"[bold green]Updating index at [yellow]{db_path}")
         console.print(f"[gray]Source directory: [yellow]{directory.absolute()}")
@@ -379,7 +361,7 @@ def stats(index: Path | None) -> None:
     console = Console()
 
     async def _do_stats(index: Path | None) -> None:
-        from findingmodel.config import ensure_db_file
+        from findingmodel.config import ensure_index_db
 
         if index:
             db_path = index
@@ -389,12 +371,7 @@ def stats(index: Path | None) -> None:
                 async with DuckDBIndex(db_path=db_path, read_only=False) as temp_idx:
                     await temp_idx.setup()  # This will create schema and load base contributors
         else:
-            db_path = ensure_db_file(
-                settings.duckdb_index_path,
-                settings.remote_index_db_url,
-                settings.remote_index_db_hash,
-                manifest_key="finding_models",
-            )
+            db_path = ensure_index_db()
 
         console.print(f"[bold green]Index Statistics for [yellow]{db_path}\n")
 
@@ -472,22 +449,13 @@ def anatomic_build(source: str | None, output: Path | None, force: bool) -> None
 
     async def _do_build(source: str | None, output: Path | None, force: bool) -> None:
         # Determine source and output paths
-        from findingmodel.config import ensure_db_file
+        from findingmodel.config import ensure_anatomic_db
 
         data_source = (
             source
             or "https://raw.githubusercontent.com/openimagingdata/CDEStaging/main/doc/anatomic_locations/anatomic_locations.json"
         )
-        db_path = (
-            output
-            if output
-            else ensure_db_file(
-                settings.duckdb_anatomic_path,
-                settings.remote_anatomic_db_url,
-                settings.remote_anatomic_db_hash,
-                manifest_key="anatomic_locations",
-            )
-        )
+        db_path = output or ensure_anatomic_db()
 
         # Check if database already exists
         if db_path.exists() and not force:
@@ -592,20 +560,11 @@ def anatomic_validate(source: str | None) -> None:
 @click.option("--db-path", type=click.Path(path_type=Path), help="Database path (default: config setting)")
 def anatomic_stats(db_path: Path | None) -> None:
     """Show anatomic location database statistics."""
-    from findingmodel.config import ensure_db_file
+    from findingmodel.config import ensure_anatomic_db
 
     console = Console()
 
-    database_path = (
-        db_path
-        if db_path
-        else ensure_db_file(
-            settings.duckdb_anatomic_path,
-            settings.remote_anatomic_db_url,
-            settings.remote_anatomic_db_hash,
-            manifest_key="anatomic_locations",
-        )
-    )
+    database_path = db_path or ensure_anatomic_db()
 
     console.print("[bold green]Anatomic Location Database Statistics\n")
     console.print(f"[gray]Database: [yellow]{database_path.absolute()}\n")

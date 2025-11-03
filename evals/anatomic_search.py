@@ -822,16 +822,12 @@ def verify_database_populated() -> None:
     Raises:
         RuntimeError: If database is not found or not populated with required test data
     """
-    from findingmodel.config import ensure_db_file, settings
+    from findingmodel.config import ensure_anatomic_db
     from findingmodel.tools.duckdb_utils import setup_duckdb_connection
 
     # Get database path
     try:
-        db_path = ensure_db_file(
-            settings.duckdb_anatomic_path,
-            settings.remote_anatomic_db_url,
-            settings.remote_anatomic_db_hash,
-        )
+        db_path = ensure_anatomic_db()
     except Exception as e:
         raise RuntimeError(
             f"Failed to locate anatomic database: {e}\nPlease run: python -m findingmodel anatomic build"

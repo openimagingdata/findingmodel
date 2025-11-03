@@ -215,14 +215,9 @@ class DuckDBIndex:
             self.db_path = Path(db_path).expanduser()  # Honor explicit path
         else:
             # Use package data directory with optional download
-            from findingmodel.config import ensure_db_file
+            from findingmodel.config import ensure_index_db
 
-            self.db_path = ensure_db_file(
-                settings.duckdb_index_path,
-                settings.remote_index_db_url,
-                settings.remote_index_db_hash,
-                manifest_key="finding_models",
-            )
+            self.db_path = ensure_index_db()
         self.read_only = read_only
         self.conn: duckdb.DuckDBPyConnection | None = None
         self._openai_client: AsyncOpenAI | None = None
