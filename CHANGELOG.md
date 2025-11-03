@@ -6,27 +6,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased (presumed 0.5.0)]
+## [0.5.0] - 2025-11-03
 
 ### Added
 
-- **Comprehensive Agent Evaluation Suites** (2025-10-18 to 2025-11-02) - Five new eval suites for AI agent quality assessment:
-  - `evals/similar_models.py` - Similarity search and duplicate detection (8 cases)
-  - `evals/ontology_match.py` - Multi-backend ontology concept matching (12 cases)
-  - `evals/anatomic_search.py` - Two-agent anatomic location search (10 cases)
-  - `evals/markdown_in.py` - Markdown to finding model parsing (8 cases)
-  - `evals/finding_description.py` - Clinical description quality with LLMJudge (15 cases)
-  - All use Pydantic Evals Dataset.evaluate() pattern with focused evaluators
-  - Logfire observability via lazy instrumentation pattern
-  - Taskfile commands: `task evals` or `task evals:agent_name`
-- **LLMJudge Evaluator Support** (2025-11-02) - Built-in LLM-based quality assessment:
-  - Configured for clinical description quality scoring
-  - Uses cost-effective gpt-5-nano model
-  - Workaround for Pydantic Evals API key bug documented
-- **PerformanceEvaluator** (2025-10-29) - Reusable evaluator in `src/findingmodel/tools/evaluators.py`:
-  - Configurable time limits for agent performance testing
-  - Comprehensive unit tests in `test/tools/test_evaluators.py`
-  - Used across all 5+ eval suites (eliminates ~190 lines duplication)
 - **Enhanced Index API Methods** - Complete pagination and search capabilities without breaking abstraction:
   - `list(limit, offset, order_by, order_dir)` - Paginated browsing of all finding models
   - `search_by_slug(pattern, match_type, limit, offset)` - Pattern-based search with relevance ranking
@@ -47,6 +30,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Database Path Configuration** - Specify database file paths for production/Docker deployments:
   - Set `DUCKDB_INDEX_PATH` or `DUCKDB_ANATOMIC_PATH` to use pre-mounted database files
   - Default behavior unchanged (automatic manifest-based downloads)
+- **Comprehensive Agent Evaluation Suites** (2025-10-18 to 2025-11-02) - Five new eval suites for AI agent quality assessment:
+  - `evals/similar_models.py` - Similarity search and duplicate detection (8 cases)
+  - `evals/ontology_match.py` - Multi-backend ontology concept matching (12 cases)
+  - `evals/anatomic_search.py` - Two-agent anatomic location search (10 cases)
+  - `evals/markdown_in.py` - Markdown to finding model parsing (8 cases)
+  - `evals/finding_description.py` - Clinical description quality with LLMJudge (15 cases)
+  - All use Pydantic Evals Dataset.evaluate() pattern with focused evaluators
+  - Logfire observability via lazy instrumentation pattern
+  - Taskfile commands: `task evals` or `task evals:agent_name`
+  - **LLMJudge Evaluator Support** (2025-11-02) - Built-in LLM-based quality assessment:
+    - Configured for clinical description quality scoring
+    - Uses cost-effective gpt-5-nano model
+    - Workaround for Pydantic Evals API key bug documented
+  - **PerformanceEvaluator** (2025-10-29) - Reusable evaluator in `src/findingmodel/tools/evaluators.py`:
+    - Configurable time limits for agent performance testing
+    - Comprehensive unit tests in `test/tools/test_evaluators.py`
+    - Used across all 5+ eval suites (eliminates ~190 lines duplication)
 
 ### Changed
 
@@ -82,13 +82,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`src/findingmodel/tools/add_ids.py`** module - All ID generation now handled by Index class
 - **MongoDB Index backend** - DuckDB is now the only Index implementation
 - **`MongoDBIndex` class** - Use `Index` (aliased to `DuckDBIndex`) instead
-
-### Removed
-
-- **evals/base.py** (2025-10-29) - Unused evaluators (~350 lines):
-  - All 5 evaluators duplicated Pydantic Evals built-ins or were never used
-  - Replaced by centralized PerformanceEvaluator and inline evaluators
-- **test/test_base_evaluators.py** (2025-10-29) - Tests for removed code (~600 lines)
 
 ### Fixed
 
