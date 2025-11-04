@@ -25,12 +25,24 @@ def setup_duckdb_connection(
     read_only: bool = True,
     extensions: Iterable[str] = _DEFAULT_EXTENSIONS,
 ) -> duckdb.DuckDBPyConnection:
-    """Create a DuckDB connection with the standard extensions loaded."""
+    """Create a DuckDB connection with the standard extensions loaded.
+
+    Args:
+        db_path: Path to the DuckDB database file
+        read_only: Whether to open the connection in read-only mode
+        extensions: Extensions to install and load (default: fts and vss)
+
+    Returns:
+        Configured DuckDB connection with extensions loaded
+
+    Note:
+        INSTALL and LOAD are idempotent operations. Extensions are cached locally
+        after the first install, and subsequent calls use the cached version.
+    """
     connection = duckdb.connect(str(db_path), read_only=read_only)
 
     for extension in extensions:
-        if not read_only:
-            connection.execute(f"INSTALL {extension}")
+        connection.execute(f"INSTALL {extension}")
         connection.execute(f"LOAD {extension}")
 
     if not read_only:
