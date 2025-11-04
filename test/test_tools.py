@@ -47,6 +47,42 @@ def test_add_ids_to_finding_model(base_model: FindingModelBase) -> None:
                 assert value.value_code == f"{attr.oifma_id}.{i}"
 
 
+def test_render_agent_prompt() -> None:
+    """Test render_agent_prompt extracts instructions and user prompt correctly."""
+    from jinja2 import Template
+
+    from findingmodel.tools.prompt_template import render_agent_prompt
+
+    # Create a simple test template
+    template_text = """# SYSTEM
+You are a helpful assistant.
+
+# USER
+Please help with: {{task}}
+"""
+    template = Template(template_text)
+
+    instructions, user_prompt = render_agent_prompt(template, task="testing")
+
+    assert instructions == "You are a helpful assistant."
+    assert user_prompt == "Please help with: testing"
+
+
+def test_render_agent_prompt_missing_user_section() -> None:
+    """Test render_agent_prompt raises error if USER section missing."""
+    from jinja2 import Template
+
+    from findingmodel.tools.prompt_template import render_agent_prompt
+
+    template_text = """# SYSTEM
+Only system instructions.
+"""
+    template = Template(template_text)
+
+    with pytest.raises(ValueError, match="must include a USER section"):
+        render_agent_prompt(template)
+
+
 IdsJsonType = dict[str, dict[str, str] | dict[str, tuple[str, str]]]
 
 
@@ -312,6 +348,76 @@ async def test_add_details_to_info_basic_wiring() -> None:
         assert hasattr(result, "citations")
     finally:
         models.ALLOW_MODEL_REQUESTS = original
+
+
+@pytest.mark.asyncio
+async def test_create_model_from_markdown_with_test_model() -> None:
+    """Unit test: Verify agent structure without API calls.
+
+    Uses TestModel to verify agent configuration and prompt extraction
+    work correctly without making real API calls.
+    """
+    from unittest.mock import patch
+
+    from pydantic_ai.models.test import TestModel
+
+    from findingmodel.finding_model import ChoiceAttribute, ChoiceValue, FindingModelBase
+    from findingmodel.tools import create_model_from_markdown
+
+    # ALLOW_MODEL_REQUESTS is already False at module level
+
+    # Create test data
+    finding_info = FindingInfo(
+        name="Test Finding",
+        description="A test finding for unit testing",
+        synonyms=["test", "unittest"],
+    )
+
+    markdown_text = """
+    # Test Finding Attributes
+
+    ## Size
+    - Small
+    - Large
+
+    ## Severity
+    - Mild
+    - Moderate
+    - Severe
+    """
+
+    # Create valid FindingModelBase for TestModel to return
+    test_output = FindingModelBase(
+        name="test finding",
+        description="A test finding for unit testing",
+        attributes=[
+            ChoiceAttribute(
+                name="Size",
+                description="Size of the finding",
+                values=[ChoiceValue(name="Small"), ChoiceValue(name="Large")],
+                required=False,
+                max_selected=1,
+            )
+        ],
+    )
+
+    # Mock get_openai_model to return TestModel with controlled output
+    # This prevents actual OpenAI client creation
+    with patch("findingmodel.tools.markdown_in.get_openai_model") as mock_model:
+        # TestModel requires custom_output_args to be a dict, not a Pydantic model
+        mock_model.return_value = TestModel(custom_output_args=test_output.model_dump())
+
+        # This verifies the agent structure, not LLM behavior
+        result = await create_model_from_markdown(
+            finding_info,
+            markdown_text=markdown_text,
+        )
+
+        # Verify structure
+        assert isinstance(result, FindingModelBase)
+        assert result.name == test_output.name
+        assert result.description == test_output.description
+        assert len(result.attributes) == len(test_output.attributes)
 
 
 @pytest.mark.callout

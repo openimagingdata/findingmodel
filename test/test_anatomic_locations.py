@@ -1094,9 +1094,9 @@ async def test_find_anatomic_locations_basic_wiring() -> None:
     # Skip if DuckDB anatomic database not available
     # Try to ensure database exists - it will raise FileNotFoundError if unavailable
     try:
-        from findingmodel.config import ensure_db_file
+        from findingmodel.config import ensure_anatomic_db
 
-        ensure_db_file(settings.duckdb_anatomic_path, settings.remote_anatomic_db_url, settings.remote_anatomic_db_hash)
+        ensure_anatomic_db()
     except (FileNotFoundError, Exception):
         pytest.skip("DuckDB anatomic locations database not available")
 

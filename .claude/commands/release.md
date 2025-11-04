@@ -177,7 +177,7 @@ Proceed?
 Create temp file with CHANGELOG content, then:
 ```bash
 gh release create vX.Y.Z \
-  --title "Release vX.Y.Z" \
+  --title "vX.Y.Z" \
   --notes-file /tmp/release_notes.md \
   dist/findingmodel-X.Y.Z-py3-none-any.whl \
   dist/findingmodel-X.Y.Z.tar.gz
