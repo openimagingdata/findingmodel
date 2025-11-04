@@ -1,7 +1,6 @@
 """Finding description and detail generation tools."""
 
 import warnings
-from typing import cast
 
 from pydantic_ai import Agent
 
@@ -10,28 +9,9 @@ from findingmodel.config import settings
 from findingmodel.finding_info import FindingInfo
 
 from .common import get_async_perplexity_client, get_openai_model
-from .prompt_template import create_prompt_messages, load_prompt_template
+from .prompt_template import create_prompt_messages, load_prompt_template, render_agent_prompt
 
 PROMPT_TEMPLATE_NAME = "get_finding_description"
-
-
-def _render_finding_description_prompt(finding_name: str) -> tuple[str, str]:
-    """Render the system instructions and user prompt for the finding description agent."""
-
-    template = load_prompt_template(PROMPT_TEMPLATE_NAME)
-    messages = create_prompt_messages(template, finding_name=finding_name)
-
-    system_sections = [
-        cast(str, msg["content"]) for msg in messages if msg.get("role") == "system" and "content" in msg
-    ]
-    user_sections = [cast(str, msg["content"]) for msg in messages if msg.get("role") == "user" and "content" in msg]
-
-    if not user_sections:
-        raise ValueError("Prompt template must include a user section")
-
-    instructions = "\n\n".join(system_sections) if system_sections else ""
-    user_prompt = "\n\n".join(user_sections)
-    return instructions, user_prompt
 
 
 async def create_info_from_name(finding_name: str, model_name: str = settings.openai_default_model) -> FindingInfo:
@@ -42,7 +22,8 @@ async def create_info_from_name(finding_name: str, model_name: str = settings.op
     :return: A FindingInfo object containing the finding name, synonyms, and description.
     """
     settings.check_ready_for_openai()
-    instructions, user_prompt = _render_finding_description_prompt(finding_name)
+    template = load_prompt_template(PROMPT_TEMPLATE_NAME)
+    instructions, user_prompt = render_agent_prompt(template, finding_name=finding_name)
 
     agent = _create_finding_info_agent(model_name, instructions)
 
