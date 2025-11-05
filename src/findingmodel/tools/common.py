@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from instructor import AsyncInstructor, from_openai
 from openai import AsyncOpenAI
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -26,11 +25,6 @@ async def _get_embedding_cache() -> EmbeddingCache:
         _embedding_cache = EmbeddingCache()
         await _embedding_cache.setup()
     return _embedding_cache
-
-
-def get_async_instructor_client() -> AsyncInstructor:
-    settings.check_ready_for_openai()
-    return from_openai(AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value()))
 
 
 def get_async_perplexity_client() -> AsyncOpenAI:
