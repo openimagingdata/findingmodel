@@ -179,31 +179,6 @@ async def get_finding_model(identifier: str) -> SearchResult | None:
 
 
 @mcp.tool()
-async def list_finding_model_tags() -> list[str]:
-    """List all unique tags used across all finding models.
-
-    Returns a sorted list of all tags that are currently used
-    to categorize finding models in the index.
-
-    Returns:
-        Sorted list of unique tag strings
-
-    Example:
-        Returns: ["abdominal", "cardiac", "chest", "musculoskeletal", ...]
-    """
-    async with DuckDBIndex() as index:
-        conn = index._ensure_connection()
-        rows = conn.execute(
-            """
-            SELECT DISTINCT tag
-            FROM tags
-            ORDER BY tag
-            """
-        ).fetchall()
-        return [str(row[0]) for row in rows]
-
-
-@mcp.tool()
 async def count_finding_models() -> dict[str, int]:
     """Get statistics about the finding model index.
 

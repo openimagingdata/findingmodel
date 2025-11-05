@@ -4,12 +4,11 @@ The Finding Model MCP (Model Context Protocol) server provides AI agents with ac
 
 ## Overview
 
-The MCP server exposes four tools that agents can use to interact with the Finding Model Index:
+The MCP server exposes three tools that agents can use to interact with the Finding Model Index:
 
 1. **search_finding_models**: Search for finding models using hybrid search (FTS + semantic)
 2. **get_finding_model**: Retrieve a specific finding model by ID, name, or synonym
-3. **list_finding_model_tags**: List all unique tags used across finding models
-4. **count_finding_models**: Get statistics about the index (models, people, organizations)
+3. **count_finding_models**: Get statistics about the index (models, people, organizations)
 
 ## Installation
 
@@ -29,15 +28,23 @@ uv add findingmodel
 
 ### Standalone Execution
 
-Run the server directly using Python:
+**Recommended:** Run using the installed console script:
+
+```bash
+findingmodel-mcp
+```
+
+Or with `uvx` (no installation required):
+
+```bash
+uvx --from findingmodel findingmodel-mcp
+```
+
+Alternative: Run directly using Python:
 
 ```bash
 python -m findingmodel.mcp_server
-```
-
-Or with `uv`:
-
-```bash
+# or with uv:
 uv run python -m findingmodel.mcp_server
 ```
 
@@ -49,12 +56,14 @@ To use the MCP server with Claude Desktop, add the following to your Claude Desk
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
+**Recommended (using uvx, no installation required):**
+
 ```json
 {
   "mcpServers": {
     "finding-model-search": {
-      "command": "python",
-      "args": ["-m", "findingmodel.mcp_server"],
+      "command": "uvx",
+      "args": ["--from", "findingmodel", "findingmodel-mcp"],
       "env": {
         "OPENAI_API_KEY": "your-openai-api-key-here"
       }
@@ -63,14 +72,13 @@ To use the MCP server with Claude Desktop, add the following to your Claude Desk
 }
 ```
 
-If using `uv`:
+**Alternative (if findingmodel is already installed):**
 
 ```json
 {
   "mcpServers": {
     "finding-model-search": {
-      "command": "uv",
-      "args": ["run", "python", "-m", "findingmodel.mcp_server"],
+      "command": "findingmodel-mcp",
       "env": {
         "OPENAI_API_KEY": "your-openai-api-key-here"
       }
@@ -88,11 +96,13 @@ If using `uv`:
 Search for finding models using hybrid search (FTS + semantic with Reciprocal Rank Fusion).
 
 **Parameters:**
+
 - `query` (string, required): Search query (e.g., "pneumothorax", "lung nodule")
 - `limit` (integer, optional): Maximum results to return (default: 10, max: 100)
 - `tags` (array of strings, optional): Filter by tags - models must have ALL specified tags
 
 **Returns:** SearchResponse object containing:
+
 - `query`: The search query used
 - `limit`: The limit applied
 - `tags`: Tags used for filtering (if any)
@@ -109,7 +119,8 @@ Search for finding models using hybrid search (FTS + semantic with Reciprocal Ra
   - `attributes`: Array of attributes with id, name, and type
 
 **Example usage in Claude:**
-```
+
+```text
 Search for pneumothorax finding models with a limit of 5 results
 ```
 
@@ -118,26 +129,15 @@ Search for pneumothorax finding models with a limit of 5 results
 Retrieve a specific finding model by its ID, name, or synonym.
 
 **Parameters:**
+
 - `identifier` (string, required): OIFM ID, name, slug name, or synonym to look up
 
 **Returns:** SearchResult object or null if not found
 
 **Example usage in Claude:**
-```
+
+```text
 Get the finding model with ID OIFM_RSNA_000001
-```
-
-### list_finding_model_tags
-
-List all unique tags used across all finding models.
-
-**Parameters:** None
-
-**Returns:** Array of tag strings (sorted)
-
-**Example usage in Claude:**
-```
-Show me all available tags for finding models
 ```
 
 ### count_finding_models
@@ -147,27 +147,35 @@ Get statistics about the finding model index.
 **Parameters:** None
 
 **Returns:** Object with counts:
+
 - `finding_models`: Total number of finding models
 - `people`: Total number of contributors (people)
 - `organizations`: Total number of organizations
 
 **Example usage in Claude:**
-```
+
+```text
 How many finding models are in the index?
 ```
 
 ## Database Configuration
 
-The MCP server uses the DuckDB index for finding models. By default, it will:
+**By default, the MCP server automatically downloads and uses the latest version of the Finding Model Repository Index.** No manual configuration is required.
 
-1. Look for a local database file at `~/.local/share/findingmodel/finding_models.duckdb`
-2. If not found, attempt to download the latest database from the remote URL configured in settings
+The database is downloaded from a trusted remote source and cached locally at:
 
-You can override the database location by setting the `DUCKDB_INDEX_PATH` environment variable:
+- Linux/macOS: `~/.local/share/findingmodel/finding_models.duckdb`
+- Windows: `%LOCALAPPDATA%\findingmodel\finding_models.duckdb`
+
+### Custom Database Location (Optional)
+
+If you need to use a custom database file (e.g., for development or offline use), set the `DUCKDB_INDEX_PATH` environment variable:
 
 ```bash
 export DUCKDB_INDEX_PATH=/path/to/your/custom/database.duckdb
 ```
+
+When using a custom path without additional configuration, the file will be used directly without verification or download attempts.
 
 ## Development
 
@@ -202,18 +210,10 @@ uv run ruff format src/findingmodel/mcp_server.py
 export OPENAI_API_KEY=your-api-key-here
 ```
 
-### Database Download Fails
-
-**Error**: `Failed to download/verify database file`
-
-**Solution**:
-1. Check your internet connection
-2. Verify the remote database URL is accessible
-3. Manually download the database and place it in `~/.local/share/findingmodel/finding_models.duckdb`
-
 ### Server Not Appearing in Claude Desktop
 
 **Solution**:
+
 1. Verify the configuration file path is correct for your OS
 2. Restart Claude Desktop after updating the configuration
 3. Check the Claude Desktop logs for errors

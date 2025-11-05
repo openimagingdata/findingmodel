@@ -1,19 +1,20 @@
 """Tests for the MCP server.
 
 Note: These tests use mocking to avoid requiring a populated database.
+Integration tests marked with @pytest.mark.callout use real databases.
 """
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from findingmodel.index import AttributeInfo, IndexEntry
+from findingmodel.index import AttributeInfo, DuckDBIndex, IndexEntry
 from findingmodel.mcp_server import (
     count_finding_models,
     get_finding_model,
-    list_finding_model_tags,
     search_finding_models,
 )
 
@@ -137,27 +138,6 @@ async def test_get_finding_model_not_found() -> None:
 
 
 @pytest.mark.asyncio
-async def test_list_finding_model_tags() -> None:
-    """Test listing all tags."""
-    mock_conn = MagicMock()
-    mock_conn.execute.return_value.fetchall.return_value = [
-        ("abdominal",),
-        ("cardiac",),
-        ("chest",),
-    ]
-
-    mock_index = AsyncMock()
-    mock_index._ensure_connection = MagicMock(return_value=mock_conn)
-    mock_index.__aenter__ = AsyncMock(return_value=mock_index)
-    mock_index.__aexit__ = AsyncMock(return_value=None)
-
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
-        result = await list_finding_model_tags()
-
-        assert result == ["abdominal", "cardiac", "chest"]
-
-
-@pytest.mark.asyncio
 async def test_count_finding_models() -> None:
     """Test getting statistics."""
     mock_index = AsyncMock()
@@ -224,3 +204,88 @@ async def test_search_result_structure() -> None:
         assert model.attributes[0].attribute_id == "OIFMA_TEST_000001"
         assert model.attributes[0].name == "Severity"
         assert model.attributes[0].type == "ChoiceAttribute"
+
+
+@pytest.mark.asyncio
+@pytest.mark.callout
+async def test_mcp_server_integration(tmp_path: Path) -> None:
+    """Integration test: MCP server with real DuckDB database.
+
+    This test verifies the MCP server works end-to-end with a real database.
+    Run with: pytest test/test_mcp_server.py::test_mcp_server_integration -v
+    """
+    from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded, FindingModelFull
+
+    # Create a test database with real data
+    db_path = tmp_path / "test_mcp.duckdb"
+    index = DuckDBIndex(db_path, read_only=False)
+    await index.setup()
+
+    try:
+        # Create a simple test model
+        model = FindingModelFull(
+            oifm_id="OIFM_TEST_000001",
+            name="Pneumothorax",
+            description="Air in the pleural space",
+            synonyms=["collapsed lung", "PTX"],
+            tags=["chest", "emergency"],
+            attributes=[
+                ChoiceAttributeIded(
+                    oifma_id="OIFMA_TEST_000001",
+                    name="Severity",
+                    values=[
+                        ChoiceValueIded(value_code="OIFMA_TEST_000001.0", name="Small"),
+                        ChoiceValueIded(value_code="OIFMA_TEST_000001.1", name="Large"),
+                    ],
+                )
+            ],
+        )
+
+        # Write model to file and add to index
+        model_file = tmp_path / "pneumothorax.fm.json"
+        model_file.write_text(model.model_dump_json(indent=2, exclude_none=True))
+        await index.add_or_update_entry_from_file(model_file, model)
+
+        # Close the index so MCP server can open it read-only
+        if index.conn is not None:
+            index.conn.close()
+
+        # Now test MCP server functions with the real database
+        with patch("findingmodel.mcp_server.DuckDBIndex") as mock_duckdb_class:
+            # Make the mock return our real index instance
+            test_index = DuckDBIndex(db_path, read_only=True)
+            await test_index.setup()
+
+            mock_duckdb_class.return_value.__aenter__.return_value = test_index
+
+            # Test search
+            search_result = await search_finding_models(query="pneumothorax", limit=5)
+            assert search_result.result_count == 1
+            assert search_result.results[0].oifm_id == "OIFM_TEST_000001"
+            assert search_result.results[0].name == "Pneumothorax"
+            assert "chest" in (search_result.results[0].tags or [])
+
+            # Test get by ID
+            get_result = await get_finding_model(identifier="OIFM_TEST_000001")
+            assert get_result is not None
+            assert get_result.name == "Pneumothorax"
+
+            # Test get by synonym
+            synonym_result = await get_finding_model(identifier="collapsed lung")
+            assert synonym_result is not None
+            assert synonym_result.oifm_id == "OIFM_TEST_000001"
+
+            # Test count
+            count_result = await count_finding_models()
+            assert count_result["finding_models"] == 1
+            assert "people" in count_result
+            assert "organizations" in count_result
+
+            # Cleanup
+            if test_index.conn is not None:
+                test_index.conn.close()
+
+    finally:
+        # Cleanup
+        if index.conn is not None:
+            index.conn.close()
