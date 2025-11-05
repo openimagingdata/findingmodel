@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Setup a `render_agent_prompt` method in `tools.common` for using a MD prompt with Pydantic AI agents.
+
 ### Removed
+
+- No more dependency on `instructor` library
 
 ### Fixed
 
+- Refactored `markdown_in` tool to use Pydantic AI agent in line with other tools
 - Make sure DuckDB extensions are loaded when opening the DuckDB connection
 
 ## [0.5.0] - 2025-11-03
