@@ -4,7 +4,7 @@ from typing import Annotated, Any, Literal
 import httpx
 import openai
 from platformdirs import user_data_dir
-from pydantic import BeforeValidator, Field, HttpUrl, SecretStr, model_validator
+from pydantic import BeforeValidator, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
@@ -39,10 +39,12 @@ class FindingModelConfig(BaseSettings):
     openai_default_model_full: str = Field(default="gpt-5")
     openai_default_model_small: str = Field(default="gpt-5-nano")
 
-    # Perplexity API
-    perplexity_base_url: HttpUrl = Field(default=HttpUrl("https://api.perplexity.ai"))
-    perplexity_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-    perplexity_default_model: str = Field(default="sonar-pro")
+    # Tavily API
+    tavily_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    tavily_search_depth: Literal["basic", "advanced"] = Field(
+        default="advanced",
+        description="Tavily search depth: 'basic' or 'advanced'",
+    )
 
     # BioOntology API
     bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
@@ -127,9 +129,9 @@ class FindingModelConfig(BaseSettings):
             raise ConfigurationError("OpenAI API key is not set")
         return True
 
-    def check_ready_for_perplexity(self) -> Literal[True]:
-        if not self.perplexity_api_key.get_secret_value():
-            raise ConfigurationError("Perplexity API key is not set")
+    def check_ready_for_tavily(self) -> Literal[True]:
+        if not self.tavily_api_key.get_secret_value():
+            raise ConfigurationError("Tavily API key is not set")
         return True
 
 

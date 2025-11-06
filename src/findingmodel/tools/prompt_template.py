@@ -3,12 +3,6 @@ from pathlib import Path
 from typing import Any
 
 from jinja2 import Template
-from openai.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionMessageParam,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-)
 
 PROMPT_TEMPLATE_DIR = Path(__file__).parent / "prompt_templates"
 
@@ -70,53 +64,3 @@ def render_agent_prompt(template: Template, **kwargs: Any) -> tuple[str, str]:  
         raise ValueError("Prompt template must include a USER section")
 
     return instructions, user_prompt
-
-
-def create_prompt_messages(template: Template, **kwargs: Any) -> list[ChatCompletionMessageParam]:  # noqa: ANN401
-    """Create OpenAI-style chat messages from a prompt template.
-
-    DEPRECATED: For Pydantic AI agents, use render_agent_prompt() instead.
-    This function is kept for backward compatibility with non-Pydantic AI code.
-
-    Args:
-        template: Jinja2 template to render
-        **kwargs: Variables to pass to template rendering
-
-    Returns:
-        List of chat messages in OpenAI format
-    """
-    import warnings
-
-    warnings.warn(
-        "create_prompt_messages() is deprecated for Pydantic AI agents. Use render_agent_prompt() instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    rendered_prompt = template.render(**kwargs)
-
-    # Split the markdown text into sections based on '# [ROLE]' headers
-    sections = re.split(r"(^|\n)# (SYSTEM|USER|ASSISTANT)", rendered_prompt)
-
-    # Remove any leading/trailing whitespace and empty strings
-    sections = [s.strip() for s in sections if s.strip()]
-
-    # Build the list of messages
-    prompt_messages: list[ChatCompletionMessageParam] = []
-    for i in range(0, len(sections), 2):
-        role = sections[i].lower()
-        # If there is no content for the role, use an empty string
-        content = "" if i + 1 >= len(sections) else sections[i + 1]
-        message: ChatCompletionMessageParam
-        if role == "system":
-            message = ChatCompletionSystemMessageParam(role="system", content=content)
-        elif role == "user":
-            message = ChatCompletionUserMessageParam(role="user", content=content)
-        elif role == "assistant":
-            message = ChatCompletionAssistantMessageParam(role="assistant", content=content)
-        else:
-            raise NotImplementedError(f"Role {role} not implemented")
-
-        prompt_messages.append(message)
-
-    return prompt_messages

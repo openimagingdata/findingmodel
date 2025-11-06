@@ -5,6 +5,7 @@ from pathlib import Path
 from openai import AsyncOpenAI
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
+from tavily import AsyncTavilyClient
 
 from findingmodel import logger
 from findingmodel.config import settings
@@ -27,11 +28,10 @@ async def _get_embedding_cache() -> EmbeddingCache:
     return _embedding_cache
 
 
-def get_async_perplexity_client() -> AsyncOpenAI:
-    settings.check_ready_for_perplexity()
-    return AsyncOpenAI(
-        api_key=str(settings.perplexity_api_key.get_secret_value()), base_url=str(settings.perplexity_base_url)
-    )
+def get_async_tavily_client() -> AsyncTavilyClient:
+    """Get configured async Tavily search client."""
+    settings.check_ready_for_tavily()
+    return AsyncTavilyClient(api_key=settings.tavily_api_key.get_secret_value())
 
 
 def get_openai_model(model_name: str) -> OpenAIModel:

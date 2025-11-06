@@ -14,7 +14,7 @@ from findingmodel.index_code import IndexCode
 # Tests marked with @pytest.mark.callout can enable this as needed
 models.ALLOW_MODEL_REQUESTS = False
 
-HAS_PERPLEXITY_API_KEY = bool(settings.perplexity_api_key.get_secret_value())
+HAS_TAVILY_API_KEY = bool(settings.tavily_api_key.get_secret_value())
 
 
 def test_create_stub(finding_info: FindingInfo) -> None:
@@ -314,6 +314,191 @@ async def test_create_info_from_name_basic_wiring() -> None:
         models.ALLOW_MODEL_REQUESTS = original
 
 
+def _create_stub_result(output: str, messages: list[str]) -> SimpleNamespace:
+    """Create a stub result for testing add_details_to_info without API calls."""
+
+    class _MockMessage:
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+        def __str__(self) -> str:
+            return self.content
+
+    mock_messages = [_MockMessage(msg) for msg in messages]
+    return SimpleNamespace(output=output, all_messages=lambda: mock_messages)
+
+
+@pytest.mark.asyncio
+async def test_add_details_to_info_with_test_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unit test: Verify citation extraction and field preservation without API calls.
+
+    Uses stub result to verify citation extraction logic works correctly
+    without making real API calls.
+    """
+    from unittest.mock import AsyncMock
+
+    from pydantic_ai.models.test import TestModel
+
+    from findingmodel.tools import add_details_to_info
+
+    # Create test FindingInfo
+    finding = FindingInfo(
+        name="pneumothorax",
+        description="Presence of air in the pleural space",
+        synonyms=["PTX", "spontaneous pneumothorax"],
+    )
+
+    # Expected detail text (what the agent should return)
+    mock_detail = (
+        "Pneumothorax is characterized by the presence of air in the pleural space. "
+        "Key imaging features include visceral pleural line separation and absence of lung markings peripherally. "
+        "Common locations include apical and lateral pleural spaces."
+    )
+
+    # Mock search tool responses with Source: URLs
+    mock_messages = [
+        "Initial prompt",
+        "Pneumothorax is visible as air in the pleural cavity on chest X-ray.\n\n"
+        "Source: https://radiopaedia.org/articles/pneumothorax",
+        "The visceral pleural line is the key finding in pneumothorax diagnosis.\n\n"
+        "Source: https://radiologyassistant.nl/chest/pneumothorax",
+        "Additional information about pneumothorax characteristics.\n\n"
+        "Source: https://radiopaedia.org/articles/pneumothorax",  # Duplicate URL to test deduplication
+        f"Final response: {mock_detail}",
+    ]
+
+    stub_result = _create_stub_result(output=mock_detail, messages=mock_messages)
+
+    # Mock Agent.run to return our stub result
+    mock_run = AsyncMock(return_value=stub_result)
+
+    # Patch Agent.run method
+    from pydantic_ai import Agent
+
+    monkeypatch.setattr(Agent, "run", mock_run)
+
+    # Mock get_openai_model to return TestModel
+    monkeypatch.setattr("findingmodel.tools.finding_description.get_openai_model", lambda model_name: TestModel())
+
+    # Run the function
+    result = await add_details_to_info(finding)
+
+    # Verify the result structure
+    assert result is not None
+    assert isinstance(result, FindingInfo)
+
+    # Verify original fields are preserved
+    assert result.name == finding.name
+    assert result.synonyms == finding.synonyms
+    assert result.description == finding.description
+
+    # Verify detail is populated
+    assert result.detail == mock_detail
+
+    # Verify citations are extracted and deduplicated
+    assert result.citations is not None
+    assert len(result.citations) == 2  # Should deduplicate the radiopaedia URL
+    assert "https://radiopaedia.org/articles/pneumothorax" in result.citations
+    assert "https://radiologyassistant.nl/chest/pneumothorax" in result.citations
+
+    # Verify agent.run was called
+    assert mock_run.called
+
+
+@pytest.mark.asyncio
+async def test_add_details_to_info_empty_output_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unit test: Verify function returns None when agent returns empty output.
+
+    Tests the error path at lines 186-187 in finding_description.py where
+    the function returns None if result.output is falsy.
+    """
+    from unittest.mock import AsyncMock
+
+    from pydantic_ai import Agent
+    from pydantic_ai.models.test import TestModel
+
+    from findingmodel.tools import add_details_to_info
+
+    # Create test FindingInfo
+    finding = FindingInfo(
+        name="pneumothorax",
+        description="Presence of air in the pleural space",
+        synonyms=["PTX"],
+    )
+
+    # Create stub result with empty output
+    stub_result = _create_stub_result(output="", messages=["No results"])
+
+    # Mock Agent.run to return empty output
+    mock_run = AsyncMock(return_value=stub_result)
+    monkeypatch.setattr(Agent, "run", mock_run)
+
+    # Mock get_openai_model
+    monkeypatch.setattr("findingmodel.tools.finding_description.get_openai_model", lambda model_name: TestModel())
+
+    # Run the function
+    result = await add_details_to_info(finding)
+
+    # Verify function returns None for empty output
+    assert result is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("search_depth", ["basic", "advanced"])
+async def test_add_details_to_info_search_depth_parameter(search_depth: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unit test: Verify search_depth parameter is passed to Tavily search.
+
+    Tests that the search_depth parameter (line 97, used at line 126 in finding_description.py)
+    flows correctly from function parameter to the Tavily client search call.
+    """
+    from typing import Any
+    from unittest.mock import AsyncMock
+
+    from pydantic_ai.models.test import TestModel
+
+    from findingmodel.tools import add_details_to_info
+
+    # Create test FindingInfo
+    finding = FindingInfo(
+        name="pneumothorax",
+        description="Presence of air in the pleural space",
+        synonyms=["PTX"],
+    )
+
+    # Track calls to Tavily search
+    captured_search_calls: list[dict[str, Any]] = []
+
+    # Create mock Tavily client with search method
+    mock_client = AsyncMock()
+    mock_client.search = AsyncMock(
+        side_effect=lambda query, **kwargs: (
+            captured_search_calls.append({"query": query, **kwargs}),
+            {"results": [{"content": "Test radiology content", "url": "https://radiopaedia.org/test"}]},
+        )[1]
+    )
+
+    # Mock get_async_tavily_client to return our mock client
+    monkeypatch.setattr("findingmodel.tools.finding_description.get_async_tavily_client", lambda: mock_client)
+
+    # Mock get_openai_model to use TestModel that will call tools
+    test_model = TestModel()
+    monkeypatch.setattr("findingmodel.tools.finding_description.get_openai_model", lambda model_name: test_model)
+
+    # Enable model requests for this test since we're using TestModel
+    monkeypatch.setattr("pydantic_ai.models.ALLOW_MODEL_REQUESTS", True)
+
+    # Run add_details_to_info with the specified search_depth
+    result = await add_details_to_info(finding, search_depth=search_depth)
+
+    # Verify the result is returned
+    assert result is not None
+
+    # Verify that Tavily search was called with the correct search_depth parameter
+    assert len(captured_search_calls) > 0, "Tavily search should have been called at least once"
+    for call in captured_search_calls:
+        assert call["search_depth"] == search_depth, f"Expected search_depth={search_depth}, got {call['search_depth']}"
+
+
 @pytest.mark.callout
 @pytest.mark.asyncio
 async def test_add_details_to_info_basic_wiring() -> None:
@@ -322,9 +507,9 @@ async def test_add_details_to_info_basic_wiring() -> None:
     All comprehensive behavioral testing is in evals/finding_description.py.
     This test only verifies the tool can be called successfully.
     """
-    # Skip if Perplexity API key not configured
-    if not settings.perplexity_api_key or not settings.perplexity_api_key.get_secret_value():
-        pytest.skip("Perplexity API key not configured")
+    # Skip if Tavily API key not configured
+    if not settings.tavily_api_key or not settings.tavily_api_key.get_secret_value():
+        pytest.skip("Tavily API key not configured")
 
     from findingmodel.finding_info import FindingInfo
     from findingmodel.tools import add_details_to_info
@@ -531,3 +716,39 @@ def test_concurrent_id_generation(base_model: FindingModelBase) -> None:
     assert len(results) == 3
     oifm_ids = [r.oifm_id for r in results]
     assert len(set(oifm_ids)) == 3  # All should be unique
+
+
+def test_get_async_tavily_client_with_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that get_async_tavily_client returns client when API key is set."""
+    from pydantic import SecretStr
+    from tavily import AsyncTavilyClient
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_async_tavily_client
+
+    # Temporarily override settings with test key
+    original_key = config.settings.tavily_api_key
+    try:
+        config.settings.tavily_api_key = SecretStr("test-tavily-key")
+        client = get_async_tavily_client()
+        assert isinstance(client, AsyncTavilyClient)
+    finally:
+        config.settings.tavily_api_key = original_key
+
+
+def test_get_async_tavily_client_without_key_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that get_async_tavily_client raises ConfigurationError when API key missing."""
+    from pydantic import SecretStr
+
+    from findingmodel import config
+    from findingmodel.config import ConfigurationError
+    from findingmodel.tools.common import get_async_tavily_client
+
+    # Temporarily override settings with empty key
+    original_key = config.settings.tavily_api_key
+    try:
+        config.settings.tavily_api_key = SecretStr("")
+        with pytest.raises(ConfigurationError, match="Tavily API key is not set"):
+            get_async_tavily_client()
+    finally:
+        config.settings.tavily_api_key = original_key
