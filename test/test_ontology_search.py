@@ -207,14 +207,14 @@ async def test_generate_finding_query_terms_with_description() -> None:
 
 def test_create_query_generator_agent() -> None:
     """Test that the query generator agent is created correctly."""
-    with patch("findingmodel.tools.ontology_concept_match.get_openai_model") as mock_model:
-        # Mock the get_openai_model to return a TestModel instead of trying to create a real OpenAI client
+    with patch("findingmodel.tools.ontology_concept_match.get_model") as mock_model:
+        # Mock the get_model to return a TestModel instead of trying to create a real OpenAI client
         test_model = TestModel()
         mock_model.return_value = test_model
 
         agent = create_query_generator_agent()
 
-        # Should get the default model
+        # Should get the default model tier
         mock_model.assert_called_once()
 
         # Check agent configuration - output should be list[str]
@@ -429,14 +429,14 @@ def test_ensure_exact_matches_respects_limit() -> None:
 
 def test_categorization_agent_creation() -> None:
     """Test that agent is created properly."""
-    with patch("findingmodel.tools.ontology_concept_match.get_openai_model") as mock_model:
-        # Mock the get_openai_model to return a TestModel instead of trying to create a real OpenAI client
+    with patch("findingmodel.tools.ontology_concept_match.get_model") as mock_model:
+        # Mock the get_model to return a TestModel instead of trying to create a real OpenAI client
         test_model = TestModel()
         mock_model.return_value = test_model
 
         agent = create_categorization_agent()
 
-        # Should get the default model
+        # Should get the default model tier
         mock_model.assert_called_once()
 
         # Agent should exist

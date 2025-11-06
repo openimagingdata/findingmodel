@@ -6,29 +6,26 @@ from typing import Literal
 from pydantic_ai import Agent
 
 from findingmodel import logger
-from findingmodel.config import settings
+from findingmodel.config import ModelTier, settings
 from findingmodel.finding_info import FindingInfo
 
-from .common import get_async_tavily_client, get_openai_model
+from .common import get_async_tavily_client, get_model
 from .prompt_template import load_prompt_template, render_agent_prompt
 
 PROMPT_TEMPLATE_NAME = "get_finding_description"
 
 
-async def create_info_from_name(
-    finding_name: str, model_name: str = settings.openai_default_model_small
-) -> FindingInfo:
+async def create_info_from_name(finding_name: str, model_tier: ModelTier = "small") -> FindingInfo:
     """
     Create a FindingInfo object from a finding name using the OpenAI API.
     :param finding_name: The name of the finding to describe.
-    :param model_name: The OpenAI model to use for the description.
+    :param model_tier: The model tier to use ("small", "base", or "full").
     :return: A FindingInfo object containing the finding name, synonyms, and description.
     """
-    settings.check_ready_for_openai()
     template = load_prompt_template(PROMPT_TEMPLATE_NAME)
     instructions, user_prompt = render_agent_prompt(template, finding_name=finding_name)
 
-    agent = _create_finding_info_agent(model_name, instructions)
+    agent = _create_finding_info_agent(model_tier, instructions)
 
     result = await agent.run(user_prompt)
     finding_info = _normalize_finding_info(result.output, original_input=finding_name)
@@ -72,11 +69,11 @@ def _normalize_finding_info(finding_info: FindingInfo, *, original_input: str) -
     return finding_info.model_copy(update={"name": cleaned_name, "synonyms": updated_synonyms})
 
 
-def _create_finding_info_agent(model_name: str, instructions: str) -> Agent[None, FindingInfo]:
+def _create_finding_info_agent(model_tier: ModelTier, instructions: str) -> Agent[None, FindingInfo]:
     """Factory to build the finding info agent, extracted for easier testing overrides."""
 
     return Agent[None, FindingInfo](
-        model=get_openai_model(model_name),
+        model=get_model(model_tier),
         output_type=FindingInfo,
         instructions=instructions,
     )
@@ -154,7 +151,7 @@ async def add_details_to_info(
 
     # Create agent with search tool
     agent = Agent[FindingInfo, str](
-        get_openai_model(settings.openai_default_model_small),
+        get_model("small"),
         deps_type=FindingInfo,
         output_type=str,
         tools=[search_radiology_sources],
@@ -204,7 +201,14 @@ async def describe_finding_name(finding_name: str, model_name: str = settings.op
     warnings.warn(
         "describe_finding_name is deprecated, use create_info_from_name instead", DeprecationWarning, stacklevel=2
     )
-    return await create_info_from_name(finding_name, model_name)
+    # Map model_name to tier for backward compatibility
+    if model_name == settings.openai_default_model_small:
+        tier: ModelTier = "small"
+    elif model_name == settings.openai_default_model_full:
+        tier = "full"
+    else:
+        tier = "base"
+    return await create_info_from_name(finding_name, tier)
 
 
 async def get_detail_on_finding(
@@ -233,7 +237,14 @@ async def create_finding_info_from_name(
         DeprecationWarning,
         stacklevel=2,
     )
-    return await create_info_from_name(finding_name, model_name)
+    # Map model_name to tier for backward compatibility
+    if model_name == settings.openai_default_model_small:
+        tier: ModelTier = "small"
+    elif model_name == settings.openai_default_model_full:
+        tier = "full"
+    else:
+        tier = "base"
+    return await create_info_from_name(finding_name, tier)
 
 
 async def add_details_to_finding_info(

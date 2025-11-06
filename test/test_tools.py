@@ -108,12 +108,7 @@ async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.Mon
     monkeypatch.setattr(
         finding_description,
         "_create_finding_info_agent",
-        lambda model_name, instructions: stub_agent,
-    )
-    monkeypatch.setattr(
-        settings.__class__,
-        "check_ready_for_openai",
-        lambda self: True,
+        lambda model_tier, instructions: stub_agent,
     )
 
     logged: list[str] = []
@@ -129,7 +124,7 @@ async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.Mon
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
-        result = await finding_description.create_info_from_name("left lower lobe opacity", model_name="stub-model")
+        result = await finding_description.create_info_from_name("left lower lobe opacity", model_tier="small")
     finally:
         models.ALLOW_MODEL_REQUESTS = original
 
@@ -377,8 +372,8 @@ async def test_add_details_to_info_with_test_model(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setattr(Agent, "run", mock_run)
 
-    # Mock get_openai_model to return TestModel
-    monkeypatch.setattr("findingmodel.tools.finding_description.get_openai_model", lambda model_name: TestModel())
+    # Mock get_model to return TestModel
+    monkeypatch.setattr("findingmodel.tools.finding_description.get_model", lambda model_tier: TestModel())
 
     # Run the function
     result = await add_details_to_info(finding)
@@ -433,8 +428,8 @@ async def test_add_details_to_info_empty_output_returns_none(monkeypatch: pytest
     mock_run = AsyncMock(return_value=stub_result)
     monkeypatch.setattr(Agent, "run", mock_run)
 
-    # Mock get_openai_model
-    monkeypatch.setattr("findingmodel.tools.finding_description.get_openai_model", lambda model_name: TestModel())
+    # Mock get_model
+    monkeypatch.setattr("findingmodel.tools.finding_description.get_model", lambda model_tier: TestModel())
 
     # Run the function
     result = await add_details_to_info(finding)
@@ -480,9 +475,9 @@ async def test_add_details_to_info_search_depth_parameter(search_depth: str, mon
     # Mock get_async_tavily_client to return our mock client
     monkeypatch.setattr("findingmodel.tools.finding_description.get_async_tavily_client", lambda: mock_client)
 
-    # Mock get_openai_model to use TestModel that will call tools
+    # Mock get_model to use TestModel that will call tools
     test_model = TestModel()
-    monkeypatch.setattr("findingmodel.tools.finding_description.get_openai_model", lambda model_name: test_model)
+    monkeypatch.setattr("findingmodel.tools.finding_description.get_model", lambda model_tier: test_model)
 
     # Enable model requests for this test since we're using TestModel
     monkeypatch.setattr("pydantic_ai.models.ALLOW_MODEL_REQUESTS", True)
@@ -586,9 +581,9 @@ async def test_create_model_from_markdown_with_test_model() -> None:
         ],
     )
 
-    # Mock get_openai_model to return TestModel with controlled output
+    # Mock get_model to return TestModel with controlled output
     # This prevents actual OpenAI client creation
-    with patch("findingmodel.tools.markdown_in.get_openai_model") as mock_model:
+    with patch("findingmodel.tools.markdown_in.get_model") as mock_model:
         # TestModel requires custom_output_args to be a dict, not a Pydantic model
         mock_model.return_value = TestModel(custom_output_args=test_output.model_dump())
 
