@@ -3,21 +3,21 @@
 ## Overview
 
 This document outlines the migration plan for three major refactoring efforts:
-1. Replace `instructor` library with Pydantic AI
-2. Replace Perplexity search API with Tavily
-3. Add Anthropic model support alongside OpenAI
+1. Replace `instructor` library with Pydantic AI - ✅ **COMPLETE**
+2. Replace Perplexity search API with Tavily - ✅ **COMPLETE**
+3. Add Anthropic model support alongside OpenAI - ⏸️ **NOT STARTED**
 
-**Implementation Order:** Complete tasks in the order listed (Plan 1 → Plan 3 → Plan 2) to minimize risk and establish infrastructure before the most complex migration.
+**Status:** Plans 1 and 2 are complete. Plan 3 (Anthropic support) remains for future work.
 
 ---
 
-## Plan 1: Replace instructor with Pydantic AI
+## Plan 1: Replace instructor with Pydantic AI ✅
+
+**Status:** COMPLETE
 
 **Objective:** Remove the `instructor` dependency and use Pydantic AI's native Agent pattern for structured outputs.
 
-**Current State:** `instructor` is used only in `markdown_in.py` to wrap OpenAI API for structured `FindingModelBase` responses.
-
-### Task 1.1: Refactor `create_model_from_markdown()` to use Pydantic AI Agent
+### Task 1.1: Refactor `create_model_from_markdown()` to use Pydantic AI Agent ✅
 
 **Files:**
 - `src/findingmodel/tools/markdown_in.py`
@@ -68,7 +68,7 @@ Add `_extract_prompt_sections(messages)` to extract system instructions and user
 
 ---
 
-### Task 1.1.1: Refactor finding_description.py to use render_agent_prompt()
+### Task 1.1.1: Refactor finding_description.py to use render_agent_prompt() ✅
 
 **Files:**
 - `src/findingmodel/tools/finding_description.py`
@@ -108,7 +108,7 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-### Task 1.2: Remove instructor dependency from common.py
+### Task 1.2: Remove instructor dependency from common.py ✅
 
 **Files:**
 - `src/findingmodel/tools/common.py`
@@ -129,7 +129,7 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-### Task 1.3: Remove instructor from dependencies
+### Task 1.3: Remove instructor from dependencies ✅
 
 **Files:**
 - `pyproject.toml`
@@ -151,15 +151,13 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-## Plan 2: Replace Perplexity with Tavily
+## Plan 2: Replace Perplexity with Tavily ✅
+
+**Status:** COMPLETE
 
 **Objective:** Replace Perplexity API with Tavily for enhanced finding details and citations.
 
-**Current State:** Perplexity is used in `add_details_to_info()` for medical research with citations.
-
-**Dependencies:** Complete Plan 1 first (shares config/common.py changes).
-
-### Task 2.1: Add Tavily configuration and dependencies
+### Task 2.1: Add Tavily configuration and dependencies ✅
 
 **Files:**
 - `pyproject.toml`
@@ -222,7 +220,7 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-### Task 2.2: Create Tavily client helper in common.py
+### Task 2.2: Create Tavily client helper in common.py ✅
 
 **Files:**
 - `src/findingmodel/tools/common.py`
@@ -256,7 +254,7 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-### Task 2.3: Refactor `add_details_to_info()` to use Tavily
+### Task 2.3: Refactor `add_details_to_info()` to use Tavily ✅
 
 **Files:**
 - `src/findingmodel/tools/finding_description.py`
@@ -326,7 +324,7 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-### Task 2.4: Update tests for Tavily migration
+### Task 2.4: Update tests for Tavily migration ✅
 
 **Files:**
 - `test/test_tools.py`
@@ -363,7 +361,9 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-### Task 2.5: Update documentation and memories
+### Task 2.5: Update documentation and memories ⚠️
+
+**Status:** Partially complete - CHANGELOG.md updated, memories not yet updated
 
 **Files:**
 - Serena memory: `api_integration`

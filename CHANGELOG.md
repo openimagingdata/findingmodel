@@ -10,11 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Setup a `render_agent_prompt` method in `tools.common` for using a MD prompt with Pydantic AI agents.
+- Setup a `render_agent_prompt` method in `tools.prompt_template` for using a MD prompt with Pydantic AI agents.
+- Tavily API support for finding detail generation with domain filtering
 
 ### Removed
 
 - No more dependency on `instructor` library
+- Perplexity API integration replaced by Tavily
+
+### Changed
+
+- `add_details_to_info()` now uses Pydantic AI agent with custom Tavily search tool
 
 ### Fixed
 

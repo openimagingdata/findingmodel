@@ -459,6 +459,7 @@ dependencies = [
     { name = "pydantic-ai-slim", extra = ["openai", "tavily"] },
     { name = "pydantic-settings" },
     { name = "rich" },
+    { name = "tavily-python" },
 ]
 
 [package.dev-dependencies]
@@ -489,6 +490,7 @@ requires-dist = [
     { name = "pydantic-ai-slim", extras = ["openai", "tavily"], specifier = ">=0.3.2" },
     { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "rich", specifier = ">=13.9.4" },
+    { name = "tavily-python", specifier = ">=0.6.0" },
 ]
 
 [package.metadata.requires-dev]
