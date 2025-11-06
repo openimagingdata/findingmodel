@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic_ai import Agent
 
 from findingmodel import logger
-from findingmodel.config import ModelTier, settings
+from findingmodel.config import ModelProvider, ModelTier, settings
 from findingmodel.finding_info import FindingInfo
 
 from .common import get_async_tavily_client, get_model
@@ -15,17 +15,22 @@ from .prompt_template import load_prompt_template, render_agent_prompt
 PROMPT_TEMPLATE_NAME = "get_finding_description"
 
 
-async def create_info_from_name(finding_name: str, model_tier: ModelTier = "small") -> FindingInfo:
+async def create_info_from_name(
+    finding_name: str,
+    model_tier: ModelTier = "small",
+    provider: ModelProvider | None = None,
+) -> FindingInfo:
     """
-    Create a FindingInfo object from a finding name using the OpenAI API.
+    Create a FindingInfo object from a finding name using the AI API.
     :param finding_name: The name of the finding to describe.
     :param model_tier: The model tier to use ("small", "base", or "full").
+    :param provider: The model provider to use ("openai" or "anthropic"). If None, uses default from settings.
     :return: A FindingInfo object containing the finding name, synonyms, and description.
     """
     template = load_prompt_template(PROMPT_TEMPLATE_NAME)
     instructions, user_prompt = render_agent_prompt(template, finding_name=finding_name)
 
-    agent = _create_finding_info_agent(model_tier, instructions)
+    agent = _create_finding_info_agent(model_tier, instructions, provider=provider)
 
     result = await agent.run(user_prompt)
     finding_info = _normalize_finding_info(result.output, original_input=finding_name)
@@ -69,11 +74,15 @@ def _normalize_finding_info(finding_info: FindingInfo, *, original_input: str) -
     return finding_info.model_copy(update={"name": cleaned_name, "synonyms": updated_synonyms})
 
 
-def _create_finding_info_agent(model_tier: ModelTier, instructions: str) -> Agent[None, FindingInfo]:
+def _create_finding_info_agent(
+    model_tier: ModelTier,
+    instructions: str,
+    provider: ModelProvider | None = None,
+) -> Agent[None, FindingInfo]:
     """Factory to build the finding info agent, extracted for easier testing overrides."""
 
     return Agent[None, FindingInfo](
-        model=get_model(model_tier),
+        model=get_model(model_tier, provider=provider),
         output_type=FindingInfo,
         instructions=instructions,
     )
