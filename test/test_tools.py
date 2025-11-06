@@ -752,3 +752,283 @@ def test_get_async_tavily_client_without_key_raises_error(monkeypatch: pytest.Mo
             get_async_tavily_client()
     finally:
         config.settings.tavily_api_key = original_key
+
+
+# Tests for get_model() function
+
+
+def test_get_model_openai_base_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() with OpenAI provider and base tier."""
+    from pydantic import SecretStr
+    from pydantic_ai.models.openai import OpenAIModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for OpenAI client
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.openai_api_key
+    original_provider = config.settings.model_provider
+    try:
+        config.settings.openai_api_key = SecretStr("test-openai-key")
+        config.settings.model_provider = "openai"
+        model = get_model("base")
+        assert isinstance(model, OpenAIModel)
+    finally:
+        config.settings.openai_api_key = original_key
+        config.settings.model_provider = original_provider
+
+
+def test_get_model_openai_small_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() with OpenAI provider and small tier."""
+    from pydantic import SecretStr
+    from pydantic_ai.models.openai import OpenAIModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for OpenAI client
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.openai_api_key
+    try:
+        config.settings.openai_api_key = SecretStr("test-openai-key")
+        model = get_model("small", provider="openai")
+        assert isinstance(model, OpenAIModel)
+    finally:
+        config.settings.openai_api_key = original_key
+
+
+def test_get_model_openai_full_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() with OpenAI provider and full tier."""
+    from pydantic import SecretStr
+    from pydantic_ai.models.openai import OpenAIModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for OpenAI client
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.openai_api_key
+    try:
+        config.settings.openai_api_key = SecretStr("test-openai-key")
+        model = get_model("full", provider="openai")
+        assert isinstance(model, OpenAIModel)
+    finally:
+        config.settings.openai_api_key = original_key
+
+
+def test_get_model_anthropic_base_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() with Anthropic provider and base tier."""
+    from pydantic import SecretStr
+    from pydantic_ai.models.anthropic import AnthropicModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for Anthropic client
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.anthropic_api_key
+    try:
+        config.settings.anthropic_api_key = SecretStr("test-anthropic-key")
+        model = get_model("base", provider="anthropic")
+        assert isinstance(model, AnthropicModel)
+    finally:
+        config.settings.anthropic_api_key = original_key
+
+
+def test_get_model_anthropic_small_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() with Anthropic provider and small tier."""
+    from pydantic import SecretStr
+    from pydantic_ai.models.anthropic import AnthropicModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for Anthropic client
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.anthropic_api_key
+    try:
+        config.settings.anthropic_api_key = SecretStr("test-anthropic-key")
+        model = get_model("small", provider="anthropic")
+        assert isinstance(model, AnthropicModel)
+    finally:
+        config.settings.anthropic_api_key = original_key
+
+
+def test_get_model_anthropic_full_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() with Anthropic provider and full tier."""
+    from pydantic import SecretStr
+    from pydantic_ai.models.anthropic import AnthropicModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for Anthropic client
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.anthropic_api_key
+    try:
+        config.settings.anthropic_api_key = SecretStr("test-anthropic-key")
+        model = get_model("full", provider="anthropic")
+        assert isinstance(model, AnthropicModel)
+    finally:
+        config.settings.anthropic_api_key = original_key
+
+
+def test_get_model_uses_default_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() uses default provider from settings."""
+    from pydantic import SecretStr
+    from pydantic_ai.models.anthropic import AnthropicModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for Anthropic client
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+
+    # Temporarily override settings with test key and provider
+    original_key = config.settings.anthropic_api_key
+    original_provider = config.settings.model_provider
+    try:
+        config.settings.anthropic_api_key = SecretStr("test-anthropic-key")
+        config.settings.model_provider = "anthropic"
+        model = get_model("base")
+        assert isinstance(model, AnthropicModel)
+    finally:
+        config.settings.anthropic_api_key = original_key
+        config.settings.model_provider = original_provider
+
+
+def test_get_model_unsupported_provider_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() raises ConfigurationError for unsupported provider."""
+    from pydantic import SecretStr
+
+    from findingmodel import config
+    from findingmodel.config import ConfigurationError
+    from findingmodel.tools.common import get_model
+
+    # Set environment variable for OpenAI client
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.openai_api_key
+    try:
+        config.settings.openai_api_key = SecretStr("test-openai-key")
+        # Use type: ignore to bypass type checking for test
+        with pytest.raises(ConfigurationError, match="Unsupported model provider"):
+            get_model("base", provider="invalid")  # type: ignore
+    finally:
+        config.settings.openai_api_key = original_key
+
+
+def test_get_model_missing_api_key_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_model() raises ConfigurationError when API key missing."""
+    from pydantic import SecretStr
+
+    from findingmodel import config
+    from findingmodel.config import ConfigurationError
+    from findingmodel.tools.common import get_model
+
+    # Temporarily override settings with empty key
+    original_key = config.settings.openai_api_key
+    try:
+        config.settings.openai_api_key = SecretStr("")
+        with pytest.raises(ConfigurationError, match="OpenAI API key is not set"):
+            get_model("base", provider="openai")
+    finally:
+        config.settings.openai_api_key = original_key
+
+
+# Tests for get_openai_model() deprecation
+
+
+def test_get_openai_model_emits_deprecation_warning(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_openai_model() emits DeprecationWarning."""
+    import warnings
+
+    from pydantic import SecretStr
+    from pydantic_ai.models.openai import OpenAIModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_openai_model
+
+    # Set environment variable for OpenAI client
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.openai_api_key
+    try:
+        config.settings.openai_api_key = SecretStr("test-openai-key")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            model = get_openai_model("gpt-5-mini")
+            # Check that at least one deprecation warning was emitted
+            assert len(w) >= 1
+            # Find our specific deprecation warning
+            deprecation_warnings = [warning for warning in w if issubclass(warning.category, DeprecationWarning)]
+            assert len(deprecation_warnings) >= 1
+            assert any("get_openai_model() is deprecated" in str(warning.message) for warning in deprecation_warnings)
+            assert isinstance(model, OpenAIModel)
+    finally:
+        config.settings.openai_api_key = original_key
+
+
+def test_get_openai_model_none_uses_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_openai_model(None) uses default model."""
+    import warnings
+
+    from pydantic import SecretStr
+    from pydantic_ai.models.openai import OpenAIModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_openai_model
+
+    # Set environment variable for OpenAI client
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.openai_api_key
+    try:
+        config.settings.openai_api_key = SecretStr("test-openai-key")
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            model = get_openai_model(None)
+            assert isinstance(model, OpenAIModel)
+    finally:
+        config.settings.openai_api_key = original_key
+
+
+def test_get_openai_model_explicit_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test get_openai_model("specific-model") uses explicit name."""
+    import warnings
+
+    from pydantic import SecretStr
+    from pydantic_ai.models.openai import OpenAIModel
+
+    from findingmodel import config
+    from findingmodel.tools.common import get_openai_model
+
+    # Set environment variable for OpenAI client
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+
+    # Temporarily override settings with test key
+    original_key = config.settings.openai_api_key
+    try:
+        config.settings.openai_api_key = SecretStr("test-openai-key")
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            model = get_openai_model("gpt-5-nano")
+            assert isinstance(model, OpenAIModel)
+    finally:
+        config.settings.openai_api_key = original_key
