@@ -16,6 +16,11 @@ class ConfigurationError(RuntimeError):
     pass
 
 
+# Type definitions for model configuration
+ModelProvider = Literal["openai", "anthropic"]
+ModelTier = Literal["base", "small", "full"]
+
+
 def strip_quotes(value: str) -> str:
     return value.strip("\"'")
 
@@ -44,6 +49,18 @@ class FindingModelConfig(BaseSettings):
     tavily_search_depth: Literal["basic", "advanced"] = Field(
         default="advanced",
         description="Tavily search depth: 'basic' or 'advanced'",
+    )
+
+    # Anthropic API (optional alternative to OpenAI)
+    anthropic_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    anthropic_default_model: str = Field(default="claude-sonnet-4-5")
+    anthropic_default_model_full: str = Field(default="claude-opus-4-1")
+    anthropic_default_model_small: str = Field(default="claude-haiku-4-5")
+
+    # Model provider selection
+    model_provider: ModelProvider = Field(
+        default="openai",
+        description="AI model provider: 'openai' or 'anthropic'",
     )
 
     # BioOntology API
@@ -132,6 +149,11 @@ class FindingModelConfig(BaseSettings):
     def check_ready_for_tavily(self) -> Literal[True]:
         if not self.tavily_api_key.get_secret_value():
             raise ConfigurationError("Tavily API key is not set")
+        return True
+
+    def check_ready_for_anthropic(self) -> Literal[True]:
+        if not self.anthropic_api_key.get_secret_value():
+            raise ConfigurationError("Anthropic API key is not set")
         return True
 
 
@@ -396,3 +418,17 @@ def clear_manifest_cache() -> None:
     """Clear the manifest cache (for testing)."""
     global _manifest_cache
     _manifest_cache = None
+
+
+__all__ = [
+    "ConfigurationError",
+    "FindingModelConfig",
+    "ModelProvider",
+    "ModelTier",
+    "clear_manifest_cache",
+    "ensure_anatomic_db",
+    "ensure_db_file",
+    "ensure_index_db",
+    "fetch_manifest",
+    "settings",
+]
