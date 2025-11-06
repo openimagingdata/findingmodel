@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Setup a `render_agent_prompt` method in `tools.prompt_template` for using a MD prompt with Pydantic AI agents.
 - Tavily API support for finding detail generation with domain filtering
+- **Anthropic Model Support** - Multi-provider AI architecture with tier-based model selection:
+  - Added Anthropic as alternative AI provider alongside OpenAI
+  - Tier-based model selection API using "base", "small", "full" tiers instead of provider-specific model names
+  - New `ModelProvider` and `ModelTier` types for type-safe provider and tier selection
+  - Configuration via `MODEL_PROVIDER`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_DEFAULT_MODEL*` environment variables
+  - Provider parameter added to all tool functions (optional, defaults to `settings.model_provider`)
+  - Comprehensive integration tests for Anthropic models and provider switching
+  - Default models: claude-sonnet-4-5 (base), claude-opus-4-1 (full), claude-haiku-4-5 (small)
 
 ### Removed
 
@@ -21,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `add_details_to_info()` now uses Pydantic AI agent with custom Tavily search tool
+- All tool functions migrated from OpenAI-specific model names to tier-based model selection:
+  - `create_info_from_name()`: Uses `model_tier` and optional `provider` parameters
+  - `add_details_to_info()`: Uses tier-based model selection
+  - `find_anatomic_locations()`: Uses `model_tier` parameter
+  - `find_ontology_concepts()`: Uses tier-based model selection internally
+  - `create_model_from_markdown()`: Uses `model_tier` parameter
+  - `find_similar_models()`: Uses separate `search_model_tier` and `analysis_model_tier` parameters
+  - `edit_finding_model()`: Uses `model_tier` parameter
+- `get_openai_model()` deprecated in favor of `get_model()` with tier parameter
 
 ### Fixed
 
