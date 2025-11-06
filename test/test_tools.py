@@ -15,6 +15,8 @@ from findingmodel.index_code import IndexCode
 models.ALLOW_MODEL_REQUESTS = False
 
 HAS_TAVILY_API_KEY = bool(settings.tavily_api_key.get_secret_value())
+HAS_OPENAI_API_KEY = bool(settings.openai_api_key.get_secret_value())
+HAS_ANTHROPIC_API_KEY = bool(settings.anthropic_api_key.get_secret_value())
 
 
 def test_create_stub(finding_info: FindingInfo) -> None:
@@ -108,7 +110,7 @@ async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.Mon
     monkeypatch.setattr(
         finding_description,
         "_create_finding_info_agent",
-        lambda model_tier, instructions: stub_agent,
+        lambda model_tier, instructions, provider=None: stub_agent,
     )
 
     logged: list[str] = []
@@ -150,7 +152,7 @@ async def test_create_info_from_name_preserves_name_without_logging(monkeypatch:
     monkeypatch.setattr(
         finding_description,
         "_create_finding_info_agent",
-        lambda model_name, instructions: stub_agent,
+        lambda model_tier, instructions, provider=None: stub_agent,
     )
     monkeypatch.setattr(
         settings.__class__,
@@ -298,7 +300,7 @@ async def test_create_info_from_name_basic_wiring() -> None:
 
     try:
         # Single API call with simple input - use fast model for integration test
-        result = await create_info_from_name("pneumothorax", model_name="gpt-4o-mini")
+        result = await create_info_from_name("pneumothorax", model_tier="small")
 
         # Only structural assertions - no behavioral validation
         assert isinstance(result, FindingInfo)
@@ -621,7 +623,7 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
 
     try:
         # Create basic info - use fast model for integration test
-        finding_info = await create_info_from_name("pneumothorax", model_name="gpt-4o-mini")
+        finding_info = await create_info_from_name("pneumothorax", model_tier="small")
 
         # Simple markdown outline
         markdown_text = """
@@ -633,7 +635,7 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
         """
 
         # Create model from markdown - use fast model for integration test
-        model = await create_model_from_markdown(finding_info, markdown_text=markdown_text, openai_model="gpt-4o-mini")
+        model = await create_model_from_markdown(finding_info, markdown_text=markdown_text, model_tier="small")
 
         # Only structural assertions - no behavioral validation
         assert isinstance(model, FindingModelBase)
@@ -1027,3 +1029,68 @@ def test_get_openai_model_explicit_name(monkeypatch: pytest.MonkeyPatch) -> None
             assert isinstance(model, OpenAIModel)
     finally:
         config.settings.openai_api_key = original_key
+
+
+# Integration tests for Anthropic models
+
+
+@pytest.mark.callout
+@pytest.mark.skipif(not HAS_ANTHROPIC_API_KEY, reason="Anthropic API key not set")
+@pytest.mark.asyncio
+async def test_create_info_from_name_anthropic() -> None:
+    """Test finding info creation with Anthropic model."""
+    # Save and restore ALLOW_MODEL_REQUESTS state
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
+
+    try:
+        result = await finding_description.create_info_from_name(
+            "pneumothorax",
+            model_tier="small",
+            provider="anthropic",
+        )
+        assert isinstance(result, FindingInfo)
+        assert result.name
+        assert result.description
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_model_provider_switching() -> None:
+    """Test switching between OpenAI and Anthropic."""
+    if not (HAS_OPENAI_API_KEY and HAS_ANTHROPIC_API_KEY):
+        pytest.skip("Both API keys required")
+
+    # Save and restore ALLOW_MODEL_REQUESTS state
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
+
+    try:
+        # Test OpenAI
+        result_openai = await finding_description.create_info_from_name("pneumonia", provider="openai")
+        assert isinstance(result_openai, FindingInfo)
+
+        # Test Anthropic
+        result_anthropic = await finding_description.create_info_from_name("pneumonia", provider="anthropic")
+        assert isinstance(result_anthropic, FindingInfo)
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
+
+
+def test_model_tier_selection() -> None:
+    """Test that model tiers select correct models."""
+    from pydantic_ai.models.anthropic import AnthropicModel
+    from pydantic_ai.models.openai import OpenAIModel
+
+    from findingmodel.tools.common import get_model
+
+    # OpenAI tiers
+    model = get_model("small", provider="openai")
+    assert isinstance(model, OpenAIModel)
+
+    # Anthropic tiers (skip if no key)
+    if HAS_ANTHROPIC_API_KEY:
+        model = get_model("small", provider="anthropic")
+        assert isinstance(model, AnthropicModel)

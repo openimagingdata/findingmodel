@@ -1110,7 +1110,7 @@ async def test_find_anatomic_locations_basic_wiring() -> None:
             finding_name="pneumonia",
             description="Infection of the lung parenchyma",
             use_duckdb=True,
-            model="gpt-4o-mini",
+            model_tier="small",
         )
 
         # Assert only on structure, not behavior
