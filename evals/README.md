@@ -43,6 +43,23 @@ python -m evals.ontology_match
 python -m evals.markdown_in
 ```
 
+### Compare AI Providers (OpenAI vs Anthropic)
+
+To compare performance between providers on any eval suite:
+
+```bash
+# Run with default provider (OpenAI)
+task evals:finding_description
+
+# Run with Anthropic
+MODEL_PROVIDER=anthropic task evals:finding_description
+
+# Or directly:
+MODEL_PROVIDER=anthropic python -m evals.finding_description
+```
+
+The eval suite will use whichever provider you specify. Compare the overall scores and individual evaluator results to see which provider performs better for your use case.
+
 ### From Python
 
 ```python

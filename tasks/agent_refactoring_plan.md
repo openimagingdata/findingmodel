@@ -5,9 +5,9 @@
 This document outlines the migration plan for three major refactoring efforts:
 1. Replace `instructor` library with Pydantic AI - ✅ **COMPLETE**
 2. Replace Perplexity search API with Tavily - ✅ **COMPLETE**
-3. Add Anthropic model support alongside OpenAI - ⏸️ **NOT STARTED**
+3. Add Anthropic model support alongside OpenAI - ✅ **COMPLETE**
 
-**Status:** Plans 1 and 2 are complete. Plan 3 (Anthropic support) remains for future work.
+**Status:** All three plans are complete.
 
 ---
 
