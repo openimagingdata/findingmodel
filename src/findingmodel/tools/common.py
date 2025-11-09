@@ -2,13 +2,16 @@
 
 from pathlib import Path
 
-from instructor import AsyncInstructor, from_openai
 from openai import AsyncOpenAI
+from pydantic_ai.models import Model
+from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.providers.anthropic import AnthropicProvider
 from pydantic_ai.providers.openai import OpenAIProvider
+from tavily import AsyncTavilyClient
 
 from findingmodel import logger
-from findingmodel.config import settings
+from findingmodel.config import ConfigurationError, ModelProvider, ModelTier, settings
 from findingmodel.embedding_cache import EmbeddingCache
 
 # Module-level singleton for embedding cache
@@ -28,24 +31,92 @@ async def _get_embedding_cache() -> EmbeddingCache:
     return _embedding_cache
 
 
-def get_async_instructor_client() -> AsyncInstructor:
+def get_async_tavily_client() -> AsyncTavilyClient:
+    """Get configured async Tavily search client."""
+    settings.check_ready_for_tavily()
+    return AsyncTavilyClient(api_key=settings.tavily_api_key.get_secret_value())
+
+
+def get_model(
+    model_tier: ModelTier = "base",
+    *,
+    provider: ModelProvider | None = None,
+) -> Model:
+    """Get AI model from configured provider.
+
+    Args:
+        model_tier: Model capability tier - "small" (fast/cheap), "base" (default),
+                   or "full" (most capable)
+        provider: "openai" or "anthropic" (defaults to settings.model_provider)
+
+    Returns:
+        Configured Model instance
+
+    Raises:
+        ConfigurationError: If provider unsupported or API key missing
+
+    Example:
+        # Use default provider's base model
+        model = get_model()
+
+        # Use small model for quick operations
+        model = get_model("small")
+
+        # Override provider
+        model = get_model("base", provider="anthropic")
+    """
+    provider = provider or settings.model_provider
+
+    if provider == "anthropic":
+        settings.check_ready_for_anthropic()
+        tier_map = {
+            "base": settings.anthropic_default_model,
+            "full": settings.anthropic_default_model_full,
+            "small": settings.anthropic_default_model_small,
+        }
+        model_name = tier_map[model_tier]
+        anthropic_provider = AnthropicProvider(api_key=settings.anthropic_api_key.get_secret_value())
+        return AnthropicModel(model_name, provider=anthropic_provider)
+
+    elif provider == "openai":
+        settings.check_ready_for_openai()
+        tier_map = {
+            "base": settings.openai_default_model,
+            "full": settings.openai_default_model_full,
+            "small": settings.openai_default_model_small,
+        }
+        model_name = tier_map[model_tier]
+        openai_provider = OpenAIProvider(api_key=settings.openai_api_key.get_secret_value())
+        return OpenAIModel(model_name, provider=openai_provider)
+
+    else:
+        raise ConfigurationError(f"Unsupported model provider: {provider}")
+
+
+def get_openai_model(model_name: str | None = None) -> Model:
+    """Get OpenAI model by specific name (deprecated - use get_model() instead).
+
+    Args:
+        model_name: Specific OpenAI model name (e.g., "gpt-5-mini", "gpt-5-nano")
+                   If None, uses openai_default_model
+
+    Returns:
+        OpenAI model instance
+
+    Deprecated: Use get_model("base"|"small"|"full") for tier-based selection
+    """
+    import warnings
+
+    warnings.warn(
+        "get_openai_model() is deprecated, use get_model() with tier parameter instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     settings.check_ready_for_openai()
-    return from_openai(AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value()))
-
-
-def get_async_perplexity_client() -> AsyncOpenAI:
-    settings.check_ready_for_perplexity()
-    return AsyncOpenAI(
-        api_key=str(settings.perplexity_api_key.get_secret_value()), base_url=str(settings.perplexity_base_url)
-    )
-
-
-def get_openai_model(model_name: str) -> OpenAIModel:
-    """Helper function to get OpenAI model instance - moved from similar_finding_models.py"""
-    return OpenAIModel(
-        model_name=model_name,
-        provider=OpenAIProvider(api_key=settings.openai_api_key.get_secret_value()),
-    )
+    if model_name is None:
+        model_name = settings.openai_default_model
+    openai_provider = OpenAIProvider(api_key=settings.openai_api_key.get_secret_value())
+    return OpenAIModel(model_name, provider=openai_provider)
 
 
 async def get_embedding(

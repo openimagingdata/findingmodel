@@ -6,10 +6,10 @@ from pydantic_ai import ModelRetry, RunContext
 from pydantic_ai.agent import Agent
 
 from findingmodel import Index
-from findingmodel.config import settings
+from findingmodel.config import ModelTier
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
-from findingmodel.tools.common import get_openai_model
+from findingmodel.tools.common import get_model
 
 # Module-level Index instance with lazy initialization
 _index: Index | None = None
@@ -86,8 +86,11 @@ def _edited_text_instructions() -> str:
     )
 
 
-def create_edit_agent() -> Agent[EditDeps, EditResult]:
+def create_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditResult]:
     """Factory for the natural-language editing agent.
+
+    Args:
+        model_tier: Model tier to use (defaults to "base")
 
     Exposed to facilitate testing with TestModel/FunctionModel via agent.override(...).
     """
@@ -98,7 +101,7 @@ def create_edit_agent() -> Agent[EditDeps, EditResult]:
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=get_openai_model(settings.openai_default_model),
+        model=get_model(model_tier),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,
@@ -119,8 +122,11 @@ def create_edit_agent() -> Agent[EditDeps, EditResult]:
     return agent
 
 
-def create_markdown_edit_agent() -> Agent[EditDeps, EditResult]:
+def create_markdown_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditResult]:
     """Factory for the text-editing agent used for Markdown-like edits.
+
+    Args:
+        model_tier: Model tier to use (defaults to "base")
 
     The agent receives the current FindingModelFull (JSON) and an edited text string
     (often exported as Markdown) representing desired changes. It must output a COMPLETE
@@ -136,7 +142,7 @@ def create_markdown_edit_agent() -> Agent[EditDeps, EditResult]:
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=get_openai_model(settings.openai_default_model),
+        model=get_model(model_tier),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,

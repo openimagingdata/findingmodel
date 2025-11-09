@@ -15,8 +15,8 @@ from pydantic_ai import Agent
 from typing_extensions import Literal
 
 from findingmodel import logger
-from findingmodel.config import settings
-from findingmodel.tools.common import get_openai_model
+from findingmodel.config import ModelTier
+from findingmodel.tools.common import get_model
 from findingmodel.tools.duckdb_search import DuckDBOntologySearchClient
 from findingmodel.tools.ontology_search import (
     OntologySearchProtocol,
@@ -39,7 +39,7 @@ class AnatomicQueryTerms(BaseModel):
 
 
 async def generate_anatomic_query_terms(
-    finding_name: str, finding_description: str | None = None, model: str | None = None
+    finding_name: str, finding_description: str | None = None, model_tier: ModelTier = "small"
 ) -> AnatomicQueryTerms:
     """Generate anatomic location search terms for a finding.
 
@@ -49,16 +49,13 @@ async def generate_anatomic_query_terms(
     Args:
         finding_name: Name of the finding
         finding_description: Optional detailed description
-        model: OpenAI model to use (defaults to small model from settings)
+        model_tier: Model tier to use (defaults to "small")
 
     Returns:
         List of anatomic location search terms
     """
-    if model is None:
-        model = settings.openai_default_model_small
-
     agent = Agent[None, AnatomicQueryTerms](
-        model=get_openai_model(model),
+        model=get_model(model_tier),
         output_type=AnatomicQueryTerms,
         system_prompt="""You are an anatomic location specialist for medical imaging findings.
         
@@ -159,20 +156,17 @@ class LocationSearchResponse(BaseModel):
     reasoning: str = Field(description="Clear reasoning for selections made")
 
 
-def create_location_selection_agent(model: str | None = None) -> Agent[None, LocationSearchResponse]:
+def create_location_selection_agent(model_tier: ModelTier = "small") -> Agent[None, LocationSearchResponse]:
     """Create agent for selecting best anatomic locations from search results.
 
     Args:
-        model: OpenAI model to use (defaults to main model from settings)
+        model_tier: Model tier to use (defaults to "small")
 
     Returns:
         Agent configured for location selection
     """
-    if model is None:
-        model = settings.openai_default_model_small
-
     return Agent[None, LocationSearchResponse](
-        model=get_openai_model(model),
+        model=get_model(model_tier),
         output_type=LocationSearchResponse,
         system_prompt="""You are a medical imaging specialist who selects appropriate anatomic 
 locations for imaging findings. Given search results from medical ontology databases, you must 
@@ -200,7 +194,7 @@ async def find_anatomic_locations(
     finding_name: str,
     description: str | None = None,
     use_duckdb: bool = True,
-    model: str | None = None,
+    model_tier: ModelTier = "small",
 ) -> LocationSearchResponse:
     """Find relevant anatomic locations for a finding using 3-stage pipeline.
 
@@ -213,7 +207,7 @@ async def find_anatomic_locations(
         finding_name: Name of the finding (e.g., "PCL tear")
         description: Optional detailed description
         use_duckdb: Use DuckDB client if True, LanceDB if False (default True)
-        model: OpenAI model to use (defaults to small model from settings)
+        model_tier: Model tier to use (defaults to "small")
 
     Returns:
         LocationSearchResponse with selected locations and reasoning
@@ -221,7 +215,7 @@ async def find_anatomic_locations(
     logger.info(f"Starting anatomic location search for: {finding_name}")
 
     # Stage 1: Generate query terms
-    query_info = await generate_anatomic_query_terms(finding_name, description, model=model)
+    query_info = await generate_anatomic_query_terms(finding_name, description, model_tier=model_tier)
     logger.info(f"Generated query terms: {query_info.terms}, region: {query_info.region}")
 
     # Stage 2: Execute search with DuckDB client
@@ -248,7 +242,7 @@ async def find_anatomic_locations(
         )
 
     # Stage 3: Selection using AI agent
-    selection_agent = create_location_selection_agent(model=model)
+    selection_agent = create_location_selection_agent(model_tier=model_tier)
 
     # Build structured prompt for the agent
     prompt = f"""

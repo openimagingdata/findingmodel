@@ -17,9 +17,9 @@ from pydantic_ai import Agent, RunContext
 from typing_extensions import NotRequired, TypedDict
 
 from findingmodel import logger
-from findingmodel.config import settings
+from findingmodel.config import ModelTier
 from findingmodel.index import DuckDBIndex as Index
-from findingmodel.tools.common import get_openai_model
+from findingmodel.tools.common import get_model
 
 
 class SearchResult(TypedDict):
@@ -86,10 +86,14 @@ async def search_models_tool(ctx: RunContext[SearchContext], query: str, limit: 
         return f"Search failed for '{query}': {e!s}"
 
 
-def create_search_agent(openai_model: str) -> Agent[SearchContext, SearchStrategy]:
-    """Create the search agent for gathering comprehensive results."""
+def create_search_agent(model_tier: ModelTier = "base") -> Agent[SearchContext, SearchStrategy]:
+    """Create the search agent for gathering comprehensive results.
+
+    Args:
+        model_tier: Model tier to use (defaults to "base")
+    """
     return Agent[SearchContext, SearchStrategy](
-        model=get_openai_model(openai_model),
+        model=get_model(model_tier),
         output_type=SearchStrategy,
         deps_type=SearchContext,
         tools=[search_models_tool],
@@ -118,10 +122,14 @@ but don't be too restrictive--the next agent will analyze the results.
     )
 
 
-def create_term_generation_agent(openai_model: str) -> Agent[None, SearchTerms]:
-    """Create a lightweight agent for generating search terms."""
+def create_term_generation_agent(model_tier: ModelTier = "small") -> Agent[None, SearchTerms]:
+    """Create a lightweight agent for generating search terms.
+
+    Args:
+        model_tier: Model tier to use (defaults to "small")
+    """
     return Agent[None, SearchTerms](
-        model=get_openai_model(openai_model),
+        model=get_model(model_tier),
         output_type=SearchTerms,
         system_prompt="""You are a medical terminology specialist. Your job is to generate 3-5 effective search terms 
 for finding existing medical imaging finding definitions that might be similar to a proposed new finding.
@@ -151,10 +159,14 @@ class SimilarModelAnalysis(BaseModel):
     confidence: float = Field(description="Confidence score from 0.0 to 1.0 for the recommendation", ge=0.0, le=1.0)
 
 
-def create_analysis_agent(openai_model: str) -> Agent[None, SimilarModelAnalysis]:
-    """Create the analysis agent for evaluating similarity and making recommendations."""
+def create_analysis_agent(model_tier: ModelTier = "base") -> Agent[None, SimilarModelAnalysis]:
+    """Create the analysis agent for evaluating similarity and making recommendations.
+
+    Args:
+        model_tier: Model tier to use (defaults to "base")
+    """
     return Agent[None, SimilarModelAnalysis](
-        model=get_openai_model(openai_model),
+        model=get_model(model_tier),
         output_type=SimilarModelAnalysis,
         retries=3,
         system_prompt="""You are an expert medical imaging informatics analyst specializing in mapping natural language
@@ -198,8 +210,8 @@ async def find_similar_models(  # noqa: C901
     description: str | None = None,
     synonyms: list[str] | None = None,
     index: Index | None = None,
-    search_model: str | None = None,
-    analysis_model: str | None = None,
+    search_model_tier: ModelTier = "small",
+    analysis_model_tier: ModelTier = "base",
 ) -> SimilarModelAnalysis:
     """
     Find existing finding models that are similar enough to the proposed model
@@ -214,16 +226,10 @@ async def find_similar_models(  # noqa: C901
     :param description: Description of the proposed finding model
     :param synonyms: List of synonyms for the proposed finding model
     :param index: Index object to search. If None, creates a new one
-    :param search_model: Model for generating search terms (defaults to small model)
-    :param analysis_model: Model for analyzing results (defaults to default model)
+    :param search_model_tier: Model tier for generating search terms (defaults to "small")
+    :param analysis_model_tier: Model tier for analyzing results (defaults to "base")
     :return: Analysis with similar models and recommendation
     """
-
-    # Set default models
-    if search_model is None:
-        search_model = settings.openai_default_model_small
-    if analysis_model is None:
-        analysis_model = settings.openai_default_model
 
     # Create index if not provided
     if index is None:
@@ -267,7 +273,7 @@ async def find_similar_models(  # noqa: C901
 
     try:
         # Step 1: Generate search terms with smart model selection
-        search_terms = await _generate_search_terms_with_fallback(term_prompt, search_model, finding_name)
+        search_terms = await _generate_search_terms_with_fallback(term_prompt, search_model_tier, finding_name)
 
         # Step 2: Batch search all terms at once
         logger.info("Performing batch search for all terms")
@@ -321,8 +327,8 @@ recommendations.
 """
 
         # Create analysis agent (standard model)
-        analysis_agent = create_analysis_agent(analysis_model)
-        logger.info(f"Starting similarity analysis using {analysis_model}")
+        analysis_agent = create_analysis_agent(analysis_model_tier)
+        logger.info(f"Starting similarity analysis using tier {analysis_model_tier}")
         analysis_result = await analysis_agent.run(analysis_prompt)
         final_analysis = analysis_result.output
 
@@ -346,16 +352,18 @@ recommendations.
         )
 
 
-async def _generate_search_terms_with_fallback(term_prompt: str, search_model: str, finding_name: str) -> list[str]:
+async def _generate_search_terms_with_fallback(
+    term_prompt: str, search_model_tier: ModelTier, finding_name: str
+) -> list[str]:
     """
     Generate search terms with fallback to default model if small model performs poorly.
     """
     import time
 
     # Try the specified model first
-    logger.info(f"Generating search terms for '{finding_name}' using {search_model}")
+    logger.info(f"Generating search terms for '{finding_name}' using tier {search_model_tier}")
 
-    term_agent = create_term_generation_agent(search_model)
+    term_agent = create_term_generation_agent(search_model_tier)
     start_time = time.time()
     term_result = await term_agent.run(term_prompt)
     duration = time.time() - start_time
@@ -365,10 +373,12 @@ async def _generate_search_terms_with_fallback(term_prompt: str, search_model: s
 
     # Check if we got reasonable results (at least 2 terms, reasonable performance)
     if len(search_terms) < 2 or duration > 3.0:
-        fallback_model = settings.openai_default_model
-        logger.info(f"Small model underperformed ({len(search_terms)} terms, {duration:.2f}s), trying {fallback_model}")
+        fallback_tier: ModelTier = "base"
+        logger.info(
+            f"Small model underperformed ({len(search_terms)} terms, {duration:.2f}s), trying tier {fallback_tier}"
+        )
 
-        fallback_agent = create_term_generation_agent(fallback_model)
+        fallback_agent = create_term_generation_agent(fallback_tier)
         start_time = time.time()
         fallback_result = await fallback_agent.run(term_prompt)
         fallback_duration = time.time() - start_time

@@ -15,8 +15,8 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
 from findingmodel import logger
-from findingmodel.config import settings
-from findingmodel.tools.common import get_openai_model
+from findingmodel.config import ModelTier, settings
+from findingmodel.tools.common import get_model
 from findingmodel.tools.ontology_search import (
     BioOntologySearchClient,
     OntologySearchResult,
@@ -202,19 +202,20 @@ async def execute_ontology_search(
         raise
 
 
-def create_categorization_agent() -> Agent[CategorizationContext, CategorizedConcepts]:
+def create_categorization_agent(model_tier: ModelTier = "base") -> Agent[CategorizationContext, CategorizedConcepts]:
     """Create categorization agent following proper Pydantic AI patterns.
 
     This agent categorizes ontology search results into relevance tiers.
     Post-processing is handled separately to ensure exact matches are properly identified.
 
+    Args:
+        model_tier: Model tier to use (defaults to "base")
+
     Returns:
         Agent that takes CategorizationContext and produces CategorizedConcepts
     """
-    model = get_openai_model(settings.openai_default_model)
-
     return Agent[CategorizationContext, CategorizedConcepts](
-        model=model,
+        model=get_model(model_tier),
         output_type=CategorizedConcepts,
         deps_type=CategorizationContext,
         system_prompt="""You are a medical ontology expert.
@@ -328,16 +329,18 @@ def ensure_exact_matches_post_process(
     return output
 
 
-def create_query_generator_agent() -> Agent[None, list[str]]:
+def create_query_generator_agent(model_tier: ModelTier = "small") -> Agent[None, list[str]]:
     """Create agent for generating alternative medical terms for ontology matching.
 
-    Returns an agent that generates different ways to express the same medical finding
-    to help match against formal medical ontologies.
-    """
-    model = get_openai_model(settings.openai_default_model_small)  # Use small/fast model
+    Args:
+        model_tier: Model tier to use (defaults to "small")
 
+    Returns:
+        Agent that generates different ways to express the same medical finding
+        to help match against formal medical ontologies.
+    """
     return Agent[None, list[str]](
-        model=model,
+        model=get_model(model_tier),
         output_type=list[str],
         system_prompt="""We need to find terms that might match a radiology finding name in official medical ontologies that use formal medical terminology.
 

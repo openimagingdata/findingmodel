@@ -218,7 +218,7 @@ class TestGenerateAnatomicQueryTerms:
     @pytest.mark.asyncio
     async def test_successful_generation(self) -> None:
         """Test successful query term generation."""
-        with patch("findingmodel.tools.anatomic_location_search.get_openai_model") as mock_model:
+        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
             # Mock the agent
             mock_model.return_value = TestModel()
 
@@ -231,7 +231,7 @@ class TestGenerateAnatomicQueryTerms:
     @pytest.mark.asyncio
     async def test_generation_with_description(self) -> None:
         """Test query term generation with description."""
-        with patch("findingmodel.tools.anatomic_location_search.get_openai_model") as mock_model:
+        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
             mock_model.return_value = TestModel()
 
             result = await generate_anatomic_query_terms("pneumonia", "Infection of the lung parenchyma")
@@ -300,7 +300,7 @@ class TestCreateLocationSelectionAgent:
 
     def test_agent_creation(self) -> None:
         """Test creating location selection agent."""
-        with patch("findingmodel.tools.anatomic_location_search.get_openai_model") as mock_model:
+        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
             mock_model.return_value = TestModel()
 
             agent = create_location_selection_agent()
@@ -312,13 +312,13 @@ class TestCreateLocationSelectionAgent:
 
     def test_agent_with_custom_model(self) -> None:
         """Test creating agent with custom model."""
-        with patch("findingmodel.tools.anatomic_location_search.get_openai_model") as mock_model:
+        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
             mock_model.return_value = TestModel()
 
-            agent = create_location_selection_agent("gpt-4")
+            agent = create_location_selection_agent("full")
 
-            # Should pass model to get_openai_model and create an agent
-            mock_model.assert_called_once_with("gpt-4")
+            # Should pass model tier to get_model and create an agent
+            mock_model.assert_called_once_with("full")
             assert agent is not None
 
 
@@ -1094,9 +1094,9 @@ async def test_find_anatomic_locations_basic_wiring() -> None:
     # Skip if DuckDB anatomic database not available
     # Try to ensure database exists - it will raise FileNotFoundError if unavailable
     try:
-        from findingmodel.config import ensure_db_file
+        from findingmodel.config import ensure_anatomic_db
 
-        ensure_db_file(settings.duckdb_anatomic_path, settings.remote_anatomic_db_url, settings.remote_anatomic_db_hash)
+        ensure_anatomic_db()
     except (FileNotFoundError, Exception):
         pytest.skip("DuckDB anatomic locations database not available")
 
@@ -1110,7 +1110,7 @@ async def test_find_anatomic_locations_basic_wiring() -> None:
             finding_name="pneumonia",
             description="Infection of the lung parenchyma",
             use_duckdb=True,
-            model="gpt-4o-mini",
+            model_tier="small",
         )
 
         # Assert only on structure, not behavior

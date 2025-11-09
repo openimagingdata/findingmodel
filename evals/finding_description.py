@@ -1,6 +1,6 @@
 """Evaluation suite for finding description generation agent.
 
-INTEGRATION SUITE: Requires real API calls to OpenAI and Perplexity.
+INTEGRATION SUITE: Requires real API calls to OpenAI and Tavily.
 Run via `task evals:finding_description`.
 
 API CALL PATTERN:
@@ -11,7 +11,7 @@ API CALL PATTERN:
     This is an integration eval suite, not a unit test. It validates end-to-end
     behavior including:
     - Real OpenAI API calls for finding description generation
-    - Real Perplexity API calls for detailed information retrieval
+    - Real Tavily API calls for detailed information retrieval
     - Actual medical terminology usage and clinical accuracy
     - Complete FindingInfo construction from finding names
 
@@ -22,7 +22,7 @@ functionality, which uses AI agents to create clinical descriptions for finding 
 
 TOOLS UNDER TEST:
 - create_info_from_name: Creates FindingInfo from a finding name using OpenAI
-- add_details_to_info: Adds detailed description and citations using Perplexity
+- add_details_to_info: Adds detailed description and citations using Tavily
 
 EVALUATOR-BASED PATTERN:
 - Cases are evaluated using Dataset.evaluate() with focused evaluators
@@ -75,7 +75,7 @@ class FindingDescriptionInput(BaseModel):
     """Input for a finding description evaluation case."""
 
     finding_name: str = Field(description="Name of the finding to describe")
-    use_perplexity: bool = Field(default=False, description="Whether to add detailed information using Perplexity API")
+    fetch_details: bool = Field(default=False, description="Whether to fetch detailed information via search API")
 
 
 class FindingDescriptionExpectedOutput(BaseModel):
@@ -96,10 +96,8 @@ class FindingDescriptionExpectedOutput(BaseModel):
     max_description_length: int = Field(
         default=500, description="Maximum acceptable description length (concise)", ge=0
     )
-    min_detail_length: int = Field(
-        default=100, description="Minimum acceptable detail length when using Perplexity", ge=0
-    )
-    requires_citations: bool = Field(default=False, description="Whether citations are required (Perplexity only)")
+    min_detail_length: int = Field(default=100, description="Minimum acceptable detail length when using Tavily", ge=0)
+    requires_citations: bool = Field(default=False, description="Whether citations are required (Tavily only)")
     medical_terminology_level: str = Field(
         default="professional", description="Expected terminology level: 'professional' or 'layperson'"
     )
@@ -127,7 +125,7 @@ class FindingDescriptionCase(
         self,
         name: str,
         finding_name: str,
-        use_perplexity: bool = False,
+        fetch_details: bool = False,
         expected_canonical_name: str | None = None,
         expected_synonyms: list[str] | None = None,
         unexpected_synonyms: list[str] | None = None,
@@ -147,7 +145,7 @@ class FindingDescriptionCase(
         Args:
             name: Name of the test case
             finding_name: Name of the finding to describe
-            use_perplexity: Whether to add detailed information using Perplexity
+            fetch_details: Whether to fetch detailed information via search API
             expected_canonical_name: Expected canonical name after normalization
             expected_synonyms: Expected synonyms to be included
             unexpected_synonyms: Synonyms that should NOT be included
@@ -155,7 +153,7 @@ class FindingDescriptionCase(
             unexpected_keywords: Keywords that should NOT appear
             min_description_length: Minimum acceptable description length
             max_description_length: Maximum acceptable description length
-            min_detail_length: Minimum acceptable detail length when using Perplexity
+            min_detail_length: Minimum acceptable detail length when fetching details
             requires_citations: Whether citations are required
             medical_terminology_level: Expected terminology level
             consistency_group: Group name for consistency checking
@@ -164,7 +162,7 @@ class FindingDescriptionCase(
         """
         inputs = FindingDescriptionInput(
             finding_name=finding_name,
-            use_perplexity=use_perplexity,
+            fetch_details=fetch_details,
         )
         metadata = FindingDescriptionExpectedOutput(
             expected_canonical_name=expected_canonical_name,
@@ -227,8 +225,8 @@ class LengthAppropriatenessEvaluator(
         if desc_len < ctx.metadata.min_description_length or desc_len > ctx.metadata.max_description_length:
             return 0.0
 
-        # If using Perplexity, also check detail length
-        if ctx.inputs.use_perplexity:
+        # If fetching details, also check detail length
+        if ctx.inputs.fetch_details:
             detail = ctx.output.finding_info.detail or ""
             detail_len = len(detail)
 
@@ -534,7 +532,7 @@ class CanonicalNameEvaluator(
 class CitationQualityEvaluator(
     Evaluator[FindingDescriptionInput, FindingDescriptionActualOutput, FindingDescriptionExpectedOutput]
 ):
-    """Evaluate citation quality for Perplexity-enhanced descriptions.
+    """Evaluate citation quality for Tavily-enhanced descriptions.
 
     Checks that citations are present when required and are valid URLs.
 
@@ -768,8 +766,8 @@ def create_normalization_cases() -> list[FindingDescriptionCase]:
     return cases
 
 
-def create_perplexity_detail_cases() -> list[FindingDescriptionCase]:
-    """Create cases testing Perplexity detail enhancement with citations."""
+def create_tavily_detail_cases() -> list[FindingDescriptionCase]:
+    """Create cases testing detail enhancement with citations via search API."""
     cases = []
 
     # Case 12: Common finding with detail
@@ -777,7 +775,7 @@ def create_perplexity_detail_cases() -> list[FindingDescriptionCase]:
         FindingDescriptionCase(
             name="detail_pneumothorax",
             finding_name="pneumothorax",
-            use_perplexity=True,
+            fetch_details=True,
             expected_keywords=["air", "pleural", "lung", "imaging", "treatment"],
             min_description_length=30,
             min_detail_length=200,
@@ -792,7 +790,7 @@ def create_perplexity_detail_cases() -> list[FindingDescriptionCase]:
         FindingDescriptionCase(
             name="detail_stroke",
             finding_name="acute ischemic stroke",
-            use_perplexity=True,
+            fetch_details=True,
             expected_keywords=["brain", "ischemia", "vessel", "occlusion"],
             min_description_length=40,
             min_detail_length=250,
@@ -934,7 +932,7 @@ async def run_finding_description_task(input_data: FindingDescriptionInput) -> F
         finding_info = await create_info_from_name(input_data.finding_name)
 
         # Add detailed info if requested
-        if input_data.use_perplexity:
+        if input_data.fetch_details:
             detailed_info = await add_details_to_info(finding_info)
             if detailed_info:
                 finding_info = detailed_info
@@ -962,7 +960,7 @@ all_cases = (
     create_common_findings_cases()
     + create_complex_findings_cases()
     + create_normalization_cases()
-    + create_perplexity_detail_cases()
+    + create_tavily_detail_cases()
     + create_terminology_validation_cases()
     + create_edge_cases()
 )
@@ -998,7 +996,7 @@ Be strict but fair. Medical professionals will use these descriptions.""",
         assertion=False,
         model=f"openai:{settings.openai_default_model_small}",  # Use small model from settings
     ),
-    PerformanceEvaluator(time_limit=45.0),  # Accommodate Perplexity cases which take longest
+    PerformanceEvaluator(time_limit=45.0),  # Accommodate Tavily cases which take longest
 ]
 
 finding_description_dataset = Dataset(cases=all_cases, evaluators=evaluators)
@@ -1026,7 +1024,7 @@ if __name__ == "__main__":
     async def main() -> None:
         print("\nRunning finding description generation evaluation suite...")
         print("=" * 80)
-        print("NOTE: This eval requires OpenAI and Perplexity API keys and makes real API calls.")
+        print("NOTE: This eval requires OpenAI and Tavily API keys and makes real API calls.")
         print("=" * 80 + "\n")
 
         report = await run_finding_description_evals()

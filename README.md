@@ -5,7 +5,7 @@ A Python library for managing Open Imaging Finding Models - structured data mode
 ## Features
 
 - **Finding Model Management**: Create and manage structured medical finding models with attributes
-- **AI-Powered Tools**: Generate finding descriptions, synonyms, and detailed information using OpenAI and Perplexity
+- **AI-Powered Tools**: Generate finding descriptions, synonyms, and detailed information using OpenAI or Anthropic models with Tavily search
 - **Medical Ontology Integration**: Search and match concepts across multiple backends:
   - **BioOntology API**: Access to 800+ medical ontologies including SNOMED-CT, ICD-10, LOINC
   - **DuckDB Search**: High-performance vector and full-text search with HNSW indexing
@@ -29,22 +29,25 @@ Different features require different API keys:
 
 | Feature | Required Key | Purpose |
 |---------|--------------|---------|
-| **Core AI Features** | `OPENAI_API_KEY` | Generate descriptions, synonyms, create models from markdown |
-| **Detailed Finding Info** | `PERPLEXITY_API_KEY` | Add citations and detailed descriptions (requires OpenAI key too) |
+| **Core AI Features** | `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` | Generate descriptions, synonyms, create models from markdown |
+| **Detailed Finding Info** | `TAVILY_API_KEY` | Add citations and detailed descriptions (requires AI provider key too) |
 | **800+ Medical Ontologies** | `BIOONTOLOGY_API_KEY` | Access BioOntology.org for SNOMED-CT, ICD-10, LOINC, etc. |
 
 ```bash
-# Required for most features
+# AI Provider - choose one (OpenAI is default)
 OPENAI_API_KEY=your_key_here
+# OR
+ANTHROPIC_API_KEY=your_key_here
+MODEL_PROVIDER=anthropic  # Optional, defaults to openai
 
 # Optional - only needed for add_details_to_info()
-PERPLEXITY_API_KEY=your_key_here
+TAVILY_API_KEY=your_key_here
 
 # Optional - only needed for BioOntology backend in ontology searches
 BIOONTOLOGY_API_KEY=your_key_here
 ```
 
-**Note:** The Index and anatomic location search work without any API keys (DuckDB backend). OpenAI is only needed when using AI-powered tools.
+**Note:** The Index and anatomic location search work without any API keys (DuckDB backend). An AI provider (OpenAI or Anthropic) is only needed when using AI-powered tools.
 
 ### Local Database Configuration
 
@@ -84,6 +87,41 @@ $ python -m findingmodel --help
 For database maintainers, see [Database Management Guide](docs/database-management.md) for detailed information on building and updating databases.
 
 > **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `scripts/edit_finding_model.py`.
+
+## MCP Server
+
+The package includes a Model Context Protocol (MCP) server that allows AI agents like Claude to search and retrieve finding models. The server provides four tools:
+
+- **search_finding_models**: Hybrid search (FTS + semantic) for finding models
+- **get_finding_model**: Retrieve specific models by ID, name, or synonym
+- **list_finding_model_tags**: List all available tags
+- **count_finding_models**: Get index statistics
+
+### Quick Start
+
+Run the server:
+
+```bash
+python -m findingmodel.mcp_server
+```
+
+Configure Claude Desktop (see [MCP Server Documentation](docs/mcp_server.md) for details):
+
+```json
+{
+  "mcpServers": {
+    "finding-model-search": {
+      "command": "python",
+      "args": ["-m", "findingmodel.mcp_server"],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
+    }
+  }
+}
+```
+
+For complete documentation, see [MCP Server Guide](docs/mcp_server.md).
 
 ## Models
 
@@ -250,7 +288,7 @@ import findingmodel.tools as tools
 
 ### `create_info_from_name()`
 
-Takes a finding name and generates a usable description and possibly synonyms (`FindingInfo`) using OpenAI models (requires `OPENAI_API_KEY` to be set to a valid value).
+Takes a finding name and generates a usable description and possibly synonyms (`FindingInfo`) using AI models. Supports both OpenAI and Anthropic providers (requires `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`).
 
 ```python
 import asyncio
@@ -273,7 +311,7 @@ info = asyncio.run(describe_finding())
 
 ### `add_details_to_info()`
 
-Takes a described finding as above and uses Perplexity to get a lot of possible reference information, possibly including citations (requires `PERPLEXITY_API_KEY` to be set to a valid value).
+Takes a described finding as above and uses Tavily search to get detailed reference information with citations from trusted radiology sources (requires `TAVILY_API_KEY` and an AI provider key).
 
 ```python
 import asyncio
@@ -311,7 +349,7 @@ enhanced_info = asyncio.run(enhance_finding())
 
 ### `create_model_from_markdown()`
 
-Creates a `FindingModel` from a markdown file or text using OpenAI API.
+Creates a `FindingModel` from a markdown file or text using AI models. Supports both OpenAI and Anthropic providers.
 
 ```python
 import asyncio
