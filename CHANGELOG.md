@@ -6,16 +6,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased—presumed 0.5.1]
+## [0.6.0] - 2025-11-09
 
 ### Added
 
-- Setup a `render_agent_prompt` method in `tools.prompt_template` for using a MD prompt with Pydantic AI agents.
+- **Model Context Protocol (MCP) Server** - Expose Finding Model Index search to AI agents:
+  - Three tools: hybrid search, model retrieval by ID/name/synonym, index statistics
+  - Console script `findingmodel-mcp` for easy integration with Claude Desktop
+  - Complete documentation in `docs/mcp_server.md` with Claude Desktop config examples
 - Tavily API support for finding detail generation with domain filtering
 - **Anthropic Model Support** - Multi-provider AI architecture:
   - Use OpenAI or Anthropic models via `MODEL_PROVIDER` configuration
   - Tier-based selection ("base", "small", "full") abstracts provider-specific names
   - Optional `provider` parameter on tool functions for runtime override
+- Setup a `render_agent_prompt` method in `tools.prompt_template` for using a MD prompt with Pydantic AI agents.
 
 ### Removed
 

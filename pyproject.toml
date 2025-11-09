@@ -1,6 +1,6 @@
 [project]
 name = "findingmodel"
-version = "0.5.0"
+version = "0.6.0"
 description = "Definition and tools for Open Imaging Finding Models"
 authors = [
     { name = "Tarik Alkasab", email = "tarik@alkasab.org" },
