@@ -361,9 +361,9 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 ---
 
-### Task 2.5: Update documentation and memories ⚠️
+### Task 2.5: Update documentation and memories ✅
 
-**Status:** Partially complete - CHANGELOG.md updated, memories not yet updated
+**Status:** COMPLETE
 
 **Files:**
 - Serena memory: `api_integration`
@@ -441,9 +441,9 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
    ```python
    # Anthropic API (optional alternative to OpenAI)
    anthropic_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-   anthropic_default_model: str = Field(default="claude-3-5-sonnet-latest")
-   anthropic_default_model_full: str = Field(default="claude-3-7-sonnet-latest")
-   anthropic_default_model_small: str = Field(default="claude-3-5-haiku-latest")
+   anthropic_default_model: str = Field(default="claude-sonnet-4-5")
+   anthropic_default_model_full: str = Field(default="claude-opus-4-1")
+   anthropic_default_model_small: str = Field(default="claude-haiku-4-5")
 
    # Model provider selection
    model_provider: str = Field(
@@ -465,9 +465,9 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
    # Add after OpenAI section:
    # Anthropic API (optional alternative to OpenAI)
    ANTHROPIC_API_KEY=your-anthropic-api-key-here
-   ANTHROPIC_DEFAULT_MODEL=claude-3-5-sonnet-latest
-   ANTHROPIC_DEFAULT_MODEL_FULL=claude-3-7-sonnet-latest
-   ANTHROPIC_DEFAULT_MODEL_SMALL=claude-3-5-haiku-latest
+   ANTHROPIC_DEFAULT_MODEL=claude-sonnet-4-5
+   ANTHROPIC_DEFAULT_MODEL_FULL=claude-opus-4-1
+   ANTHROPIC_DEFAULT_MODEL_SMALL=claude-haiku-4-5
    MODEL_PROVIDER=openai
    ```
 
@@ -500,20 +500,22 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
    from pydantic_ai import Model
    ```
 
-2. **Add new model factory function** (before `get_openai_model()`):
+2. **Add type aliases and model factory function**:
    ```python
+   ModelProvider = Literal["openai", "anthropic"]
+   ModelTier = Literal["base", "small", "full"]
+
    def get_model(
-       model_name: str | None = None,
+       model_tier: ModelTier = "base",
        *,
-       provider: str | None = None,
-       model_tier: Literal["default", "full", "small"] = "default",
+       provider: ModelProvider | None = None,
    ) -> Model:
        """Get AI model from configured provider.
 
        Args:
-           model_name: Specific model name (overrides tier)
+           model_tier: Model capability tier - "small" (fast/cheap), "base" (default),
+                      or "full" (most capable)
            provider: "openai" or "anthropic" (defaults to settings.model_provider)
-           model_tier: Which tier to use if model_name not specified
 
        Returns:
            Configured Model instance
@@ -525,31 +527,33 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
        if provider == "anthropic":
            settings.check_ready_for_anthropic()
-           if not model_name:
-               tier_map = {
-                   "default": settings.anthropic_default_model,
-                   "full": settings.anthropic_default_model_full,
-                   "small": settings.anthropic_default_model_small,
-               }
-               model_name = tier_map[model_tier]
-           return AnthropicModel(model_name)
+           tier_map = {
+               "base": settings.anthropic_default_model,
+               "full": settings.anthropic_default_model_full,
+               "small": settings.anthropic_default_model_small,
+           }
+           model_name = tier_map[model_tier]
+           anthropic_provider = AnthropicProvider(api_key=settings.anthropic_api_key.get_secret_value())
+           return AnthropicModel(model_name, provider=anthropic_provider)
 
        elif provider == "openai":
            settings.check_ready_for_openai()
-           if not model_name:
-               tier_map = {
-                   "default": settings.openai_default_model,
-                   "full": settings.openai_default_model_full,
-                   "small": settings.openai_default_model_small,
-               }
-               model_name = tier_map[model_tier]
-           return OpenAIModel(model_name)
+           tier_map = {
+               "base": settings.openai_default_model,
+               "full": settings.openai_default_model_full,
+               "small": settings.openai_default_model_small,
+           }
+           model_name = tier_map[model_tier]
+           openai_provider = OpenAIProvider(api_key=settings.openai_api_key.get_secret_value())
+           return OpenAIModel(model_name, provider=openai_provider)
 
        else:
            raise ConfigurationError(f"Unsupported model provider: {provider}")
    ```
 
-3. **Update `get_openai_model()`** to be a compatibility wrapper:
+   **Note:** Uses "base" (not "default") for clarity. No `model_name` parameter - tier-based selection enforces provider portability.
+
+3. **Deprecate `get_openai_model()`** - keep for backward compatibility but issue warning:
    ```python
    def get_openai_model(model_name: str = settings.openai_default_model) -> Model:
        """Get OpenAI model (deprecated - use get_model() instead)."""
@@ -559,13 +563,14 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
            DeprecationWarning,
            stacklevel=2
        )
-       return get_model(model_name=model_name, provider="openai")
+       # Implementation kept unchanged for compatibility
+       openai_provider = OpenAIProvider(api_key=settings.openai_api_key.get_secret_value())
+       return OpenAIModel(model_name, provider=openai_provider)
    ```
 
 **Testing:**
 - Test `get_model()` with both providers
-- Test model tier selection
-- Test explicit model name override
+- Test model tier selection ("base", "small", "full")
 - Test error handling for missing API keys
 - Test deprecation warning on `get_openai_model()`
 
@@ -588,36 +593,29 @@ During Task 1.1, we added `render_agent_prompt()` to `prompt_template.py` to eli
 
 **Implementation:**
 
-For each file, update references from `get_openai_model()` to `get_model()`:
+For each file, update tool function signatures to accept `model_tier` and `provider` parameters:
 
 1. **`finding_description.py`**:
-   - Line 12: Keep import but add `get_model`
-   - Line 95: `model=get_model(model_name)` instead of `get_openai_model(model_name)`
-   - Consider adding optional `provider` parameter to `create_info_from_name()` signature
+   ```python
+   async def create_info_from_name(
+       finding_name: str,
+       model_tier: ModelTier = "small",
+       provider: ModelProvider | None = None,
+   ) -> FindingInfo:
+   ```
+   - All internal agent creation uses `get_model(model_tier, provider=provider)`
 
 2. **`anatomic_location_search.py`**:
-   - Find all `get_openai_model()` calls
-   - Replace with `get_model()`
-   - Update imports
+   - Update `find_anatomic_locations()` to accept `model_tier` and `provider` parameters
+   - Replace `get_openai_model()` calls with `get_model()`
 
 3. **`ontology_concept_match.py`**:
-   - Find all `get_openai_model()` calls
-   - Replace with `get_model()`
-   - Update imports
+   - Update public functions to accept `model_tier` and `provider` parameters
+   - Replace `get_openai_model()` calls with `get_model()`
 
 4. **`model_editor.py`**:
-   - Find all `get_openai_model()` calls
-   - Replace with `get_model()`
-   - Update imports
-
-**Optional Enhancement:** Add `provider` parameter to public tool functions:
-```python
-async def create_info_from_name(
-    finding_name: str,
-    model_name: str = settings.openai_default_model,
-    provider: str | None = None,  # NEW: allow provider override
-) -> FindingInfo:
-```
+   - Update editing functions to accept `model_tier` and `provider` parameters
+   - Replace `get_openai_model()` calls with `get_model()`
 
 **Testing:**
 - All tools work with OpenAI (default)
@@ -683,12 +681,12 @@ async def create_info_from_name(
        from findingmodel.tools.common import get_model
 
        # OpenAI tiers
-       model = get_model(model_tier="small", provider="openai")
+       model = get_model("small", provider="openai")
        assert isinstance(model, OpenAIModel)
 
        # Anthropic tiers
        if HAS_ANTHROPIC_API_KEY:
-           model = get_model(model_tier="small", provider="anthropic")
+           model = get_model("small", provider="anthropic")
            assert isinstance(model, AnthropicModel)
    ```
 
@@ -739,9 +737,9 @@ async def create_info_from_name(
 ### Anthropic API
 - **Environment Variable**: `ANTHROPIC_API_KEY`
 - **Default Models**:
-  - Main: `claude-3-5-sonnet-latest`
-  - Full: `claude-3-7-sonnet-latest`
-  - Small: `claude-3-5-haiku-latest`
+  - Main: `claude-sonnet-4-5`
+  - Full: `claude-opus-4-1`
+  - Small: `claude-haiku-4-5`
 - **Provider Selection**: Set `MODEL_PROVIDER=anthropic` in `.env`
 - **Used For**: Alternative to OpenAI for all AI-powered tools
 - **Usage**: `get_model(provider="anthropic")` or set as default provider
