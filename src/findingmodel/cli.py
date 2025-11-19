@@ -15,6 +15,7 @@ from .anatomic_migration import (
     validate_anatomic_record,
 )
 from .config import settings
+from .db_publish import DatabaseStats, ManifestUpdateInfo
 from .finding_info import FindingInfo
 from .finding_model import FindingModelBase, FindingModelFull
 from .index import DuckDBIndex
@@ -351,6 +352,201 @@ def validate(directory: Path) -> None:
             console.print(f"[bold green]✓ All {len(fm_files)} models validated successfully!")
 
     asyncio.run(_do_validate(directory))
+
+
+async def _build_database_from_definitions(defs_dir: Path, console: Console) -> Path:
+    """Build database from definitions directory to temporary file."""
+    import os
+    import tempfile
+
+    console.print(f"[bold green]Building database from [yellow]{defs_dir.absolute()}")
+
+    # Create temporary file for build
+    temp_fd, temp_file_str = tempfile.mkstemp(suffix=".duckdb")
+    os.close(temp_fd)  # Close file descriptor, DuckDB will open it
+    temp_db_path = Path(temp_file_str)
+
+    console.print(f"[gray]Building to temporary file: [yellow]{temp_db_path}")
+
+    def progress_update(message: str) -> None:
+        console.print(f"[cyan]→[/cyan] {message}")
+
+    # Use existing index build logic
+    async with DuckDBIndex(db_path=temp_db_path, read_only=False) as idx:
+        await idx.setup()
+        result = await idx.update_from_directory(defs_dir, progress_callback=progress_update)
+
+    console.print(
+        f"[green]✓ Built: {result['added']} added, {result['updated']} updated, {result['removed']} removed\n"
+    )
+    return temp_db_path
+
+
+def _run_sanity_check_with_confirmation(db_path: Path, console: Console) -> None:
+    """Run sanity check and prompt for user confirmation."""
+    from findingmodel.db_publish import prompt_user_confirmation, run_sanity_check
+
+    console.print("[bold cyan]Running sanity check...")
+    check_result = run_sanity_check(db_path)
+
+    response = prompt_user_confirmation(check_result)
+
+    if response == "no":
+        console.print("[yellow]Upload cancelled by user (answered 'no')")
+        sys.exit(0)
+    elif response == "cancel":
+        console.print("[yellow]Upload cancelled by user")
+        sys.exit(0)
+    # response == "yes", continue
+    console.print("[green]✓ Sanity check passed, continuing...\n")
+
+
+def _display_publication_summary(
+    db_url: str,
+    hash_value: str,
+    stats: DatabaseStats,
+    update_info: ManifestUpdateInfo,
+    manifest_url: str,
+    backup_url: str,
+    console: Console,
+) -> None:
+    """Display final publication summary."""
+    console.print("[bold green]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    console.print("[bold green]✓ Publication Complete!")
+    console.print("[bold green]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+
+    console.print("[cyan]Published Database:")
+    console.print(f"  URL: {db_url}")
+    console.print(f"  Records: {stats.record_count:,}")
+    console.print(f"  Size: {stats.size_bytes:,} bytes ({stats.size_bytes / 1024 / 1024:.2f} MB)")
+    console.print(f"  Version: {update_info.version}")
+    console.print(f"  Hash: {hash_value}\n")
+
+    console.print("[cyan]Manifest:")
+    console.print(f"  Updated: {manifest_url}")
+    console.print(f"  Backup: {backup_url}\n")
+
+
+@index.command("publish")
+@click.option(
+    "--defs-dir", type=click.Path(exists=True, path_type=Path), help="Directory with *.fm.json files (build mode)"
+)
+@click.option(
+    "--database", type=click.Path(exists=True, path_type=Path), help="Existing database file (publish-only mode)"
+)
+@click.option("--skip-checks", is_flag=True, help="Skip sanity checks and confirmation")
+def publish(defs_dir: Path | None, database: Path | None, skip_checks: bool) -> None:
+    """Publish database to S3 with automatic manifest update.
+
+    Two modes:
+    1. Build and Publish: --defs-dir path/to/definitions
+    2. Publish Existing: --database path/to/existing.duckdb
+    """
+
+    console = Console()
+
+    async def _do_publish(defs_dir: Path | None, database: Path | None, skip_checks: bool) -> None:
+        from datetime import datetime, timezone
+
+        from findingmodel.db_publish import (
+            ManifestUpdateInfo,
+            PublishConfig,
+            compute_file_hash,
+            create_s3_client,
+            get_database_stats,
+            update_and_publish_manifest,
+        )
+
+        # Step 1: Validate args (exactly one of --defs-dir or --database required)
+        if (defs_dir is None) == (database is None):
+            console.print("[bold red]Error: Provide exactly one of --defs-dir or --database")
+            sys.exit(1)
+
+        temp_db_path: Path | None = None
+        db_path: Path
+
+        try:
+            # Step 2: Build database to temp file if defs-dir provided
+            if defs_dir:
+                temp_db_path = await _build_database_from_definitions(defs_dir, console)
+                db_path = temp_db_path
+            else:
+                # Publish existing database
+                assert database is not None
+                db_path = database
+                console.print(f"[bold green]Publishing existing database: [yellow]{db_path.absolute()}\n")
+
+            # Step 3: Run sanity check unless --skip-checks
+            if not skip_checks:
+                _run_sanity_check_with_confirmation(db_path, console)
+            else:
+                console.print("[yellow]Skipping sanity checks (--skip-checks enabled)\n")
+
+            # Step 4: Compute hash
+            console.print("[bold cyan]Computing database hash...")
+            hash_value = compute_file_hash(db_path)
+            console.print(f"[green]✓ Hash: {hash_value}\n")
+
+            # Step 5: Create S3 client and PublishConfig
+            console.print("[bold cyan]Initializing S3 connection...")
+            try:
+                publish_config = PublishConfig()
+                s3_client = create_s3_client(publish_config)
+                console.print(f"[green]✓ Connected to {publish_config.s3_endpoint_url}/{publish_config.s3_bucket}\n")
+            except ValueError as e:
+                console.print(f"[bold red]Error: {e}")
+                console.print("\n[yellow]Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables")
+                sys.exit(1)
+
+            # Step 6: Generate database filename with current date
+            today = datetime.now(timezone.utc)
+            db_filename = f"findingmodels_{today:%Y%m%d}.duckdb"
+            console.print(f"[bold cyan]Database filename: [yellow]{db_filename}")
+
+            # Step 7: Upload database to S3
+            console.print("[bold cyan]Uploading database to S3...")
+            s3_client.upload_file(str(db_path), publish_config.s3_bucket, db_filename)
+
+            # Construct database URL
+            endpoint_url = s3_client.meta.endpoint_url
+            db_url = f"https://{publish_config.s3_bucket}.{endpoint_url.removeprefix('https://').removeprefix('http://')}/{db_filename}"
+            console.print(f"[green]✓ Database uploaded: {db_url}\n")
+
+            # Step 8: Update and publish manifest
+            console.print("[bold cyan]Updating manifest...")
+
+            # Get database stats for manifest
+            stats = get_database_stats(db_path)
+
+            # Create manifest update info
+            update_info = ManifestUpdateInfo(
+                database_key="finding_models",
+                version=f"{today:%Y-%m-%d}",  # ISO date format with hyphens
+                url=db_url,
+                hash_value=hash_value,
+                size_bytes=stats.size_bytes,
+                record_count=stats.record_count,
+                description="Finding model index with embeddings and full JSON",
+            )
+
+            manifest_url, backup_url = update_and_publish_manifest(s3_client, publish_config, update_info)
+            console.print(f"[green]✓ Manifest updated: {manifest_url}")
+            console.print(f"[green]✓ Backup created: {backup_url}\n")
+
+            # Display final summary
+            _display_publication_summary(db_url, hash_value, stats, update_info, manifest_url, backup_url, console)
+
+        except Exception as e:
+            console.print(f"\n[bold red]Publication failed: {e}")
+            raise
+
+        finally:
+            # Clean up temp database file if built
+            if temp_db_path and temp_db_path.exists():
+                console.print(f"[gray]Cleaning up temporary database: {temp_db_path}")
+                temp_db_path.unlink()
+
+    asyncio.run(_do_publish(defs_dir, database, skip_checks))
 
 
 @index.command()

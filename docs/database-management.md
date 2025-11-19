@@ -103,6 +103,40 @@ Displays:
 - Database file size
 - Index status (HNSW vector index, FTS text index)
 
+#### Publish to Remote Storage
+
+```bash
+# Build from definitions and publish to S3
+uv run python -m findingmodel index publish --defs-dir /path/to/defs/
+
+# Publish an existing database file
+uv run python -m findingmodel index publish --database /path/to/existing.duckdb
+
+# Skip sanity checks and confirmation prompts
+uv run python -m findingmodel index publish --database /path/to/db.duckdb --skip-checks
+```
+
+Automates database publishing workflow:
+1. Builds database from definitions (if using `--defs-dir`) or uses existing database
+2. Runs sanity checks: record count, sample OIFM IDs, model JSON validation
+3. Computes SHA256 hash and file size
+4. Uploads database to S3/Tigris storage with date-based filename
+5. Updates and publishes `manifest.json` with new version info
+6. Creates automatic manifest backup in `manifests/archive/`
+
+**Requirements**: AWS credentials in `.env` file (Tigris S3-compatible storage):
+```bash
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+```
+
+**When to use**:
+- Use `--defs-dir` for regular updates from finding model definitions
+- Use `--database` to republish an existing database file
+- Use `--skip-checks` for automated deployments (bypasses interactive prompts)
+
+The published database becomes available immediately via manifest-based auto-download for all users.
+
 ### Anatomic Location Database Management
 
 #### Build Anatomic Database

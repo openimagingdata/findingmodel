@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Automated Database Publishing** - New `index publish` CLI command for publishing DuckDB databases to remote storage:
+  - Build-and-publish mode (`--defs-dir`) or publish-only mode (`--database`)
+  - S3/Tigris storage integration with date-based filenames (`findingmodels_YYYYMMDD.duckdb`)
+  - See `docs/database-management.md` for maintainer guide
+
 ### Changed
 
 ### Fixed
