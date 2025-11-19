@@ -246,8 +246,9 @@ def test_ensure_db_file_with_manifest_key_fetches_manifest() -> None:
         mock_retrieve.return_value = "/fake/db.duckdb"
 
         # Call ensure_db_file WITH manifest_key (correct behavior)
+        # Use file_path=None for managed download mode
         ensure_db_file(
-            file_path="finding_models.duckdb",
+            file_path=None,  # Managed download mode
             remote_url=settings.remote_index_db_url,
             remote_hash=settings.remote_index_db_hash,
             manifest_key="finding_models",  # CORRECT: Provide manifest_key

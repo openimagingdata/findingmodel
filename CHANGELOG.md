@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Database auto-update from manifest: Index now checks manifest.json on instantiation and downloads updated databases when hash differs, with graceful fallback.
+
 ### Deprecated
 
 ### Removed

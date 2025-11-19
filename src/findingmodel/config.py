@@ -269,77 +269,89 @@ def ensure_db_file(
     remote_hash: str | None,
     manifest_key: str,
 ) -> Path:
-    """Ensure database file is available with flexible configuration priority.
+    """Ensure database file is available.
 
-    Priority logic:
-        1. If file_path exists and no URL/hash: use file directly (no verification)
-        2. If file_path exists and URL/hash provided: verify hash
-           - Hash matches: use file
-           - Hash mismatch: download from URL
-        3. If file doesn't exist and URL/hash provided: download using URL/hash
-        4. If file doesn't exist and no URL/hash: download using manifest (fallback)
+    Two modes:
+        1. Explicit path: User specified exact file to use (via file_path parameter)
+           - Validates file exists, returns path
+           - No downloads or hash verification (user's responsibility)
+
+        2. Managed download: Use Pooch for automatic download/caching/updates
+           - Gets URL/hash from explicit config or manifest
+           - Pooch handles: download if missing, hash verification, re-download if hash mismatch
+           - Automatic updates when manifest changes
 
     Args:
         file_path: Database file path (absolute, relative to user data dir, or None for default)
-        remote_url: Optional download URL (must provide both URL and hash, or neither)
-        remote_hash: Optional hash for verification (e.g., 'sha256:abc...')
+            - If None: uses managed download with automatic updates
+            - If set: uses explicit path, no automatic updates
+        remote_url: Optional explicit download URL (must provide both URL and hash, or neither)
+        remote_hash: Optional explicit hash for verification (e.g., 'sha256:abc...')
         manifest_key: Key in manifest JSON databases section (e.g., 'finding_models', 'anatomic_locations')
 
     Returns:
         Path to the database file
 
     Raises:
-        ConfigurationError: If configuration is invalid or download fails
+        ConfigurationError: If explicit file doesn't exist or download fails
 
     Examples:
-        # Docker production: use pre-mounted file
+        # Explicit path (Docker/production): use pre-mounted file
         db_path = ensure_db_file("/mnt/data/finding_models.duckdb", None, None, "finding_models")
 
-        # Development: use manifest
+        # Managed download with automatic updates (default behavior)
         db_path = ensure_db_file(None, None, None, "finding_models")
 
-        # Custom URL with verification
-        db_path = ensure_db_file(
-            "my_db.duckdb",
-            "https://example.com/db.duckdb",
-            "sha256:abc123...",
-            "finding_models"
-        )
+        # Explicit remote URL/hash (overrides manifest)
+        db_path = ensure_db_file(None, "https://example.com/db.duckdb", "sha256:abc123...", "finding_models")
     """
     from findingmodel import logger
 
-    # Resolve target path
-    target = _resolve_target_path(file_path, manifest_key)
+    # Case 1: User specified explicit path - validate and return
+    if file_path is not None:
+        target = _resolve_target_path(file_path, manifest_key)
+        if not target.exists():
+            raise ConfigurationError(
+                f"Explicit database file not found: {target}. "
+                f"Either provide the file or unset the path to enable automatic downloads."
+            )
+        logger.debug(f"Using explicit database file: {target}")
+        return target
 
-    # Check if we have explicit remote config
-    has_explicit_remote = remote_url is not None and remote_hash is not None
+    # Case 2: Managed download - let Pooch handle download/caching/updates
+    target = _resolve_target_path(None, manifest_key)
 
-    # Check if file exists
-    if target.exists():
-        if has_explicit_remote:
-            # Type narrowing: has_explicit_remote means both are not None
-            assert remote_url is not None and remote_hash is not None
-            # Verify hash
-            logger.info(f"Verifying existing file {target}")
-            if _verify_file_hash(target, remote_hash):
-                logger.info(f"File hash verified, using existing file: {target}")
+    # Get URL and hash (from explicit config or manifest)
+    if remote_url is not None and remote_hash is not None:
+        url, hash_value = remote_url, remote_hash
+        logger.debug(f"Using explicit remote URL: {url}")
+    else:
+        # Fetch from manifest with graceful fallback
+        try:
+            manifest = fetch_manifest()
+            db_info = manifest["databases"][manifest_key]
+            url = db_info["url"]
+            hash_value = db_info["hash"]
+            version = db_info.get("version", "unknown")
+            logger.debug(f"Using manifest version {version}: {url}")
+        except Exception as e:
+            # If manifest fetch fails but we have a local file, use it
+            if target.exists():
+                logger.warning(
+                    f"Cannot fetch manifest ({e}), but using existing local file: {target}. "
+                    f"Database may be outdated."
+                )
                 return target
             else:
-                logger.warning(f"File hash mismatch, re-downloading from {remote_url}")
-                return _download_file(target, remote_url, remote_hash)
-        else:
-            # No hash to verify, use file as-is
-            logger.debug(f"Using existing database file: {target}")
-            return target
+                # No local file and can't fetch manifest - fail
+                raise ConfigurationError(
+                    f"Cannot fetch manifest for {manifest_key}: {e}. "
+                    f"No local database file exists at {target}. "
+                    f"Either fix network connectivity or set explicit DUCKDB_*_PATH and REMOTE_*_DB_URL/HASH."
+                ) from e
 
-    # File doesn't exist, need to download
-    if has_explicit_remote:
-        # Type narrowing: has_explicit_remote means both are not None
-        assert remote_url is not None and remote_hash is not None
-        return _download_file(target, remote_url, remote_hash)
-    else:
-        # Fall back to manifest
-        return _download_from_manifest(target, manifest_key)
+    # Pooch handles: exists check, hash verification, re-download if needed
+    return _download_file(target, url, hash_value)
 
 
 def ensure_index_db() -> Path:
@@ -405,7 +417,7 @@ def fetch_manifest() -> dict[str, Any]:
         raise ConfigurationError("Manifest URL not configured")
 
     logger.info(f"Fetching manifest from {settings.remote_manifest_url}")
-    response = httpx.get(settings.remote_manifest_url, timeout=10.0)
+    response = httpx.get(settings.remote_manifest_url, timeout=2.0)
     response.raise_for_status()
 
     manifest_data: dict[str, Any] = response.json()

@@ -83,7 +83,7 @@ class TestEnsureDbFileMocked:
             mock_pooch_retrieve.return_value = str(test_file)
 
             result = ensure_db_file(
-                "test.duckdb",
+                None,  # Use managed download mode
                 "http://example.com/test.duckdb",
                 "sha256:wronghash123",  # Hash won't match
                 manifest_key="test",
@@ -116,7 +116,7 @@ class TestEnsureDbFileMocked:
                 mock_pooch_retrieve.side_effect = create_file_and_return
 
                 result = ensure_db_file(
-                    "test.duckdb",
+                    None,  # Use managed download mode
                     "http://example.com/test.duckdb",
                     "sha256:abc123def456",
                     manifest_key="test",
@@ -147,9 +147,9 @@ class TestEnsureDbFileMocked:
             # Should raise ConfigurationError when manifest fails and no fallback config
             from findingmodel.config import ConfigurationError
 
-            with pytest.raises(ConfigurationError, match="manifest fetch/download failed"):
+            with pytest.raises(ConfigurationError, match="Cannot fetch manifest"):
                 ensure_db_file(
-                    "missing.duckdb",
+                    None,  # Use managed download mode
                     None,
                     None,
                     manifest_key="test",
@@ -175,7 +175,7 @@ class TestEnsureDbFileMocked:
                 mock_pooch_retrieve.side_effect = create_file_and_return
 
                 result = ensure_db_file(
-                    "test.duckdb",
+                    None,  # Use managed download mode
                     "http://example.com/test.duckdb",
                     "sha256:hash",
                     manifest_key="test",
@@ -202,7 +202,7 @@ class TestEnsureDbFileRealDownload:
 
             # First call - should download
             result = ensure_db_file(
-                "findingmodels-test.duckdb",
+                None,  # Use managed download mode
                 url,
                 file_hash,
                 manifest_key="test",
@@ -210,7 +210,8 @@ class TestEnsureDbFileRealDownload:
 
             # Should return valid path
             assert result.exists()
-            assert result.name == "findingmodels-test.duckdb"
+            # In managed mode (file_path=None), filename is derived from manifest_key
+            assert result.name == "test.duckdb"
             assert result.parent == data_dir
 
             # Verify it's a valid DuckDB file by checking it has some content
