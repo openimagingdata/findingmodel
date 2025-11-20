@@ -7,8 +7,9 @@ including ontology codes, body regions, etiologies, imaging modalities, subspeci
 This module defines the core data structures used throughout the finding enrichment workflow.
 """
 
+import asyncio
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator
@@ -16,7 +17,7 @@ from pydantic_ai import Agent, RunContext
 from typing_extensions import Literal
 
 from findingmodel import logger
-from findingmodel.config import ModelTier
+from findingmodel.config import ModelProvider, ModelTier, settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import DuckDBIndex
 from findingmodel.index_code import IndexCode
@@ -478,17 +479,21 @@ Use these to gather additional context if needed, but rely primarily on your
 medical knowledge for the classifications."""
 
 
-def create_enrichment_agent(model_tier: ModelTier = "base") -> Agent[EnrichmentContext, EnrichmentClassification]:
+def create_enrichment_agent(
+    model_tier: ModelTier = "base",
+    provider: ModelProvider | None = None,
+) -> Agent[EnrichmentContext, EnrichmentClassification]:
     """Create the finding enrichment agent.
 
     Args:
         model_tier: Model tier to use (defaults to "base")
+        provider: AI model provider to use ("openai" or "anthropic"). If None, uses configured default.
 
     Returns:
         Configured Pydantic AI agent for finding enrichment
     """
     agent: Agent[EnrichmentContext, EnrichmentClassification] = Agent(
-        model=get_model(model_tier),
+        model=get_model(model_tier, provider=provider),
         output_type=EnrichmentClassification,
         deps_type=EnrichmentContext,
         system_prompt=_create_enrichment_system_prompt(),
@@ -564,3 +569,199 @@ def create_enrichment_agent(model_tier: ModelTier = "base") -> Agent[EnrichmentC
             return json.dumps({"error": str(e)})
 
     return agent
+
+
+# ==========================================================================================
+# Main Enrichment Function
+# ==========================================================================================
+
+
+async def enrich_finding(identifier: str, provider: ModelProvider | None = None) -> FindingEnrichmentResult:  # noqa: C901
+    """Enrich a finding with comprehensive metadata.
+
+    This is the main entry point for the enrichment workflow. It orchestrates:
+    1. Index lookup to get existing finding data
+    2. Parallel ontology code search and anatomic location search
+    3. Agent-based classification of body regions, etiologies, modalities, and subspecialties
+    4. Assembly of complete FindingEnrichmentResult with metadata
+
+    The function uses parallel execution where possible and implements graceful degradation
+    if individual components fail.
+
+    Args:
+        identifier: Either an OIFM ID (e.g., "OIFM_AI_000001") or finding name (e.g., "pneumonia")
+        provider: AI model provider to use ("openai" or "anthropic"). If None, uses configured default.
+
+    Returns:
+        FindingEnrichmentResult with all enrichment data and metadata
+
+    Raises:
+        RuntimeError: If critical workflow steps fail (e.g., database connection issues)
+        ConfigurationError: If AI provider is misconfigured
+
+    Example:
+        >>> result = await enrich_finding("pneumonia")
+        >>> print(f"Found {len(result.snomed_codes)} SNOMED codes")
+        >>> print(f"Body regions: {result.body_regions}")
+        >>> print(f"Anatomic locations: {[loc.concept_text for loc in result.anatomic_locations]}")
+    """
+    from findingmodel.tools.anatomic_location_search import find_anatomic_locations
+
+    logger.info(f"Starting enrichment workflow for: {identifier}")
+
+    # Step 1: Lookup finding in index
+    logger.debug("Step 1: Looking up finding in index")
+    try:
+        existing_model = await lookup_finding_in_index(identifier)
+        if existing_model:
+            logger.info(f"Found existing model: {existing_model.oifm_id} ({existing_model.name})")
+            finding_name = existing_model.name
+            finding_description = existing_model.description
+            oifm_id = existing_model.oifm_id
+        else:
+            logger.info(f"Finding not in index, treating '{identifier}' as finding name")
+            finding_name = identifier
+            finding_description = None
+            oifm_id = None
+    except Exception as e:
+        logger.error(f"Error during index lookup: {e}")
+        raise RuntimeError(f"Failed to lookup finding in index: {e}") from e
+
+    # Step 2: Parallel tool execution for ontology codes and anatomic locations
+    logger.debug("Step 2: Running parallel searches for ontology codes and anatomic locations")
+
+    # Create tasks for parallel execution
+    async def search_ontology_with_fallback() -> tuple[list[IndexCode], list[IndexCode]]:
+        """Search ontology codes with error handling."""
+        try:
+            return await search_ontology_codes_for_finding(finding_name, finding_description)
+        except Exception as e:
+            logger.warning(f"Ontology code search failed (continuing with empty results): {e}")
+            return ([], [])
+
+    async def search_anatomic_with_fallback() -> list[OntologySearchResult]:
+        """Search anatomic locations with error handling."""
+        try:
+            result = await find_anatomic_locations(
+                finding_name=finding_name,
+                description=finding_description,
+                model_tier="small",
+            )
+            # Collect all locations (primary + alternates)
+            locations = [result.primary_location]
+            locations.extend(result.alternate_locations)
+            return locations
+        except Exception as e:
+            logger.warning(f"Anatomic location search failed (continuing with empty results): {e}")
+            return []
+
+    # Execute in parallel with error handling
+    # Defense-in-depth: wrap fallback calls with return_exceptions=True
+    # to catch any exceptions that slip through the inner try/except blocks
+    try:
+        ontology_result, anatomic_result = await asyncio.gather(
+            search_ontology_with_fallback(),
+            search_anatomic_with_fallback(),
+            return_exceptions=True,
+        )
+
+        # Type narrow and handle any exceptions that slipped through the fallback handlers
+        snomed_codes: list[IndexCode]
+        radlex_codes: list[IndexCode]
+        anatomic_locations: list[OntologySearchResult]
+
+        if isinstance(ontology_result, Exception):
+            logger.error(f"Ontology search raised unhandled exception: {ontology_result}")
+            snomed_codes, radlex_codes = [], []
+        elif isinstance(ontology_result, tuple):
+            snomed_codes, radlex_codes = ontology_result
+        else:
+            logger.error(f"Ontology search returned unexpected type: {type(ontology_result)}")
+            snomed_codes, radlex_codes = [], []
+
+        if isinstance(anatomic_result, Exception):
+            logger.error(f"Anatomic search raised unhandled exception: {anatomic_result}")
+            anatomic_locations = []
+        elif isinstance(anatomic_result, list):
+            anatomic_locations = anatomic_result
+        else:
+            logger.error(f"Anatomic search returned unexpected type: {type(anatomic_result)}")
+            anatomic_locations = []
+
+    except Exception as e:
+        # Should not happen with return_exceptions=True, but be defensive
+        logger.error(f"Unexpected error during parallel execution: {e}")
+        snomed_codes, radlex_codes = [], []
+        anatomic_locations = []
+
+    logger.info(
+        f"Parallel search complete: {len(snomed_codes)} SNOMED, "
+        f"{len(radlex_codes)} RadLex, {len(anatomic_locations)} locations"
+    )
+
+    # Step 3: Create enrichment context for agent
+    logger.debug("Step 3: Creating enrichment context for agent")
+    all_codes = [*snomed_codes, *radlex_codes]
+    context = EnrichmentContext(
+        finding_name=finding_name,
+        finding_description=finding_description,
+        existing_codes=all_codes,
+        existing_model=existing_model,
+    )
+
+    # Step 4: Run enrichment agent for classification
+    logger.debug("Step 4: Running enrichment agent")
+    try:
+        agent = create_enrichment_agent(model_tier="base", provider=provider)
+        prompt = f"Classify the imaging finding: {finding_name}"
+        if finding_description:
+            prompt += f"\nDescription: {finding_description}"
+
+        result = await agent.run(prompt, deps=context)
+        classification = result.output
+
+        logger.info(
+            f"Agent classification complete: "
+            f"{len(classification.body_regions)} regions, "
+            f"{len(classification.etiologies)} etiologies, "
+            f"{len(classification.modalities)} modalities, "
+            f"{len(classification.subspecialties)} subspecialties"
+        )
+        logger.debug(f"Agent reasoning: {classification.reasoning}")
+
+    except Exception as e:
+        logger.error(f"Enrichment agent failed, using empty classifications: {e}")
+        # Graceful degradation - return empty classification
+        classification = EnrichmentClassification(
+            body_regions=[],
+            etiologies=[],
+            modalities=[],
+            subspecialties=[],
+            reasoning=f"Agent classification failed: {e}",
+        )
+
+    # Step 5: Assemble complete FindingEnrichmentResult
+    logger.debug("Step 5: Assembling final enrichment result")
+
+    # Determine model provider and tier for metadata
+    effective_provider = provider or settings.model_provider
+    model_tier_str = "base"  # We use base tier for enrichment agent
+
+    enrichment_result = FindingEnrichmentResult(
+        finding_name=finding_name,
+        oifm_id=oifm_id,
+        snomed_codes=snomed_codes,
+        radlex_codes=radlex_codes,
+        body_regions=classification.body_regions,
+        etiologies=classification.etiologies,
+        modalities=classification.modalities,
+        subspecialties=classification.subspecialties,
+        anatomic_locations=anatomic_locations,
+        enrichment_timestamp=datetime.now(timezone.utc),
+        model_provider=effective_provider,
+        model_tier=model_tier_str,
+    )
+
+    logger.info(f"Enrichment complete for '{finding_name}' ({oifm_id or 'not in index'})")
+
+    return enrichment_result
