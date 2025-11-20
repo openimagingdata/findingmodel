@@ -7,16 +7,20 @@ including ontology codes, body regions, etiologies, imaging modalities, subspeci
 This module defines the core data structures used throughout the finding enrichment workflow.
 """
 
+import json
 from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator
+from pydantic_ai import Agent, RunContext
 from typing_extensions import Literal
 
 from findingmodel import logger
+from findingmodel.config import ModelTier
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import DuckDBIndex
 from findingmodel.index_code import IndexCode
+from findingmodel.tools.common import get_model
 from findingmodel.tools.ontology_search import OntologySearchResult
 
 # Type aliases for constrained value sets
@@ -176,7 +180,7 @@ class FindingEnrichmentResult(BaseModel):
     )
 
     model_tier: str = Field(
-        description="AI model tier used for enrichment (e.g., 'small', 'main', 'full')",
+        description="AI model tier used for enrichment (e.g., 'small', 'base', 'full')",
     )
 
     @field_validator("etiologies")
@@ -308,3 +312,255 @@ async def search_ontology_codes_for_finding(
     except Exception as e:
         logger.error(f"Error searching ontology codes: {e}")
         raise
+
+
+# ==========================================================================================
+# Enrichment Context & Agent Implementation
+# ==========================================================================================
+
+
+class EnrichmentContext(BaseModel):
+    """Dependency context for the enrichment agent.
+
+    Contains all relevant information about the finding being enriched,
+    including existing data from the index if available.
+    """
+
+    finding_name: str = Field(
+        description="Name of the finding being enriched",
+    )
+
+    finding_description: str | None = Field(
+        default=None,
+        description="Detailed description of the finding, if available",
+    )
+
+    existing_codes: list[IndexCode] = Field(
+        default_factory=list,
+        description="Existing ontology codes from index or search",
+    )
+
+    existing_model: FindingModelFull | None = Field(
+        default=None,
+        description="Existing FindingModelFull from index, if found",
+    )
+
+
+class EnrichmentClassification(BaseModel):
+    """Structured output from the enrichment agent.
+
+    Contains the agent's classifications for body regions, etiologies,
+    modalities, and subspecialties.
+
+    Note: This is the agent's output type (Phase 4). The complete FindingEnrichmentResult
+    is assembled in Phase 5 by combining this classification with ontology codes and
+    anatomic locations from other tools. This separation allows the agent to focus on
+    classification while other components handle structured data retrieval.
+    """
+
+    body_regions: Annotated[
+        list[BodyRegion],
+        Field(
+            default_factory=list,
+            description="Primary body regions where this finding occurs",
+        ),
+    ]
+
+    etiologies: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="Etiology categories for this finding (from ETIOLOGIES taxonomy)",
+        ),
+    ]
+
+    modalities: Annotated[
+        list[Modality],
+        Field(
+            default_factory=list,
+            description="Imaging modalities where this finding is typically visualized",
+        ),
+    ]
+
+    subspecialties: Annotated[
+        list[Subspecialty],
+        Field(
+            default_factory=list,
+            description="Radiology subspecialties most relevant to this finding",
+        ),
+    ]
+
+    reasoning: str = Field(
+        description="Brief explanation of the classification decisions",
+    )
+
+    @field_validator("etiologies")
+    @classmethod
+    def validate_etiologies(cls, v: list[str]) -> list[str]:
+        """Validate that all etiologies are in the allowed ETIOLOGIES list."""
+        invalid = [etiology for etiology in v if etiology not in ETIOLOGIES]
+        if invalid:
+            raise ValueError(f"Invalid etiology categories: {invalid}. Must be from ETIOLOGIES list.")
+        return v
+
+
+def _create_enrichment_system_prompt() -> str:
+    """Create comprehensive system prompt for the enrichment agent.
+
+    Returns:
+        Complete system prompt with role, tasks, instructions, and taxonomy definitions.
+    """
+    return f"""You are a medical imaging finding enrichment specialist with expertise in radiology.
+
+Your task is to analyze an imaging finding and classify it across multiple dimensions to aid in
+organizing and categorizing findings in a medical imaging database.
+
+ROLE & RESPONSIBILITIES:
+- Classify the finding's primary body regions
+- Identify all applicable etiologies (causes/origins)
+- Determine relevant imaging modalities
+- Identify appropriate subspecialties
+
+INSTRUCTIONS:
+1. Be precise and specific in your classifications
+2. Multiple values are allowed and encouraged when appropriate
+3. If uncertain about a classification, leave it blank rather than guessing
+4. Consider the clinical context and common usage patterns in radiology
+5. Provide brief reasoning for your decisions
+
+CLASSIFICATION TAXONOMIES:
+
+Body Regions:
+- ALL: Finding applies to entire body or multiple regions
+- Head: Cranial and intracranial structures
+- Neck: Cervical region
+- Chest: Thorax including lungs and mediastinum
+- Breast: Breast tissue
+- Abdomen: Abdominal cavity and retroperitoneum
+- Arm: Upper extremity
+- Leg: Lower extremity
+
+Etiologies (multiple allowed):
+{chr(10).join(f"- {etiology}" for etiology in ETIOLOGIES)}
+
+Modalities:
+- XR: Radiography (plain X-rays)
+- CT: Computed Tomography
+- MR: Magnetic Resonance Imaging
+- US: Ultrasound (including Doppler)
+- PET: Positron Emission Tomography
+- NM: Nuclear Medicine (single-photon/SPECT)
+- MG: Mammography
+- RF: Fluoroscopy (real-time X-ray)
+- DSA: Digital Subtraction Angiography
+
+Subspecialties:
+- AB: Abdominal Radiology
+- BR: Breast Imaging
+- CA: Cardiac Imaging
+- CH: Chest/Thoracic Imaging
+- ER: Emergency Radiology
+- GI: Gastrointestinal Radiology
+- GU: Genitourinary Radiology
+- HN: Head & Neck Imaging
+- IR: Interventional Radiology
+- MI: Molecular Imaging/Nuclear Medicine
+- MK: Musculoskeletal Radiology
+- NR: Neuroradiology
+- OB: OB/Gyn Radiology
+- OI: Oncologic Imaging
+- PD: Pediatric Radiology
+- VI: Vascular Imaging
+
+TOOLS AVAILABLE:
+You have access to tools for searching ontology codes and anatomic locations.
+Use these to gather additional context if needed, but rely primarily on your
+medical knowledge for the classifications."""
+
+
+def create_enrichment_agent(model_tier: ModelTier = "base") -> Agent[EnrichmentContext, EnrichmentClassification]:
+    """Create the finding enrichment agent.
+
+    Args:
+        model_tier: Model tier to use (defaults to "base")
+
+    Returns:
+        Configured Pydantic AI agent for finding enrichment
+    """
+    agent: Agent[EnrichmentContext, EnrichmentClassification] = Agent(
+        model=get_model(model_tier),
+        output_type=EnrichmentClassification,
+        deps_type=EnrichmentContext,
+        system_prompt=_create_enrichment_system_prompt(),
+    )
+
+    @agent.tool
+    async def search_ontology_codes(ctx: RunContext[EnrichmentContext], query: str) -> str:
+        """Search for ontology codes related to a finding concept.
+
+        Use this to find SNOMED CT and RadLex codes that may provide additional
+        context about the finding.
+
+        Args:
+            ctx: Agent run context with finding information
+            query: Search query (finding name or concept)
+
+        Returns:
+            JSON string with search results
+        """
+        try:
+            snomed_codes, radlex_codes = await search_ontology_codes_for_finding(
+                finding_name=query,
+                description=ctx.deps.finding_description,
+            )
+
+            result = {
+                "snomed_codes": [code.model_dump() for code in snomed_codes],
+                "radlex_codes": [code.model_dump() for code in radlex_codes],
+            }
+
+            logger.info(f"Ontology search for '{query}': {len(snomed_codes)} SNOMED, {len(radlex_codes)} RadLex")
+            return json.dumps(result, indent=2)
+
+        except Exception as e:
+            logger.error(f"Error in ontology search tool: {e}")
+            return json.dumps({"error": str(e)})
+
+    @agent.tool
+    async def find_anatomic_location(ctx: RunContext[EnrichmentContext], finding: str) -> str:
+        """Find anatomic locations for a finding.
+
+        Use this to identify where in the body this finding typically occurs.
+
+        Args:
+            ctx: Agent run context with finding information
+            finding: Finding name to search for
+
+        Returns:
+            JSON string with primary and alternate locations
+        """
+        from findingmodel.tools.anatomic_location_search import find_anatomic_locations
+
+        try:
+            # Use "small" tier for sub-tool regardless of parent agent tier
+            # to keep costs down for this auxiliary search
+            result = await find_anatomic_locations(
+                finding_name=finding,
+                description=ctx.deps.finding_description,
+                model_tier="small",
+            )
+
+            locations = {
+                "primary_location": result.primary_location.model_dump(),
+                "alternate_locations": [loc.model_dump() for loc in result.alternate_locations],
+                "reasoning": result.reasoning,
+            }
+
+            logger.info(f"Anatomic location search for '{finding}': {result.primary_location.concept_text}")
+            return json.dumps(locations, indent=2)
+
+        except Exception as e:
+            logger.error(f"Error in anatomic location tool: {e}")
+            return json.dumps({"error": str(e)})
+
+    return agent
