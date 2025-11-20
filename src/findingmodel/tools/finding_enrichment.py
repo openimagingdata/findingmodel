@@ -247,3 +247,64 @@ async def lookup_finding_in_index(identifier: str) -> FindingModelFull | None:
         # Log database connection errors but re-raise for caller to handle
         logger.error(f"Error looking up finding in index: {e}")
         raise RuntimeError(f"Database error while looking up finding '{identifier}': {e}") from e
+
+
+async def search_ontology_codes_for_finding(
+    finding_name: str, description: str | None = None
+) -> tuple[list[IndexCode], list[IndexCode]]:
+    """Search for ontology codes (SNOMED CT and RadLex) that represent a finding.
+
+    Wraps match_ontology_concepts() with exclude_anatomical=True to filter out
+    anatomic location codes and returns only disorder/finding codes.
+
+    Args:
+        finding_name: Name of the imaging finding (e.g., "pneumonia", "liver lesion")
+        description: Optional detailed description for context
+
+    Returns:
+        Tuple of (snomed_codes, radlex_codes) as IndexCode objects.
+        Both lists may be empty if no matches found.
+
+    Raises:
+        Exception: If the ontology search fails
+
+    Example:
+        >>> snomed, radlex = await search_ontology_codes_for_finding("pneumonia")
+        >>> print(f"Found {len(snomed)} SNOMED codes and {len(radlex)} RadLex codes")
+        Found 3 SNOMED codes and 2 RadLex codes
+    """
+    from findingmodel.tools.ontology_concept_match import match_ontology_concepts
+
+    logger.info(f"Searching ontology codes for finding: {finding_name}")
+
+    try:
+        categorized_results = await match_ontology_concepts(
+            finding_name=finding_name,
+            finding_description=description,
+            exclude_anatomical=True,
+        )
+
+        # Collect high-confidence results (exact + should_include)
+        all_results = [
+            *categorized_results.exact_matches,
+            *categorized_results.should_include,
+        ]
+
+        # Separate by ontology system
+        snomed_codes: list[IndexCode] = []
+        radlex_codes: list[IndexCode] = []
+
+        for result in all_results:
+            index_code = result.as_index_code()
+            if index_code.system == "SNOMEDCT":
+                snomed_codes.append(index_code)
+            elif index_code.system == "RADLEX":
+                radlex_codes.append(index_code)
+
+        logger.info(f"Found {len(snomed_codes)} SNOMED CT and {len(radlex_codes)} RadLex codes")
+
+        return (snomed_codes, radlex_codes)
+
+    except Exception as e:
+        logger.error(f"Error searching ontology codes: {e}")
+        raise
