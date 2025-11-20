@@ -13,6 +13,9 @@ from typing import Annotated
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import Literal
 
+from findingmodel import logger
+from findingmodel.finding_model import FindingModelFull
+from findingmodel.index import DuckDBIndex
 from findingmodel.index_code import IndexCode
 from findingmodel.tools.ontology_search import OntologySearchResult
 
@@ -184,3 +187,63 @@ class FindingEnrichmentResult(BaseModel):
         if invalid:
             raise ValueError(f"Invalid etiology categories: {invalid}. Must be from ETIOLOGIES list.")
         return v
+
+
+async def lookup_finding_in_index(identifier: str) -> FindingModelFull | None:
+    """Look up a finding model in the DuckDB index by OIFM ID or name.
+
+    This function attempts to retrieve a finding model from the index, first trying
+    to match the identifier as an OIFM ID (exact match), then falling back to name-based
+    search if not found. The function properly manages DuckDB connection lifecycle
+    using a context manager.
+
+    Args:
+        identifier: Either an OIFM ID (e.g., "OIFM_AI_000001") or a finding name
+                   (e.g., "pneumonia"). Name matching is case-insensitive and
+                   supports synonym matching.
+
+    Returns:
+        FindingModelFull object if found, None if not found.
+        Returns None rather than raising an error when the finding doesn't exist,
+        as missing findings are a normal case in the enrichment workflow.
+
+    Raises:
+        RuntimeError: If there are database connection issues or other system errors.
+                     Does NOT raise on missing findings (returns None instead).
+
+    Example:
+        >>> # Lookup by OIFM ID
+        >>> model = await lookup_finding_in_index("OIFM_AI_000001")
+        >>> if model:
+        ...     print(f"Found: {model.name}")
+        ...
+        >>> # Lookup by name
+        >>> model = await lookup_finding_in_index("pneumonia")
+        >>> if model is None:
+        ...     print("Finding not in index")
+    """
+    logger.debug(f"Looking up finding in index: {identifier}")
+
+    index = DuckDBIndex(read_only=True)
+
+    try:
+        async with index:
+            # Use public API - get() handles OIFM ID resolution internally
+            # Tries in order: OIFM ID match, name match, slug match, synonym match
+            entry = await index.get(identifier)
+
+            if entry is None:
+                logger.debug(f"Finding not found in index: {identifier}")
+                return None
+
+            logger.debug(f"Resolved {identifier} to {entry.oifm_id}")
+
+            # Get the full model
+            model = await index.get_full(entry.oifm_id)
+            logger.debug(f"Retrieved full model: {model.oifm_id} ({model.name})")
+            return model
+
+    except Exception as e:
+        # Log database connection errors but re-raise for caller to handle
+        logger.error(f"Error looking up finding in index: {e}")
+        raise RuntimeError(f"Database error while looking up finding '{identifier}': {e}") from e
