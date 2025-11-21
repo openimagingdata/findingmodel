@@ -338,8 +338,7 @@ def ensure_db_file(
             # If manifest fetch fails but we have a local file, use it
             if target.exists():
                 logger.warning(
-                    f"Cannot fetch manifest ({e}), but using existing local file: {target}. "
-                    f"Database may be outdated."
+                    f"Cannot fetch manifest ({e}), but using existing local file: {target}. Database may be outdated."
                 )
                 return target
             else:
