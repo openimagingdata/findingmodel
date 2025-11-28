@@ -220,7 +220,7 @@ class TestEnsureDbFileRealDownload:
             # Second call - should reuse cached file without re-download
             original_mtime = result.stat().st_mtime
             result2 = ensure_db_file(
-                "findingmodels-test.duckdb",
+                "test.duckdb",  # Use same filename as downloaded (derived from manifest_key)
                 url,
                 file_hash,
                 manifest_key="test",

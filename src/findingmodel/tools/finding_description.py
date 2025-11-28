@@ -6,10 +6,10 @@ from typing import Literal
 from pydantic_ai import Agent
 
 from findingmodel import logger
-from findingmodel.config import ModelProvider, ModelTier, settings
+from findingmodel.config import ModelTier, settings
 from findingmodel.finding_info import FindingInfo
 
-from .common import get_async_tavily_client, get_model
+from .common import get_async_tavily_client
 from .prompt_template import load_prompt_template, render_agent_prompt
 
 PROMPT_TEMPLATE_NAME = "get_finding_description"
@@ -18,19 +18,17 @@ PROMPT_TEMPLATE_NAME = "get_finding_description"
 async def create_info_from_name(
     finding_name: str,
     model_tier: ModelTier = "small",
-    provider: ModelProvider | None = None,
 ) -> FindingInfo:
     """
     Create a FindingInfo object from a finding name using the AI API.
     :param finding_name: The name of the finding to describe.
     :param model_tier: The model tier to use ("small", "base", or "full").
-    :param provider: The model provider to use ("openai" or "anthropic"). If None, uses default from settings.
     :return: A FindingInfo object containing the finding name, synonyms, and description.
     """
     template = load_prompt_template(PROMPT_TEMPLATE_NAME)
     instructions, user_prompt = render_agent_prompt(template, finding_name=finding_name)
 
-    agent = _create_finding_info_agent(model_tier, instructions, provider=provider)
+    agent = _create_finding_info_agent(model_tier, instructions)
 
     result = await agent.run(user_prompt)
     finding_info = _normalize_finding_info(result.output, original_input=finding_name)
@@ -77,12 +75,11 @@ def _normalize_finding_info(finding_info: FindingInfo, *, original_input: str) -
 def _create_finding_info_agent(
     model_tier: ModelTier,
     instructions: str,
-    provider: ModelProvider | None = None,
 ) -> Agent[None, FindingInfo]:
     """Factory to build the finding info agent, extracted for easier testing overrides."""
 
     return Agent[None, FindingInfo](
-        model=get_model(model_tier, provider=provider),
+        model=settings.get_model(model_tier),
         output_type=FindingInfo,
         instructions=instructions,
     )
@@ -160,7 +157,7 @@ async def add_details_to_info(
 
     # Create agent with search tool
     agent = Agent[FindingInfo, str](
-        get_model("small"),
+        settings.get_model("small"),
         deps_type=FindingInfo,
         output_type=str,
         tools=[search_radiology_sources],
@@ -202,26 +199,20 @@ async def add_details_to_info(
 
 
 # Deprecated aliases for backward compatibility
-async def describe_finding_name(finding_name: str, model_name: str = settings.openai_default_model) -> FindingInfo:
+async def describe_finding_name(finding_name: str, model_name: str | None = None) -> FindingInfo:
     """
     DEPRECATED: Use create_info_from_name instead.
-    Get a description of a finding name using the OpenAI API.
+    Get a description of a finding name using the AI API.
     """
     warnings.warn(
         "describe_finding_name is deprecated, use create_info_from_name instead", DeprecationWarning, stacklevel=2
     )
-    # Map model_name to tier for backward compatibility
-    if model_name == settings.openai_default_model_small:
-        tier: ModelTier = "small"
-    elif model_name == settings.openai_default_model_full:
-        tier = "full"
-    else:
-        tier = "base"
-    return await create_info_from_name(finding_name, tier)
+    # Ignoring model_name parameter - use base tier
+    return await create_info_from_name(finding_name, "base")
 
 
 async def get_detail_on_finding(
-    finding: FindingInfo, search_depth: Literal["basic", "advanced"] = settings.tavily_search_depth
+    finding: FindingInfo, search_depth: Literal["basic", "advanced"] = "advanced"
 ) -> FindingInfo | None:
     """
     DEPRECATED: Use add_details_to_info instead.
@@ -234,30 +225,22 @@ async def get_detail_on_finding(
 
 
 # Additional deprecated aliases for the intermediate names
-async def create_finding_info_from_name(
-    finding_name: str, model_name: str = settings.openai_default_model
-) -> FindingInfo:
+async def create_finding_info_from_name(finding_name: str, model_name: str | None = None) -> FindingInfo:
     """
     DEPRECATED: Use create_info_from_name instead.
-    Create a FindingInfo object from a finding name using the OpenAI API.
+    Create a FindingInfo object from a finding name using the AI API.
     """
     warnings.warn(
         "create_finding_info_from_name is deprecated, use create_info_from_name instead",
         DeprecationWarning,
         stacklevel=2,
     )
-    # Map model_name to tier for backward compatibility
-    if model_name == settings.openai_default_model_small:
-        tier: ModelTier = "small"
-    elif model_name == settings.openai_default_model_full:
-        tier = "full"
-    else:
-        tier = "base"
-    return await create_info_from_name(finding_name, tier)
+    # Ignoring model_name parameter - use base tier
+    return await create_info_from_name(finding_name, "base")
 
 
 async def add_details_to_finding_info(
-    finding: FindingInfo, search_depth: Literal["basic", "advanced"] = settings.tavily_search_depth
+    finding: FindingInfo, search_depth: Literal["basic", "advanced"] = "advanced"
 ) -> FindingInfo | None:
     """
     DEPRECATED: Use add_details_to_info instead.

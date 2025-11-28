@@ -20,7 +20,7 @@ Claude Code must follow these instructions when working in this repository.
 ## 2. Architecture touchpoints
 
 - Protocol-based backend pattern documented in Serena `protocol_based_architecture_2025`; follow that interface when adding search providers.
-- Multi-provider AI support: OpenAI and Anthropic backends with tier-based model selection (main/full/small); configure via `MODEL_PROVIDER` env var or runtime `provider=` parameter—see Serena `api_integration` for details.
+- Multi-provider AI support: OpenAI, Anthropic, and Gateway backends with tier-based model selection (base/full/small); configure via `DEFAULT_MODEL` env var using Pydantic AI format (e.g., `openai:gpt-5-mini`, `anthropic:claude-sonnet-4-5`, `gateway/openai:gpt-5`).
 - AI workflow conventions rely on two-agent patterns and structured outputs—review Serena `ontology_concept_search_refactoring` and `anatomic_location_search_implementation` before refactoring those areas.
 - Mongo/JSONL index behaviour summarized in `project_state_january_2025` and `ontology_search_optimizations_2025` memories.
 - DuckDB index migration drops search indexes before any write, clears denormalized tables manually, and rebuilds HNSW/FTS afterward; no foreign keys remain (see Serena `index_duckdb_migration_decisions_2025`).

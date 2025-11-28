@@ -12,7 +12,6 @@ import httpx
 import pytest
 from click.testing import CliRunner
 from openai import AsyncOpenAI
-from pydantic_ai.models.test import TestModel
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -28,7 +27,7 @@ from findingmodel.anatomic_migration import (
     validate_anatomic_record,
 )
 from findingmodel.cli import cli
-from findingmodel.config import settings
+from findingmodel.config import FindingModelConfig, settings
 from findingmodel.tools.anatomic_location_search import (
     AnatomicQueryTerms,
     LocationSearchResponse,
@@ -218,10 +217,7 @@ class TestGenerateAnatomicQueryTerms:
     @pytest.mark.asyncio
     async def test_successful_generation(self) -> None:
         """Test successful query term generation."""
-        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
-            # Mock the agent
-            mock_model.return_value = TestModel()
-
+        with patch.object(FindingModelConfig, "get_model", return_value="test"):
             # The TestModel will return a default AnatomicQueryTerms
             result = await generate_anatomic_query_terms("pneumonia")
 
@@ -231,9 +227,7 @@ class TestGenerateAnatomicQueryTerms:
     @pytest.mark.asyncio
     async def test_generation_with_description(self) -> None:
         """Test query term generation with description."""
-        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
-            mock_model.return_value = TestModel()
-
+        with patch.object(FindingModelConfig, "get_model", return_value="test"):
             result = await generate_anatomic_query_terms("pneumonia", "Infection of the lung parenchyma")
 
             assert isinstance(result, AnatomicQueryTerms)
@@ -241,7 +235,10 @@ class TestGenerateAnatomicQueryTerms:
     @pytest.mark.asyncio
     async def test_generation_fallback_on_error(self) -> None:
         """Test fallback when generation fails."""
-        with patch("findingmodel.tools.anatomic_location_search.Agent.run") as mock_run:
+        with (
+            patch.object(FindingModelConfig, "get_model", return_value="test"),
+            patch("findingmodel.tools.anatomic_location_search.Agent.run") as mock_run,
+        ):
             mock_run.side_effect = Exception("API error")
 
             result = await generate_anatomic_query_terms("test finding")
@@ -300,9 +297,7 @@ class TestCreateLocationSelectionAgent:
 
     def test_agent_creation(self) -> None:
         """Test creating location selection agent."""
-        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
-            mock_model.return_value = TestModel()
-
+        with patch.object(FindingModelConfig, "get_model", return_value="test"):
             agent = create_location_selection_agent()
 
             # Should create an agent
@@ -312,13 +307,11 @@ class TestCreateLocationSelectionAgent:
 
     def test_agent_with_custom_model(self) -> None:
         """Test creating agent with custom model."""
-        with patch("findingmodel.tools.anatomic_location_search.get_model") as mock_model:
-            mock_model.return_value = TestModel()
-
+        with patch.object(FindingModelConfig, "get_model", return_value="test") as mock_get_model:
             agent = create_location_selection_agent("full")
 
             # Should pass model tier to get_model and create an agent
-            mock_model.assert_called_once_with("full")
+            mock_get_model.assert_called_once_with("full")
             assert agent is not None
 
 
@@ -992,7 +985,14 @@ class TestAnatomicCLI:
         runner = CliRunner()
         db_path = tmp_path / "test_anatomic.duckdb"
 
-        with patch("findingmodel.cli.AsyncOpenAI", return_value=_fake_openai_client()):
+        # Mock both the AsyncOpenAI client and the API key check
+        mock_api_key = MagicMock()
+        mock_api_key.get_secret_value.return_value = "test-key"
+
+        with (
+            patch("findingmodel.cli.AsyncOpenAI", return_value=_fake_openai_client()),
+            patch.object(settings, "openai_api_key", mock_api_key),
+        ):
             result = runner.invoke(
                 cli, ["anatomic", "build", "--source", str(TEST_DATA_FILE), "--output", str(db_path)]
             )
@@ -1047,8 +1047,15 @@ class TestAnatomicCLI:
         runner = CliRunner()
         db_path = tmp_path / "stats_test.duckdb"
 
+        # Mock both the AsyncOpenAI client and the API key check
+        mock_api_key = MagicMock()
+        mock_api_key.get_secret_value.return_value = "test-key"
+
         # Build database first
-        with patch("findingmodel.cli.AsyncOpenAI", return_value=_fake_openai_client()):
+        with (
+            patch("findingmodel.cli.AsyncOpenAI", return_value=_fake_openai_client()),
+            patch.object(settings, "openai_api_key", mock_api_key),
+        ):
             build_result = runner.invoke(
                 cli, ["anatomic", "build", "--source", str(TEST_DATA_FILE), "--output", str(db_path)]
             )

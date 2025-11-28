@@ -34,11 +34,15 @@ Different features require different API keys:
 | **800+ Medical Ontologies** | `BIOONTOLOGY_API_KEY` | Access BioOntology.org for SNOMED-CT, ICD-10, LOINC, etc. |
 
 ```bash
-# AI Provider - choose one (OpenAI is default)
+# AI Model Configuration (Pydantic AI format: "provider:model")
+# DEFAULT_MODEL=openai:gpt-5-mini          # or anthropic:claude-sonnet-4-5
+# DEFAULT_MODEL_FULL=openai:gpt-5          # for complex tasks
+# DEFAULT_MODEL_SMALL=openai:gpt-5-nano    # for simple/fast tasks
+
+# API Keys - at least one required for AI tools
 OPENAI_API_KEY=your_key_here
-# OR
-ANTHROPIC_API_KEY=your_key_here
-MODEL_PROVIDER=anthropic  # Optional, defaults to openai
+# ANTHROPIC_API_KEY=your_key_here          # if using anthropic:* models
+# PYDANTIC_AI_GATEWAY_API_KEY=your_key     # if using gateway/* models
 
 # Optional - only needed for add_details_to_info()
 TAVILY_API_KEY=your_key_here

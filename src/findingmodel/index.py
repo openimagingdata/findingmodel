@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from findingmodel import logger
 from findingmodel.common import normalize_name
-from findingmodel.config import settings
+from findingmodel.config import ConfigurationError, settings
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
 from findingmodel.tools.duckdb_utils import (
@@ -1772,7 +1772,8 @@ class DuckDBIndex:
 
     async def _ensure_openai_client(self) -> AsyncOpenAI:
         if self._openai_client is None:
-            settings.check_ready_for_openai()
+            if not settings.openai_api_key.get_secret_value():
+                raise ConfigurationError("OPENAI_API_KEY required for embeddings")
             self._openai_client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
         return self._openai_client
 

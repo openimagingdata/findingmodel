@@ -48,17 +48,17 @@ python -m evals.markdown_in
 To compare performance between providers on any eval suite:
 
 ```bash
-# Run with default provider (OpenAI)
+# Run with default model (OpenAI)
 task evals:finding_description
 
 # Run with Anthropic
-MODEL_PROVIDER=anthropic task evals:finding_description
+DEFAULT_MODEL=anthropic:claude-sonnet-4-5 task evals:finding_description
 
 # Or directly:
-MODEL_PROVIDER=anthropic python -m evals.finding_description
+DEFAULT_MODEL=anthropic:claude-sonnet-4-5 python -m evals.finding_description
 ```
 
-The eval suite will use whichever provider you specify. Compare the overall scores and individual evaluator results to see which provider performs better for your use case.
+The eval suite will use whichever model you specify via `DEFAULT_MODEL` (Pydantic AI format: `provider:model`). Compare the overall scores and individual evaluator results to see which provider performs better for your use case.
 
 ### From Python
 

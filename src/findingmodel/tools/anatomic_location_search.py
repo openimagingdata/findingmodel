@@ -15,8 +15,7 @@ from pydantic_ai import Agent
 from typing_extensions import Literal
 
 from findingmodel import logger
-from findingmodel.config import ModelTier
-from findingmodel.tools.common import get_model
+from findingmodel.config import ModelTier, settings
 from findingmodel.tools.duckdb_search import DuckDBOntologySearchClient
 from findingmodel.tools.ontology_search import (
     OntologySearchProtocol,
@@ -55,7 +54,7 @@ async def generate_anatomic_query_terms(
         List of anatomic location search terms
     """
     agent = Agent[None, AnatomicQueryTerms](
-        model=get_model(model_tier),
+        model=settings.get_model(model_tier),
         output_type=AnatomicQueryTerms,
         system_prompt="""You are an anatomic location specialist for medical imaging findings.
         
@@ -166,7 +165,7 @@ def create_location_selection_agent(model_tier: ModelTier = "small") -> Agent[No
         Agent configured for location selection
     """
     return Agent[None, LocationSearchResponse](
-        model=get_model(model_tier),
+        model=settings.get_model(model_tier),
         output_type=LocationSearchResponse,
         system_prompt="""You are a medical imaging specialist who selects appropriate anatomic 
 locations for imaging findings. Given search results from medical ontology databases, you must 

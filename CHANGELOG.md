@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased—presumed 0.6.1]
+## [Unreleased—presumed 0.7.0]
 
 ### Added
 
@@ -14,8 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build-and-publish mode (`--defs-dir`) or publish-only mode (`--database`)
   - S3/Tigris storage integration with date-based filenames (`findingmodels_YYYYMMDD.duckdb`)
   - See `docs/database-management.md` for maintainer guide
+- **Pydantic AI Gateway Support** - Use hosted gateway for unified API access:
+  - Configure via `PYDANTIC_AI_GATEWAY_API_KEY` and `gateway/openai:*` or `gateway/anthropic:*` model strings
+  - Customizable base URL via `PYDANTIC_AI_GATEWAY_BASE_URL`
 
 ### Changed
+
+- **BREAKING: Unified Model Configuration** - Migrated from separate provider/model env vars to Pydantic AI's `provider:model` string format:
+  - New env vars: `DEFAULT_MODEL`, `DEFAULT_MODEL_FULL`, `DEFAULT_MODEL_SMALL` (e.g., `openai:gpt-5-mini`, `anthropic:claude-sonnet-4-5`)
+  - Removed: `MODEL_PROVIDER`, `OPENAI_DEFAULT_MODEL`, `ANTHROPIC_DEFAULT_MODEL` and variants
+  - Model selection moved from `get_model()` function to `settings.get_model(tier)` method
+  - OpenAI now uses Responses API (`OpenAIResponsesModel`) instead of Chat Completions
+  - Small tier OpenAI models use minimal reasoning effort for faster responses
 
 ### Fixed
 
@@ -24,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 ### Removed
+
+- `ModelProvider` enum and `model_provider` configuration field
+- `get_model()` and `get_openai_model()` functions from `tools.common`
+- `provider` parameter from tool functions (now inferred from model string)
+- `check_ready_for_openai()` and `check_ready_for_anthropic()` methods
 
 ## [0.6.0] - 2025-11-09
 

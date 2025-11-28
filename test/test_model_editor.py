@@ -23,6 +23,10 @@ def _disable_model_requests() -> Iterator[None]:
 @pytest.mark.asyncio
 async def test_edit_model_natural_language_add_attribute(real_model: FindingModelFull) -> None:
     """Test adding an attribute via natural language command."""
+    from unittest.mock import patch
+
+    from findingmodel.config import FindingModelConfig
+
     # Use provided real model fixture
     model = real_model
 
@@ -38,7 +42,10 @@ async def test_edit_model_natural_language_add_attribute(real_model: FindingMode
     modified_model = FindingModelFull.model_validate(base_data)
 
     # Use TestModel to override the real model and supply a controlled output (EditResult)
-    agent = model_editor.create_edit_agent()
+    # Need to mock get_model to avoid API key check
+    with patch.object(FindingModelConfig, "get_model", return_value="test"):
+        agent = model_editor.create_edit_agent()
+
     command = "Add attribute 'severity' with values mild, moderate, severe."
     mock_output = model_editor.EditResult(
         model=modified_model,
@@ -126,19 +133,24 @@ async def test_edit_model_natural_language_callout_real_api(real_model: FindingM
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
-        # Create agent with fast model for integration test
-        from findingmodel.tools.common import get_openai_model
+        # Override model settings to use a fast model for integration test
+        from findingmodel import config
 
-        fast_agent = model_editor.create_edit_agent()
-        fast_agent.model = get_openai_model("gpt-4o-mini")
+        original_model = config.settings.default_model
+        config.settings.default_model = "openai:gpt-4o-mini"
 
-        command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
-        result = await model_editor.edit_model_natural_language(real_model, command, agent=fast_agent)
+        try:
+            fast_agent = model_editor.create_edit_agent()
 
-        # Verify we got a valid result structure back
-        assert isinstance(result.model, FindingModelFull)
-        assert isinstance(result.changes, list)
-        assert isinstance(result.rejections, list)
+            command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
+            result = await model_editor.edit_model_natural_language(real_model, command, agent=fast_agent)
+
+            # Verify we got a valid result structure back
+            assert isinstance(result.model, FindingModelFull)
+            assert isinstance(result.changes, list)
+            assert isinstance(result.rejections, list)
+        finally:
+            config.settings.default_model = original_model
     finally:
         models.ALLOW_MODEL_REQUESTS = original
 

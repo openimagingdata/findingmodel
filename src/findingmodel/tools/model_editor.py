@@ -6,10 +6,9 @@ from pydantic_ai import ModelRetry, RunContext
 from pydantic_ai.agent import Agent
 
 from findingmodel import Index
-from findingmodel.config import ModelTier
+from findingmodel.config import ModelTier, settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
-from findingmodel.tools.common import get_model
 
 # Module-level Index instance with lazy initialization
 _index: Index | None = None
@@ -101,7 +100,7 @@ def create_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditRes
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=get_model(model_tier),
+        model=settings.get_model(model_tier),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,
@@ -142,7 +141,7 @@ def create_markdown_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=get_model(model_tier),
+        model=settings.get_model(model_tier),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,

@@ -5,6 +5,10 @@ import httpx
 import openai
 from platformdirs import user_data_dir
 from pydantic import BeforeValidator, Field, SecretStr, model_validator
+from pydantic_ai.models import Model
+from pydantic_ai.models.openai import OpenAIResponsesModel
+from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai.settings import ModelSettings
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
@@ -17,7 +21,6 @@ class ConfigurationError(RuntimeError):
 
 
 # Type definitions for model configuration
-ModelProvider = Literal["openai", "anthropic"]
 ModelTier = Literal["base", "small", "full"]
 
 
@@ -38,29 +41,26 @@ QuoteStrippedSecretStr = Annotated[SecretStr, BeforeValidator(strip_quotes_secre
 
 
 class FindingModelConfig(BaseSettings):
-    # OpenAI API
+    # API Keys
     openai_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-    openai_default_model: str = Field(default="gpt-5-mini")
-    openai_default_model_full: str = Field(default="gpt-5")
-    openai_default_model_small: str = Field(default="gpt-5-nano")
+    anthropic_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    pydantic_ai_gateway_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    pydantic_ai_gateway_base_url: str = Field(
+        default="https://gateway.pydantic.dev/proxy/",
+        description="Base URL for Pydantic AI Gateway (default: hosted gateway)",
+    )
+
+    # Model configuration (Pydantic AI string format: "provider:model")
+    # Examples: "openai:gpt-5-mini", "anthropic:claude-sonnet-4-5", "gateway/openai:gpt-5"
+    default_model: str = Field(default="openai:gpt-5-mini")
+    default_model_full: str = Field(default="openai:gpt-5")
+    default_model_small: str = Field(default="openai:gpt-5-nano")
 
     # Tavily API
     tavily_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
     tavily_search_depth: Literal["basic", "advanced"] = Field(
         default="advanced",
         description="Tavily search depth: 'basic' or 'advanced'",
-    )
-
-    # Anthropic API (optional alternative to OpenAI)
-    anthropic_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-    anthropic_default_model: str = Field(default="claude-sonnet-4-5")
-    anthropic_default_model_full: str = Field(default="claude-opus-4-1")
-    anthropic_default_model_small: str = Field(default="claude-haiku-4-5")
-
-    # Model provider selection
-    model_provider: ModelProvider = Field(
-        default="openai",
-        description="AI model provider: 'openai' or 'anthropic'",
     )
 
     # BioOntology API
@@ -141,20 +141,88 @@ class FindingModelConfig(BaseSettings):
 
         return self
 
-    def check_ready_for_openai(self) -> Literal[True]:
-        if not self.openai_api_key.get_secret_value():
-            raise ConfigurationError("OpenAI API key is not set")
-        return True
-
     def check_ready_for_tavily(self) -> Literal[True]:
         if not self.tavily_api_key.get_secret_value():
             raise ConfigurationError("Tavily API key is not set")
         return True
 
-    def check_ready_for_anthropic(self) -> Literal[True]:
-        if not self.anthropic_api_key.get_secret_value():
-            raise ConfigurationError("Anthropic API key is not set")
-        return True
+    def get_model(self, model_tier: ModelTier = "base") -> Model:
+        """Get a Pydantic AI model instance for the requested tier.
+
+        Args:
+            model_tier: "base", "small", or "full"
+
+        Returns:
+            Configured Model instance
+
+        Raises:
+            ConfigurationError: If API key missing or provider unknown
+        """
+        model_string = {
+            "base": self.default_model,
+            "full": self.default_model_full,
+            "small": self.default_model_small,
+        }[model_tier]
+
+        if ":" not in model_string:
+            raise ConfigurationError(f"Invalid model format '{model_string}'. Expected 'provider:model_name'")
+
+        provider_part, model_name = model_string.split(":", 1)
+        parts = provider_part.split("/")
+
+        # Small tier uses minimal reasoning for faster/cheaper OpenAI responses
+        openai_settings = (
+            ModelSettings(extra_body={"reasoning": {"effort": "minimal"}}) if model_tier == "small" else None
+        )
+
+        if parts == ["openai"]:
+            return self._make_openai_model(model_name, openai_settings)
+        elif parts == ["anthropic"]:
+            return self._make_anthropic_model(model_name)
+        elif parts == ["gateway", "openai"]:
+            return self._make_gateway_openai_model(model_name, openai_settings)
+        elif parts == ["gateway", "anthropic"]:
+            return self._make_gateway_anthropic_model(model_name)
+        else:
+            raise ConfigurationError(f"Unknown provider '{provider_part}'")
+
+    def _make_openai_model(self, model_name: str, settings: ModelSettings | None) -> OpenAIResponsesModel:
+        """Create an OpenAI model with configured API key."""
+        api_key = self.openai_api_key.get_secret_value()
+        if not api_key:
+            raise ConfigurationError("OPENAI_API_KEY not configured")
+        return OpenAIResponsesModel(model_name, provider=OpenAIProvider(api_key=api_key), settings=settings)
+
+    def _make_anthropic_model(self, model_name: str) -> Model:
+        """Create an Anthropic model with configured API key."""
+        from pydantic_ai.models.anthropic import AnthropicModel
+        from pydantic_ai.providers.anthropic import AnthropicProvider
+
+        api_key = self.anthropic_api_key.get_secret_value()
+        if not api_key:
+            raise ConfigurationError("ANTHROPIC_API_KEY not configured")
+        return AnthropicModel(model_name, provider=AnthropicProvider(api_key=api_key))
+
+    def _make_gateway_openai_model(self, model_name: str, settings: ModelSettings | None) -> OpenAIResponsesModel:
+        """Create an OpenAI model via Pydantic AI Gateway."""
+        from pydantic_ai.providers.gateway import gateway_provider
+
+        api_key = self.pydantic_ai_gateway_api_key.get_secret_value()
+        if not api_key:
+            raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
+        provider = gateway_provider("openai-responses", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
+        return OpenAIResponsesModel(model_name, provider=provider, settings=settings)
+
+    def _make_gateway_anthropic_model(self, model_name: str) -> Model:
+        """Create an Anthropic model via Pydantic AI Gateway."""
+        from pydantic_ai.models.anthropic import AnthropicModel
+        from pydantic_ai.providers.gateway import gateway_provider
+
+        api_key = self.pydantic_ai_gateway_api_key.get_secret_value()
+        if not api_key:
+            raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
+        provider = gateway_provider("anthropic", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
+        return AnthropicModel(model_name, provider=provider)
 
 
 settings = FindingModelConfig()
@@ -338,8 +406,7 @@ def ensure_db_file(
             # If manifest fetch fails but we have a local file, use it
             if target.exists():
                 logger.warning(
-                    f"Cannot fetch manifest ({e}), but using existing local file: {target}. "
-                    f"Database may be outdated."
+                    f"Cannot fetch manifest ({e}), but using existing local file: {target}. Database may be outdated."
                 )
                 return target
             else:
@@ -435,7 +502,6 @@ def clear_manifest_cache() -> None:
 __all__ = [
     "ConfigurationError",
     "FindingModelConfig",
-    "ModelProvider",
     "ModelTier",
     "clear_manifest_cache",
     "ensure_anatomic_db",

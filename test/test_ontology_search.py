@@ -207,15 +207,13 @@ async def test_generate_finding_query_terms_with_description() -> None:
 
 def test_create_query_generator_agent() -> None:
     """Test that the query generator agent is created correctly."""
-    with patch("findingmodel.tools.ontology_concept_match.get_model") as mock_model:
-        # Mock the get_model to return a TestModel instead of trying to create a real OpenAI client
-        test_model = TestModel()
-        mock_model.return_value = test_model
+    from findingmodel.config import FindingModelConfig
 
+    with patch.object(FindingModelConfig, "get_model", return_value="test") as mock_get_model:
         agent = create_query_generator_agent()
 
         # Should get the default model tier
-        mock_model.assert_called_once()
+        mock_get_model.assert_called_once()
 
         # Check agent configuration - output should be list[str]
         # Note: _output_type is the actual type annotation list[str], not just list
@@ -429,15 +427,13 @@ def test_ensure_exact_matches_respects_limit() -> None:
 
 def test_categorization_agent_creation() -> None:
     """Test that agent is created properly."""
-    with patch("findingmodel.tools.ontology_concept_match.get_model") as mock_model:
-        # Mock the get_model to return a TestModel instead of trying to create a real OpenAI client
-        test_model = TestModel()
-        mock_model.return_value = test_model
+    from findingmodel.config import FindingModelConfig
 
+    with patch.object(FindingModelConfig, "get_model", return_value="test") as mock_get_model:
         agent = create_categorization_agent()
 
         # Should get the default model tier
-        mock_model.assert_called_once()
+        mock_get_model.assert_called_once()
 
         # Agent should exist
         assert agent is not None
@@ -446,6 +442,8 @@ def test_categorization_agent_creation() -> None:
 @pytest.mark.asyncio
 async def test_categorization_with_test_model() -> None:
     """Test categorization using TestModel."""
+    from findingmodel.config import FindingModelConfig
+
     # Create test response
     test_output = CategorizedConcepts(
         exact_matches=["RID5350"],
@@ -454,8 +452,10 @@ async def test_categorization_with_test_model() -> None:
         rationale="Test categorization",
     )
 
-    # Create agent and override with TestModel
-    agent = create_categorization_agent()
+    # Create agent and override with TestModel (need to mock get_model to avoid API key check)
+    with patch.object(FindingModelConfig, "get_model", return_value="test"):
+        agent = create_categorization_agent()
+
     # TestModel requires custom_output_args to be a dict, not a Pydantic model
     test_model = TestModel(custom_output_args=test_output.model_dump())
 
@@ -496,14 +496,18 @@ async def test_match_ontology_concepts_integration() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    # Mock the categorization agent
+    # Mock the categorization agent and query generation
     with (
         patch("findingmodel.tools.ontology_concept_match.create_categorization_agent") as mock_create,
         patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
         patch("findingmodel.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
+
+        # Mock query term generation
+        mock_query_gen.return_value = ["pneumonia", "lung infection"]
 
         mock_agent = MagicMock()
         mock_result = MagicMock()
@@ -543,14 +547,18 @@ async def test_match_ontology_concepts_with_custom_ontologies() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    # Mock the categorization agent
+    # Mock the categorization agent and query generation
     with (
         patch("findingmodel.tools.ontology_concept_match.create_categorization_agent") as mock_create,
         patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
         patch("findingmodel.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
+
+        # Mock query term generation
+        mock_query_gen.return_value = ["pneumonia", "lung infection"]
 
         mock_agent = MagicMock()
         mock_result = MagicMock()
@@ -600,14 +608,18 @@ async def test_match_ontology_concepts_with_none_ontologies() -> None:
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
-    # Mock the categorization agent
+    # Mock the categorization agent and query generation
     with (
         patch("findingmodel.tools.ontology_concept_match.create_categorization_agent") as mock_create,
         patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
         patch("findingmodel.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
+
+        # Mock query term generation
+        mock_query_gen.return_value = ["pneumonia", "lung infection"]
 
         mock_agent = MagicMock()
         mock_result = MagicMock()
@@ -645,9 +657,15 @@ async def test_match_ontology_concepts_with_none_ontologies() -> None:
 @pytest.mark.asyncio
 async def test_match_ontology_concepts_missing_api_key() -> None:
     """Test that match_ontology_concepts raises ValueError when BioOntology API key is not configured."""
-    with patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings:
+    with (
+        patch("findingmodel.tools.ontology_concept_match.settings") as mock_settings,
+        patch("findingmodel.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
+    ):
         # Mock that API key is not configured
         mock_settings.bioontology_api_key = None
+
+        # Mock query term generation (it gets called before the API key check)
+        mock_query_gen.return_value = ["test"]
 
         # Run and expect ValueError
         with pytest.raises(ValueError, match="BioOntology API key is required"):
@@ -679,18 +697,18 @@ async def test_match_ontology_concepts_basic_wiring() -> None:
         # Temporarily override settings to use fast model for integration test
         from findingmodel import config
 
-        original_model = config.settings.openai_default_model
-        original_small = config.settings.openai_default_model_small
-        config.settings.openai_default_model = "gpt-4o-mini"
-        config.settings.openai_default_model_small = "gpt-4o-mini"
+        original_model = config.settings.default_model
+        original_small = config.settings.default_model_small
+        config.settings.default_model = "openai:gpt-4o-mini"
+        config.settings.default_model_small = "openai:gpt-4o-mini"
 
         try:
             # Call with simplest valid input
             result = await match_ontology_concepts(finding_name="pneumonia")
         finally:
             # Restore original settings
-            config.settings.openai_default_model = original_model
-            config.settings.openai_default_model_small = original_small
+            config.settings.default_model = original_model
+            config.settings.default_model_small = original_small
 
         # Assert only on structure, not behavior
         assert result is not None

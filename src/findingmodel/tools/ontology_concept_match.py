@@ -16,7 +16,6 @@ from pydantic_ai import Agent
 
 from findingmodel import logger
 from findingmodel.config import ModelTier, settings
-from findingmodel.tools.common import get_model
 from findingmodel.tools.ontology_search import (
     BioOntologySearchClient,
     OntologySearchResult,
@@ -215,7 +214,7 @@ def create_categorization_agent(model_tier: ModelTier = "base") -> Agent[Categor
         Agent that takes CategorizationContext and produces CategorizedConcepts
     """
     return Agent[CategorizationContext, CategorizedConcepts](
-        model=get_model(model_tier),
+        model=settings.get_model(model_tier),
         output_type=CategorizedConcepts,
         deps_type=CategorizationContext,
         system_prompt="""You are a medical ontology expert.
@@ -340,7 +339,7 @@ def create_query_generator_agent(model_tier: ModelTier = "small") -> Agent[None,
         to help match against formal medical ontologies.
     """
     return Agent[None, list[str]](
-        model=get_model(model_tier),
+        model=settings.get_model(model_tier),
         output_type=list[str],
         system_prompt="""We need to find terms that might match a radiology finding name in official medical ontologies that use formal medical terminology.
 
