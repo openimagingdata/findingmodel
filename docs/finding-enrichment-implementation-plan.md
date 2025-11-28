@@ -2,7 +2,7 @@
 
 ## Implementation Status
 
-**Last Updated**: 2025-01-21
+**Last Updated**: 2025-11-25
 
 ### Phase Completion Summary
 
@@ -14,8 +14,8 @@
 | Phase 4: Enrichment Agent | ✅ Complete | Pydantic AI agent with structured output, 2 tools |
 | Phase 5: Main Function | ✅ Complete | 5-step orchestration with parallel execution |
 | Phase 6: Script Interface | ✅ Complete | scripts/enrich_finding.py with logging enabled |
-| Phase 7: Unit Tests | 🚧 Not Started | Planned |
-| Phase 8: Integration Tests | 🚧 Not Started | Planned |
+| Phase 7: Unit Tests | ✅ Complete | 57 tests covering models, helpers, agent, orchestration |
+| Phase 8: Integration Tests | ✅ Complete | 8 tests with @pytest.mark.callout for real API calls |
 | Phase 9: Manual Validation | 🚧 Not Started | Planned |
 | Phase 10: Documentation | 🚧 In Progress | PRD and plan updated, memory updates pending |
 
@@ -27,6 +27,7 @@
 4. **Best-effort errors**: asyncio.gather with return_exceptions=True allows partial results
 5. **Loguru logging**: Must explicitly enable with logger.enable("findingmodel")
 6. **JSON-only output**: Simplified script interface, no pretty-print mode
+7. **Canonical names**: When finding exists in Index, uses canonical name (e.g., "Pneumonia" not "pneumonia")
 
 ---
 
@@ -210,57 +211,72 @@ python scripts/enrich_finding.py "pneumonia" --provider anthropic
 python scripts/enrich_finding.py OIFM_AI_000001
 ```
 
-### Phase 7: Testing - Unit Tests
+### Phase 7: Testing - Unit Tests ✅
 
-**Files to create:**
-- `test/test_finding_enrichment.py` (new)
-- `test/data/test_enrichment_samples.json` (new)
+**Status**: COMPLETE
 
-**Tasks:**
-1. Set up test module with `ALLOW_MODEL_REQUESTS = False`
-2. Create fixtures:
-   - Mock FindingModel objects
-   - Mock ontology search results
-   - Mock anatomic location results
-   - TestModel/FunctionModel instances
-3. Unit tests for data models:
-   - FindingEnrichmentResult validation
-   - Enum constraints (modalities, subspecialties, etc.)
-4. Unit tests for helper functions:
-   - Index lookup with mocked DuckDB
-   - Ontology code filtering
-   - Result assembly logic
-5. Unit tests for agent with TestModel:
-   - Mock tool outputs
-   - Verify structured output format
-   - Test error handling paths
+**Files created:**
+- `test/test_finding_enrichment.py` (1,666 lines)
+- `test/data/test_enrichment_samples.json` (test fixtures)
 
-**Estimated complexity:** Medium
-**Dependencies:** Phases 1-5
-**Reference:** `test/test_anatomic_location_search.py` for patterns
+**Completed Tasks:**
+1. ✅ Set up test module with `ALLOW_MODEL_REQUESTS = False` at module level
+2. ✅ Created fixtures:
+   - `mock_finding_model`: FindingModelFull instance (Pulmonary Nodule)
+   - `mock_snomed_codes`, `mock_radlex_codes`: Lists of IndexCode objects
+   - `mock_anatomic_locations`: List of OntologySearchResult objects
+   - `mock_enrichment_context`: Complete EnrichmentContext for agent testing
+3. ✅ Unit tests for data models (28 tests):
+   - `TestFindingEnrichmentResult`: 7 tests for validation, serialization
+   - `TestEnumTypes`: 6 tests for BodyRegion, Modality, Subspecialty Literals
+   - `TestEtiologiesConstant`: 5 tests for taxonomy validation
+   - `TestEnrichmentContext`: 3 tests for context model
+   - `TestEnrichmentClassification`: 4 tests for agent output model
+   - `TestModelCompatibility`: 3 tests for integration between models
+4. ✅ Unit tests for helper functions (9 tests):
+   - `TestSearchOntologyCodesForFinding`: 5 tests for code separation, filtering, errors
+   - `TestCreateEnrichmentSystemPrompt`: 4 tests for prompt content
+5. ✅ Unit tests for agent (14 tests):
+   - `TestCreateEnrichmentAgent`: 6 tests for configuration
+   - `TestEnrichmentAgentBehavior`: 8 tests with TestModel
+6. ✅ Unit tests for orchestration (6 tests):
+   - `TestEnrichFindingOrchestration`: 6 tests for main function with mocked dependencies
 
-### Phase 8: Testing - Integration Tests
+**Implementation Notes:**
+- Total: 57 unit tests, all passing
+- Uses `@patch` for external dependencies (DuckDBIndex, ontology search, anatomic search)
+- Uses `TestModel` from pydantic_ai for agent behavior tests
+- Comprehensive error handling and edge case coverage
+- Run with: `task test -- test/test_finding_enrichment.py`
 
-**Files to modify:**
-- `test/test_finding_enrichment.py`
+### Phase 8: Testing - Integration Tests ✅
 
-**Tasks:**
-1. Add integration tests marked with `@pytest.mark.callout`
-2. Test on representative findings:
-   - Simple: "pneumonia", "fracture", "effusion"
-   - Moderate: "pulmonary nodule", "liver lesion"
-   - Complex: "ground-glass opacity", "rim-enhancing mass"
-   - Edge: "mass" (ambiguous), "artifact"
-3. Use FunctionModel for controlled agent behavior where determinism needed
-4. Verify:
-   - Ontology codes are appropriate (basic sanity checks)
-   - Classifications contain expected values
-   - Multiple values supported correctly
+**Status**: COMPLETE
+
+**Files modified:**
+- `test/test_finding_enrichment.py` (added TestFindingEnrichmentIntegration class)
+
+**Completed Tasks:**
+1. ✅ Added 8 integration tests marked with `@pytest.mark.callout`
+2. ✅ Tested representative findings:
+   - Simple: `test_enrich_pneumonia`, `test_enrich_fracture`
+   - Moderate: `test_enrich_pulmonary_nodule`, `test_enrich_liver_lesion`
+   - Complex: `test_enrich_ground_glass_opacity`
+   - Edge: `test_enrich_mass_ambiguous`, `test_enrich_unknown_finding`
+3. ✅ Proper try/finally blocks to restore ALLOW_MODEL_REQUESTS
+4. ✅ Verified:
+   - Result structure (all fields present and typed correctly)
+   - Classifications contain expected values (flexible assertions for AI variability)
+   - Multiple values supported correctly (all lists validated)
    - Empty results handled gracefully
-5. Add performance checks (should complete <30s per finding)
+5. ✅ Performance check: `test_enrich_performance_under_30s`
 
-**Estimated complexity:** Medium
-**Dependencies:** Phase 7
+**Implementation Notes:**
+- Total: 8 integration tests, require real API keys to run
+- Uses case-insensitive assertions for finding_name (Index returns canonical form)
+- Flexible assertions accommodate AI variability (e.g., "Chest" OR len > 0)
+- Run with: `task test-full -- test/test_finding_enrichment.py -m callout`
+- All tests properly restore ALLOW_MODEL_REQUESTS in finally blocks
 
 ### Phase 9: Manual Validation & Iteration
 

@@ -1,0 +1,496 @@
+[
+  {
+    "finding": "pulmonary segmental consolidation",
+    "original": {
+      "time": 24.4,
+      "snomed": [
+        {
+          "code": "95436008",
+          "display": "Lung consolidation"
+        },
+        {
+          "code": "846749001",
+          "display": "Consolidation of lung present"
+        },
+        {
+          "code": "9656002",
+          "display": "Consolidation"
+        }
+      ],
+      "radlex": [
+        {
+          "code": "RID43255",
+          "display": "consolidation"
+        }
+      ],
+      "locations": [
+        {
+          "id": "RID1301",
+          "text": "lung"
+        },
+        {
+          "id": "RID1327",
+          "text": "upper lobe of left lung"
+        },
+        {
+          "id": "RID1315",
+          "text": "lower lobe of right lung"
+        },
+        {
+          "id": "RID1303",
+          "text": "upper lobe of right lung"
+        }
+      ],
+      "body_regions": [
+        "Chest"
+      ],
+      "etiologies": [
+        "inflammatory:infectious",
+        "inflammatory",
+        "neoplastic:malignant",
+        "vascular:ischemic",
+        "vascular:hemorrhagic",
+        "neoplastic:metastatic"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "US"
+      ],
+      "subspecialties": [
+        "CH",
+        "ER",
+        "OI",
+        "PD"
+      ]
+    },
+    "agentic": {
+      "time": 26.9,
+      "snomed": [
+        {
+          "code": "95436008",
+          "display": "95436008"
+        },
+        {
+          "code": "9656002",
+          "display": "9656002"
+        },
+        {
+          "code": "846749001",
+          "display": "846749001"
+        }
+      ],
+      "radlex": [
+        {
+          "code": "RID43255",
+          "display": "RID43255"
+        }
+      ],
+      "locations": [
+        {
+          "id": "RID1301",
+          "text": "RID1301"
+        },
+        {
+          "id": "RID1303",
+          "text": "RID1303"
+        },
+        {
+          "id": "RID1327",
+          "text": "RID1327"
+        },
+        {
+          "id": "RID1315",
+          "text": "RID1315"
+        }
+      ],
+      "body_regions": [
+        "Chest"
+      ],
+      "etiologies": [
+        "inflammatory:infectious",
+        "inflammatory",
+        "neoplastic:malignant",
+        "neoplastic:metastatic",
+        "vascular:ischemic",
+        "vascular:hemorrhagic",
+        "iatrogenic:post-radiation"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "US",
+        "MR"
+      ],
+      "subspecialties": [
+        "CH",
+        "ER",
+        "PD"
+      ]
+    }
+  },
+  {
+    "finding": "calcification in a tendon",
+    "original": {
+      "time": 26.3,
+      "snomed": [
+        {
+          "code": "129755006",
+          "display": "Punctate calcification"
+        }
+      ],
+      "radlex": [
+        {
+          "code": "RID5196",
+          "display": "calcification"
+        }
+      ],
+      "locations": [
+        {
+          "id": "RID2068",
+          "text": "common extensor tendon"
+        },
+        {
+          "id": "RID1953",
+          "text": "supraspinatus tendon"
+        },
+        {
+          "id": "RID1944",
+          "text": "tendon of long head of biceps brachii"
+        },
+        {
+          "id": "RID2383",
+          "text": "flexor pollicis longus tendon"
+        }
+      ],
+      "body_regions": [
+        "ALL"
+      ],
+      "etiologies": [
+        "degenerative",
+        "metabolic",
+        "inflammatory"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "US",
+        "MR"
+      ],
+      "subspecialties": [
+        "MK",
+        "ER"
+      ]
+    },
+    "agentic": {
+      "time": 26.9,
+      "snomed": [
+        {
+          "code": "129750001",
+          "display": "129750001"
+        },
+        {
+          "code": "60963005",
+          "display": "60963005"
+        }
+      ],
+      "radlex": [
+        {
+          "code": "RID34246",
+          "display": "RID34246"
+        }
+      ],
+      "locations": [
+        {
+          "id": "RID1953",
+          "text": "RID1953"
+        },
+        {
+          "id": "RID1949",
+          "text": "RID1949"
+        },
+        {
+          "id": "RID2068",
+          "text": "RID2068"
+        },
+        {
+          "id": "RID2382",
+          "text": "RID2382"
+        }
+      ],
+      "body_regions": [
+        "Arm",
+        "Leg"
+      ],
+      "etiologies": [
+        "degenerative",
+        "inflammatory"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "US",
+        "MR"
+      ],
+      "subspecialties": [
+        "MK"
+      ]
+    }
+  },
+  {
+    "finding": "abnormal intracranial enhancement",
+    "original": {
+      "time": 19.7,
+      "snomed": [],
+      "radlex": [
+        {
+          "code": "RID34309",
+          "display": "stippled enhancement"
+        }
+      ],
+      "locations": [
+        {
+          "id": "RID6434",
+          "text": "brain"
+        },
+        {
+          "id": "RID6383_RID9080",
+          "text": "intracranial head"
+        },
+        {
+          "id": "RID6389_RID6434",
+          "text": "supratentorial brain"
+        },
+        {
+          "id": "RID6381_RID6434",
+          "text": "infratentorial brain"
+        }
+      ],
+      "body_regions": [
+        "Head"
+      ],
+      "etiologies": [
+        "neoplastic:benign",
+        "neoplastic:malignant",
+        "neoplastic:metastatic",
+        "inflammatory:infectious",
+        "inflammatory",
+        "vascular:ischemic",
+        "vascular:hemorrhagic",
+        "iatrogenic:post-operative"
+      ],
+      "modalities": [
+        "CT",
+        "MR"
+      ],
+      "subspecialties": [
+        "NR",
+        "ER",
+        "OI",
+        "PD"
+      ]
+    },
+    "agentic": {
+      "time": 28.4,
+      "snomed": [],
+      "radlex": [
+        {
+          "code": "RID34309",
+          "display": "RID34309"
+        }
+      ],
+      "locations": [
+        {
+          "id": "RID6434",
+          "text": "RID6434"
+        },
+        {
+          "id": "RID6389_RID6434",
+          "text": "RID6389_RID6434"
+        },
+        {
+          "id": "RID6381_RID6434",
+          "text": "RID6381_RID6434"
+        },
+        {
+          "id": "RID7091",
+          "text": "RID7091"
+        }
+      ],
+      "body_regions": [
+        "Head"
+      ],
+      "etiologies": [
+        "neoplastic:benign",
+        "neoplastic:malignant",
+        "neoplastic:metastatic",
+        "neoplastic:potential",
+        "inflammatory:infectious",
+        "inflammatory",
+        "vascular:ischemic",
+        "vascular:hemorrhagic",
+        "iatrogenic:post-operative"
+      ],
+      "modalities": [
+        "CT",
+        "MR"
+      ],
+      "subspecialties": [
+        "NR",
+        "ER"
+      ]
+    }
+  },
+  {
+    "finding": "thoracic spine degenerative change",
+    "original": {
+      "time": 28.0,
+      "snomed": [
+        {
+          "code": "387802007",
+          "display": "Thoracic spondylosis"
+        },
+        {
+          "code": "202811000",
+          "display": "Ankylosis or instability of cervical, thoracic or lumbar spine"
+        }
+      ],
+      "radlex": [],
+      "locations": [
+        {
+          "id": "RID34572",
+          "text": "thoracic vertebral column"
+        },
+        {
+          "id": "RID30049",
+          "text": "back of thorax"
+        },
+        {
+          "id": "RID32807",
+          "text": "musculature of back of thorax"
+        },
+        {
+          "id": "RID2468",
+          "text": "chest wall"
+        }
+      ],
+      "body_regions": [
+        "Chest"
+      ],
+      "etiologies": [
+        "degenerative"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "MR"
+      ],
+      "subspecialties": [
+        "MK",
+        "CH"
+      ]
+    },
+    "agentic": {
+      "time": 26.3,
+      "snomed": [
+        {
+          "code": "387802007",
+          "display": "387802007"
+        }
+      ],
+      "radlex": [],
+      "locations": [
+        {
+          "id": "RID34572",
+          "text": "RID34572"
+        },
+        {
+          "id": "RID29198",
+          "text": "RID29198"
+        },
+        {
+          "id": "RID30049",
+          "text": "RID30049"
+        },
+        {
+          "id": "RID32807",
+          "text": "RID32807"
+        }
+      ],
+      "body_regions": [
+        "Chest"
+      ],
+      "etiologies": [
+        "degenerative"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "MR"
+      ],
+      "subspecialties": [
+        "MK",
+        "NR"
+      ]
+    }
+  },
+  {
+    "finding": "enotosis",
+    "original": {
+      "time": 28.9,
+      "snomed": [
+        {
+          "code": "782164008",
+          "display": "Enostosis"
+        }
+      ],
+      "radlex": [
+        {
+          "code": "RID4003",
+          "display": "enostosis"
+        }
+      ],
+      "locations": [
+        {
+          "id": "RID9779",
+          "text": "temporomandibular joint"
+        },
+        {
+          "id": "RID9361",
+          "text": "temporal bone"
+        },
+        {
+          "id": "RID9082",
+          "text": "mandible"
+        },
+        {
+          "id": "RID9110",
+          "text": "condyle of mandible"
+        }
+      ],
+      "body_regions": [
+        "ALL"
+      ],
+      "etiologies": [
+        "neoplastic:benign",
+        "neoplastic:malignant",
+        "inflammatory"
+      ],
+      "modalities": [],
+      "subspecialties": [
+        "OI",
+        "MI"
+      ]
+    },
+    "agentic": {
+      "time": 31.8,
+      "snomed": [],
+      "radlex": [],
+      "locations": [],
+      "body_regions": [],
+      "etiologies": [],
+      "modalities": [],
+      "subspecialties": []
+    }
+  }
+]
