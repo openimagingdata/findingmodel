@@ -2,8 +2,8 @@
 
 ## Implementation Status
 
-**Status**: Core MVP Complete (Phases 1-6)
-**Date**: 2025-01-21
+**Status**: Testing Complete (Phases 1-8)
+**Date**: 2025-11-25
 
 ### ✅ Completed Components
 
@@ -20,12 +20,23 @@
   - Loguru logging enabled for real-time feedback
   - Clean JSON output with model_dump_json(exclude_none=True, indent=2)
 
+- **Phase 7**: Unit tests in `test/test_finding_enrichment.py`
+  - 57 tests covering data models, helpers, agent configuration, orchestration
+  - Uses TestModel for deterministic agent behavior testing
+  - Comprehensive mocking of external dependencies
+  - Run with: `task test -- test/test_finding_enrichment.py`
+
+- **Phase 8**: Integration tests in `test/test_finding_enrichment.py`
+  - 8 tests marked with `@pytest.mark.callout`
+  - Tests pneumonia, fracture, pulmonary nodule, liver lesion, ground-glass opacity
+  - Edge cases: ambiguous "mass", unknown finding
+  - Performance test validates <30s completion
+  - Run with: `task test-full -- test/test_finding_enrichment.py -m callout`
+
 ### 🚧 Remaining Work
 
-- **Phase 7**: Unit tests (not started)
-- **Phase 8**: Integration tests (not started)
 - **Phase 9**: Manual validation & iteration (not started)
-- **Phase 10**: Documentation & memory updates (not started)
+- **Phase 10**: Documentation & memory updates (in progress)
 
 ### Usage
 

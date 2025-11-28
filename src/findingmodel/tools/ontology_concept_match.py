@@ -421,7 +421,7 @@ async def categorize_with_validation(
     )
 
     # Use the categorization agent
-    categorization_agent = create_categorization_agent()
+    categorization_agent = create_categorization_agent(model_tier="small")
 
     # Create a compact representation of results for the prompt
     compact_results = [{"id": r.concept_id, "text": r.concept_text} for r in search_results]

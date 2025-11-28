@@ -8,9 +8,11 @@ PROMPT_TEMPLATE_DIR = Path(__file__).parent / "prompt_templates"
 
 
 def load_prompt_template(template_file_name: str) -> Template:
-    template_file_name = (
-        template_file_name if template_file_name.endswith(".md.jinja") else f"{template_file_name}.md.jinja"
-    )
+    # Support both .md.jinja and .xml.jinja extensions
+    # If filename already has an extension, use as-is, otherwise default to .md.jinja
+    if not (template_file_name.endswith(".md.jinja") or template_file_name.endswith(".xml.jinja")):
+        template_file_name = f"{template_file_name}.md.jinja"
+
     template_file = PROMPT_TEMPLATE_DIR / template_file_name
     if not template_file.exists():
         raise FileNotFoundError(f"Prompt template {template_file_name} not found")

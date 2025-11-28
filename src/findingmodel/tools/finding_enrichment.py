@@ -8,12 +8,11 @@ This module defines the core data structures used throughout the finding enrichm
 """
 
 import asyncio
-import json
 from datetime import datetime, timezone
 from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent
 from typing_extensions import Literal
 
 from findingmodel import logger
@@ -82,20 +81,23 @@ ETIOLOGIES: list[str] = [
     "neoplastic:malignant",
     "neoplastic:metastatic",
     "neoplastic:potential",  # indeterminate lesions, incidentalomas
-    "traumatic-acute",  # acute injury
+    "traumatic",  # acute injury
     "post-traumatic",  # sequelae of prior injury
-    "iatrogenic:post-operative",
-    "iatrogenic:post-radiation",
-    "iatrogenic:device",
-    "iatrogenic:medication-related",
     "vascular:ischemic",
     "vascular:hemorrhagic",
     "vascular:thrombotic",
+    "vascular:aneurysmal",
     "degenerative",
-    "congenital",
     "metabolic",
+    "congenital",
+    "developmental",
+    "autoimmune",
     "toxic",
     "mechanical",  # obstruction, herniation, torsion
+    "iatrogenic:post-operative",
+    "iatrogenic:post-radiation",
+    "iatrogenic:device-related",
+    "iatrogenic:medication-related",
     "idiopathic",
     "normal-variant",
 ]
@@ -264,7 +266,7 @@ class EnrichmentContext(BaseModel):
     """Dependency context for the enrichment agent.
 
     Contains all relevant information about the finding being enriched,
-    including existing data from the index if available.
+    including pre-fetched search results and existing data from the index.
     """
 
     finding_name: str = Field(
@@ -284,6 +286,22 @@ class EnrichmentContext(BaseModel):
     existing_model: FindingModelFull | None = Field(
         default=None,
         description="Existing FindingModelFull from index, if found",
+    )
+
+    # Pre-fetched search results (provided to agent for context)
+    snomed_codes: list[IndexCode] = Field(
+        default_factory=list,
+        description="SNOMED CT codes found for this finding",
+    )
+
+    radlex_codes: list[IndexCode] = Field(
+        default_factory=list,
+        description="RadLex codes found for this finding",
+    )
+
+    anatomic_locations: list[OntologySearchResult] = Field(
+        default_factory=list,
+        description="Anatomic locations identified for this finding",
     )
 
 
@@ -333,6 +351,125 @@ class EnrichmentClassification(BaseModel):
 
     reasoning: str = Field(
         description="Brief explanation of the classification decisions",
+    )
+
+    @field_validator("etiologies")
+    @classmethod
+    def validate_etiologies(cls, v: list[str]) -> list[str]:
+        """Validate that all etiologies are in the allowed ETIOLOGIES list."""
+        invalid = [etiology for etiology in v if etiology not in ETIOLOGIES]
+        if invalid:
+            raise ValueError(f"Invalid etiology categories: {invalid}. Must be from ETIOLOGIES list.")
+        return v
+
+
+class CategorizedOntologyCodes(BaseModel):
+    """Ontology codes categorized by relevance to a finding.
+
+    Used by the unified enrichment classifier to structure ontology code selection
+    from raw search results.
+    """
+
+    exact_matches: Annotated[
+        list[IndexCode],
+        Field(
+            default_factory=list,
+            max_length=5,
+            description="Concepts whose meaning is identical to the finding name (max 5)",
+        ),
+    ]
+
+    should_include: Annotated[
+        list[IndexCode],
+        Field(
+            default_factory=list,
+            max_length=10,
+            description="Closely related concepts - subtypes, variants, strong associations (max 10)",
+        ),
+    ]
+
+    marginal: Annotated[
+        list[IndexCode],
+        Field(
+            default_factory=list,
+            max_length=10,
+            description="Peripherally related - broader categories, distinct but related (max 10)",
+        ),
+    ]
+
+
+class AnatomicLocationSelection(BaseModel):
+    """Single anatomic location for a finding - the highest-level container.
+
+    Used by the unified enrichment classifier to select the most appropriate
+    anatomic location from raw search results. Returns exactly ONE location
+    that encompasses all places where this finding can occur.
+    """
+
+    location: OntologySearchResult = Field(
+        description="The single highest-level anatomic container that encompasses ALL locations where this finding can occur",
+    )
+
+
+class UnifiedEnrichmentOutput(BaseModel):
+    """Complete structured output from the unified enrichment classifier.
+
+    This model represents the output from the unified enrichment classifier that
+    combines ontology code selection, anatomic location selection, and finding
+    classification into a single AI agent call. It replaces the multi-stage
+    pipeline with a single prompt that processes raw search results.
+
+    The unified classifier receives:
+    - Finding name and description
+    - Raw SNOMED/RadLex search results
+    - Raw anatomic location search results
+    - Any existing model data
+
+    And produces comprehensive enrichment in one call.
+    """
+
+    ontology_codes: CategorizedOntologyCodes = Field(
+        description="Ontology codes categorized by relevance (exact/should_include/marginal)",
+    )
+
+    anatomic_location: AnatomicLocationSelection = Field(
+        description="Single anatomic location for this finding (highest-level container)",
+    )
+
+    body_regions: Annotated[
+        list[BodyRegion],
+        Field(
+            default_factory=list,
+            description="Primary body regions where this finding occurs",
+        ),
+    ]
+
+    etiologies: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="Etiology categories for this finding (from ETIOLOGIES taxonomy)",
+        ),
+    ]
+
+    modalities: Annotated[
+        list[Modality],
+        Field(
+            default_factory=list,
+            description="Imaging modalities where this finding is typically visualized",
+        ),
+    ]
+
+    subspecialties: Annotated[
+        list[Subspecialty],
+        Field(
+            default_factory=list,
+            description="Radiology subspecialties most relevant to this finding",
+        ),
+    ]
+
+    reasoning: str = Field(
+        description="Clear explanation of all classification, selection, and categorization decisions",
     )
 
     @field_validator("etiologies")
@@ -413,10 +550,14 @@ Subspecialties:
 - PD: Pediatric Radiology
 - VI: Vascular Imaging
 
-TOOLS AVAILABLE:
-You have access to tools for searching ontology codes and anatomic locations.
-Use these to gather additional context if needed, but rely primarily on your
-medical knowledge for the classifications."""
+CONTEXT PROVIDED:
+You will receive pre-fetched search results including:
+- SNOMED CT and RadLex codes relevant to the finding
+- Anatomic locations where the finding typically occurs
+- Any existing data from the finding model database
+
+Use this context along with your medical knowledge for the classifications.
+Do NOT call any external tools - all necessary information is provided."""
 
 
 def create_enrichment_agent(
@@ -425,12 +566,16 @@ def create_enrichment_agent(
 ) -> Agent[EnrichmentContext, EnrichmentClassification]:
     """Create the finding enrichment agent.
 
+    The agent performs classification only - ontology and anatomic location searches
+    are run in parallel BEFORE the agent is called, and results are provided in context.
+    This avoids duplicate API calls and significantly improves performance.
+
     Args:
         model_tier: Model tier to use (defaults to "base")
         provider: AI model provider to use ("openai" or "anthropic"). If None, uses configured default.
 
     Returns:
-        Configured Pydantic AI agent for finding enrichment
+        Configured Pydantic AI agent for finding enrichment (no tools - classification only)
     """
     agent: Agent[EnrichmentContext, EnrichmentClassification] = Agent(
         model=get_model(model_tier, provider=provider),
@@ -439,74 +584,10 @@ def create_enrichment_agent(
         system_prompt=_create_enrichment_system_prompt(),
     )
 
-    @agent.tool
-    async def search_ontology_codes(ctx: RunContext[EnrichmentContext], query: str) -> str:
-        """Search for ontology codes related to a finding concept.
-
-        Use this to find SNOMED CT and RadLex codes that may provide additional
-        context about the finding.
-
-        Args:
-            ctx: Agent run context with finding information
-            query: Search query (finding name or concept)
-
-        Returns:
-            JSON string with search results
-        """
-        try:
-            snomed_codes, radlex_codes = await search_ontology_codes_for_finding(
-                finding_name=query,
-                description=ctx.deps.finding_description,
-            )
-
-            result = {
-                "snomed_codes": [code.model_dump() for code in snomed_codes],
-                "radlex_codes": [code.model_dump() for code in radlex_codes],
-            }
-
-            logger.info(f"Ontology search for '{query}': {len(snomed_codes)} SNOMED, {len(radlex_codes)} RadLex")
-            return json.dumps(result, indent=2)
-
-        except Exception as e:
-            logger.error(f"Error in ontology search tool: {e}")
-            return json.dumps({"error": str(e)})
-
-    @agent.tool
-    async def find_anatomic_location(ctx: RunContext[EnrichmentContext], finding: str) -> str:
-        """Find anatomic locations for a finding.
-
-        Use this to identify where in the body this finding typically occurs.
-
-        Args:
-            ctx: Agent run context with finding information
-            finding: Finding name to search for
-
-        Returns:
-            JSON string with primary and alternate locations
-        """
-        from findingmodel.tools.anatomic_location_search import find_anatomic_locations
-
-        try:
-            # Use "small" tier for sub-tool regardless of parent agent tier
-            # to keep costs down for this auxiliary search
-            result = await find_anatomic_locations(
-                finding_name=finding,
-                description=ctx.deps.finding_description,
-                model_tier="small",
-            )
-
-            locations = {
-                "primary_location": result.primary_location.model_dump(),
-                "alternate_locations": [loc.model_dump() for loc in result.alternate_locations],
-                "reasoning": result.reasoning,
-            }
-
-            logger.info(f"Anatomic location search for '{finding}': {result.primary_location.concept_text}")
-            return json.dumps(locations, indent=2)
-
-        except Exception as e:
-            logger.error(f"Error in anatomic location tool: {e}")
-            return json.dumps({"error": str(e)})
+    # NOTE: No tools registered - the agent only classifies based on context.
+    # Ontology and anatomic location searches are performed in parallel
+    # BEFORE the agent runs, and results are included in the context.
+    # This design avoids duplicate API calls and improves performance significantly.
 
     return agent
 
@@ -514,6 +595,252 @@ def create_enrichment_agent(
 # ==========================================================================================
 # Main Enrichment Function
 # ==========================================================================================
+
+
+async def enrich_finding_unified(  # noqa: C901
+    finding_name: str,
+    description: str | None = None,
+    provider: ModelProvider | None = None,
+) -> UnifiedEnrichmentOutput:
+    """Enrich a finding using the unified classifier approach.
+
+    This is the optimized 3-LLM-call pipeline that:
+    1. Runs parallel query generation for ontology and anatomic searches (small tier)
+    2. Executes DuckDB searches for both
+    3. Passes raw results to unified classifier (base tier) for comprehensive categorization
+
+    This approach is faster and more coherent than the 5-call pipeline, reducing
+    from ~25-30s to ~15-20s while maintaining or improving quality.
+
+    Args:
+        finding_name: Name of the imaging finding (e.g., "pneumonia", "liver lesion")
+        description: Optional detailed description for context
+        provider: AI model provider to use ("openai" or "anthropic"). If None, uses configured default.
+
+    Returns:
+        UnifiedEnrichmentOutput with categorized codes, selected locations, and classifications
+
+    Raises:
+        RuntimeError: If critical workflow steps fail
+        ConfigurationError: If AI provider is misconfigured
+
+    Example:
+        >>> result = await enrich_finding_unified("pneumonia")
+        >>> print(f"Exact matches: {len(result.ontology_codes.exact_matches)}")
+        >>> print(f"Anatomic location: {result.anatomic_location.location.concept_text}")
+        >>> print(f"Body regions: {result.body_regions}")
+    """
+    from time import perf_counter
+
+    from findingmodel.tools.anatomic_location_search import generate_anatomic_query_terms
+    from findingmodel.tools.duckdb_search import DuckDBOntologySearchClient
+    from findingmodel.tools.ontology_concept_match import generate_finding_query_terms
+    from findingmodel.tools.prompt_template import load_prompt_template, render_agent_prompt
+
+    timings: dict[str, float] = {}
+    total_start = perf_counter()
+
+    logger.info(f"Starting unified enrichment for: {finding_name}")
+
+    # Step 1: Parallel query generation (LLM small tier)
+    step1_start = perf_counter()
+    logger.debug("Step 1: Parallel query generation")
+
+    async def generate_ontology_queries() -> list[str]:
+        """Generate ontology query terms with error handling."""
+        try:
+            return await generate_finding_query_terms(finding_name, description)
+        except Exception as e:
+            logger.warning(f"Ontology query generation failed, using fallback: {e}")
+            return [finding_name]
+
+    async def generate_anatomic_queries() -> tuple[
+        list[str],
+        Literal["Abdomen", "Neck", "Lower Extremity", "Breast", "Body", "Thorax", "Upper Extremity", "Head", "Pelvis"]
+        | None,
+    ]:
+        """Generate anatomic query terms with error handling."""
+        try:
+            query_info = await generate_anatomic_query_terms(
+                finding_name=finding_name,
+                finding_description=description,
+                model_tier="small",
+            )
+            return (query_info.terms, query_info.region)
+        except Exception as e:
+            logger.warning(f"Anatomic query generation failed, using fallback: {e}")
+            return ([finding_name], None)
+
+    # Execute query generation in parallel
+    ontology_queries, (anatomic_queries, anatomic_region) = await asyncio.gather(
+        generate_ontology_queries(),
+        generate_anatomic_queries(),
+    )
+    timings["step1_query_gen"] = perf_counter() - step1_start
+
+    logger.info(
+        f"Query generation complete ({timings['step1_query_gen']:.1f}s): {len(ontology_queries)} ontology terms, "
+        f"{len(anatomic_queries)} anatomic terms (region: {anatomic_region or 'none'})"
+    )
+
+    # Step 2: Execute searches (ontology via BioOntology API, anatomic via DuckDB)
+    step2_start = perf_counter()
+    logger.debug("Step 2: Executing searches")
+
+    ontology_results: list[OntologySearchResult] = []
+    anatomic_results: list[OntologySearchResult] = []
+
+    # Search ontology codes (SNOMED/RadLex) via BioOntology API
+    ontology_search_start = perf_counter()
+    try:
+        from findingmodel.tools.ontology_concept_match import execute_ontology_search
+
+        ontology_results = await execute_ontology_search(
+            query_terms=ontology_queries,
+            exclude_anatomical=True,
+            base_limit=30,
+            max_results=12,
+        )
+        timings["step2a_ontology_search"] = perf_counter() - ontology_search_start
+        logger.info(f"Found {len(ontology_results)} ontology results ({timings['step2a_ontology_search']:.1f}s)")
+    except Exception as e:
+        timings["step2a_ontology_search"] = perf_counter() - ontology_search_start
+        logger.error(f"Ontology search failed: {e}")
+        # Continue with empty results
+
+    # Search anatomic locations via DuckDB
+    anatomic_search_start = perf_counter()
+    try:
+        from findingmodel.tools.anatomic_location_search import AnatomicQueryTerms, execute_anatomic_search
+
+        async with DuckDBOntologySearchClient() as client:
+            query_info = AnatomicQueryTerms(region=anatomic_region, terms=anatomic_queries)
+            anatomic_results = await execute_anatomic_search(query_info, client, limit=30)
+            timings["step2b_anatomic_search"] = perf_counter() - anatomic_search_start
+            logger.info(f"Found {len(anatomic_results)} anatomic results ({timings['step2b_anatomic_search']:.1f}s)")
+    except Exception as e:
+        timings["step2b_anatomic_search"] = perf_counter() - anatomic_search_start
+        logger.error(f"Anatomic search failed: {e}")
+        # Continue with empty results
+
+    timings["step2_total_search"] = perf_counter() - step2_start
+
+    # Step 3: Add RID39569 "whole body" to anatomic results if not present
+    whole_body_id = "RID39569"
+    if not any(result.concept_id == whole_body_id for result in anatomic_results):
+        anatomic_results.append(
+            OntologySearchResult(
+                concept_id=whole_body_id,
+                concept_text="whole body",
+                score=0.0,  # Low score since it's a fallback
+                table_name="anatomic_locations",
+            )
+        )
+        logger.debug("Added RID39569 'whole body' to anatomic results")
+
+    # Step 4: Format raw results as strings for the prompt
+    logger.debug("Step 4: Formatting results for unified classifier")
+
+    # Format ontology results as "SYSTEM CODE: display" strings
+    # Note: We avoid calling as_index_code() here because IndexCode validation
+    # may fail on short display values (e.g., "Or" < 3 chars). We just need the
+    # system name for prompt formatting.
+    from findingmodel.tools.ontology_search import TABLE_TO_INDEX_CODE_SYSTEM
+
+    ontology_results_str = "\n".join([
+        f"{TABLE_TO_INDEX_CODE_SYSTEM.get(result.table_name, result.table_name)} {result.concept_id}: {result.concept_text}"
+        for result in ontology_results
+    ])
+    if not ontology_results_str:
+        ontology_results_str = "(no ontology results found)"
+
+    # Format anatomic results as "ID: description" strings
+    anatomic_results_str = "\n".join([f"{result.concept_id}: {result.concept_text}" for result in anatomic_results])
+
+    # Step 5: Load and render the unified enrichment classifier prompt
+    step5_start = perf_counter()
+    logger.debug("Step 5: Loading and rendering prompt template")
+    template = load_prompt_template("unified_enrichment_classifier.xml.jinja")
+
+    # Lookup existing model for context (optional, non-blocking)
+    existing_model_str = ""
+    index_lookup_start = perf_counter()
+    try:
+        index = DuckDBIndex(read_only=True)
+        async with index:
+            entry = await index.get(finding_name)
+            if entry is not None:
+                existing_model = await index.get_full(entry.oifm_id)
+                existing_model_str = f"OIFM ID: {existing_model.oifm_id}\nName: {existing_model.name}"
+                if existing_model.description:
+                    existing_model_str += f"\nDescription: {existing_model.description}"
+                logger.debug(f"Found existing model: {existing_model.oifm_id}")
+    except Exception as e:
+        logger.warning(f"Failed to lookup existing model (non-fatal): {e}")
+    timings["step5_index_lookup"] = perf_counter() - index_lookup_start
+
+    system_prompt, user_prompt = render_agent_prompt(
+        template,
+        finding_name=finding_name,
+        description=description or "",
+        ontology_results=ontology_results_str,
+        anatomic_results=anatomic_results_str,
+        existing_model=existing_model_str if existing_model_str else None,
+    )
+    timings["step5_template"] = perf_counter() - step5_start
+
+    # Step 6: Create and run unified classifier agent (base tier)
+    step6_start = perf_counter()
+    logger.debug("Step 6: Running unified classifier agent")
+
+    agent: Agent[None, UnifiedEnrichmentOutput] = Agent(
+        model=get_model("base", provider=provider),
+        output_type=UnifiedEnrichmentOutput,
+        system_prompt=system_prompt,
+        retries=2,  # Allow 2 retries for validation errors
+    )
+
+    try:
+        result = await agent.run(user_prompt)
+        output = result.output
+        timings["step6_classifier"] = perf_counter() - step6_start
+        timings["total"] = perf_counter() - total_start
+
+        logger.info(
+            f"Unified classifier complete ({timings['step6_classifier']:.1f}s): "
+            f"{len(output.ontology_codes.exact_matches)} exact codes, "
+            f"{len(output.body_regions)} body regions, "
+            f"{len(output.etiologies)} etiologies, "
+            f"location: {output.anatomic_location.location.concept_text}"
+        )
+
+        # Log timing breakdown
+        logger.info(
+            f"Timing breakdown - Total: {timings['total']:.1f}s | "
+            f"QueryGen: {timings.get('step1_query_gen', 0):.1f}s | "
+            f"OntologySearch: {timings.get('step2a_ontology_search', 0):.1f}s | "
+            f"AnatomicSearch: {timings.get('step2b_anatomic_search', 0):.1f}s | "
+            f"IndexLookup: {timings.get('step5_index_lookup', 0):.1f}s | "
+            f"Classifier: {timings.get('step6_classifier', 0):.1f}s"
+        )
+
+        return output
+
+    except Exception as e:
+        timings["step6_classifier"] = perf_counter() - step6_start
+        timings["total"] = perf_counter() - total_start
+        logger.error(
+            f"Unified classifier agent failed after {timings['step6_classifier']:.1f}s: {e}"
+        )
+        logger.info(
+            f"Timing breakdown (failed) - Total: {timings['total']:.1f}s | "
+            f"QueryGen: {timings.get('step1_query_gen', 0):.1f}s | "
+            f"OntologySearch: {timings.get('step2a_ontology_search', 0):.1f}s | "
+            f"AnatomicSearch: {timings.get('step2b_anatomic_search', 0):.1f}s | "
+            f"IndexLookup: {timings.get('step5_index_lookup', 0):.1f}s | "
+            f"Classifier: {timings.get('step6_classifier', 0):.1f}s"
+        )
+        raise RuntimeError(f"Enrichment classification failed: {e}") from e
 
 
 async def enrich_finding(identifier: str, provider: ModelProvider | None = None) -> FindingEnrichmentResult:  # noqa: C901
@@ -649,7 +976,7 @@ async def enrich_finding(identifier: str, provider: ModelProvider | None = None)
         f"{len(radlex_codes)} RadLex, {len(anatomic_locations)} locations"
     )
 
-    # Step 3: Create enrichment context for agent
+    # Step 3: Create enrichment context for agent (includes pre-fetched results)
     logger.debug("Step 3: Creating enrichment context for agent")
     all_codes = [*snomed_codes, *radlex_codes]
     context = EnrichmentContext(
@@ -657,6 +984,10 @@ async def enrich_finding(identifier: str, provider: ModelProvider | None = None)
         finding_description=finding_description,
         existing_codes=all_codes,
         existing_model=existing_model,
+        # Include pre-fetched results so agent doesn't need to call tools
+        snomed_codes=snomed_codes,
+        radlex_codes=radlex_codes,
+        anatomic_locations=anatomic_locations,
     )
 
     # Step 4: Run enrichment agent for classification
@@ -695,7 +1026,7 @@ async def enrich_finding(identifier: str, provider: ModelProvider | None = None)
 
     # Determine model provider and tier for metadata
     effective_provider = provider or settings.model_provider
-    model_tier_str = "base"  # We use base tier for enrichment agent
+    model_tier_str = "base"  # We use base tier for enrichment agent (Sonnet 4.5)
 
     enrichment_result = FindingEnrichmentResult(
         finding_name=finding_name,
