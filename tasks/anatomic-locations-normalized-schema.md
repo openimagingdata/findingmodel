@@ -1,6 +1,6 @@
 # Plan: Rich Anatomic Location DuckDB with Relationships
 
-**Status:** Planning (Rev 8)
+**Status:** Planning (Rev 11)
 **Related Research:** [anatomic-locations-graph-research.md](anatomic-locations-graph-research.md)
 **Restructuring Plan:** [oidm-package-restructuring.md](oidm-package-restructuring.md)
 
@@ -15,6 +15,7 @@ https://oidm-public.t3.storage.dev/anatomic_locations_20251220.json
 ```
 
 For future updates, new data will be provided as either:
+
 - A new dated URL (e.g., `anatomic_locations_YYYYMMDD.json`)
 - A local file path passed to the migration tool
 
@@ -66,18 +67,18 @@ The manifest handling logic will be part of `oidm-core-utils`, used by both libr
 
 From `anatomic_locations.json` (2,901 entries):
 
-| Field | Count | Description |
-|-------|-------|-------------|
-| `containedByRef` | 2,901 (100%) | Spatial containment parent |
-| `containsRefs` | 183 | Containment children (inverse) |
-| `partOfRef` | 1,101 | Mereological parent |
-| `hasPartsRefs` | 312 | Mereological children (inverse) |
-| `leftRef` | 1,623 | Left laterality variant |
-| `rightRef` | 1,623 | Right laterality variant |
-| `unsidedRef` | 1,594 | Generic (unsided) variant |
-| `codes` | varies | FMA, MESH, UMLS codes |
-| `snomedId` | varies | SNOMED CT identifiers |
-| `acrCommonId` | varies | ACR Common Data Element IDs |
+| Field            | Count        | Description                     |
+| ---------------- | ------------ | ------------------------------- |
+| `containedByRef` | 2,901 (100%) | Spatial containment parent      |
+| `containsRefs`   | 183          | Containment children (inverse)  |
+| `partOfRef`      | 1,101        | Mereological parent             |
+| `hasPartsRefs`   | 312          | Mereological children (inverse) |
+| `leftRef`        | 1,623        | Left laterality variant         |
+| `rightRef`       | 1,623        | Right laterality variant        |
+| `unsidedRef`     | 1,594        | Generic (unsided) variant       |
+| `codes`          | varies       | FMA, MESH, UMLS codes           |
+| `snomedId`       | varies       | SNOMED CT identifiers           |
+| `acrCommonId`    | varies       | ACR Common Data Element IDs     |
 
 Regions: Head (869), Lower Extremity (579), Upper Extremity (582), Neck (230), Thorax (211), Abdomen (207), Pelvis (152), Breast (46), Body (25)
 
@@ -90,11 +91,13 @@ Regions: Head (869), Lower Extremity (579), Upper Extremity (582), Neck (230), T
 Since the database is **completely rebuilt** when data changes, we can pre-compute hierarchy structures for **instant queries without recursive CTEs**.
 
 **Materialized Path stores the full ancestry as a delimited string:**
-```
+
+```text
 containment_path: "/RID1/RID46/RID2660/RID2772/"
 ```
 
 **This enables instant queries:**
+
 ```sql
 -- Find all ancestors (no recursion!)
 SELECT * FROM anatomic_locations
@@ -107,12 +110,14 @@ WHERE containment_path LIKE '/RID1/RID46/RID2660/%';
 ```
 
 **Sources:**
+
 - [Materialized Path Pattern](https://adamdjellouli.com/articles/databases_notes/03_sql/09_hierarchical_data)
 - [Hierarchical Data in PostgreSQL](https://www.ackee.agency/blog/hierarchical-models-in-postgresql)
 
 ### 2. Simplified Tables (4 tables)
 
 Store hierarchy and laterality references **as fields** rather than separate tables:
+
 - `anatomic_locations` - main table with pre-computed hierarchy fields
 - `anatomic_synonyms` - for exact-match lookups
 - `anatomic_codes` - for IndexCode lookups (using existing IndexCode pattern)
@@ -121,6 +126,7 @@ Store hierarchy and laterality references **as fields** rather than separate tab
 ### 3. Reuse Existing IndexCode
 
 Instead of a new `ExternalCode` class, reuse the existing `IndexCode` from `findingmodel.index_code`:
+
 ```python
 from findingmodel.index_code import IndexCode
 # SNOMED, FMA, MESH, UMLS, ACR all stored the same way
@@ -143,7 +149,7 @@ class WebReference(BaseModel):
     """Reference to a web resource, compatible with Tavily search results.
 
     Can be created manually with just url+title, or populated from
-    Tavily search results with additional metadata like score and content.
+    Tavily search results with additional metadata like content and published_date.
 
     Parallels IndexCode:
     - IndexCode: system + code + display
@@ -257,10 +263,11 @@ loc.get_containment_ancestors()  # Raises ValueError - index closed
 **Why weakref?** Without it, `Location → Index → Location` creates circular references that delay garbage collection. The weakref breaks the cycle and enforces correct lifecycle usage.
 
 **Sources:**
+
 - [Circular References in Python](https://medium.com/@chipiga86/circular-references-without-memory-leaks-and-destruction-of-objects-in-python-43da57915b8d)
 - [Pydantic weakref discussion](https://github.com/pydantic/pydantic/discussions/2857)
 
-### 5. STRUCT[] Arrays for Children (not JSON or parallel arrays)
+### 6. STRUCT[] Arrays for Children (not JSON or parallel arrays)
 
 For storing child references with both ID and display name, we use native DuckDB STRUCT arrays:
 
@@ -275,12 +282,34 @@ containment_children STRUCT(id VARCHAR, display VARCHAR)[]
 **Why STRUCT[]?** Single atomic field, native DuckDB type, maintains schema integrity, leverages vectorized engine.
 
 **Sources:**
+
 - [DuckDB STRUCT: Handling Nested Data](https://motherduck.com/learn-more/duckdb-struct-nested-data/)
 - [Shredding Deeply Nested JSON – DuckDB](https://duckdb.org/2023/03/03/json)
 
 ---
 
 ## New Classification Enums
+
+### Anatomic Region
+
+Based on the regions already present in the source data:
+
+```python
+class AnatomicRegion(str, Enum):
+    """Body regions for anatomic locations.
+
+    Derived from existing anatomic_locations.json data.
+    """
+    HEAD = "Head"
+    NECK = "Neck"
+    THORAX = "Thorax"
+    ABDOMEN = "Abdomen"
+    PELVIS = "Pelvis"
+    UPPER_EXTREMITY = "Upper Extremity"
+    LOWER_EXTREMITY = "Lower Extremity"
+    BREAST = "Breast"
+    BODY = "Body"  # Whole body / systemic
+```
 
 ### Laterality (Simplified)
 
@@ -348,15 +377,15 @@ class LocationType(str, Enum):
 
 **Usage examples:**
 
-| Location | LocationType | StructureType | Notes |
-|----------|--------------|---------------|-------|
-| femur | STRUCTURE | BONE | Physical bone structure |
-| liver | STRUCTURE | SOLID_ORGAN | Physical organ |
-| pleural space | SPACE | None | Cavity that can contain fluid |
-| anterior surface of heart | REGION | None | Positional subdivision |
-| thorax | BODY_PART | None | Macro anatomical division |
-| cardiovascular system | SYSTEM | None | Functional grouping |
-| cervical lymph nodes | GROUP | None | Collection of structures |
+| Location                  | LocationType | StructureType | Notes                         |
+| ------------------------- | ------------ | ------------- | ----------------------------- |
+| femur                     | STRUCTURE    | BONE          | Physical bone structure       |
+| liver                     | STRUCTURE    | SOLID_ORGAN   | Physical organ                |
+| pleural space             | SPACE        | None          | Cavity that can contain fluid |
+| anterior surface of heart | REGION       | None          | Positional subdivision        |
+| thorax                    | BODY_PART    | None          | Macro anatomical division     |
+| cardiovascular system     | SYSTEM       | None          | Functional grouping           |
+| cervical lymph nodes      | GROUP        | None          | Collection of structures      |
 
 ### Body System
 
@@ -383,55 +412,89 @@ class BodySystem(str, Enum):
 
 ### Structure Type
 
-Based on FMA-RadLex ontology and radiology imaging practice:
+Based on FMA-RadLex ontology and radiology imaging practice, expanded with brain-specific types and lymph node stations:
 
 ```python
 class StructureType(str, Enum):
     """Anatomical structure types for clinical imaging.
 
     Based on FMA-RadLex classification and radiology practice.
-    See: https://pmc.ncbi.nlm.nih.gov/articles/PMC2656009/
+    Organized by category for easier navigation.
+
+    See:
+    - FMA-RadLex: https://pmc.ncbi.nlm.nih.gov/articles/PMC2656009/
+    - Neuroanatomical domain of FMA: https://pmc.ncbi.nlm.nih.gov/articles/PMC3944952/
+    - IASLC Lymph Node Map: https://pmc.ncbi.nlm.nih.gov/articles/PMC4499584/
     """
-    # Musculoskeletal structures
+
+    # === MUSCULOSKELETAL ===
     BONE = "bone"                   # Skeletal structures
     JOINT = "joint"                 # Articulations
     MUSCLE = "muscle"               # Skeletal, smooth, cardiac muscle
     TENDON = "tendon"               # Tendinous structures
     LIGAMENT = "ligament"           # Ligamentous structures
     CARTILAGE = "cartilage"         # Cartilaginous structures
+    BURSA = "bursa"                 # Synovial bursae
 
-    # Vascular structures (subtypes important for imaging)
+    # === VASCULAR ===
     ARTERY = "artery"               # Arterial vessels
     VEIN = "vein"                   # Venous vessels
-    PORTAL_VEIN = "portal_vein"     # Portal venous system (connects two capillary beds)
+    PORTAL_VEIN = "portal_vein"     # Portal venous system
     LYMPHATIC_VESSEL = "lymphatic_vessel"  # Lymphatic vessels
 
-    # Neural structures
+    # === NEURAL (peripheral) ===
     NERVE = "nerve"                 # Peripheral nerves
     GANGLION = "ganglion"           # Nerve ganglia
-    PLEXUS = "plexus"               # Nerve plexuses
-    CNS = "cns"                     # Central nervous system structures
+    PLEXUS = "plexus"               # Nerve/vascular plexuses
 
-    # Organs (per Radiopaedia classification)
+    # === BRAIN-SPECIFIC (CNS) ===
+    GYRUS = "gyrus"                 # Cortical folds (precentral gyrus, cingulate)
+    SULCUS = "sulcus"               # Cortical grooves (central sulcus, lateral)
+    FISSURE = "fissure"             # Major brain divisions (Sylvian, longitudinal)
+    WHITE_MATTER_TRACT = "white_matter_tract"  # White matter pathways (corticospinal)
+    NUCLEUS = "nucleus"             # Deep gray matter clusters (caudate, thalamus)
+    VENTRICLE = "ventricle"         # CSF-filled brain cavities (lateral, third, fourth)
+    CISTERN = "cistern"             # Subarachnoid CSF spaces (cisterna magna)
+
+    # === ORGANS ===
     SOLID_ORGAN = "solid_organ"     # Liver, spleen, kidney, pancreas
     HOLLOW_ORGAN = "hollow_organ"   # Stomach, intestines, bladder, gallbladder
     GLAND = "gland"                 # Thyroid, adrenal, salivary, pituitary
 
-    # Other structures
+    # === LYMPHATIC ===
+    LYMPH_NODE = "lymph_node"       # Individual lymph nodes
+    LYMPH_NODE_STATION = "lymph_node_station"  # TNM staging groups (IASLC stations, levels)
+
+    # === ANATOMICAL ORGANIZATION ===
+    COMPARTMENT = "compartment"     # Fascial-bounded spaces (mediastinal, retroperitoneal)
+    MEMBRANE = "membrane"           # Serous membranes, meninges (pleura, peritoneum, dura)
+
+    # === SPATIAL/OTHER ===
     SOFT_TISSUE = "soft_tissue"     # Fat, fascia, connective tissue
-    SPACE = "space"                 # Anatomical spaces, compartments
+    SPACE = "space"                 # Anatomical spaces
     CAVITY = "cavity"               # Body cavities (thoracic, abdominal, pelvic)
     REGION = "region"               # Body regions (not specific structures)
 ```
 
+**32 structure types** organized into 8 categories.
+
+**Key additions:**
+
+- **Brain-specific** (7 types): gyrus, sulcus, fissure, white_matter_tract, nucleus, ventricle, cistern
+- **Lymph node station**: For TNM staging groups (IASLC lung stations, head/neck levels, axillary levels)
+- **Anatomical organization** (2 types): compartment, membrane
+
 **Sources:**
+
 - [FMA-RadLex Application Ontology](https://pmc.ncbi.nlm.nih.gov/articles/PMC2656009/)
-- [Solid and Hollow Abdominal Viscera](https://radiopaedia.org/articles/solid-and-hollow-abdominal-viscera)
-- [Blood Vessel Structure](https://openstax.org/books/anatomy-and-physiology-2e/pages/20-1-structure-and-function-of-blood-vessels)
+- [Neuroanatomical domain of FMA](https://pmc.ncbi.nlm.nih.gov/articles/PMC3944952/)
+- [IASLC Lymph Node Map](https://pmc.ncbi.nlm.nih.gov/articles/PMC4499584/)
+- [Brain anatomy - Radiopaedia](https://radiopaedia.org/articles/brain)
+- [Mediastinum compartments - ITMIG](https://pubs.rsna.org/doi/full/10.1148/rg.2017160095)
 
 ---
 
-## Database Schema (3 Tables)
+## Database Schema (4 Tables)
 
 ### Table 1: anatomic_locations (with pre-computed hierarchy)
 
@@ -536,6 +599,7 @@ CREATE INDEX idx_refs_domain ON anatomic_references(
 **Reference loading strategy:** Like codes, `references: list[WebReference]` are **eagerly loaded** via a JOIN on `anatomic_references`.
 
 **Typical references for anatomic locations:**
+
 - Radiopaedia articles (anatomy)
 - Wikipedia anatomy pages
 - FMA ontology pages
@@ -1049,11 +1113,13 @@ def get_location(
 ```
 
 **Thread safety notes:**
+
 - DuckDB read-only connections can be shared across threads
 - Queries are serialized internally (MVCC)
 - For high concurrency, consider a connection pool pattern
 
 **Sources:**
+
 - [DuckDB Concurrency](https://duckdb.org/docs/stable/connect/concurrency)
 - [FastAPI Singleton Pattern](https://medium.com/@hieutrantrung.it/using-fastapi-like-a-pro-with-singleton-and-dependency-injection-patterns-28de0a833a52)
 - [DuckDB FastAPI Discussion](https://github.com/duckdb/duckdb/discussions/13719)
@@ -1065,6 +1131,7 @@ def get_location(
 ### Step 0: Create WebReference Model (Shared)
 
 Create `src/findingmodel/web_reference.py`:
+
 - `WebReference` model (Tavily-compatible)
 - `from_tavily_result()` factory method
 - `domain` computed property
@@ -1075,18 +1142,28 @@ This is a **shared model** that will also be used by FindingModel (future).
 ### Step 1: Create Enums and Data Models
 
 Create `src/findingmodel/anatomic_location.py`:
+
 - `AnatomicRegion` enum (existing regions)
 - `Laterality` enum (generic, left, right, nonlateral)
 - `LocationType` enum (structure, space, region, body_part, system, group)
 - `BodySystem` enum (10 systems)
-- `StructureType` enum (18 types - only for LocationType.STRUCTURE)
+- `StructureType` enum (32 types - only for LocationType.STRUCTURE)
 - `AnatomicRef` model
 - `AnatomicLocation` model with all navigation methods
+
+### Step 1.5: Add `ensure_anatomic_db()` to config.py
+
+Add database download/caching function to `src/findingmodel/config.py`:
+
+- `ensure_anatomic_db()` - Downloads anatomic locations DuckDB from manifest if not cached
+- Follows same pattern as existing `ensure_index_db()` for FindingModel Index
+- Checks manifest for version updates, re-downloads if needed
 
 ### Step 2: Update `anatomic_migration.py`
 
 - New schema with pre-computed fields
 - Build materialized paths during migration:
+
   ```python
   def compute_containment_path(record, all_records) -> str:
       """Build path by traversing containedByRef chain to root."""
@@ -1098,6 +1175,7 @@ Create `src/findingmodel/anatomic_location.py`:
           current = records_by_id[parent_id]
       return "/" + "/".join(path_parts) + "/" + record["_id"] + "/"
   ```
+
 - Extract codes as IndexCode format
 - Compute laterality fields from refs
 
@@ -1133,17 +1211,18 @@ Create `src/findingmodel/anatomic_location.py`:
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/findingmodel/web_reference.py` | **NEW** - WebReference model (shared, Tavily-compatible) |
-| `src/findingmodel/anatomic_location.py` | **NEW** - Enums, AnatomicRef, AnatomicLocation |
-| `src/findingmodel/anatomic_migration.py` | New schema, path computation, code/reference extraction |
-| `src/findingmodel/anatomic_index.py` | **NEW** - AnatomicLocationIndex |
-| `src/findingmodel/cli.py` | Update anatomic commands |
-| `src/findingmodel/__init__.py` | Export new classes (WebReference, AnatomicLocation, etc.) |
-| `test/test_web_reference.py` | **NEW** - WebReference tests |
-| `test/test_anatomic_location.py` | **NEW** - Model tests |
-| `test/test_anatomic_index.py` | **NEW** - Index/query tests |
+| File                                     | Changes                                                   |
+| ---------------------------------------- | --------------------------------------------------------- |
+| `src/findingmodel/web_reference.py`      | **NEW** - WebReference model (shared, Tavily-compatible)  |
+| `src/findingmodel/anatomic_location.py`  | **NEW** - Enums, AnatomicRef, AnatomicLocation            |
+| `src/findingmodel/config.py`             | Add `ensure_anatomic_db()` function                       |
+| `src/findingmodel/anatomic_migration.py` | New schema, path computation, code/reference extraction   |
+| `src/findingmodel/anatomic_index.py`     | **NEW** - AnatomicLocationIndex                           |
+| `src/findingmodel/cli.py`                | Update anatomic commands                                  |
+| `src/findingmodel/__init__.py`           | Export new classes (WebReference, AnatomicLocation, etc.) |
+| `test/test_web_reference.py`             | **NEW** - WebReference tests                              |
+| `test/test_anatomic_location.py`         | **NEW** - Model tests                                     |
+| `test/test_anatomic_index.py`            | **NEW** - Index/query tests                               |
 
 ---
 
@@ -1156,7 +1235,7 @@ Create `src/findingmodel/anatomic_location.py`:
 5. **Auto-bound `_index` via weakref** - Avoids circular reference memory leaks, enforces context lifecycle
 6. **Laterality: 4 values** - generic, left, right, nonlateral
 7. **LocationType: 6 values** - structure, space, region, body_part, system, group (required field)
-8. **StructureType** - Only applicable when location_type = STRUCTURE (18 specific types)
+8. **StructureType** - Only applicable when location_type = STRUCTURE (32 types in 8 categories)
 9. **BodySystem** - Optional classification by organ system (10 systems)
 10. **Same search capabilities** - Vector + BM25 hybrid search
 11. **No foreign keys** - Integrity enforced by build process
