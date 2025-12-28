@@ -171,8 +171,12 @@ class FindingModelConfig(BaseSettings):
         parts = provider_part.split("/")
 
         # Small tier uses minimal reasoning for faster/cheaper OpenAI responses
+        # Only gpt-5+ and o1+ models support the reasoning parameter
+        supports_reasoning = model_name.startswith(("gpt-5", "o1"))
         openai_settings = (
-            ModelSettings(extra_body={"reasoning": {"effort": "minimal"}}) if model_tier == "small" else None
+            ModelSettings(extra_body={"reasoning": {"effort": "minimal"}})
+            if model_tier == "small" and supports_reasoning
+            else None
         )
 
         if parts == ["openai"]:

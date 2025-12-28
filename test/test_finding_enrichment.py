@@ -122,7 +122,7 @@ class TestFindingEnrichmentResult:
             subspecialties=["CH", "OI"],
             anatomic_locations=mock_anatomic_locations[:2],
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="openai",
+            model_used="openai:gpt-4-turbo",
             model_tier="main",
         )
 
@@ -135,7 +135,7 @@ class TestFindingEnrichmentResult:
         assert "CT" in result.modalities
         assert "CH" in result.subspecialties
         assert len(result.anatomic_locations) == 2
-        assert result.model_provider == "openai"
+        assert result.model_used == "openai:gpt-4-turbo"
         assert result.model_tier == "main"
 
     def test_enrichment_result_minimal_fields(self) -> None:
@@ -143,7 +143,7 @@ class TestFindingEnrichmentResult:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Test Finding",
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="anthropic",
+            model_used="anthropic:claude-sonnet-4-5",
             model_tier="small",
         )
 
@@ -162,13 +162,13 @@ class TestFindingEnrichmentResult:
         with pytest.raises(ValidationError) as exc_info:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="Test Finding",
-                # Missing required enrichment_timestamp, model_provider, model_tier
+                # Missing required enrichment_timestamp, model_used, model_tier
             )
 
         errors = exc_info.value.errors()
         error_fields = {error["loc"][0] for error in errors}
         assert "enrichment_timestamp" in error_fields
-        assert "model_provider" in error_fields
+        assert "model_used" in error_fields
         assert "model_tier" in error_fields
 
     def test_enrichment_result_empty_finding_name(self) -> None:
@@ -177,7 +177,7 @@ class TestFindingEnrichmentResult:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="",  # Empty string should fail min_length=1
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_provider="openai",
+                model_used="openai:gpt-4-turbo",
                 model_tier="main",
             )
 
@@ -197,7 +197,7 @@ class TestFindingEnrichmentResult:
             finding_name="Test Finding",
             etiologies=valid_etiologies,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="openai",
+            model_used="openai:gpt-4-turbo",
             model_tier="main",
         )
 
@@ -212,7 +212,7 @@ class TestFindingEnrichmentResult:
                 finding_name="Test Finding",
                 etiologies=invalid_etiologies,
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_provider="openai",
+                model_used="openai:gpt-4-turbo",
                 model_tier="main",
             )
 
@@ -238,7 +238,7 @@ class TestFindingEnrichmentResult:
             subspecialties=["CH", "ER"],
             anatomic_locations=mock_anatomic_locations[:1],
             enrichment_timestamp=timestamp,
-            model_provider="anthropic",
+            model_used="anthropic:claude-sonnet-4-5",
             model_tier="full",
         )
 
@@ -252,7 +252,7 @@ class TestFindingEnrichmentResult:
         assert parsed["body_regions"] == ["Chest"]
         assert parsed["etiologies"] == ["inflammatory:infectious"]
         assert parsed["modalities"] == ["XR", "CT"]
-        assert parsed["model_provider"] == "anthropic"
+        assert parsed["model_used"] == "anthropic:claude-sonnet-4-5"
 
 
 # =============================================================================
@@ -271,7 +271,7 @@ class TestEnumTypes:
             finding_name="Multi-region Finding",
             body_regions=valid_regions,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="openai",
+            model_used="openai:gpt-4-turbo",
             model_tier="main",
         )
 
@@ -284,7 +284,7 @@ class TestEnumTypes:
                 finding_name="Test Finding",
                 body_regions=["Chest", "InvalidRegion"],  # type: ignore[list-item]
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_provider="openai",
+                model_used="openai:gpt-4-turbo",
                 model_tier="main",
             )
 
@@ -299,7 +299,7 @@ class TestEnumTypes:
             finding_name="Multi-modality Finding",
             modalities=valid_modalities,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="openai",
+            model_used="openai:gpt-4-turbo",
             model_tier="main",
         )
 
@@ -312,7 +312,7 @@ class TestEnumTypes:
                 finding_name="Test Finding",
                 modalities=["CT", "INVALID"],  # type: ignore[list-item]
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_provider="openai",
+                model_used="openai:gpt-4-turbo",
                 model_tier="main",
             )
 
@@ -344,7 +344,7 @@ class TestEnumTypes:
             finding_name="Multi-specialty Finding",
             subspecialties=valid_subspecialties,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="openai",
+            model_used="openai:gpt-4-turbo",
             model_tier="main",
         )
 
@@ -357,7 +357,7 @@ class TestEnumTypes:
                 finding_name="Test Finding",
                 subspecialties=["CH", "FAKE"],  # type: ignore[list-item]
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_provider="openai",
+                model_used="openai:gpt-4-turbo",
                 model_tier="main",
             )
 
@@ -391,7 +391,7 @@ class TestEtiologiesConstant:
             "vascular:ischemic",
             "degenerative",
             "congenital",
-            "traumatic-acute",
+            "traumatic",
             "idiopathic",
             "normal-variant",
         ]
@@ -538,7 +538,7 @@ class TestModelCompatibility:
             finding_name="Test Finding",
             snomed_codes=mock_snomed_codes,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="openai",
+            model_used="openai:gpt-4-turbo",
             model_tier="main",
         )
 
@@ -555,7 +555,7 @@ class TestModelCompatibility:
             finding_name="Test Finding",
             anatomic_locations=mock_anatomic_locations,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_provider="openai",
+            model_used="openai:gpt-4-turbo",
             model_tier="main",
         )
 
@@ -804,13 +804,13 @@ class TestCreateEnrichmentAgent:
 
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
 
-        with patch("findingmodel.tools.finding_enrichment.get_model") as mock_get_model:
-            mock_get_model.return_value = TestModel()
+        with patch("findingmodel.tools.finding_enrichment.settings") as mock_settings:
+            mock_settings.get_model.return_value = TestModel()
 
             create_enrichment_agent(model_tier="base")
 
-            # Verify get_model was called with correct tier
-            mock_get_model.assert_called_once_with("base", provider=None)
+            # Verify settings.get_model was called with correct tier
+            mock_settings.get_model.assert_called_once_with("base")
 
     def test_agent_has_no_tools(self) -> None:
         """Test that agent has no tools registered.
@@ -854,21 +854,19 @@ class TestCreateEnrichmentAgent:
         assert len(agent._system_prompts) > 0
         assert len(agent._system_prompts[0]) > 0
 
-    def test_agent_with_custom_provider(self) -> None:
-        """Test creating agent with custom provider."""
-        from unittest.mock import patch
-
+    def test_agent_with_custom_model(self) -> None:
+        """Test creating agent with custom model string."""
         from pydantic_ai.models.test import TestModel
 
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
 
-        with patch("findingmodel.tools.finding_enrichment.get_model") as mock_get_model:
-            mock_get_model.return_value = TestModel()
+        # Use TestModel to avoid needing API keys
+        agent = create_enrichment_agent(model=TestModel())
 
-            create_enrichment_agent(provider="anthropic")
-
-            # Verify provider was passed to get_model
-            mock_get_model.assert_called_once_with("base", provider="anthropic")
+        # Agent should be created with the custom model
+        # (Can't easily verify the model without accessing internals,
+        # but we can verify the function accepts the parameter)
+        assert agent is not None
 
 
 # =============================================================================
@@ -967,7 +965,7 @@ class TestEnrichmentAgentBehavior:
 
         controlled_classification = EnrichmentClassification(
             body_regions=["Chest", "Abdomen"],
-            etiologies=["traumatic-acute", "vascular:hemorrhagic"],
+            etiologies=["traumatic", "vascular:hemorrhagic"],
             modalities=["CT"],
             subspecialties=["ER"],
             reasoning="Multi-system trauma",
@@ -1240,7 +1238,7 @@ class TestEnrichFindingOrchestration:
             assert len(result.modalities) == 3
             assert len(result.subspecialties) == 3
             assert result.enrichment_timestamp is not None
-            assert result.model_provider is not None
+            assert result.model_used is not None
             assert result.model_tier == "base"
 
     @pytest.mark.asyncio
@@ -1332,8 +1330,8 @@ class TestEnrichFindingOrchestration:
             assert result.finding_name == "test finding"
 
     @pytest.mark.asyncio
-    async def test_enrich_finding_provider_parameter_propagated(self) -> None:
-        """Test that provider parameter is passed to create_enrichment_agent."""
+    async def test_enrich_finding_model_parameter_propagated(self) -> None:
+        """Test that model parameter is passed to create_enrichment_agent."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
         from findingmodel.tools.finding_enrichment import enrich_finding
@@ -1373,10 +1371,10 @@ class TestEnrichFindingOrchestration:
             mock_agent.run = AsyncMock(return_value=mock_result)
             mock_create_agent.return_value = mock_agent
 
-            await enrich_finding("test finding", provider="anthropic")
+            await enrich_finding("test finding", model="anthropic:claude-sonnet-4-5")
 
-            # Verify provider was passed to create_enrichment_agent
-            mock_create_agent.assert_called_once_with(model_tier="base", provider="anthropic")
+            # Verify model was passed to create_enrichment_agent
+            mock_create_agent.assert_called_once_with(model_tier="base", model="anthropic:claude-sonnet-4-5")
 
 
 # =============================================================================

@@ -13,11 +13,10 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 
 from findingmodel import logger
-from findingmodel.config import ModelProvider, ModelTier, settings
+from findingmodel.config import ModelTier, settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import DuckDBIndex
 from findingmodel.index_code import IndexCode
-from findingmodel.tools.common import get_model
 
 # Import shared types from the main module
 from findingmodel.tools.finding_enrichment import (
@@ -124,14 +123,14 @@ INSTRUCTIONS:
 
 def create_agentic_enrichment_agent(
     model_tier: ModelTier = "base",
-    provider: ModelProvider | None = None,
+    model: str | None = None,
 ) -> Agent[AgenticEnrichmentContext, AgenticEnrichmentOutput]:
     """Create the agentic enrichment agent with tools.
 
     This agent uses tools to gather information, then classifies the finding.
     """
     agent: Agent[AgenticEnrichmentContext, AgenticEnrichmentOutput] = Agent(
-        model=get_model(model_tier, provider=provider),
+        model=model if model else settings.get_model(model_tier),
         output_type=AgenticEnrichmentOutput,
         deps_type=AgenticEnrichmentContext,
         system_prompt=_create_agentic_system_prompt(),
@@ -220,7 +219,7 @@ def create_agentic_enrichment_agent(
     return agent
 
 
-async def enrich_finding_agentic(identifier: str, provider: ModelProvider | None = None) -> FindingEnrichmentResult:
+async def enrich_finding_agentic(identifier: str, model: str | None = None) -> FindingEnrichmentResult:
     """Enrich a finding using the agentic tool-calling approach.
 
     This version uses a single agent that calls tools as needed,
@@ -228,7 +227,7 @@ async def enrich_finding_agentic(identifier: str, provider: ModelProvider | None
 
     Args:
         identifier: Either an OIFM ID or finding name
-        provider: AI model provider ("openai" or "anthropic")
+        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5')
 
     Returns:
         FindingEnrichmentResult with all enrichment data
@@ -262,7 +261,7 @@ async def enrich_finding_agentic(identifier: str, provider: ModelProvider | None
         existing_model=existing_model,
     )
 
-    agent = create_agentic_enrichment_agent(model_tier="base", provider=provider)
+    agent = create_agentic_enrichment_agent(model_tier="base", model=model)
 
     prompt = f"Enrich the imaging finding: {finding_name}"
     if finding_description:
@@ -291,7 +290,7 @@ async def enrich_finding_agentic(identifier: str, provider: ModelProvider | None
         for loc_id in output.anatomic_location_ids
     ]
 
-    effective_provider = provider or settings.model_provider
+    model_used = model if model else str(settings.get_model("base"))
 
     return FindingEnrichmentResult(
         finding_name=finding_name,
@@ -304,6 +303,6 @@ async def enrich_finding_agentic(identifier: str, provider: ModelProvider | None
         subspecialties=output.subspecialties,
         anatomic_locations=anatomic_locations,
         enrichment_timestamp=datetime.now(timezone.utc),
-        model_provider=effective_provider,
+        model_used=model_used,
         model_tier="base",
     )

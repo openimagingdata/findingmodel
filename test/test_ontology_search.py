@@ -694,21 +694,8 @@ async def test_match_ontology_concepts_basic_wiring() -> None:
     models.ALLOW_MODEL_REQUESTS = True
 
     try:
-        # Temporarily override settings to use fast model for integration test
-        from findingmodel import config
-
-        original_model = config.settings.default_model
-        original_small = config.settings.default_model_small
-        config.settings.default_model = "openai:gpt-4o-mini"
-        config.settings.default_model_small = "openai:gpt-4o-mini"
-
-        try:
-            # Call with simplest valid input
-            result = await match_ontology_concepts(finding_name="pneumonia")
-        finally:
-            # Restore original settings
-            config.settings.default_model = original_model
-            config.settings.default_model_small = original_small
+        # Call with simplest valid input (uses default_model_small from settings)
+        result = await match_ontology_concepts(finding_name="pneumonia")
 
         # Assert only on structure, not behavior
         assert result is not None

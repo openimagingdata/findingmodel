@@ -16,11 +16,10 @@ from pydantic_ai import Agent
 from typing_extensions import Literal
 
 from findingmodel import logger
-from findingmodel.config import ModelProvider, ModelTier, settings
+from findingmodel.config import ModelTier, settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import DuckDBIndex
 from findingmodel.index_code import IndexCode
-from findingmodel.tools.common import get_model
 from findingmodel.tools.ontology_search import OntologySearchResult
 
 # Type aliases for constrained value sets
@@ -178,8 +177,8 @@ class FindingEnrichmentResult(BaseModel):
         description="Timestamp when this enrichment was performed",
     )
 
-    model_provider: str = Field(
-        description="AI model provider used for enrichment (e.g., 'openai', 'anthropic')",
+    model_used: str = Field(
+        description="AI model string used for enrichment (e.g., 'openai:gpt-5-mini', 'anthropic:claude-sonnet-4-5')",
     )
 
     model_tier: str = Field(
@@ -562,7 +561,7 @@ Do NOT call any external tools - all necessary information is provided."""
 
 def create_enrichment_agent(
     model_tier: ModelTier = "base",
-    provider: ModelProvider | None = None,
+    model: str | None = None,
 ) -> Agent[EnrichmentContext, EnrichmentClassification]:
     """Create the finding enrichment agent.
 
@@ -572,13 +571,14 @@ def create_enrichment_agent(
 
     Args:
         model_tier: Model tier to use (defaults to "base")
-        provider: AI model provider to use ("openai" or "anthropic"). If None, uses configured default.
+        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5').
+               If None, uses the configured default for the specified tier.
 
     Returns:
         Configured Pydantic AI agent for finding enrichment (no tools - classification only)
     """
     agent: Agent[EnrichmentContext, EnrichmentClassification] = Agent(
-        model=get_model(model_tier, provider=provider),
+        model=model if model else settings.get_model(model_tier),
         output_type=EnrichmentClassification,
         deps_type=EnrichmentContext,
         system_prompt=_create_enrichment_system_prompt(),
@@ -600,7 +600,7 @@ def create_enrichment_agent(
 async def enrich_finding_unified(  # noqa: C901
     finding_name: str,
     description: str | None = None,
-    provider: ModelProvider | None = None,
+    model: str | None = None,
 ) -> UnifiedEnrichmentOutput:
     """Enrich a finding using the unified classifier approach.
 
@@ -615,7 +615,8 @@ async def enrich_finding_unified(  # noqa: C901
     Args:
         finding_name: Name of the imaging finding (e.g., "pneumonia", "liver lesion")
         description: Optional detailed description for context
-        provider: AI model provider to use ("openai" or "anthropic"). If None, uses configured default.
+        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5').
+               If None, uses the configured default.
 
     Returns:
         UnifiedEnrichmentOutput with categorized codes, selected locations, and classifications
@@ -794,7 +795,7 @@ async def enrich_finding_unified(  # noqa: C901
     logger.debug("Step 6: Running unified classifier agent")
 
     agent: Agent[None, UnifiedEnrichmentOutput] = Agent(
-        model=get_model("base", provider=provider),
+        model=model if model else settings.get_model("base"),
         output_type=UnifiedEnrichmentOutput,
         system_prompt=system_prompt,
         retries=2,  # Allow 2 retries for validation errors
@@ -829,9 +830,7 @@ async def enrich_finding_unified(  # noqa: C901
     except Exception as e:
         timings["step6_classifier"] = perf_counter() - step6_start
         timings["total"] = perf_counter() - total_start
-        logger.error(
-            f"Unified classifier agent failed after {timings['step6_classifier']:.1f}s: {e}"
-        )
+        logger.error(f"Unified classifier agent failed after {timings['step6_classifier']:.1f}s: {e}")
         logger.info(
             f"Timing breakdown (failed) - Total: {timings['total']:.1f}s | "
             f"QueryGen: {timings.get('step1_query_gen', 0):.1f}s | "
@@ -843,7 +842,7 @@ async def enrich_finding_unified(  # noqa: C901
         raise RuntimeError(f"Enrichment classification failed: {e}") from e
 
 
-async def enrich_finding(identifier: str, provider: ModelProvider | None = None) -> FindingEnrichmentResult:  # noqa: C901
+async def enrich_finding(identifier: str, model: str | None = None) -> FindingEnrichmentResult:  # noqa: C901
     """Enrich a finding with comprehensive metadata.
 
     This is the main entry point for the enrichment workflow. It orchestrates:
@@ -857,7 +856,8 @@ async def enrich_finding(identifier: str, provider: ModelProvider | None = None)
 
     Args:
         identifier: Either an OIFM ID (e.g., "OIFM_AI_000001") or finding name (e.g., "pneumonia")
-        provider: AI model provider to use ("openai" or "anthropic"). If None, uses configured default.
+        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5').
+               If None, uses the configured default.
 
     Returns:
         FindingEnrichmentResult with all enrichment data and metadata
@@ -993,7 +993,7 @@ async def enrich_finding(identifier: str, provider: ModelProvider | None = None)
     # Step 4: Run enrichment agent for classification
     logger.debug("Step 4: Running enrichment agent")
     try:
-        agent = create_enrichment_agent(model_tier="base", provider=provider)
+        agent = create_enrichment_agent(model_tier="base", model=model)
         prompt = f"Classify the imaging finding: {finding_name}"
         if finding_description:
             prompt += f"\nDescription: {finding_description}"
@@ -1024,9 +1024,9 @@ async def enrich_finding(identifier: str, provider: ModelProvider | None = None)
     # Step 5: Assemble complete FindingEnrichmentResult
     logger.debug("Step 5: Assembling final enrichment result")
 
-    # Determine model provider and tier for metadata
-    effective_provider = provider or settings.model_provider
+    # Determine model used for metadata
     model_tier_str = "base"  # We use base tier for enrichment agent (Sonnet 4.5)
+    model_used = model if model else str(settings.get_model("base"))
 
     enrichment_result = FindingEnrichmentResult(
         finding_name=finding_name,
@@ -1039,7 +1039,7 @@ async def enrich_finding(identifier: str, provider: ModelProvider | None = None)
         subspecialties=classification.subspecialties,
         anatomic_locations=anatomic_locations,
         enrichment_timestamp=datetime.now(timezone.utc),
-        model_provider=effective_provider,
+        model_used=model_used,
         model_tier=model_tier_str,
     )
 

@@ -76,14 +76,10 @@ async def enrich_single_finding(finding_name: str, index: DuckDBIndex) -> dict |
         "description": existing_model.description,
         "synonyms": list(existing_model.synonyms) if existing_model.synonyms else [],
         "attributes": [attr.name for attr in existing_model.attributes],
-
         # Enrichment data
         "ontology_codes": [
             {"system": code.system, "code": code.code, "display": code.display}
-            for code in (
-                enrichment.ontology_codes.exact_matches +
-                enrichment.ontology_codes.should_include
-            )
+            for code in (enrichment.ontology_codes.exact_matches + enrichment.ontology_codes.should_include)
         ],
         "anatomic_location": {
             "id": enrichment.anatomic_location.location.concept_id,
@@ -150,7 +146,7 @@ async def main(input_path: Path, output_path: Path) -> None:
                     save_output_file(output_path, output_data)
                 else:
                     failed += 1
-                    logger.warning(f"  ✗ No model found")
+                    logger.warning("  ✗ No model found")
 
             except Exception as e:
                 failed += 1
@@ -179,7 +175,9 @@ async def main(input_path: Path, output_path: Path) -> None:
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python scripts/enrich_findings_batch.py <input.json> <output.json>")
-        print("Example: python scripts/enrich_findings_batch.py scripts/ipl_finding_models.json scripts/enriched_findings.json")
+        print(
+            "Example: python scripts/enrich_findings_batch.py scripts/ipl_finding_models.json scripts/enriched_findings.json"
+        )
         sys.exit(1)
 
     input_path = Path(sys.argv[1])
