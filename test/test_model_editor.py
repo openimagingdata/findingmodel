@@ -128,29 +128,21 @@ def test_export_model_for_editing_attributes_only(real_model: FindingModelFull) 
 async def test_edit_model_natural_language_callout_real_api(real_model: FindingModelFull) -> None:
     """Sanity check that real API integration works.
     Behavior validation is handled by evals; this just verifies we get a valid result.
+    Uses configured default_model (no override - test with production config).
     """
     # Temporarily enable model requests for this test only
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
-        # Override model settings to use a fast model for integration test
-        from findingmodel import config
+        agent = model_editor.create_edit_agent()
 
-        original_model = config.settings.default_model
-        config.settings.default_model = "openai:gpt-4o-mini"
+        command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
+        result = await model_editor.edit_model_natural_language(real_model, command, agent=agent)
 
-        try:
-            fast_agent = model_editor.create_edit_agent()
-
-            command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
-            result = await model_editor.edit_model_natural_language(real_model, command, agent=fast_agent)
-
-            # Verify we got a valid result structure back
-            assert isinstance(result.model, FindingModelFull)
-            assert isinstance(result.changes, list)
-            assert isinstance(result.rejections, list)
-        finally:
-            config.settings.default_model = original_model
+        # Verify we got a valid result structure back
+        assert isinstance(result.model, FindingModelFull)
+        assert isinstance(result.changes, list)
+        assert isinstance(result.rejections, list)
     finally:
         models.ALLOW_MODEL_REQUESTS = original
 

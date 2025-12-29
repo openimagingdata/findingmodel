@@ -62,3 +62,10 @@
 - One main concept per file
 - Related utilities grouped in tools/ directory
 - Test files mirror source structure
+
+## Model Configuration
+- **ModelSpec Type**: Use validated `ModelSpec` type for model strings (pattern: `provider:model` or `gateway/provider:model`)
+- **Test Constants**: Use `TEST_OPENAI_MODEL` and `TEST_ANTHROPIC_MODEL` from conftest.py (cheapest models for testing)
+- **Production Config**: Use tier-based selection (`base`/`full`/`small`) via `settings.get_model(tier)`
+- **Never hard-code**: Avoid hard-coded model strings like `"openai:gpt-4o-mini"` in test/production code
+- **Gateway tests**: Construct gateway models from constants: `f"gateway/{TEST_OPENAI_MODEL}"`

@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
+from conftest import TEST_OPENAI_MODEL
 from pydantic_ai import models
 
 import findingmodel.tools
@@ -902,7 +903,7 @@ async def test_gateway_openai_integration() -> None:
     try:
         # Temporarily override settings to use gateway
         original_model = config.settings.default_model
-        config.settings.default_model = "gateway/openai:gpt-4o-mini"
+        config.settings.default_model = f"gateway/{TEST_OPENAI_MODEL}"
 
         try:
             # Get model from settings - this should return an OpenAIResponsesModel

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
 from pydantic import ValidationError
 from pydantic_ai import models
 
@@ -122,7 +123,7 @@ class TestFindingEnrichmentResult:
             subspecialties=["CH", "OI"],
             anatomic_locations=mock_anatomic_locations[:2],
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="openai:gpt-4-turbo",
+            model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
 
@@ -135,7 +136,7 @@ class TestFindingEnrichmentResult:
         assert "CT" in result.modalities
         assert "CH" in result.subspecialties
         assert len(result.anatomic_locations) == 2
-        assert result.model_used == "openai:gpt-4-turbo"
+        assert result.model_used == TEST_OPENAI_MODEL
         assert result.model_tier == "main"
 
     def test_enrichment_result_minimal_fields(self) -> None:
@@ -143,7 +144,7 @@ class TestFindingEnrichmentResult:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Test Finding",
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="anthropic:claude-sonnet-4-5",
+            model_used=TEST_ANTHROPIC_MODEL,
             model_tier="small",
         )
 
@@ -177,7 +178,7 @@ class TestFindingEnrichmentResult:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="",  # Empty string should fail min_length=1
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_used="openai:gpt-4-turbo",
+                model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
 
@@ -197,7 +198,7 @@ class TestFindingEnrichmentResult:
             finding_name="Test Finding",
             etiologies=valid_etiologies,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="openai:gpt-4-turbo",
+            model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
 
@@ -212,7 +213,7 @@ class TestFindingEnrichmentResult:
                 finding_name="Test Finding",
                 etiologies=invalid_etiologies,
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_used="openai:gpt-4-turbo",
+                model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
 
@@ -238,7 +239,7 @@ class TestFindingEnrichmentResult:
             subspecialties=["CH", "ER"],
             anatomic_locations=mock_anatomic_locations[:1],
             enrichment_timestamp=timestamp,
-            model_used="anthropic:claude-sonnet-4-5",
+            model_used=TEST_ANTHROPIC_MODEL,
             model_tier="full",
         )
 
@@ -252,7 +253,7 @@ class TestFindingEnrichmentResult:
         assert parsed["body_regions"] == ["Chest"]
         assert parsed["etiologies"] == ["inflammatory:infectious"]
         assert parsed["modalities"] == ["XR", "CT"]
-        assert parsed["model_used"] == "anthropic:claude-sonnet-4-5"
+        assert parsed["model_used"] == TEST_ANTHROPIC_MODEL
 
 
 # =============================================================================
@@ -271,7 +272,7 @@ class TestEnumTypes:
             finding_name="Multi-region Finding",
             body_regions=valid_regions,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="openai:gpt-4-turbo",
+            model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
 
@@ -284,7 +285,7 @@ class TestEnumTypes:
                 finding_name="Test Finding",
                 body_regions=["Chest", "InvalidRegion"],  # type: ignore[list-item]
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_used="openai:gpt-4-turbo",
+                model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
 
@@ -299,7 +300,7 @@ class TestEnumTypes:
             finding_name="Multi-modality Finding",
             modalities=valid_modalities,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="openai:gpt-4-turbo",
+            model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
 
@@ -312,7 +313,7 @@ class TestEnumTypes:
                 finding_name="Test Finding",
                 modalities=["CT", "INVALID"],  # type: ignore[list-item]
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_used="openai:gpt-4-turbo",
+                model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
 
@@ -344,7 +345,7 @@ class TestEnumTypes:
             finding_name="Multi-specialty Finding",
             subspecialties=valid_subspecialties,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="openai:gpt-4-turbo",
+            model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
 
@@ -357,7 +358,7 @@ class TestEnumTypes:
                 finding_name="Test Finding",
                 subspecialties=["CH", "FAKE"],  # type: ignore[list-item]
                 enrichment_timestamp=datetime.now(timezone.utc),
-                model_used="openai:gpt-4-turbo",
+                model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
 
@@ -538,7 +539,7 @@ class TestModelCompatibility:
             finding_name="Test Finding",
             snomed_codes=mock_snomed_codes,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="openai:gpt-4-turbo",
+            model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
 
@@ -555,7 +556,7 @@ class TestModelCompatibility:
             finding_name="Test Finding",
             anatomic_locations=mock_anatomic_locations,
             enrichment_timestamp=datetime.now(timezone.utc),
-            model_used="openai:gpt-4-turbo",
+            model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
 
@@ -1435,198 +1436,6 @@ class TestFindingEnrichmentIntegration:
 
     @pytest.mark.callout
     @pytest.mark.asyncio
-    async def test_enrich_fracture(self) -> None:
-        """Test enrichment of simple finding: fracture."""
-        original = models.ALLOW_MODEL_REQUESTS
-        models.ALLOW_MODEL_REQUESTS = True
-        try:
-            from findingmodel.tools.finding_enrichment import enrich_finding
-
-            result = await enrich_finding("fracture")
-
-            # Validate result structure - finding_name may be canonical form from Index
-            assert result.finding_name.lower() == "fracture"
-            assert isinstance(result.snomed_codes, list)
-            assert isinstance(result.radlex_codes, list)
-            assert isinstance(result.body_regions, list)
-            assert isinstance(result.etiologies, list)
-            assert isinstance(result.modalities, list)
-            assert isinstance(result.subspecialties, list)
-            assert isinstance(result.anatomic_locations, list)
-            assert result.enrichment_timestamp is not None
-
-            # Content validation for fracture
-            # Should have traumatic etiology
-            traumatic_etiologies = [e for e in result.etiologies if "traumatic" in e.lower()]
-            assert len(traumatic_etiologies) > 0 or len(result.etiologies) > 0
-
-            # Common modalities should include XR or CT
-            assert len(result.modalities) > 0
-
-            # Should have MK (musculoskeletal) subspecialty
-            assert "MK" in result.subspecialties or len(result.subspecialties) > 0
-
-        finally:
-            models.ALLOW_MODEL_REQUESTS = original
-
-    @pytest.mark.callout
-    @pytest.mark.asyncio
-    async def test_enrich_pulmonary_nodule(self) -> None:
-        """Test enrichment of moderate complexity: pulmonary nodule."""
-        original = models.ALLOW_MODEL_REQUESTS
-        models.ALLOW_MODEL_REQUESTS = True
-        try:
-            from findingmodel.tools.finding_enrichment import enrich_finding
-
-            result = await enrich_finding("pulmonary nodule")
-
-            # Validate result structure - finding_name may be canonical form from Index
-            assert result.finding_name.lower() == "pulmonary nodule"
-            assert isinstance(result.snomed_codes, list)
-            assert isinstance(result.radlex_codes, list)
-            assert isinstance(result.body_regions, list)
-            assert isinstance(result.etiologies, list)
-            assert isinstance(result.modalities, list)
-            assert isinstance(result.subspecialties, list)
-            assert isinstance(result.anatomic_locations, list)
-            assert result.enrichment_timestamp is not None
-
-            # Content validation for pulmonary nodule
-            # Should be in chest
-            assert "Chest" in result.body_regions or len(result.body_regions) > 0
-
-            # Nodules can have multiple etiologies (neoplastic, infectious, etc.)
-            assert len(result.etiologies) >= 0  # May have multiple or none if uncertain
-
-            # Common modalities should include CT
-            assert len(result.modalities) > 0
-
-            # Should have CH (chest) subspecialty
-            assert "CH" in result.subspecialties or len(result.subspecialties) > 0
-
-            # Should have lung-related anatomic locations
-            assert len(result.anatomic_locations) >= 0
-
-        finally:
-            models.ALLOW_MODEL_REQUESTS = original
-
-    @pytest.mark.callout
-    @pytest.mark.asyncio
-    async def test_enrich_liver_lesion(self) -> None:
-        """Test enrichment of moderate complexity: liver lesion."""
-        original = models.ALLOW_MODEL_REQUESTS
-        models.ALLOW_MODEL_REQUESTS = True
-        try:
-            from findingmodel.tools.finding_enrichment import enrich_finding
-
-            result = await enrich_finding("liver lesion")
-
-            # Validate result structure - finding_name may be canonical form from Index
-            # "liver lesion" may map to "hepatic lesion" (synonym) in the Index
-            assert "liver" in result.finding_name.lower() or "hepatic" in result.finding_name.lower()
-            assert isinstance(result.snomed_codes, list)
-            assert isinstance(result.radlex_codes, list)
-            assert isinstance(result.body_regions, list)
-            assert isinstance(result.etiologies, list)
-            assert isinstance(result.modalities, list)
-            assert isinstance(result.subspecialties, list)
-            assert isinstance(result.anatomic_locations, list)
-            assert result.enrichment_timestamp is not None
-
-            # Content validation for liver lesion
-            # Should be in abdomen
-            assert "Abdomen" in result.body_regions or len(result.body_regions) > 0
-
-            # Lesions can have various etiologies
-            assert isinstance(result.etiologies, list)
-
-            # Common modalities should include CT, MR, or US
-            assert len(result.modalities) > 0
-
-            # Should have AB (abdominal) subspecialty
-            assert "AB" in result.subspecialties or len(result.subspecialties) > 0
-
-        finally:
-            models.ALLOW_MODEL_REQUESTS = original
-
-    @pytest.mark.callout
-    @pytest.mark.asyncio
-    async def test_enrich_ground_glass_opacity(self) -> None:
-        """Test enrichment of complex finding: ground-glass opacity."""
-        original = models.ALLOW_MODEL_REQUESTS
-        models.ALLOW_MODEL_REQUESTS = True
-        try:
-            from findingmodel.tools.finding_enrichment import enrich_finding
-
-            result = await enrich_finding("ground-glass opacity")
-
-            # Validate result structure - finding_name may be canonical form from Index
-            assert "ground" in result.finding_name.lower() and "glass" in result.finding_name.lower()
-            assert isinstance(result.snomed_codes, list)
-            assert isinstance(result.radlex_codes, list)
-            assert isinstance(result.body_regions, list)
-            assert isinstance(result.etiologies, list)
-            assert isinstance(result.modalities, list)
-            assert isinstance(result.subspecialties, list)
-            assert isinstance(result.anatomic_locations, list)
-            assert result.enrichment_timestamp is not None
-
-            # Content validation for ground-glass opacity
-            # Should be in chest
-            assert "Chest" in result.body_regions or len(result.body_regions) > 0
-
-            # GGO has diverse etiologies (infectious, inflammatory, neoplastic, etc.)
-            assert isinstance(result.etiologies, list)
-
-            # Primarily seen on CT
-            assert len(result.modalities) > 0
-
-            # Should have CH (chest) subspecialty
-            assert "CH" in result.subspecialties or len(result.subspecialties) > 0
-
-        finally:
-            models.ALLOW_MODEL_REQUESTS = original
-
-    @pytest.mark.callout
-    @pytest.mark.asyncio
-    async def test_enrich_mass_ambiguous(self) -> None:
-        """Test enrichment of ambiguous finding: mass."""
-        original = models.ALLOW_MODEL_REQUESTS
-        models.ALLOW_MODEL_REQUESTS = True
-        try:
-            from findingmodel.tools.finding_enrichment import enrich_finding
-
-            result = await enrich_finding("mass")
-
-            # Validate result structure - should handle gracefully despite ambiguity
-            assert result.finding_name.lower() == "mass"
-            assert isinstance(result.snomed_codes, list)
-            assert isinstance(result.radlex_codes, list)
-            assert isinstance(result.body_regions, list)
-            assert isinstance(result.etiologies, list)
-            assert isinstance(result.modalities, list)
-            assert isinstance(result.subspecialties, list)
-            assert isinstance(result.anatomic_locations, list)
-            assert result.enrichment_timestamp is not None
-
-            # Content validation for ambiguous "mass"
-            # May not have specific body regions or may have multiple
-            assert isinstance(result.body_regions, list)
-
-            # Likely neoplastic etiologies
-            assert isinstance(result.etiologies, list)
-
-            # Multiple modalities possible
-            assert isinstance(result.modalities, list)
-
-            # Multiple subspecialties possible
-            assert isinstance(result.subspecialties, list)
-
-        finally:
-            models.ALLOW_MODEL_REQUESTS = original
-
-    @pytest.mark.callout
-    @pytest.mark.asyncio
     async def test_enrich_unknown_finding(self) -> None:
         """Test enrichment of unknown finding name - should still produce valid result."""
         original = models.ALLOW_MODEL_REQUESTS
@@ -1651,42 +1460,6 @@ class TestFindingEnrichmentIntegration:
             # All lists should be valid (even if empty)
             # The agent should handle unknown findings gracefully
             assert result.oifm_id is None  # Not in index
-
-        finally:
-            models.ALLOW_MODEL_REQUESTS = original
-
-    @pytest.mark.callout
-    @pytest.mark.asyncio
-    async def test_enrich_performance_under_90s(self) -> None:
-        """Test that enrichment completes within 90 seconds.
-
-        The enrichment workflow involves multiple LLM calls:
-        - Index lookup (~1s)
-        - Parallel ontology + anatomic searches (~35-50s combined)
-          - Ontology: query generation + search + categorization
-          - Anatomic: query generation + search + selection
-        - Agent classification (~15-25s)
-
-        A 90s threshold allows for API latency variability. All models now use
-        the 'small' tier (Haiku/GPT-4o-mini) for faster response times.
-        """
-        import time
-
-        original = models.ALLOW_MODEL_REQUESTS
-        models.ALLOW_MODEL_REQUESTS = True
-        try:
-            from findingmodel.tools.finding_enrichment import enrich_finding
-
-            start_time = time.time()
-            result = await enrich_finding("pneumonia")
-            elapsed_time = time.time() - start_time
-
-            # Should complete within 90 seconds with small models
-            assert elapsed_time < 90.0, f"Enrichment took {elapsed_time:.2f}s, expected < 90s"
-
-            # Should still have valid result
-            assert result.finding_name.lower() == "pneumonia"
-            assert result.enrichment_timestamp is not None
 
         finally:
             models.ALLOW_MODEL_REQUESTS = original

@@ -15,6 +15,16 @@ from findingmodel.finding_model import (
     NumericAttributeIded,
 )
 
+# =============================================================================
+# Test Model Constants
+# =============================================================================
+# Use cheapest models for test fixtures to minimize cost during testing.
+# These should be valid ModelSpec strings (see config.MODEL_SPEC_PATTERN).
+# Update when model families change.
+
+TEST_OPENAI_MODEL = "openai:gpt-5-nano"
+TEST_ANTHROPIC_MODEL = "anthropic:claude-haiku-4-5"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def configure_test_logging() -> None:

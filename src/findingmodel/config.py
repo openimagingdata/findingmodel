@@ -23,6 +23,21 @@ class ConfigurationError(RuntimeError):
 # Type definitions for model configuration
 ModelTier = Literal["base", "small", "full"]
 
+# Pattern validates: provider:model or gateway/provider:model
+# Providers: openai, anthropic, gemini, ollama
+# Gateway providers: openai, anthropic, gemini
+# Model names: alphanumeric, hyphens, dots, colons (for versions), underscores
+# Update this pattern when adding new providers
+MODEL_SPEC_PATTERN = r"^(openai|anthropic|gemini|ollama|gateway/(openai|anthropic|gemini)):[\w.:-]+$"
+
+ModelSpec = Annotated[
+    str,
+    Field(
+        pattern=MODEL_SPEC_PATTERN,
+        description="Model spec: 'provider:model' (e.g., 'openai:gpt-5-mini', 'ollama:llama3.2:70b')",
+    ),
+]
+
 
 def strip_quotes(value: str) -> str:
     return value.strip("\"'")
@@ -51,10 +66,10 @@ class FindingModelConfig(BaseSettings):
     )
 
     # Model configuration (Pydantic AI string format: "provider:model")
-    # Examples: "openai:gpt-5-mini", "anthropic:claude-sonnet-4-5", "gateway/openai:gpt-5"
-    default_model: str = Field(default="openai:gpt-5-mini")
-    default_model_full: str = Field(default="openai:gpt-5")
-    default_model_small: str = Field(default="openai:gpt-5-nano")
+    # See MODEL_SPEC_PATTERN for supported providers
+    default_model: ModelSpec = Field(default="openai:gpt-5-mini")
+    default_model_full: ModelSpec = Field(default="openai:gpt-5.2")
+    default_model_small: ModelSpec = Field(default="openai:gpt-5-nano")
 
     # Tavily API
     tavily_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
