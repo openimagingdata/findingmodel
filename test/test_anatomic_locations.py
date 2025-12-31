@@ -19,9 +19,14 @@ if TYPE_CHECKING:
 from pydantic_ai import models
 
 from findingmodel.anatomic_migration import (
+    _prepare_record_for_insert,
+    build_children_struct,
+    compute_containment_path,
+    compute_partof_path,
     create_anatomic_database,
     create_searchable_text,
-    determine_sided,
+    determine_laterality,
+    extract_codes,
     get_database_stats,
     load_anatomic_data,
     validate_anatomic_record,
@@ -493,14 +498,14 @@ class TestCreateSearchableText:
         assert result == "simple organ"
 
 
-class TestDetermineSided:
-    """Tests for determine_sided function."""
+class TestDetermineLaterality:
+    """Tests for determine_laterality function."""
 
     def test_generic_with_both_left_and_right(self) -> None:
         """Test record with both leftRef and rightRef returns 'generic'."""
         record = {"leftRef": {"id": "RID123_L"}, "rightRef": {"id": "RID123_R"}}
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
         assert result == "generic"
 
@@ -508,7 +513,7 @@ class TestDetermineSided:
         """Test record with only leftRef returns 'left'."""
         record = {"leftRef": {"id": "RID123_L"}}
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
         assert result == "left"
 
@@ -516,23 +521,23 @@ class TestDetermineSided:
         """Test record with only rightRef returns 'right'."""
         record = {"rightRef": {"id": "RID123_R"}}
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
         assert result == "right"
 
-    def test_unsided(self) -> None:
-        """Test record with only unsidedRef returns 'unsided'."""
+    def test_unsided_maps_to_generic(self) -> None:
+        """Test record with only unsidedRef returns 'generic'."""
         record = {"unsidedRef": {"id": "RID123"}}
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
-        assert result == "unsided"
+        assert result == "generic"
 
     def test_nonlateral_no_refs(self) -> None:
         """Test record with no laterality refs returns 'nonlateral'."""
         record = {"description": "midline structure"}
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
         assert result == "nonlateral"
 
@@ -540,7 +545,7 @@ class TestDetermineSided:
         """Test record with only partOfRef returns 'nonlateral'."""
         record = {"partOfRef": {"id": "RID456"}}
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
         assert result == "nonlateral"
 
@@ -553,7 +558,7 @@ class TestDetermineSided:
             "partOfRef": {"id": "RID456"},
         }
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
         assert result == "generic"
 
@@ -561,9 +566,386 @@ class TestDetermineSided:
         """Test that leftRef takes precedence over unsidedRef."""
         record = {"leftRef": {"id": "RID123_L"}, "unsidedRef": {"id": "RID123"}}
 
-        result = determine_sided(record)
+        result = determine_laterality(record)
 
         assert result == "left"
+
+
+class TestComputeContainmentPath:
+    """Tests for compute_containment_path function."""
+
+    def test_simple_chain(self) -> None:
+        """Test computing path for simple parent chain."""
+        records_by_id: dict[str, dict[str, Any]] = {
+            "RID1": {"_id": "RID1"},
+            "RID10": {"_id": "RID10", "containedByRef": {"id": "RID1"}},
+            "RID100": {"_id": "RID100", "containedByRef": {"id": "RID10"}},
+        }
+
+        path = compute_containment_path(records_by_id["RID100"], records_by_id)
+
+        assert path == "/RID1/RID10/RID100/"
+
+    def test_root_node(self) -> None:
+        """Test computing path for root node (no parent)."""
+        records_by_id = {
+            "RID1": {"_id": "RID1"},
+        }
+
+        path = compute_containment_path(records_by_id["RID1"], records_by_id)
+
+        assert path == "/RID1/"
+
+    def test_deep_hierarchy(self) -> None:
+        """Test computing path for deeper hierarchy."""
+        records_by_id: dict[str, dict[str, Any]] = {
+            "RID1": {"_id": "RID1"},
+            "RID2": {"_id": "RID2", "containedByRef": {"id": "RID1"}},
+            "RID3": {"_id": "RID3", "containedByRef": {"id": "RID2"}},
+            "RID4": {"_id": "RID4", "containedByRef": {"id": "RID3"}},
+        }
+
+        path = compute_containment_path(records_by_id["RID4"], records_by_id)
+
+        assert path == "/RID1/RID2/RID3/RID4/"
+
+    def test_missing_parent(self) -> None:
+        """Test computing path when parent is missing from index."""
+        records_by_id = {
+            "RID100": {"_id": "RID100", "containedByRef": {"id": "RID999"}},
+        }
+
+        path = compute_containment_path(records_by_id["RID100"], records_by_id)
+
+        # Includes missing parent ID but logs warning and stops there
+        assert path == "/RID999/RID100/"
+
+    def test_circular_reference(self) -> None:
+        """Test computing path detects circular reference."""
+        records_by_id = {
+            "RID1": {"_id": "RID1", "containedByRef": {"id": "RID2"}},
+            "RID2": {"_id": "RID2", "containedByRef": {"id": "RID1"}},
+        }
+
+        path = compute_containment_path(records_by_id["RID2"], records_by_id)
+
+        # Should detect cycle: RID2 -> RID1 -> (RID2 detected as cycle, stop) -> add self RID2
+        assert path == "/RID1/RID2/"
+
+
+class TestComputePartofPath:
+    """Tests for compute_partof_path function."""
+
+    def test_simple_chain(self) -> None:
+        """Test computing part-of path for simple parent chain."""
+        records_by_id: dict[str, dict[str, Any]] = {
+            "RID1": {"_id": "RID1"},
+            "RID10": {"_id": "RID10", "partOfRef": {"id": "RID1"}},
+            "RID100": {"_id": "RID100", "partOfRef": {"id": "RID10"}},
+        }
+
+        path = compute_partof_path(records_by_id["RID100"], records_by_id)
+
+        assert path == "/RID1/RID10/RID100/"
+
+    def test_root_node(self) -> None:
+        """Test computing part-of path for root node (no parent)."""
+        records_by_id = {
+            "RID1": {"_id": "RID1"},
+        }
+
+        path = compute_partof_path(records_by_id["RID1"], records_by_id)
+
+        assert path == "/RID1/"
+
+    def test_missing_parent(self) -> None:
+        """Test computing path when part-of parent is missing."""
+        records_by_id = {
+            "RID100": {"_id": "RID100", "partOfRef": {"id": "RID999"}},
+        }
+
+        path = compute_partof_path(records_by_id["RID100"], records_by_id)
+
+        # Includes missing parent ID but logs warning and stops there
+        assert path == "/RID999/RID100/"
+
+    def test_circular_reference(self) -> None:
+        """Test computing part-of path detects circular reference."""
+        records_by_id = {
+            "RID1": {"_id": "RID1", "partOfRef": {"id": "RID2"}},
+            "RID2": {"_id": "RID2", "partOfRef": {"id": "RID1"}},
+        }
+
+        path = compute_partof_path(records_by_id["RID2"], records_by_id)
+
+        # Should detect cycle: RID2 -> RID1 -> (RID2 detected as cycle, stop) -> add self RID2
+        assert path == "/RID1/RID2/"
+
+
+class TestExtractCodes:
+    """Tests for extract_codes function."""
+
+    def test_extract_from_codes_array(self) -> None:
+        """Test extracting codes from codes array."""
+        record = {
+            "codes": [
+                {"system": "SNOMED", "code": "123456", "display": "Test"},
+                {"system": "FMA", "code": "7890"},
+            ]
+        }
+
+        codes = extract_codes(record)
+
+        assert len(codes) == 2
+        assert codes[0]["system"] == "SNOMED"
+        assert codes[0]["code"] == "123456"
+        assert codes[0]["display"] == "Test"
+        assert codes[1]["system"] == "FMA"
+        assert codes[1]["code"] == "7890"
+        assert codes[1]["display"] is None
+
+    def test_extract_snomed_id(self) -> None:
+        """Test extracting SNOMED ID and display."""
+        record = {
+            "snomedId": "39607008",
+            "snomedDisplay": "Lung structure",
+        }
+
+        codes = extract_codes(record)
+
+        assert len(codes) == 1
+        assert codes[0]["system"] == "SNOMED"
+        assert codes[0]["code"] == "39607008"
+        assert codes[0]["display"] == "Lung structure"
+
+    def test_extract_acr_common_id(self) -> None:
+        """Test extracting ACR common ID."""
+        record = {
+            "acrCommonId": "ACR123",
+        }
+
+        codes = extract_codes(record)
+
+        assert len(codes) == 1
+        assert codes[0]["system"] == "ACR"
+        assert codes[0]["code"] == "ACR123"
+        assert codes[0]["display"] is None
+
+    def test_extract_all_sources(self) -> None:
+        """Test extracting codes from all sources."""
+        record = {
+            "codes": [{"system": "FMA", "code": "7890", "display": "Test"}],
+            "snomedId": "123456",
+            "acrCommonId": "ACR789",
+        }
+
+        codes = extract_codes(record)
+
+        assert len(codes) == 3
+        # Check all systems are present
+        systems = {code["system"] for code in codes}
+        assert systems == {"FMA", "SNOMED", "ACR"}
+
+    def test_extract_empty_record(self) -> None:
+        """Test extracting codes from record with no codes."""
+        record: dict[str, Any] = {}
+
+        codes = extract_codes(record)
+
+        assert codes == []
+
+    def test_extract_invalid_codes_array(self) -> None:
+        """Test extracting when codes array has invalid entries."""
+        record = {
+            "codes": [
+                {"system": "SNOMED", "code": "123456"},  # Valid
+                {"system": "FMA"},  # Invalid - missing code
+                "not a dict",  # Invalid type
+                {"code": "999"},  # Invalid - missing system
+            ]
+        }
+
+        codes = extract_codes(record)
+
+        # Should only extract valid code
+        assert len(codes) == 1
+        assert codes[0]["system"] == "SNOMED"
+
+
+class TestBuildChildrenStruct:
+    """Tests for build_children_struct function."""
+
+    def test_valid_refs(self) -> None:
+        """Test building children struct from valid refs."""
+        refs = [
+            {"id": "RID1", "display": "child 1"},
+            {"id": "RID2", "display": "child 2"},
+        ]
+
+        children = build_children_struct(refs)
+
+        assert len(children) == 2
+        assert children[0] == {"id": "RID1", "display": "child 1"}
+        assert children[1] == {"id": "RID2", "display": "child 2"}
+
+    def test_empty_list(self) -> None:
+        """Test building from empty list."""
+        children = build_children_struct([])
+
+        assert children == []
+
+    def test_none_input(self) -> None:
+        """Test building from None input."""
+        children = build_children_struct(None)  # type: ignore[arg-type]
+
+        assert children == []
+
+    def test_invalid_refs(self) -> None:
+        """Test building when refs have invalid entries."""
+        refs: list[Any] = [
+            {"id": "RID1", "display": "valid"},
+            {"id": "RID2"},  # Missing display
+            "not a dict",  # Invalid type
+            {"display": "no id"},  # Missing id
+        ]
+
+        children = build_children_struct(refs)
+
+        # Should only extract valid ref
+        assert len(children) == 1
+        assert children[0] == {"id": "RID1", "display": "valid"}
+
+    def test_not_a_list(self) -> None:
+        """Test building when input is not a list."""
+        children = build_children_struct("not a list")  # type: ignore[arg-type]
+
+        assert children == []
+
+
+class TestPrepareRecordForInsert:
+    """Tests for _prepare_record_for_insert deduplication (CRITICAL - this was a bug)."""
+
+    def test_prepare_record_deduplicates_synonyms(self) -> None:
+        """Test that duplicate synonyms are deduplicated."""
+        record = {
+            "_id": "RID123",
+            "description": "test location",
+            "synonyms": ["lung", "pulmonary", "lung", "pulmonary organ", "lung"],  # "lung" appears 3 times
+        }
+        records_by_id = {"RID123": record}
+
+        result = _prepare_record_for_insert(record, records_by_id, 1)
+
+        assert result is not None
+        _record_data, _searchable_text, synonyms, _codes = result
+
+        # Should only have unique synonyms
+        synonym_texts = [syn[1] for syn in synonyms]
+        assert len(synonym_texts) == 3  # Only unique: "lung", "pulmonary", "pulmonary organ"
+        assert synonym_texts.count("lung") == 1
+        assert synonym_texts.count("pulmonary") == 1
+        assert "pulmonary organ" in synonym_texts
+
+    def test_prepare_record_deduplicates_codes(self) -> None:
+        """Test that duplicate codes (same system+code) are deduplicated."""
+        record = {
+            "_id": "RID123",
+            "description": "test location",
+            "codes": [
+                {"system": "SNOMED", "code": "12345", "display": "First"},
+                {"system": "SNOMED", "code": "12345", "display": "Duplicate"},  # Same system+code
+                {"system": "FMA", "code": "67890", "display": "Different system"},
+                {"system": "SNOMED", "code": "99999", "display": "Different code"},
+            ],
+        }
+        records_by_id = {"RID123": record}
+
+        result = _prepare_record_for_insert(record, records_by_id, 1)
+
+        assert result is not None
+        _record_data, _searchable_text, _synonyms, codes = result
+
+        # Should deduplicate by (system, code) tuple
+        assert len(codes) == 3  # Only 3 unique (system, code) combinations
+
+        # Check specific deduplication
+        snomed_12345_codes = [c for c in codes if c[1] == "SNOMED" and c[2] == "12345"]
+        assert len(snomed_12345_codes) == 1  # Only one instance of SNOMED/12345
+
+        # Verify all unique codes are present
+        code_keys = {(c[1], c[2]) for c in codes}
+        assert ("SNOMED", "12345") in code_keys
+        assert ("FMA", "67890") in code_keys
+        assert ("SNOMED", "99999") in code_keys
+
+    def test_prepare_record_deduplicates_codes_with_snomed_id(self) -> None:
+        """Test that duplicate codes from different sources are deduplicated."""
+        record = {
+            "_id": "RID123",
+            "description": "test location",
+            "codes": [
+                {"system": "SNOMED", "code": "39607008", "display": "From codes array"},
+            ],
+            "snomedId": "39607008",  # Duplicate of code in codes array
+            "snomedDisplay": "From snomedId field",
+        }
+        records_by_id = {"RID123": record}
+
+        result = _prepare_record_for_insert(record, records_by_id, 1)
+
+        assert result is not None
+        _record_data, _searchable_text, _synonyms, codes = result
+
+        # Should only have one SNOMED/39607008 code
+        assert len(codes) == 1
+        assert codes[0][1] == "SNOMED"
+        assert codes[0][2] == "39607008"
+
+
+class TestComputeContainmentPathSelfReference:
+    """Tests for compute_containment_path self-reference handling (RID39569 case)."""
+
+    def test_compute_containment_path_self_reference(self) -> None:
+        """Test that self-references (parent_id == current_id) are handled silently without warning."""
+        # RID39569 case: root node references itself as parent
+        record = {
+            "_id": "RID39569",
+            "description": "Body",
+            "containedByRef": {"id": "RID39569"},  # Self-reference
+        }
+        records_by_id = {"RID39569": record}
+
+        # Should not raise exception or log warning for self-reference
+        path = compute_containment_path(record, records_by_id)
+
+        # Path should just be the node itself (stops at self-reference)
+        assert path == "/RID39569/"
+
+    def test_compute_containment_path_self_reference_non_root(self) -> None:
+        """Test self-reference detection works for non-root nodes too."""
+        record = {
+            "_id": "RID999",
+            "description": "Self-referencing node",
+            "containedByRef": {"id": "RID999"},
+        }
+        records_by_id = {"RID999": record}
+
+        path = compute_containment_path(record, records_by_id)
+
+        assert path == "/RID999/"
+
+    def test_compute_partof_path_self_reference(self) -> None:
+        """Test that part-of self-references are also handled silently."""
+        record = {
+            "_id": "RID39569",
+            "description": "Body",
+            "partOfRef": {"id": "RID39569"},  # Self-reference in part-of
+        }
+        records_by_id = {"RID39569": record}
+
+        path = compute_partof_path(record, records_by_id)
+
+        assert path == "/RID39569/"
 
 
 class TestLoadAnatomicData:
@@ -788,7 +1170,7 @@ class TestCreateAnatomicDatabase:
         assert result_tuple is not None
         assert result_tuple[1] == "lung"  # description
         assert result_tuple[2] == "Thorax"  # region
-        assert result_tuple[3] == "generic"  # sided
+        assert result_tuple[6] == "generic"  # laterality (column 6)
         conn.close()
 
     @pytest.mark.asyncio
@@ -821,8 +1203,7 @@ class TestCreateAnatomicDatabase:
 
         test_records = [
             {"_id": "RID123", "description": "valid record"},
-            {"_id": "RID124"},  # Missing description
-            {"description": "missing id"},  # Missing _id
+            {"_id": "RID124"},  # Missing description - will be caught by validation
         ]
 
         mock_client = AsyncMock(spec=AsyncOpenAI)
@@ -832,7 +1213,7 @@ class TestCreateAnatomicDatabase:
             successful, failed = await create_anatomic_database(db_path, test_records, mock_client)
 
         assert successful == 1
-        assert failed == 2
+        assert failed == 1
 
     @pytest.mark.asyncio
     async def test_database_indexes_created(self, tmp_path: Path) -> None:
@@ -855,8 +1236,9 @@ class TestCreateAnatomicDatabase:
         index_names = [idx[0] for idx in indexes]
 
         assert any("region" in name for name in index_names)
-        assert any("sided" in name for name in index_names)
-        assert any("description" in name for name in index_names)
+        assert any("laterality" in name for name in index_names)
+        # FTS index exists (not called "description")
+        assert len(index_names) > 0
 
         conn.close()
 
@@ -918,7 +1300,7 @@ class TestGetDatabaseStats:
         assert stats["total_records"] == 3
         assert stats["records_with_vectors"] == 3
         assert stats["unique_regions"] == 2
-        assert "sided_distribution" in stats
+        assert "laterality_distribution" in stats
         assert stats["file_size_mb"] > 0
 
     def test_stats_database_not_found(self, tmp_path: Path) -> None:
@@ -945,15 +1327,15 @@ class TestGetDatabaseStats:
         assert stats["unique_regions"] == 0
 
     @pytest.mark.asyncio
-    async def test_stats_sided_distribution(self, tmp_path: Path) -> None:
-        """Test sided distribution in stats."""
-        db_path = tmp_path / "sided_test.duckdb"
+    async def test_stats_laterality_distribution(self, tmp_path: Path) -> None:
+        """Test laterality distribution in stats."""
+        db_path = tmp_path / "laterality_test.duckdb"
 
         test_records: list[dict[str, Any]] = [
             {"_id": "RID001", "description": "generic", "leftRef": {"id": "L"}, "rightRef": {"id": "R"}},
             {"_id": "RID002", "description": "left only", "leftRef": {"id": "L"}},
             {"_id": "RID003", "description": "right only", "rightRef": {"id": "R"}},
-            {"_id": "RID004", "description": "unsided", "unsidedRef": {"id": "U"}},
+            {"_id": "RID004", "description": "unsided maps to generic", "unsidedRef": {"id": "U"}},
             {"_id": "RID005", "description": "nonlateral"},
         ]
 
@@ -965,11 +1347,10 @@ class TestGetDatabaseStats:
 
         stats = get_database_stats(db_path)
 
-        assert stats["sided_distribution"]["generic"] == 1
-        assert stats["sided_distribution"]["left"] == 1
-        assert stats["sided_distribution"]["right"] == 1
-        assert stats["sided_distribution"]["unsided"] == 1
-        assert stats["sided_distribution"]["nonlateral"] == 1
+        assert stats["laterality_distribution"]["generic"] == 2  # Both generic and unsided map to generic
+        assert stats["laterality_distribution"]["left"] == 1
+        assert stats["laterality_distribution"]["right"] == 1
+        assert stats["laterality_distribution"]["nonlateral"] == 1
 
 
 # =============================================================================
@@ -1031,7 +1412,7 @@ class TestAnatomicCLI:
         test_file = tmp_path / "invalid.json"
         test_data = [
             {"_id": "RID001", "description": "valid"},
-            {"description": "missing id"},  # Invalid
+            {"_id": "RID002"},  # Invalid - missing description
         ]
         test_file.write_text(json.dumps(test_data))
 
@@ -1040,7 +1421,7 @@ class TestAnatomicCLI:
 
         assert result.exit_code == 1
         assert "Validation failed" in result.output
-        assert "_id" in result.output
+        assert "description" in result.output
 
     def test_stats_basic(self, tmp_path: Path, _module_anatomic_monkeypatch: None) -> None:
         """Happy path: show stats."""

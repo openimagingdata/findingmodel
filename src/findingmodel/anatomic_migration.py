@@ -5,6 +5,7 @@ anatomic location databases with DuckDB.
 """
 
 import json
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,57 @@ from findingmodel.tools.duckdb_utils import (
     create_hnsw_index,
     setup_duckdb_connection,
 )
+
+# Column type definitions for bulk JSON loading
+SYNONYM_COLUMNS = {
+    "location_id": "VARCHAR",
+    "synonym": "VARCHAR",
+}
+
+CODE_COLUMNS = {
+    "location_id": "VARCHAR",
+    "system": "VARCHAR",
+    "code": "VARCHAR",
+    "display": "VARCHAR",
+}
+
+
+def _get_location_columns() -> dict[str, str]:
+    """Get column type definitions for anatomic_locations table.
+
+    Returns:
+        Dictionary mapping column names to DuckDB type strings
+    """
+    dimensions = settings.openai_embedding_dimensions
+    return {
+        "id": "VARCHAR",
+        "description": "VARCHAR",
+        "region": "VARCHAR",
+        "location_type": "VARCHAR",
+        "body_system": "VARCHAR",
+        "structure_type": "VARCHAR",
+        "laterality": "VARCHAR",
+        "definition": "VARCHAR",
+        "sex_specific": "VARCHAR",
+        "search_text": "VARCHAR",
+        "vector": f"FLOAT[{dimensions}]",
+        "containment_path": "VARCHAR",
+        "containment_parent_id": "VARCHAR",
+        "containment_parent_display": "VARCHAR",
+        "containment_depth": "INTEGER",
+        "containment_children": "STRUCT(id VARCHAR, display VARCHAR)[]",
+        "partof_path": "VARCHAR",
+        "partof_parent_id": "VARCHAR",
+        "partof_parent_display": "VARCHAR",
+        "partof_depth": "INTEGER",
+        "partof_children": "STRUCT(id VARCHAR, display VARCHAR)[]",
+        "left_id": "VARCHAR",
+        "left_display": "VARCHAR",
+        "right_id": "VARCHAR",
+        "right_display": "VARCHAR",
+        "generic_id": "VARCHAR",
+        "generic_display": "VARCHAR",
+    }
 
 
 def create_searchable_text(record: dict[str, Any]) -> str:
@@ -53,21 +105,21 @@ def create_searchable_text(record: dict[str, Any]) -> str:
     return " | ".join(parts)
 
 
-def determine_sided(record: dict[str, Any]) -> str:
-    """Determine the 'sided' value based on ref properties.
+def determine_laterality(record: dict[str, Any]) -> str:
+    """Determine the laterality value based on ref properties.
 
     Logic:
     - If has leftRef AND rightRef: "generic"
     - If has leftRef only: "left"
     - If has rightRef only: "right"
-    - If has unsidedRef only: "unsided"
-    - Otherwise: "nonlateral" (instead of NULL)
+    - If has unsidedRef only: "unsided" (maps to generic)
+    - Otherwise: "nonlateral"
 
     Args:
         record: JSON record with potential ref properties
 
     Returns:
-        Sided value (never None)
+        Laterality value (never None)
     """
     has_left = "leftRef" in record
     has_right = "rightRef" in record
@@ -80,9 +132,211 @@ def determine_sided(record: dict[str, Any]) -> str:
     elif has_right and not has_left:
         return "right"
     elif has_unsided and not has_left and not has_right:
-        return "unsided"
+        return "generic"  # unsided is a variant of generic
     else:
-        return "nonlateral"  # Default for items with no laterality
+        return "nonlateral"
+
+
+def compute_containment_path(record: dict[str, Any], records_by_id: dict[str, dict[str, Any]]) -> str:
+    """Compute materialized path for containment hierarchy.
+
+    Traverses containedByRef chain to root and builds path.
+
+    Args:
+        record: Current record
+        records_by_id: Dictionary of all records by ID
+
+    Returns:
+        Path string like "/RID1/RID46/RID2660/"
+    """
+    path_parts: list[str] = []
+    current = record
+    current_id = record["_id"]
+    visited: set[str] = {current_id}  # Start with self to detect self-references
+
+    while current.get("containedByRef"):
+        parent_id = current["containedByRef"]["id"]
+
+        # Detect cycles (including self-references)
+        if parent_id in visited:
+            # Self-reference (parent_id == current_id) is normal for root nodes - don't warn
+            # Only warn for true cycles back to a non-self ancestor
+            if parent_id != current_id:
+                logger.warning(f"Circular containment reference at {parent_id} for {record['_id']}")
+            break
+        visited.add(parent_id)
+
+        path_parts.insert(0, parent_id)
+
+        # Look up parent
+        if parent_id not in records_by_id:
+            logger.warning(f"Parent {parent_id} not found for {record['_id']}")
+            break
+        current = records_by_id[parent_id]
+        current_id = parent_id
+
+    # Add self at the end
+    path_parts.append(record["_id"])
+
+    return "/" + "/".join(path_parts) + "/"
+
+
+def compute_partof_path(record: dict[str, Any], records_by_id: dict[str, dict[str, Any]]) -> str:
+    """Compute materialized path for part-of hierarchy.
+
+    Traverses partOfRef chain to root and builds path.
+
+    Args:
+        record: Current record
+        records_by_id: Dictionary of all records by ID
+
+    Returns:
+        Path string like "/RID1/RID46/RID2660/"
+    """
+    path_parts: list[str] = []
+    current = record
+    current_id = record["_id"]
+    visited: set[str] = {current_id}  # Start with self to detect self-references
+
+    while current.get("partOfRef"):
+        parent_id = current["partOfRef"]["id"]
+
+        # Detect cycles (including self-references)
+        if parent_id in visited:
+            # Self-reference (parent_id == current_id) is normal for root nodes - don't warn
+            # Only warn for true cycles back to a non-self ancestor
+            if parent_id != current_id:
+                logger.warning(f"Circular partOf reference at {parent_id} for {record['_id']}")
+            break
+        visited.add(parent_id)
+
+        path_parts.insert(0, parent_id)
+
+        # Look up parent
+        if parent_id not in records_by_id:
+            logger.warning(f"Part-of parent {parent_id} not found for {record['_id']}")
+            break
+        current = records_by_id[parent_id]
+        current_id = parent_id
+
+    # Add self at the end
+    path_parts.append(record["_id"])
+
+    return "/" + "/".join(path_parts) + "/"
+
+
+def extract_codes(record: dict[str, Any]) -> list[dict[str, str]]:
+    """Extract all codes from a record.
+
+    Extracts from:
+    - codes field (list of {system, code, display?})
+    - snomedId/snomedDisplay
+    - acrCommonId
+
+    Args:
+        record: Anatomic location record
+
+    Returns:
+        List of code dictionaries with system, code, display
+    """
+    codes = []
+
+    # Extract from codes array
+    if "codes" in record and isinstance(record["codes"], list):
+        for code_obj in record["codes"]:
+            if isinstance(code_obj, dict) and "system" in code_obj and "code" in code_obj:
+                codes.append({
+                    "system": code_obj["system"],
+                    "code": code_obj["code"],
+                    "display": code_obj.get("display"),
+                })
+
+    # Extract SNOMED
+    if "snomedId" in record:
+        codes.append({
+            "system": "SNOMED",
+            "code": record["snomedId"],
+            "display": record.get("snomedDisplay"),
+        })
+
+    # Extract ACR
+    if "acrCommonId" in record:
+        codes.append({
+            "system": "ACR",
+            "code": record["acrCommonId"],
+            "display": None,
+        })
+
+    return codes
+
+
+def build_children_struct(refs: list[dict[str, str]]) -> list[dict[str, str]]:
+    """Convert a list of refs to a list of dicts for STRUCT[] storage.
+
+    Args:
+        refs: List of {id, display} dictionaries
+
+    Returns:
+        List of {id, display} dicts (empty list if no valid refs)
+    """
+    if not refs or not isinstance(refs, list):
+        return []
+
+    children = []
+    for ref in refs:
+        if isinstance(ref, dict) and "id" in ref and "display" in ref:
+            children.append({"id": ref["id"], "display": ref["display"]})
+    return children
+
+
+def _bulk_load_table(
+    conn: duckdb.DuckDBPyConnection,
+    table_name: str,
+    data: list[dict[str, Any]],
+    column_types: dict[str, str],
+) -> int:
+    """Bulk load data into table via temp JSON file.
+
+    Args:
+        conn: DuckDB connection
+        table_name: Target table name
+        data: List of row dicts
+        column_types: Map of column name to DuckDB type string
+
+    Returns:
+        Number of rows inserted
+    """
+    if not data:
+        return 0
+
+    # Create temp file for JSON data - using context manager
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, encoding="utf-8") as temp_file:
+        temp_path = temp_file.name
+        # Write data to temp file
+        json.dump(data, temp_file, ensure_ascii=False)
+
+    try:
+        # Build column specification for read_json
+        # Complex types like FLOAT[512] and STRUCT(...)[] need to be quoted
+        columns_spec = ", ".join(f"{name}: '{dtype}'" for name, dtype in column_types.items())
+        column_names = ", ".join(column_types.keys())
+
+        # Execute bulk insert via read_json
+        # Specify column names explicitly so DB defaults are used for created_at, updated_at
+        sql = f"""
+            INSERT INTO {table_name} ({column_names})
+            SELECT * FROM read_json('{temp_path}', columns={{{columns_spec}}})
+        """
+        conn.execute(sql)
+
+        return len(data)
+
+    finally:
+        # Clean up temp file
+        try:
+            Path(temp_path).unlink(missing_ok=True)
+        except Exception as e:
+            logger.warning(f"Failed to delete temp file {temp_path}: {e}")
 
 
 async def load_anatomic_data(source: str) -> list[dict[str, Any]]:
@@ -92,7 +346,7 @@ async def load_anatomic_data(source: str) -> list[dict[str, Any]]:
         source: URL (starts with http:// or https://) or file path
 
     Returns:
-        List of anatomic location records
+        List of anatomic location records (deduplicated by _id)
     """
     if source.startswith("http://") or source.startswith("https://"):
         # Download from URL
@@ -113,8 +367,24 @@ async def load_anatomic_data(source: str) -> list[dict[str, Any]]:
     if not isinstance(data, list):
         raise ValueError(f"Expected list of records, got {type(data)}")
 
-    logger.info(f"Loaded {len(data)} records")
-    return data
+    # Deduplicate by _id (keep first occurrence)
+    seen_ids: set[str] = set()
+    unique_records: list[dict[str, Any]] = []
+    duplicates = 0
+    for record in data:
+        record_id = record.get("_id")
+        if record_id and record_id not in seen_ids:
+            seen_ids.add(record_id)
+            unique_records.append(record)
+        elif record_id:
+            duplicates += 1
+            logger.debug(f"Skipping duplicate record ID: {record_id}")
+
+    if duplicates > 0:
+        logger.warning(f"Found {duplicates} duplicate record IDs in source data (skipped)")
+
+    logger.info(f"Loaded {len(unique_records)} unique records")
+    return unique_records
 
 
 def validate_anatomic_record(record: dict[str, Any]) -> list[str]:
@@ -155,7 +425,7 @@ async def create_anatomic_database(
         db_path: Path to the database file to create
         records: List of anatomic location records
         client: OpenAI client for generating embeddings
-        batch_size: Number of records to process per batch
+        batch_size: Number of records to embed per batch (for rate limiting)
 
     Returns:
         Tuple of (successful_count, failed_count)
@@ -166,26 +436,62 @@ async def create_anatomic_database(
     conn = setup_duckdb_connection(db_path, read_only=False)
 
     try:
-        # Create the anatomic_locations table
-        logger.info("Creating anatomic_locations table...")
-        dimensions = settings.openai_embedding_dimensions
-        conn.execute(f"""
-            CREATE TABLE IF NOT EXISTS anatomic_locations (
-                id TEXT PRIMARY KEY,
-                description TEXT NOT NULL,
-                region TEXT,
-                sided TEXT,
-                synonyms TEXT[],
-                definition TEXT,
-                vector FLOAT[{dimensions}]
-            )
-        """)
+        # Drop existing tables if they exist (idempotent migration)
+        logger.info("Dropping existing tables if present...")
+        conn.execute("DROP TABLE IF EXISTS anatomic_references")
+        conn.execute("DROP TABLE IF EXISTS anatomic_codes")
+        conn.execute("DROP TABLE IF EXISTS anatomic_synonyms")
+        conn.execute("DROP TABLE IF EXISTS anatomic_locations")
 
-        # Process and insert data
-        successful, failed = await _process_and_insert_data(conn, records, client, batch_size)
+        # Create the 4-table schema
+        logger.info("Creating new schema...")
+        _create_schema(conn)
 
-        # Create indexes
-        _create_indexes(conn, dimensions)
+        # Build index of all records by ID for path computation
+        logger.info("Building record index...")
+        records_by_id = {record["_id"]: record for record in records}
+
+        # Prepare all records for insertion
+        logger.info(f"Preparing {len(records)} records...")
+        location_rows, searchable_texts, synonym_rows, code_rows = _prepare_all_records(records, records_by_id)
+
+        successful = len(location_rows)
+        failed = len(records) - successful
+
+        if successful == 0:
+            logger.warning("No valid records to insert")
+            return 0, failed
+
+        # Generate embeddings for all searchable texts (with batching for API rate limits)
+        logger.info(f"Generating embeddings for {len(searchable_texts)} records...")
+        embeddings: list[list[float] | None] = []
+        for i in range(0, len(searchable_texts), batch_size):
+            batch = searchable_texts[i : i + batch_size]
+            logger.info(f"Generating embeddings for batch {i // batch_size + 1} ({len(batch)} records)...")
+            batch_embeddings = await batch_embeddings_for_duckdb(batch, client=client)
+            embeddings.extend(batch_embeddings)
+
+        # Merge embeddings into location rows
+        logger.info("Merging embeddings into location data...")
+        for location_row, embedding in zip(location_rows, embeddings, strict=True):
+            location_row["vector"] = embedding
+
+        # Bulk load all tables
+        logger.info("Bulk loading anatomic_locations table...")
+        _bulk_load_table(conn, "anatomic_locations", location_rows, _get_location_columns())
+
+        logger.info(f"Bulk loading {len(synonym_rows)} synonyms...")
+        _bulk_load_table(conn, "anatomic_synonyms", synonym_rows, SYNONYM_COLUMNS)
+
+        logger.info(f"Bulk loading {len(code_rows)} codes...")
+        _bulk_load_table(conn, "anatomic_codes", code_rows, CODE_COLUMNS)
+
+        # Commit all changes
+        conn.commit()
+        logger.info(f"Successfully inserted {successful} records")
+
+        # Create indexes after data load
+        _create_indexes(conn, settings.openai_embedding_dimensions)
 
         # Verify and summarize
         _verify_database(conn)
@@ -196,125 +502,259 @@ async def create_anatomic_database(
         conn.close()
 
 
-async def _process_and_insert_data(
-    conn: duckdb.DuckDBPyConnection,
-    records: list[dict[str, Any]],
-    client: AsyncOpenAI,
-    batch_size: int,
-) -> tuple[int, int]:
-    """Process records and insert into database in batches.
+def _create_schema(conn: duckdb.DuckDBPyConnection) -> None:
+    """Create the 4-table schema for anatomic locations.
 
     Args:
         conn: DuckDB connection
-        records: List of anatomic location records
-        client: OpenAI client for generating embeddings
-        batch_size: Number of records to insert per batch
+    """
+    dimensions = settings.openai_embedding_dimensions
+
+    # Table 1: anatomic_locations (main table with pre-computed hierarchy)
+    conn.execute(f"""
+        CREATE TABLE anatomic_locations (
+            -- Core identity
+            id VARCHAR PRIMARY KEY,
+            description VARCHAR NOT NULL,
+
+            -- Classification
+            region VARCHAR,
+            location_type VARCHAR NOT NULL DEFAULT 'structure',
+            body_system VARCHAR,
+            structure_type VARCHAR,
+            laterality VARCHAR NOT NULL DEFAULT 'nonlateral',
+
+            -- Text fields
+            definition TEXT,
+            sex_specific VARCHAR,
+            search_text TEXT NOT NULL,
+            vector FLOAT[{dimensions}] NOT NULL,
+
+            -- Pre-computed CONTAINMENT hierarchy (materialized path)
+            containment_path VARCHAR,
+            containment_parent_id VARCHAR,
+            containment_parent_display VARCHAR,
+            containment_depth INTEGER,
+            containment_children STRUCT(id VARCHAR, display VARCHAR)[],
+
+            -- Pre-computed PART-OF hierarchy (materialized path)
+            partof_path VARCHAR,
+            partof_parent_id VARCHAR,
+            partof_parent_display VARCHAR,
+            partof_depth INTEGER,
+            partof_children STRUCT(id VARCHAR, display VARCHAR)[],
+
+            -- Pre-computed LATERALITY references
+            left_id VARCHAR,
+            left_display VARCHAR,
+            right_id VARCHAR,
+            right_display VARCHAR,
+            generic_id VARCHAR,
+            generic_display VARCHAR,
+
+            -- Metadata
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Table 2: anatomic_synonyms
+    conn.execute("""
+        CREATE TABLE anatomic_synonyms (
+            location_id VARCHAR NOT NULL,
+            synonym VARCHAR NOT NULL,
+            PRIMARY KEY (location_id, synonym)
+        )
+    """)
+
+    # Table 3: anatomic_codes
+    conn.execute("""
+        CREATE TABLE anatomic_codes (
+            location_id VARCHAR NOT NULL,
+            system VARCHAR NOT NULL,
+            code VARCHAR NOT NULL,
+            display VARCHAR,
+            PRIMARY KEY (location_id, system, code)
+        )
+    """)
+
+    # Table 4: anatomic_references
+    conn.execute("""
+        CREATE TABLE anatomic_references (
+            location_id VARCHAR NOT NULL,
+            url VARCHAR NOT NULL,
+            title VARCHAR NOT NULL,
+            description VARCHAR,
+            content VARCHAR,
+            published_date VARCHAR,
+            accessed_date DATE,
+            PRIMARY KEY (location_id, url)
+        )
+    """)
+
+
+def _prepare_record_for_insert(
+    record: dict[str, Any],
+    records_by_id: dict[str, dict[str, Any]],
+    record_num: int,
+) -> tuple[dict[str, Any], str, list[tuple[str, str]], list[tuple[str, str, str, str | None]]] | None:
+    """Prepare a single record for database insertion.
+
+    Args:
+        record: Anatomic location record
+        records_by_id: Dictionary of all records by ID for path computation
+        record_num: Record number for logging
 
     Returns:
-        Tuple of (successful_count, failed_count)
+        Tuple of (record_data, searchable_text, synonyms, codes) or None if validation fails
     """
-    logger.info(f"Processing {len(records)} records...")
+    # Validate record
+    errors = validate_anatomic_record(record)
+    if errors:
+        logger.warning(f"Record {record_num} validation errors: {errors}")
+        return None
 
-    successful = 0
-    failed = 0
-    batch_records = []
-    batch_texts = []
+    # Extract core fields
+    record_id = record["_id"]
+    description = record["description"]
+    region = record.get("region")
+    laterality = determine_laterality(record)
+    definition = record.get("definition")
+    sex_specific = record.get("sex_specific")
+
+    # Create searchable text for embedding
+    searchable_text = create_searchable_text(record)
+
+    # Compute containment hierarchy
+    containment_path = compute_containment_path(record, records_by_id)
+    containment_parent_id = record.get("containedByRef", {}).get("id")
+    containment_parent_display = record.get("containedByRef", {}).get("display")
+    containment_depth = containment_path.count("/") - 2  # Subtract leading and trailing /
+    containment_children = build_children_struct(record.get("containsRefs", []))
+
+    # Compute part-of hierarchy
+    partof_path = compute_partof_path(record, records_by_id)
+    partof_parent_id = record.get("partOfRef", {}).get("id")
+    partof_parent_display = record.get("partOfRef", {}).get("display")
+    partof_depth = partof_path.count("/") - 2
+    partof_children = build_children_struct(record.get("hasPartsRefs", []))
+
+    # Extract laterality references
+    left_id = record.get("leftRef", {}).get("id")
+    left_display = record.get("leftRef", {}).get("display")
+    right_id = record.get("rightRef", {}).get("id")
+    right_display = record.get("rightRef", {}).get("display")
+    generic_id = record.get("unsidedRef", {}).get("id")
+    generic_display = record.get("unsidedRef", {}).get("display")
+
+    # Build record data
+    record_data = {
+        "id": record_id,
+        "description": description,
+        "region": region,
+        "location_type": "structure",  # Default, can be enhanced later
+        "body_system": None,  # To be populated later
+        "structure_type": None,  # To be populated later
+        "laterality": laterality,
+        "definition": definition,
+        "sex_specific": sex_specific,
+        "search_text": searchable_text,
+        "containment_path": containment_path,
+        "containment_parent_id": containment_parent_id,
+        "containment_parent_display": containment_parent_display,
+        "containment_depth": containment_depth,
+        "containment_children": containment_children,
+        "partof_path": partof_path,
+        "partof_parent_id": partof_parent_id,
+        "partof_parent_display": partof_parent_display,
+        "partof_depth": partof_depth,
+        "partof_children": partof_children,
+        "left_id": left_id,
+        "left_display": left_display,
+        "right_id": right_id,
+        "right_display": right_display,
+        "generic_id": generic_id,
+        "generic_display": generic_display,
+    }
+
+    # Collect synonyms (deduplicated)
+    seen_synonyms: set[str] = set()
+    synonyms: list[tuple[str, str]] = []
+    raw_synonyms = record.get("synonyms", [])
+    if raw_synonyms and isinstance(raw_synonyms, list):
+        for synonym in raw_synonyms:
+            if synonym not in seen_synonyms:
+                seen_synonyms.add(synonym)
+                synonyms.append((record_id, synonym))
+
+    # Collect codes (deduplicated by system+code)
+    seen_codes: set[tuple[str, str]] = set()
+    codes: list[tuple[str, str, str, str | None]] = []
+    for code in extract_codes(record):
+        code_key = (code["system"], code["code"])
+        if code_key not in seen_codes:
+            seen_codes.add(code_key)
+            codes.append((record_id, code["system"], code["code"], code.get("display")))
+
+    return record_data, searchable_text, synonyms, codes
+
+
+def _prepare_all_records(
+    records: list[dict[str, Any]],
+    records_by_id: dict[str, dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[str], list[dict[str, str]], list[dict[str, str | None]]]:
+    """Prepare all records for bulk insertion.
+
+    Args:
+        records: List of anatomic location records
+        records_by_id: Dictionary of all records by ID for path computation
+
+    Returns:
+        Tuple of (location_rows, searchable_texts, synonym_rows, code_rows)
+    """
+    location_rows: list[dict[str, Any]] = []
+    searchable_texts: list[str] = []
+    synonym_rows: list[dict[str, str]] = []
+    code_rows: list[dict[str, str | None]] = []
+
+    failed_count = 0
 
     for i, record in enumerate(records, 1):
         try:
-            # Validate record
-            errors = validate_anatomic_record(record)
-            if errors:
-                logger.warning(f"Record {i} validation errors: {errors}")
-                failed += 1
+            # Validate and prepare record
+            processed = _prepare_record_for_insert(record, records_by_id, i)
+            if processed is None:
+                failed_count += 1
                 continue
 
-            # Extract fields
-            record_id = record["_id"]
-            description = record["description"]
-            region = record.get("region")
-            sided = determine_sided(record)
-            synonyms = record.get("synonyms", [])
-            definition = record.get("definition")
+            record_data, searchable_text, synonyms, codes = processed
 
-            # Create searchable text for embedding
-            searchable_text = create_searchable_text(record)
+            # Build location row without vector (will be added later)
+            location_row = dict(record_data)
+            location_rows.append(location_row)
+            searchable_texts.append(searchable_text)
 
-            # Add to batch
-            batch_records.append({
-                "id": record_id,
-                "description": description,
-                "region": region,
-                "sided": sided,
-                "synonyms": synonyms if synonyms else [],
-                "definition": definition,
-            })
-            batch_texts.append(searchable_text)
+            # Collect synonyms as dicts
+            for location_id, synonym in synonyms:
+                synonym_rows.append({"location_id": location_id, "synonym": synonym})
 
-            # Process batch when full
-            if len(batch_records) >= batch_size:
-                await _insert_batch(conn, batch_records, batch_texts, client)
-                successful += len(batch_records)
-                logger.info(f"Inserted {successful}/{len(records)} records...")
-
-                batch_records = []
-                batch_texts = []
+            # Collect codes as dicts
+            for location_id, system, code, display in codes:
+                code_rows.append({
+                    "location_id": location_id,
+                    "system": system,
+                    "code": code,
+                    "display": display,
+                })
 
         except Exception as e:
             logger.error(f"Error processing record {i}: {e}")
-            failed += 1
+            failed_count += 1
 
-    # Insert remaining records
-    if batch_records:
-        await _insert_batch(conn, batch_records, batch_texts, client)
-        successful += len(batch_records)
+    if failed_count > 0:
+        logger.warning(f"Failed to prepare {failed_count} records")
 
-    # Commit all changes at once
-    conn.commit()
-
-    logger.info(f"Insertion complete: {successful} successful, {failed} failed")
-    return successful, failed
-
-
-async def _insert_batch(
-    conn: duckdb.DuckDBPyConnection,
-    batch_records: list[dict[str, Any]],
-    batch_texts: list[str],
-    client: AsyncOpenAI,
-) -> None:
-    """Insert a batch of records with embeddings.
-
-    Args:
-        conn: DuckDB connection
-        batch_records: List of record dicts
-        batch_texts: List of texts to embed
-        client: OpenAI client
-    """
-    # Generate embeddings for batch using common utility
-    logger.info(f"Generating embeddings for {len(batch_texts)} records...")
-    embeddings = await batch_embeddings_for_duckdb(batch_texts, client=client)
-
-    # Prepare data for insertion
-    batch_data = []
-    for rec, embedding in zip(batch_records, embeddings, strict=True):
-        batch_data.append((
-            rec["id"],
-            rec["description"],
-            rec["region"],
-            rec["sided"],
-            rec["synonyms"],
-            rec["definition"],
-            embedding,  # Will be None if embedding failed
-        ))
-
-    conn.executemany(
-        """
-        INSERT INTO anatomic_locations 
-            (id, description, region, sided, synonyms, definition, vector)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        batch_data,
-    )
+    return location_rows, searchable_texts, synonym_rows, code_rows
 
 
 def _create_indexes(conn: duckdb.DuckDBPyConnection, dimensions: int) -> None:
@@ -355,11 +795,31 @@ def _create_indexes(conn: duckdb.DuckDBPyConnection, dimensions: int) -> None:
         # Utility logged the specific error; continuing without index
         logger.info("Anatomic location search will continue without HNSW index")
 
-    # Create standard indexes
-    logger.info("Creating standard indexes...")
+    # Create standard indexes on main table
+    logger.info("Creating standard indexes on anatomic_locations...")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_region ON anatomic_locations(region)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_sided ON anatomic_locations(sided)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_description ON anatomic_locations(description)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_location_type ON anatomic_locations(location_type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_body_system ON anatomic_locations(body_system)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_structure_type ON anatomic_locations(structure_type)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_laterality ON anatomic_locations(laterality)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_containment_parent ON anatomic_locations(containment_parent_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_containment_path ON anatomic_locations(containment_path)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_partof_parent ON anatomic_locations(partof_parent_id)")
+
+    # Create indexes on synonym table
+    logger.info("Creating indexes on anatomic_synonyms...")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_synonyms_synonym ON anatomic_synonyms(synonym)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_synonyms_location ON anatomic_synonyms(location_id)")
+
+    # Create indexes on codes table
+    logger.info("Creating indexes on anatomic_codes...")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_codes_system ON anatomic_codes(system)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_codes_lookup ON anatomic_codes(system, code)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_codes_location ON anatomic_codes(location_id)")
+
+    # Create indexes on references table
+    logger.info("Creating indexes on anatomic_references...")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_refs_location ON anatomic_references(location_id)")
 
     conn.commit()
 
@@ -377,25 +837,25 @@ def _verify_database(conn: duckdb.DuckDBPyConnection) -> None:
     total = result[0] if result else 0
     logger.info(f"Total records: {total}")
 
-    # Get sided distribution
-    sided_dist = conn.execute("""
-        SELECT sided, COUNT(*) as count 
-        FROM anatomic_locations 
-        GROUP BY sided 
+    # Get laterality distribution
+    laterality_dist = conn.execute("""
+        SELECT laterality, COUNT(*) as count
+        FROM anatomic_locations
+        GROUP BY laterality
         ORDER BY count DESC
     """).fetchall()
 
-    logger.info("Sided distribution:")
-    for sided, count in sided_dist:
-        sided_label = sided if sided else "NULL"
-        logger.info(f"  {sided_label}: {count}")
+    logger.info("Laterality distribution:")
+    for laterality, count in laterality_dist:
+        laterality_label = laterality if laterality else "NULL"
+        logger.info(f"  {laterality_label}: {count}")
 
     # Get region distribution (top 10)
     region_dist = conn.execute("""
-        SELECT region, COUNT(*) as count 
-        FROM anatomic_locations 
+        SELECT region, COUNT(*) as count
+        FROM anatomic_locations
         WHERE region IS NOT NULL
-        GROUP BY region 
+        GROUP BY region
         ORDER BY count DESC
         LIMIT 10
     """).fetchall()
@@ -412,6 +872,28 @@ def _verify_database(conn: duckdb.DuckDBPyConnection) -> None:
     """).fetchone()
     vector_count = vector_result[0] if vector_result else 0
     logger.info(f"Records with vectors: {vector_count}/{total}")
+
+    # Check synonym count
+    synonym_result = conn.execute("SELECT COUNT(*) FROM anatomic_synonyms").fetchone()
+    synonym_count = synonym_result[0] if synonym_result else 0
+    logger.info(f"Total synonyms: {synonym_count}")
+
+    # Check code count
+    code_result = conn.execute("SELECT COUNT(*) FROM anatomic_codes").fetchone()
+    code_count = code_result[0] if code_result else 0
+    logger.info(f"Total codes: {code_count}")
+
+    # Check code system distribution
+    code_dist = conn.execute("""
+        SELECT system, COUNT(*) as count
+        FROM anatomic_codes
+        GROUP BY system
+        ORDER BY count DESC
+    """).fetchall()
+
+    logger.info("Code system distribution:")
+    for system, count in code_dist:
+        logger.info(f"  {system}: {count}")
 
 
 def get_database_stats(db_path: Path) -> dict[str, Any]:
@@ -441,19 +923,28 @@ def get_database_stats(db_path: Path) -> dict[str, Any]:
         ).fetchone()
         region_count = result[0] if result else 0
 
-        # Get sided distribution
-        sided_dist = conn.execute("""
-            SELECT sided, COUNT(*) as count 
-            FROM anatomic_locations 
-            GROUP BY sided 
+        # Get laterality distribution
+        laterality_dist = conn.execute("""
+            SELECT laterality, COUNT(*) as count
+            FROM anatomic_locations
+            GROUP BY laterality
             ORDER BY count DESC
         """).fetchall()
+
+        # Get synonym and code counts
+        result = conn.execute("SELECT COUNT(*) FROM anatomic_synonyms").fetchone()
+        synonym_count = result[0] if result else 0
+
+        result = conn.execute("SELECT COUNT(*) FROM anatomic_codes").fetchone()
+        code_count = result[0] if result else 0
 
         return {
             "total_records": total_records,
             "records_with_vectors": vector_count,
             "unique_regions": region_count,
-            "sided_distribution": dict(sided_dist),
+            "laterality_distribution": dict(laterality_dist),
+            "total_synonyms": synonym_count,
+            "total_codes": code_count,
             "file_size_mb": db_path.stat().st_size / (1024 * 1024),
         }
 
