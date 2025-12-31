@@ -11,7 +11,7 @@ A Python library for managing Open Imaging Finding Models - structured data mode
   - **DuckDB Search**: High-performance vector and full-text search with HNSW indexing
 - **Protocol-Based Architecture**: Flexible backend support with automatic parallel execution
 - **Finding Model Index**: Fast lookup and search across finding model definitions
-- **Anatomic Location Discovery**: Two-agent AI system for finding relevant anatomic locations
+- **Anatomic Location Navigation**: Hierarchy traversal, laterality variants, semantic search, and AI-assisted discovery
 
 ## Installation
 
@@ -69,9 +69,9 @@ $ python -m findingmodel --help
 - `make-stub-model`: Create basic finding model templates
 - `config`: View current configuration
 - `index`: Manage finding model index (build, update, stats)
-- `anatomic`: Manage anatomic location database (build, validate, stats)
+- `anatomic`: Manage and query anatomic locations (build, validate, stats, query)
 
-For database maintainers, see [Database Management Guide](docs/database-management.md) for detailed information on building and updating databases.
+For anatomic location usage, see [Anatomic Locations Guide](docs/anatomic-locations.md). For database maintainers, see [Database Management Guide](docs/database-management.md).
 
 > **Note**: The AI-powered model editing functionality (`edit_model_natural_language`, `edit_model_markdown`) is available through the Python API. See an interactive demo at `scripts/edit_finding_model.py`.
 

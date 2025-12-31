@@ -1,6 +1,6 @@
 # Task Status Overview
 
-**Last Updated:** 2025-01-10
+**Last Updated:** 2025-12-31
 
 Quick reference for active tasks and project status. For completed tasks, see [done/README.md](done/README.md).
 
@@ -8,9 +8,8 @@ Quick reference for active tasks and project status. For completed tasks, see [d
 
 ## Project Health
 
-- ✅ **All tests passing**: 409 tests (397 fast + 12 callout)
+- ✅ **All tests passing**
 - ✅ **Code quality**: Clean linting, no warnings
-- ✅ **Documentation**: Up to date with v0.6.0
 - ✅ **Core features**: Complete and stable
 
 ---
@@ -123,12 +122,12 @@ See [pending-fixes.md](pending-fixes.md) for details:
 
 ## Recently Completed (Last 3 Months)
 
+- ✅ **Anatomic Location Models** - Rich hierarchy navigation, laterality variants, semantic search
+- ✅ **Bulk-Load Migration** - 1000x faster database creation via `read_json()` pattern
 - ✅ **DuckDB Index Migration** - Complete MongoDB → DuckDB backend replacement
 - ✅ **Anatomic Location Cleanup** - CLI commands, common utilities, no hardcoded config
-- ✅ **DuckDB Common Patterns** - Shared utilities in `tools/duckdb_utils.py`
 - ✅ **Anthropic Support** - Multi-provider AI with tier-based model selection
 - ✅ **Agent Eval Suites** - 5 comprehensive eval suites for AI agents
-- ✅ **Three-Tier Testing** - Separated evals from unit/integration tests
 
 See [done/README.md](done/README.md) for full history.
 

@@ -491,3 +491,65 @@ def l2_to_cosine_similarity(l2_distance: float) -> float:
 - Utilities: `src/findingmodel/tools/duckdb_utils.py` (to create)
 - Tests: `test/test_duckdb_utils.py` (to create)
 - Config: `src/findingmodel/config.py`
+
+---
+
+## Bulk Loading with Complex Types (Added 2025-12)
+
+### Problem
+
+DuckDB's `executemany` is extremely slow with complex column types:
+
+| Method | Speed | Notes |
+|--------|-------|-------|
+| `executemany` with Python lists | ~52ms/row | Parameter conversion overhead |
+| `read_json()` from temp file | ~0.05ms/row | **1000x faster** |
+
+This affects `FLOAT[N]` vectors, `STRUCT(...)[]` arrays, and other complex types.
+
+### Solution
+
+Write data to a temporary JSON file, then bulk load with `read_json()`:
+
+```python
+import json
+import tempfile
+from pathlib import Path
+
+def bulk_load_table(
+    conn: duckdb.DuckDBPyConnection,
+    table_name: str,
+    data: list[dict],
+    column_types: dict[str, str],  # e.g., {"vector": "FLOAT[512]", "children": "STRUCT(...)[]"}
+) -> int:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        for row in data:
+            f.write(json.dumps(row) + "\n")
+        temp_path = Path(f.name)
+
+    try:
+        # Quote complex types in column spec
+        columns_spec = ", ".join(f"{name}: '{dtype}'" for name, dtype in column_types.items())
+        conn.execute(f"""
+            INSERT INTO {table_name}
+            SELECT * FROM read_json('{temp_path}', columns={{{columns_spec}}})
+        """)
+        return len(data)
+    finally:
+        temp_path.unlink()
+```
+
+### Key Details
+
+1. **Quote column types** - Complex types like `FLOAT[512]` and `STRUCT(id VARCHAR, display VARCHAR)[]` must be quoted in the columns spec
+2. **NDJSON format** - One JSON object per line (not a JSON array)
+3. **STRUCT arrays work natively** - JSON `[{"id": "x", "display": "y"}]` maps directly to DuckDB STRUCT arrays
+4. **Float precision preserved** - JSON floats round-trip correctly to FLOAT columns
+
+### When to Use
+
+- Inserting 100+ rows with vector embeddings
+- Any table with STRUCT[] columns
+- Batch operations where individual INSERTs are too slow
+
+See `src/findingmodel/anatomic_migration.py:_bulk_load_table()` for production implementation.

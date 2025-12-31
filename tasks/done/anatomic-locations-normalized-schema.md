@@ -1,10 +1,38 @@
 # Plan: Rich Anatomic Location DuckDB with Relationships
 
-**Status:** Planning (Rev 11)
+**Status:** Complete (Rev 13)
+**Completed:** 2025-12-31
 **Related Research:** [anatomic-locations-graph-research.md](anatomic-locations-graph-research.md)
 **Restructuring Plan:** [oidm-package-restructuring.md](oidm-package-restructuring.md)
 
-> **Note:** This implementation will be built within the `findingmodel` repository first (Phase 1), then extracted to a separate `anatomic-locations` package later (Phase 3). See restructuring plan for details.
+> **Note:** Built within `findingmodel` (Phase 1). Package extraction planned for Phase 3.
+
+---
+
+## Implementation Status
+
+All phases complete. See [docs/anatomic-locations.md](../docs/anatomic-locations.md) for usage.
+
+| Phase | Status |
+|-------|--------|
+| 0: WebReference Model | ✅ |
+| 1: Enums and Data Models | ✅ |
+| 1.5: ensure_anatomic_db() | ✅ |
+| 2: anatomic_migration.py | ✅ |
+| 3: anatomic_index.py | ✅ |
+| 4: CLI Commands | ✅ |
+| 5: Tests | ✅ |
+| 6: Bulk-load optimization | ✅ |
+
+### Lessons Learned
+
+Key issues discovered during implementation (now fixed):
+
+1. **DuckDB bulk loading** - `executemany` is 1000x slower than `read_json()` for complex types. See [duckdb-common-patterns.md](done/duckdb-common-patterns.md#bulk-loading-with-complex-types-added-2025-12).
+2. **Self-referential roots** - Root nodes may have `containedByRef` pointing to themselves.
+3. **Source data duplicates** - Deduplicate synonyms and codes during migration.
+
+---
 
 ## Data Source
 
@@ -1126,22 +1154,180 @@ def get_location(
 
 ---
 
+## Key Implementation Details
+
+### DuckDB STRUCT Array Insertion
+
+DuckDB's `executemany` does NOT support STRUCT arrays. You must use individual `execute()` calls with inline `ROW()` syntax:
+
+```python
+def _children_to_sql(children: list[dict[str, str]]) -> str:
+    """Convert children list to DuckDB STRUCT array SQL literal."""
+    if not children:
+        return "[]"
+    rows = []
+    for child in children:
+        # Escape single quotes
+        child_id = child["id"].replace("'", "''")
+        child_display = child["display"].replace("'", "''")
+        rows.append(f"row('{child_id}', '{child_display}')")
+    return "[" + ", ".join(rows) + "]"
+
+# Usage in INSERT:
+children_sql = _children_to_sql(rec["containment_children"])
+conn.execute(f"""
+    INSERT INTO anatomic_locations (..., containment_children, ...)
+    VALUES (?, ?, ..., {children_sql}, ...)
+""", (other_params...))
+```
+
+### Source Data Known Issues
+
+The source JSON at `https://oidm-public.t3.storage.dev/anatomic_locations_20251220.json` has these quirks:
+
+| Issue | Example | Handling |
+|-------|---------|----------|
+| Self-referential root | RID39569 has `containedByRef.id = "RID39569"` | Treat as valid root termination, no warning |
+| Duplicate synonyms | RID9968, RID2772, RID1301 have same synonym twice | Deduplicate before insert |
+| Duplicate codes | Some records have same code twice | Deduplicate before insert |
+
+### Cycle Detection in Path Computation
+
+The path computation must handle self-references correctly. **This logic is subtle:**
+
+```python
+def compute_containment_path(record, records_by_id) -> str:
+    path_parts = []
+    current = record
+    current_id = record["_id"]
+    visited = {current_id}  # Start with self to catch self-references immediately
+
+    while current.get("containedByRef"):
+        parent_id = current["containedByRef"]["id"]
+
+        if parent_id in visited:
+            # Self-reference (parent_id == current_id) is normal for root - don't warn
+            # Only warn for true cycles back to a different ancestor
+            if parent_id != current_id:
+                logger.warning(f"Circular reference at {parent_id} for {record['_id']}")
+            break
+        visited.add(parent_id)
+        path_parts.insert(0, parent_id)
+        current = records_by_id[parent_id]
+        current_id = parent_id
+
+    path_parts.append(record["_id"])
+    return "/" + "/".join(path_parts) + "/"
+```
+
+**Key insight:** When RID39569 references itself, `parent_id == current_id` at that point, so we break silently. Every other record traces up to RID39569 and terminates there.
+
+### Logging Configuration
+
+The project disables logging by default in `src/findingmodel/__init__.py`:
+
+```python
+logger.disable("findingmodel")
+```
+
+To see logs during build, explicitly enable before the operation:
+
+```python
+from findingmodel import logger
+logger.enable("findingmodel")
+```
+
+### Testing with Pre-Generated Embeddings
+
+Tests use embeddings from `test/data/anatomic_sample_embeddings.json` to avoid API calls. Pattern:
+
+```python
+@pytest.fixture
+def mock_embedding_function(anatomic_sample_embeddings):
+    """Return a function that looks up embeddings instead of calling API."""
+    def get_embedding(text: str, record_id: str) -> list[float]:
+        return anatomic_sample_embeddings[record_id]
+    return get_embedding
+
+# In test, patch the embedding call to use the lookup
+```
+
+For search tests, use query embeddings from `test/data/anatomic_query_embeddings.json`.
+
+### Batch Processing Architecture
+
+The migration processes records in batches of 50 for embedding efficiency:
+
+```
+load_anatomic_data()           # Load JSON, deduplicate by _id
+    ↓
+_process_and_insert_data()     # Iterate records, batch them
+    ↓
+_prepare_record_for_insert()   # Validate, compute paths, dedupe synonyms/codes
+    ↓
+flush_batch() → _insert_batch()
+    ↓
+    ├── Generate embeddings (batch API call)
+    ├── Insert main records (individual execute() for STRUCT arrays)
+    ├── Insert synonyms (executemany with INSERT OR IGNORE)
+    └── Insert codes (executemany with INSERT OR IGNORE)
+```
+
+**Why individual inserts for main records?** STRUCT arrays require `ROW()` SQL syntax which can't be parameterized.
+
+**Why INSERT OR IGNORE for synonyms/codes?** Deduplication in `_prepare_record_for_insert` handles within-record duplicates, but INSERT OR IGNORE provides defense-in-depth.
+
+**Error handling:** `flush_batch()` uses `try/finally` to always clear batch lists, preventing cascading failures.
+
+### Key Migration Functions Reference
+
+```python
+# anatomic_migration.py - public API
+async def load_anatomic_data(source: str) -> list[dict]
+async def create_anatomic_database(db_path: Path, records: list[dict], client: AsyncOpenAI, batch_size: int = 50) -> tuple[int, int]
+
+# anatomic_migration.py - helpers (for understanding/testing)
+def validate_anatomic_record(record: dict) -> list[str]  # Returns list of error messages
+def determine_laterality(record: dict) -> str  # Returns "left", "right", "generic", or "nonlateral"
+def create_searchable_text(record: dict) -> str  # Builds text for embedding
+def compute_containment_path(record: dict, records_by_id: dict) -> str  # Returns "/RID1/RID2/..."
+def compute_partof_path(record: dict, records_by_id: dict) -> str
+def build_children_struct(refs: list[dict]) -> list[dict]  # Returns [{"id": ..., "display": ...}, ...]
+def extract_codes(record: dict) -> list[dict]  # Returns [{"system": ..., "code": ..., "display": ...}, ...]
+```
+
+### Build and Verify Commands
+
+```bash
+# Build database (takes ~3 min with embedding generation)
+uv run python -m findingmodel anatomic build --force
+
+# Verify it worked
+uv run python -c "
+from findingmodel import AnatomicLocationIndex
+with AnatomicLocationIndex() as idx:
+    loc = idx.get('RID58')
+    print(f'{loc.id}: {loc.description}')
+    print(f'Ancestors: {[a.description for a in loc.get_containment_ancestors()]}')
+"
+```
+
+---
+
 ## Implementation Steps
 
-### Step 0: Create WebReference Model (Shared)
+### Step 0: Create WebReference Model (Shared) ✅
 
-Create `src/findingmodel/web_reference.py`:
+Created `src/findingmodel/web_reference.py`:
 
 - `WebReference` model (Tavily-compatible)
 - `from_tavily_result()` factory method
 - `domain` computed property
-- Export in `__init__.py`
+- Exported in `__init__.py`
 
-This is a **shared model** that will also be used by FindingModel (future).
+### Step 1: Create Enums and Data Models ✅
 
-### Step 1: Create Enums and Data Models
-
-Create `src/findingmodel/anatomic_location.py`:
+Created `src/findingmodel/anatomic_location.py`:
 
 - `AnatomicRegion` enum (existing regions)
 - `Laterality` enum (generic, left, right, nonlateral)
@@ -1151,57 +1337,212 @@ Create `src/findingmodel/anatomic_location.py`:
 - `AnatomicRef` model
 - `AnatomicLocation` model with all navigation methods
 
-### Step 1.5: Add `ensure_anatomic_db()` to config.py
+### Step 1.5: Add `ensure_anatomic_db()` to config.py ✅
 
-Add database download/caching function to `src/findingmodel/config.py`:
+Added database download/caching function to `src/findingmodel/config.py`:
 
 - `ensure_anatomic_db()` - Downloads anatomic locations DuckDB from manifest if not cached
 - Follows same pattern as existing `ensure_index_db()` for FindingModel Index
-- Checks manifest for version updates, re-downloads if needed
 
-### Step 2: Update `anatomic_migration.py`
+### Step 2: Update `anatomic_migration.py` ✅ (with fixes)
 
-- New schema with pre-computed fields
-- Build materialized paths during migration:
+Created migration with pre-computed fields. **Issues discovered during testing:**
 
-  ```python
-  def compute_containment_path(record, all_records) -> str:
-      """Build path by traversing containedByRef chain to root."""
-      path_parts = []
-      current = record
-      while current.get("containedByRef"):
-          parent_id = current["containedByRef"]["id"]
-          path_parts.insert(0, parent_id)
-          current = records_by_id[parent_id]
-      return "/" + "/".join(path_parts) + "/" + record["_id"] + "/"
-  ```
+1. **STRUCT array insertion**: DuckDB's `executemany` doesn't support STRUCT arrays.
+   - **Fix**: Use individual `execute()` with `ROW()` SQL syntax via `_children_to_sql()` helper
 
-- Extract codes as IndexCode format
-- Compute laterality fields from refs
+2. **Self-referential root**: RID39569 ("whole body") has `containedByRef` pointing to itself.
+   - **Fix**: `compute_containment_path` and `compute_partof_path` detect self-references and treat as valid root termination (no warning)
 
-### Step 3: Create `anatomic_index.py`
+3. **Duplicate synonyms in source**: Records like RID9968 have the same synonym listed twice.
+   - **Fix**: `_prepare_record_for_insert` deduplicates synonyms and codes within each record
+   - **Fix**: `INSERT OR IGNORE` for synonyms/codes tables
 
-- `AnatomicLocationIndex` class
-- Query methods using materialized paths
-- Hybrid search (existing pattern from duckdb_search.py)
+4. **Batch error handling**: Failed batches weren't clearing, causing cascading failures.
+   - **Fix**: `flush_batch()` uses `finally` block to always clear batch lists
 
-### Step 4: CLI Commands
+**Key functions implemented:**
+- `compute_containment_path()` / `compute_partof_path()` - materialized path with cycle detection
+- `_children_to_sql()` - converts children list to `[row('id', 'display'), ...]` SQL
+- `_prepare_record_for_insert()` - validates and prepares record with deduplication
+- `_insert_batch()` - individual inserts for main records (STRUCT arrays), batch for synonyms/codes
+- `create_anatomic_database()` - orchestrates schema creation, data insertion, index creation
 
-- Update `anatomic build` for new schema
-- Add `anatomic query` subcommand:
-  - `anatomic query ancestors <id>`
-  - `anatomic query descendants <id>`
-  - `anatomic query laterality <id>`
-  - `anatomic query code <system> <code>`
+### Step 3: Create `anatomic_index.py` ✅
 
-### Step 5: Tests
+Created `AnatomicLocationIndex` class:
 
-- Unit tests for Pydantic models
-- Unit tests for path computation
-- Integration tests for hierarchy navigation
-- Integration tests for search
+- Context manager and explicit open/close patterns
+- `get()` - lookup by ID with auto-binding
+- `search()` - hybrid FTS + vector search
+- `get_containment_ancestors()` / `get_containment_descendants()` - materialized path queries
+- `by_region()`, `by_laterality()` - filtering methods
+- Weakref binding to prevent circular reference memory leaks
 
-### Step 6: Data Enrichment (Future)
+### Step 4: CLI Commands ✅
+
+Updated `src/findingmodel/cli.py`:
+
+- `anatomic build [--source URL] [--output PATH] [--force]` - builds database from source
+- `anatomic validate [--source URL]` - validates source data without building
+- Source URL defaults to `https://oidm-public.t3.storage.dev/anatomic_locations_20251220.json`
+- Progress logging via loguru (enabled during build)
+
+### Step 5: Tests ⚠️ (Inadequate - see Step 6)
+
+Initial tests were implemented but **failed to catch real-world issues**:
+
+- Used clean mock data without edge cases (self-references, duplicate synonyms)
+- No actual DuckDB integration tests with STRUCT array insertion
+- No tests against real source data
+
+**These gaps led to all the bugs discovered in Step 2.**
+
+### Step 6: Test Remediation
+
+The initial test suite missed critical real-world issues. This phase adds comprehensive tests using real data samples and actual DuckDB integration.
+
+#### 6.1: Create Real Data Sample ✅
+
+Created `test/data/anatomic_sample.json` with 42 records extracted from the live source, including all referenced records for complete hierarchy chains:
+
+| File | Contents |
+|------|----------|
+| `anatomic_sample.json` | 42 records with all references resolved |
+| `anatomic_sample_embeddings.json` | Real 512-dim embeddings for all 42 records |
+| `anatomic_query_embeddings.json` | 8 pre-generated query embeddings for search tests |
+
+**Edge cases included:**
+- 1 self-referential root (RID39569)
+- 6 records with duplicate synonyms
+- 26 records with codes
+- 24 records with laterality refs (complete triads)
+- 4 records with partOf refs
+- Complete containment chain from RID10049 → RID39569 (6 levels)
+
+#### 6.2: Unit Tests (No External Dependencies)
+
+Create/expand `test/test_anatomic_migration_unit.py`:
+
+| Test | Purpose |
+|------|---------|
+| `test_validate_anatomic_record_valid` | Valid record passes |
+| `test_validate_anatomic_record_missing_id` | Missing _id caught |
+| `test_validate_anatomic_record_missing_description` | Missing description caught |
+| `test_determine_laterality_*` | All 4 laterality cases |
+| `test_create_searchable_text_*` | Normal, empty synonyms, null definition |
+| `test_build_children_struct_*` | Normal refs, empty list, malformed refs |
+| `test_children_to_sql_empty` | Returns "[]" |
+| `test_children_to_sql_single` | Single ROW() output |
+| `test_children_to_sql_multiple` | Multiple ROW() output |
+| `test_children_to_sql_escapes_quotes` | SQL injection prevention |
+| `test_compute_containment_path_self_reference` | Root self-ref handled silently |
+| `test_compute_containment_path_missing_parent` | Dangling ref logged |
+| `test_compute_containment_path_normal_chain` | 3-4 level chain works |
+| `test_compute_partof_path_*` | Same cases as containment |
+| `test_prepare_record_deduplicates_synonyms` | Same synonym twice → one |
+| `test_prepare_record_deduplicates_codes` | Same code twice → one |
+
+#### 6.3: DuckDB Integration Tests (Real Local Database)
+
+Create `test/test_anatomic_migration_db.py`:
+
+Uses real DuckDB (temp file) and **real embeddings from `test/data/anatomic_sample_embeddings.json`** (no API calls needed).
+
+| Test | Purpose |
+|------|---------|
+| `test_schema_creation` | Tables created correctly |
+| `test_struct_array_insertion_with_row_syntax` | ROW() syntax works |
+| `test_insert_single_record_with_children` | STRUCT[] round-trips |
+| `test_insert_batch_with_sample_data` | Real sample → correct counts |
+| `test_insert_or_ignore_duplicate_synonym` | Duplicates silently ignored |
+| `test_insert_or_ignore_duplicate_code` | Duplicates silently ignored |
+| `test_batch_failure_clears_batch` | Next batch starts fresh |
+| `test_index_creation_fts` | FTS index created |
+| `test_index_creation_hnsw` | HNSW index created |
+| `test_full_build_pipeline` | Load sample → build → verify counts |
+
+Tests load embeddings directly from `test/data/anatomic_sample_embeddings.json` - no OpenAI API calls needed.
+
+#### 6.4: Query/Search Integration Tests
+
+Create/expand `test/test_anatomic_index_db.py`:
+
+Uses a pre-built test database with sample data.
+
+| Test | Purpose |
+|------|---------|
+| `test_get_by_id` | Returns correct record |
+| `test_get_by_id_not_found` | Raises appropriate error |
+| `test_containment_path_ancestor_query` | LIKE query finds ancestors |
+| `test_containment_path_descendant_query` | LIKE query finds descendants |
+| `test_fts_search_description` | Full-text search works |
+| `test_vector_search` | HNSW search returns results |
+| `test_hybrid_search` | Combined FTS+vector works |
+| `test_find_by_code` | Code lookup works |
+| `test_laterality_lookup` | Left/right/generic navigation |
+| `test_weakref_binding` | Index binding works |
+| `test_weakref_fails_after_close` | Appropriate error after close |
+
+#### 6.5: Test Data Fixtures
+
+Update `test/conftest.py`:
+
+```python
+@pytest.fixture(scope="session")
+def anatomic_sample_data() -> list[dict]:
+    """Load real sample data from test/data/anatomic_sample.json."""
+    sample_path = Path(__file__).parent / "data" / "anatomic_sample.json"
+    with open(sample_path) as f:
+        return json.load(f)
+
+@pytest.fixture(scope="session")
+def anatomic_sample_embeddings() -> dict[str, list[float]]:
+    """Load pre-generated embeddings from test/data/anatomic_sample_embeddings.json."""
+    emb_path = Path(__file__).parent / "data" / "anatomic_sample_embeddings.json"
+    with open(emb_path) as f:
+        return json.load(f)
+
+@pytest.fixture(scope="session")
+def anatomic_query_embeddings() -> dict[str, list[float]]:
+    """Load pre-generated query embeddings for search tests."""
+    query_path = Path(__file__).parent / "data" / "anatomic_query_embeddings.json"
+    with open(query_path) as f:
+        return json.load(f)
+
+@pytest.fixture(scope="session")
+def anatomic_records_by_id(anatomic_sample_data) -> dict[str, dict]:
+    """Index sample data by _id for path computation tests."""
+    return {r["_id"]: r for r in anatomic_sample_data}
+
+@pytest.fixture
+def temp_duckdb_path(tmp_path) -> Path:
+    """Temporary DuckDB file path for integration tests."""
+    return tmp_path / "test_anatomic.duckdb"
+
+@pytest.fixture
+def built_test_db(temp_duckdb_path, anatomic_sample_data, anatomic_sample_embeddings) -> Path:
+    """Build a test database with sample data and pre-generated embeddings."""
+    # Insert records using embeddings from anatomic_sample_embeddings
+    ...
+```
+
+#### 6.6: CI Integration
+
+All tests run without API keys - embeddings are pre-generated in test data files:
+
+```bash
+# Unit tests (fast, no external deps)
+pytest test/test_anatomic_migration_unit.py
+
+# DuckDB integration tests (uses pre-generated embeddings)
+pytest test/test_anatomic_migration_db.py
+
+# Index/search tests (uses pre-generated embeddings + query embeddings)
+pytest test/test_anatomic_index_db.py
+```
+
+### Step 7: Data Enrichment (Future)
 
 - Add `body_system` and `structure_type` to existing entries
 - Could use SNOMED mappings or AI classification
@@ -1220,9 +1561,14 @@ Add database download/caching function to `src/findingmodel/config.py`:
 | `src/findingmodel/anatomic_index.py`     | **NEW** - AnatomicLocationIndex                           |
 | `src/findingmodel/cli.py`                | Update anatomic commands                                  |
 | `src/findingmodel/__init__.py`           | Export new classes (WebReference, AnatomicLocation, etc.) |
+| `test/data/anatomic_sample.json`         | **NEW** - Real data sample (~30 records with edge cases)  |
+| `test/conftest.py`                       | Add anatomic test fixtures                                |
 | `test/test_web_reference.py`             | **NEW** - WebReference tests                              |
 | `test/test_anatomic_location.py`         | **NEW** - Model tests                                     |
+| `test/test_anatomic_migration_unit.py`   | **NEW** - Unit tests for migration helpers                |
+| `test/test_anatomic_migration_db.py`     | **NEW** - DuckDB integration tests (real database)        |
 | `test/test_anatomic_index.py`            | **NEW** - Index/query tests                               |
+| `test/test_anatomic_index_db.py`         | **NEW** - Index integration tests with real database      |
 
 ---
 
