@@ -1,0 +1,3667 @@
+[
+  {
+    "_id": "RID10049",
+    "acrCommonId": "4015333",
+    "snomedId": "65289004",
+    "snomedDisplay": "Superior nasal turbinate structure",
+    "description": "superior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10049_RID5824",
+      "display": "left superior nasal turbinate"
+    },
+    "rightRef": {
+      "id": "RID10049_RID5825",
+      "display": "right superior nasal turbinate"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "57458"
+      }
+    ]
+  },
+  {
+    "_id": "RID10049_RID5824",
+    "description": "left superior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "rightRef": {
+      "id": "RID10049_RID5825",
+      "display": "right superior nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10049",
+      "display": "superior nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID10049_RID5825",
+    "description": "right superior nasal turbinate",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9532",
+      "display": "nasal cavity"
+    },
+    "partOfRef": {
+      "id": "RID9199",
+      "display": "ethmoid bone"
+    },
+    "leftRef": {
+      "id": "RID10049_RID5824",
+      "display": "left superior nasal turbinate"
+    },
+    "unsidedRef": {
+      "id": "RID10049",
+      "display": "superior nasal turbinate"
+    }
+  },
+  {
+    "_id": "RID1243",
+    "acrCommonId": "4015442",
+    "snomedId": "51185008",
+    "snomedDisplay": "Thoracic structure",
+    "description": "thorax",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "containsRefs": [
+      {
+        "id": "RID582",
+        "display": "brachiocephalic artery"
+      },
+      {
+        "id": "RID1011",
+        "display": "brachiocephalic vein"
+      },
+      {
+        "id": "RID1011_RID5824",
+        "display": "left brachiocephalic vein"
+      },
+      {
+        "id": "RID1011_RID5825",
+        "display": "right brachiocephalic vein"
+      },
+      {
+        "id": "RID2468",
+        "display": "chest wall"
+      },
+      {
+        "id": "RID1524",
+        "display": "diaphragm"
+      },
+      {
+        "id": "RID94",
+        "display": "gastrointestinal tract"
+      },
+      {
+        "id": "RID43896",
+        "display": "left subclavian artery"
+      },
+      {
+        "id": "RID1384",
+        "display": "mediastinum"
+      },
+      {
+        "id": "RID1363",
+        "display": "pleural space"
+      },
+      {
+        "id": "RID1363_RID5824",
+        "display": "left pleural space"
+      },
+      {
+        "id": "RID1363_RID5825",
+        "display": "right pleural space"
+      },
+      {
+        "id": "RID1362",
+        "display": "pleura"
+      },
+      {
+        "id": "RID43895",
+        "display": "right subclavian artery"
+      },
+      {
+        "id": "RID773",
+        "display": "subclavian artery"
+      },
+      {
+        "id": "RID34572",
+        "display": "thoracic vertebral column"
+      },
+      {
+        "id": "RID1517",
+        "display": "axillary lymph node"
+      },
+      {
+        "id": "RID1517_RID5824",
+        "display": "left axillary lymph node"
+      },
+      {
+        "id": "RID1517_RID5825",
+        "display": "right axillary lymph node"
+      },
+      {
+        "id": "RID49962",
+        "display": "set of chest vessels"
+      },
+      {
+        "id": "RID29198",
+        "display": "first thoracic vertebra"
+      },
+      {
+        "id": "RID29199",
+        "display": "second thoracic vertebra"
+      },
+      {
+        "id": "RID29200",
+        "display": "third thoracic vertebra"
+      },
+      {
+        "id": "RID29201",
+        "display": "fourth thoracic vertebra"
+      },
+      {
+        "id": "RID29202",
+        "display": "fifth thoracic vertebra"
+      },
+      {
+        "id": "RID29203",
+        "display": "sixth thoracic vertebra"
+      },
+      {
+        "id": "RID29204",
+        "display": "seventh thoracic vertebra"
+      },
+      {
+        "id": "RID29205",
+        "display": "eight thoracic vertebra"
+      },
+      {
+        "id": "RID29206",
+        "display": "ninth thoracic vertebra"
+      },
+      {
+        "id": "RID29207",
+        "display": "tenth thoracic vertebra"
+      },
+      {
+        "id": "RID29208",
+        "display": "eleventh thoracic vertebra"
+      },
+      {
+        "id": "RID29209",
+        "display": "twelfth thoracic vertebra"
+      },
+      {
+        "id": "RID1529",
+        "display": "crus of diaphragm"
+      },
+      {
+        "id": "RID1529_RID5824",
+        "display": "left crus of diaphragm"
+      },
+      {
+        "id": "RID1529_RID5825",
+        "display": "right crus of diaphragm"
+      },
+      {
+        "id": "RID1169",
+        "display": "azygos vein"
+      },
+      {
+        "id": "RID7694",
+        "display": "thoracic duct"
+      },
+      {
+        "id": "RID7201",
+        "display": "phrenic nerve"
+      },
+      {
+        "id": "RID27716",
+        "display": "right phrenic nerve"
+      },
+      {
+        "id": "RID27717",
+        "display": "left phrenic nerve"
+      },
+      {
+        "id": "RID44771",
+        "display": "pericardiacophrenic artery"
+      },
+      {
+        "id": "RID44772",
+        "display": "right pericardiacophrenic artery"
+      },
+      {
+        "id": "RID44773",
+        "display": "left pericardiacophrenic artery"
+      },
+      {
+        "id": "RID28909",
+        "display": "hemidiaphragm"
+      },
+      {
+        "id": "RID1526",
+        "display": "right hemidiaphragm"
+      },
+      {
+        "id": "RID1525",
+        "display": "left hemidiaphragm"
+      },
+      {
+        "id": "RID1232",
+        "display": "right common pulmonary vein"
+      },
+      {
+        "id": "RID1238",
+        "display": "left common pulmonary vein"
+      },
+      {
+        "id": "RID43951",
+        "display": "lateral thoracic vein"
+      },
+      {
+        "id": "RID43952",
+        "display": "right lateral thoracic vein"
+      },
+      {
+        "id": "RID43953",
+        "display": "left lateral thoracic vein"
+      },
+      {
+        "id": "RID12187",
+        "display": "vagus nerve"
+      },
+      {
+        "id": "RID27700",
+        "display": "right vagus nerve"
+      },
+      {
+        "id": "RID27701",
+        "display": "left vagus nerve"
+      },
+      {
+        "id": "RID1523",
+        "display": "retrocrural lymph node"
+      },
+      {
+        "id": "RID456",
+        "display": "paracardiac lymph node"
+      },
+      {
+        "id": "RID1522",
+        "display": "superior diaphragmatic lymph node"
+      },
+      {
+        "id": "RID1522_RID5824",
+        "display": "left superior diaphragmatic lymph node"
+      },
+      {
+        "id": "RID1522_RID5825",
+        "display": "right superior diaphragmatic lymph node"
+      },
+      {
+        "id": "RID1490",
+        "display": "inferior pulmonary ligament lymph node"
+      },
+      {
+        "id": "RID1492",
+        "display": "right inferior pulmonary ligament lymph node"
+      },
+      {
+        "id": "RID1494",
+        "display": "left inferior pulmonary ligament lymph node"
+      },
+      {
+        "id": "RID28935",
+        "display": "para-aortic thoracic lymph node"
+      },
+      {
+        "id": "RID1484",
+        "display": "esophageal lymph node"
+      },
+      {
+        "id": "RID1486",
+        "display": "right paraesophageal lymph node"
+      },
+      {
+        "id": "RID1488",
+        "display": "left paraesophageal lymph node"
+      },
+      {
+        "id": "RID1465",
+        "display": "upper paratracheal lymph node"
+      },
+      {
+        "id": "RID1467",
+        "display": "right upper paratracheal lymph node"
+      },
+      {
+        "id": "RID1469",
+        "display": "left upper paratracheal lymph node"
+      },
+      {
+        "id": "RID1482",
+        "display": "subcarinal lymph node"
+      }
+    ],
+    "synonyms": [
+      "chest"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID28591",
+        "display": "set of ribs"
+      }
+    ],
+    "codes": [
+      {
+        "system": "UMLS",
+        "code": "C0040113"
+      }
+    ],
+    "definition": "Subdivision of trunk proper, which is demarcated from the neck by the plane of the superior thoracic aperture and from the abdomen internally by the inferior surface of the diaphragm and externally by the costal margin and associated with the thoracic vertebral column and ribcage and from the back of the thorax by the external surface of the posterolateral part of the rib cage, the anterior surface of the thoracic vertebral column and the posterior axillary lines; together with the abdomen and the perineum, it constitutes the trunk proper. [FMA]"
+  },
+  {
+    "_id": "RID1301",
+    "acrCommonId": "4014472",
+    "snomedId": "39607008",
+    "snomedDisplay": "Lung structure",
+    "description": "lung",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1363",
+      "display": "pleural space"
+    },
+    "containsRefs": [
+      {
+        "id": "RID43260",
+        "display": "oblique fissure"
+      },
+      {
+        "id": "RID28584",
+        "display": "apex of lung"
+      },
+      {
+        "id": "RID1497",
+        "display": "bronchopulmonary lymph node"
+      },
+      {
+        "id": "RID1499",
+        "display": "right bronchopulmonary lymph node"
+      },
+      {
+        "id": "RID1501",
+        "display": "left bronchopulmonary lymph node"
+      }
+    ],
+    "synonyms": [
+      "pulmo",
+      "pulmo"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID43260",
+        "display": "oblique fissure"
+      },
+      {
+        "id": "RID1216",
+        "display": "coronary sinus"
+      }
+    ],
+    "leftRef": {
+      "id": "RID1326",
+      "display": "left lung"
+    },
+    "rightRef": {
+      "id": "RID1302",
+      "display": "right lung"
+    },
+    "definition": "Either of the pair of organs occupying the cavity of the thorax that effect the aeration of the blood. [MeSH]"
+  },
+  {
+    "_id": "RID1302",
+    "acrCommonId": "4015016",
+    "snomedId": "3341006",
+    "snomedDisplay": "Right lung structure",
+    "description": "right lung",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1363_RID5825",
+      "display": "right pleural space"
+    },
+    "containsRefs": [
+      {
+        "id": "RID1315",
+        "display": "lower lobe of right lung"
+      },
+      {
+        "id": "RID1310",
+        "display": "middle lobe of lung"
+      },
+      {
+        "id": "RID1303",
+        "display": "upper lobe of right lung"
+      },
+      {
+        "id": "RID43258",
+        "display": "horizontal fissure of right lung"
+      },
+      {
+        "id": "RID43260_RID5825",
+        "display": "right oblique fissure"
+      }
+    ],
+    "synonyms": [
+      "pulmo dexter",
+      "pulmo dexter",
+      "Rechte Lunge"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID1315",
+        "display": "lower lobe of right lung"
+      },
+      {
+        "id": "RID1310",
+        "display": "middle lobe of lung"
+      },
+      {
+        "id": "RID1303",
+        "display": "upper lobe of right lung"
+      },
+      {
+        "id": "RID43258",
+        "display": "horizontal fissure of right lung"
+      },
+      {
+        "id": "RID43260_RID5825",
+        "display": "right oblique fissure"
+      }
+    ],
+    "leftRef": {
+      "id": "RID1326",
+      "display": "left lung"
+    },
+    "unsidedRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "definition": "Lung located right of sagittal midplane of body and which consists of the right upper lobe, middle lobe and right lower lobe."
+  },
+  {
+    "_id": "RID1326",
+    "acrCommonId": "4014245",
+    "snomedId": "44029006",
+    "snomedDisplay": "Left lung structure",
+    "description": "left lung",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1363_RID5824",
+      "display": "left pleural space"
+    },
+    "containsRefs": [
+      {
+        "id": "RID1333",
+        "display": "lingula"
+      },
+      {
+        "id": "RID1338",
+        "display": "lower lobe of left lung"
+      },
+      {
+        "id": "RID1327",
+        "display": "upper lobe of left lung"
+      },
+      {
+        "id": "RID43260_RID5824",
+        "display": "left oblique fissure"
+      }
+    ],
+    "synonyms": [
+      "pulmo sinister",
+      "pulmo sinister",
+      "Linke Lunge"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID1338",
+        "display": "lower lobe of left lung"
+      },
+      {
+        "id": "RID1327",
+        "display": "upper lobe of left lung"
+      },
+      {
+        "id": "RID43260_RID5824",
+        "display": "left oblique fissure"
+      }
+    ],
+    "rightRef": {
+      "id": "RID1302",
+      "display": "right lung"
+    },
+    "unsidedRef": {
+      "id": "RID1301",
+      "display": "lung"
+    },
+    "definition": "Lung located left of sagittal midplane of body and which consists of the left upper lobe and left lower lobe."
+  },
+  {
+    "_id": "RID13284",
+    "acrCommonId": "4013814",
+    "snomedId": "89545001",
+    "snomedDisplay": "Face structure",
+    "description": "face",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9080",
+      "display": "head"
+    },
+    "containsRefs": [
+      {
+        "id": "RID9573",
+        "display": "orbit"
+      },
+      {
+        "id": "RID9573_RID5824",
+        "display": "left orbit"
+      },
+      {
+        "id": "RID9573_RID5825",
+        "display": "right orbit"
+      },
+      {
+        "id": "RID10029",
+        "display": "nose"
+      },
+      {
+        "id": "RID7540",
+        "display": "suprahyoid neck"
+      },
+      {
+        "id": "RID7576",
+        "display": "infrahyoid neck"
+      },
+      {
+        "id": "RID9555",
+        "display": "frontal sinus"
+      },
+      {
+        "id": "RID9555_RID5824",
+        "display": "left frontal sinus"
+      },
+      {
+        "id": "RID9555_RID5825",
+        "display": "right frontal sinus"
+      },
+      {
+        "id": "RID9557",
+        "display": "maxillary sinus"
+      },
+      {
+        "id": "RID9557_RID5824",
+        "display": "left maxillary sinus"
+      },
+      {
+        "id": "RID9557_RID5825",
+        "display": "right maxillary sinus"
+      },
+      {
+        "id": "RID9569",
+        "display": "sphenoid sinus"
+      },
+      {
+        "id": "RID9569_RID5824",
+        "display": "left sphenoid sinus"
+      },
+      {
+        "id": "RID9569_RID5825",
+        "display": "right sphenoid sinus"
+      },
+      {
+        "id": "RID9561",
+        "display": "ethmoid sinus"
+      },
+      {
+        "id": "RID9561_RID5824",
+        "display": "left ethmoid sinus"
+      },
+      {
+        "id": "RID9561_RID5825",
+        "display": "right ethmoid sinus"
+      },
+      {
+        "id": "RID731",
+        "display": "middle temporal artery"
+      },
+      {
+        "id": "RID731_RID5824",
+        "display": "left middle temporal artery"
+      },
+      {
+        "id": "RID731_RID5825",
+        "display": "right middle temporal artery"
+      },
+      {
+        "id": "RID679",
+        "display": "posterior temporal artery"
+      },
+      {
+        "id": "RID36461",
+        "display": "right posterior temporal artery"
+      },
+      {
+        "id": "RID36462",
+        "display": "left posterior temporal artery"
+      },
+      {
+        "id": "RID711",
+        "display": "occipital artery"
+      },
+      {
+        "id": "RID711_RID5824",
+        "display": "left occipital artery"
+      },
+      {
+        "id": "RID711_RID5825",
+        "display": "right occipital artery"
+      },
+      {
+        "id": "RID44762",
+        "display": "right lateral occipital artery"
+      },
+      {
+        "id": "RID44763",
+        "display": "left lateral occipital artery"
+      },
+      {
+        "id": "RID44764",
+        "display": "medial occipital artery"
+      },
+      {
+        "id": "RID44765",
+        "display": "right medial occipital artery"
+      },
+      {
+        "id": "RID44766",
+        "display": "left medial occipital artery"
+      },
+      {
+        "id": "RID696",
+        "display": "lingual artery"
+      },
+      {
+        "id": "RID696_RID5824",
+        "display": "left lingual artery"
+      },
+      {
+        "id": "RID696_RID5825",
+        "display": "right lingual artery"
+      },
+      {
+        "id": "RID701",
+        "display": "facial artery"
+      },
+      {
+        "id": "RID701_RID5824",
+        "display": "left facial artery"
+      },
+      {
+        "id": "RID701_RID5825",
+        "display": "right facial artery"
+      },
+      {
+        "id": "RID734",
+        "display": "maxillary artery"
+      },
+      {
+        "id": "RID734_RID5824",
+        "display": "left maxillary artery"
+      },
+      {
+        "id": "RID734_RID5825",
+        "display": "right maxillary artery"
+      },
+      {
+        "id": "RID36453",
+        "display": "temporal artery"
+      },
+      {
+        "id": "RID36454",
+        "display": "right temporal artery"
+      },
+      {
+        "id": "RID36455",
+        "display": "left temporal artery"
+      },
+      {
+        "id": "RID9912",
+        "display": "temporalis muscle"
+      },
+      {
+        "id": "RID9912_RID5824",
+        "display": "left temporalis muscle"
+      },
+      {
+        "id": "RID9912_RID5825",
+        "display": "right temporalis muscle"
+      },
+      {
+        "id": "RID9908",
+        "display": "masseter muscle"
+      },
+      {
+        "id": "RID9908_RID5824",
+        "display": "left masseter muscle"
+      },
+      {
+        "id": "RID9908_RID5825",
+        "display": "right masseter muscle"
+      },
+      {
+        "id": "RID9911",
+        "display": "medial pterygoid muscle"
+      },
+      {
+        "id": "RID9911_RID5824",
+        "display": "left medial pterygoid muscle"
+      },
+      {
+        "id": "RID9911_RID5825",
+        "display": "right medial pterygoid muscle"
+      },
+      {
+        "id": "RID9905",
+        "display": "lateral pterygoid muscle"
+      },
+      {
+        "id": "RID9905_RID5824",
+        "display": "left lateral pterygoid muscle"
+      },
+      {
+        "id": "RID9905_RID5825",
+        "display": "right lateral pterygoid muscle"
+      },
+      {
+        "id": "RID9875",
+        "display": "orbicularis oculi muscle"
+      },
+      {
+        "id": "RID9875_RID5824",
+        "display": "left orbicularis oculi muscle"
+      },
+      {
+        "id": "RID9875_RID5825",
+        "display": "right orbicularis oculi muscle"
+      },
+      {
+        "id": "RID9869",
+        "display": "nasalis muscle"
+      },
+      {
+        "id": "RID9869_RID5824",
+        "display": "left nasalis muscle"
+      },
+      {
+        "id": "RID9869_RID5825",
+        "display": "right nasalis muscle"
+      },
+      {
+        "id": "RID9854",
+        "display": "levator labii superioris muscle"
+      },
+      {
+        "id": "RID9854_RID5824",
+        "display": "left levator labii superioris muscle"
+      },
+      {
+        "id": "RID9854_RID5825",
+        "display": "right levator labii superioris muscle"
+      },
+      {
+        "id": "RID9863",
+        "display": "zygomaticus major muscle"
+      },
+      {
+        "id": "RID9863_RID5824",
+        "display": "left zygomaticus major muscle"
+      },
+      {
+        "id": "RID9863_RID5825",
+        "display": "right zygomaticus major muscle"
+      },
+      {
+        "id": "RID9864",
+        "display": "zygomaticus minor muscle"
+      },
+      {
+        "id": "RID9864_RID5824",
+        "display": "left zygomaticus minor muscle"
+      },
+      {
+        "id": "RID9864_RID5825",
+        "display": "right zygomaticus minor muscle"
+      },
+      {
+        "id": "RID9860",
+        "display": "depressor anguli oris muscle"
+      },
+      {
+        "id": "RID9860_RID5824",
+        "display": "left depressor anguli oris muscle"
+      },
+      {
+        "id": "RID9860_RID5825",
+        "display": "right depressor anguli oris muscle"
+      },
+      {
+        "id": "RID9867",
+        "display": "mentalis muscle"
+      },
+      {
+        "id": "RID9867_RID5824",
+        "display": "left mentalis muscle"
+      },
+      {
+        "id": "RID9867_RID5825",
+        "display": "right mentalis muscle"
+      },
+      {
+        "id": "RID9853",
+        "display": "depressor labii inferior muscle"
+      },
+      {
+        "id": "RID9853_RID5824",
+        "display": "left depressor labii inferior muscle"
+      },
+      {
+        "id": "RID9853_RID5825",
+        "display": "right depressor labii inferior muscle"
+      },
+      {
+        "id": "RID9866",
+        "display": "buccinator muscle"
+      },
+      {
+        "id": "RID9866_RID5824",
+        "display": "left buccinator muscle"
+      },
+      {
+        "id": "RID9866_RID5825",
+        "display": "right buccinator muscle"
+      },
+      {
+        "id": "RID9857",
+        "display": "orbicularis oris muscle"
+      },
+      {
+        "id": "RID9862",
+        "display": "risoris muscle"
+      },
+      {
+        "id": "RID9862_RID5824",
+        "display": "left risoris muscle"
+      },
+      {
+        "id": "RID9862_RID5825",
+        "display": "right risoris muscle"
+      },
+      {
+        "id": "RID9881",
+        "display": "depressor supercilii muscle"
+      },
+      {
+        "id": "RID9881_RID5824",
+        "display": "left depressor supercilii muscle"
+      },
+      {
+        "id": "RID9881_RID5825",
+        "display": "right depressor supercilii muscle"
+      },
+      {
+        "id": "RID9880",
+        "display": "corrugator supercilii muscle"
+      },
+      {
+        "id": "RID9880_RID5824",
+        "display": "left corrugator supercilii muscle"
+      },
+      {
+        "id": "RID9880_RID5825",
+        "display": "right corrugator supercilii muscle"
+      },
+      {
+        "id": "RID9873",
+        "display": "procerus muscle"
+      },
+      {
+        "id": "RID9855",
+        "display": "levator labii superioris alaeque nasi muscle"
+      },
+      {
+        "id": "RID9855_RID5824",
+        "display": "left levator labii superioris alaeque nasi muscle"
+      },
+      {
+        "id": "RID9855_RID5825",
+        "display": "right levator labii superioris alaeque nasi muscle"
+      },
+      {
+        "id": "RID9710",
+        "display": "levator palpebrae superioris muscle"
+      },
+      {
+        "id": "RID9710_RID5824",
+        "display": "left levator palpebrae superioris muscle"
+      },
+      {
+        "id": "RID9710_RID5825",
+        "display": "right levator palpebrae superioris muscle"
+      },
+      {
+        "id": "RID9750",
+        "display": "superior tarsal muscle"
+      },
+      {
+        "id": "RID9750_RID5824",
+        "display": "left superior tarsal muscle"
+      },
+      {
+        "id": "RID9750_RID5825",
+        "display": "right superior tarsal muscle"
+      },
+      {
+        "id": "RID9751",
+        "display": "inferior tarsal muscle"
+      },
+      {
+        "id": "RID9751_RID5824",
+        "display": "left inferior tarsal muscle"
+      },
+      {
+        "id": "RID9751_RID5825",
+        "display": "right inferior tarsal muscle"
+      },
+      {
+        "id": "RID9236",
+        "display": "maxilla"
+      },
+      {
+        "id": "RID9082",
+        "display": "mandible"
+      },
+      {
+        "id": "RID28576",
+        "display": "mandibular rami"
+      },
+      {
+        "id": "RID9083",
+        "display": "body of mandible"
+      },
+      {
+        "id": "RID9110",
+        "display": "condyle of mandible"
+      },
+      {
+        "id": "RID9115",
+        "display": "coronoid process of mandible"
+      },
+      {
+        "id": "RID9262",
+        "display": "palatine process of maxilla"
+      },
+      {
+        "id": "RID9246",
+        "display": "anterior nasal spine of maxilla"
+      },
+      {
+        "id": "RID9247",
+        "display": "zygomaticomaxillary suture of maxilla"
+      },
+      {
+        "id": "RID9248",
+        "display": "infratemporal fossa of maxilla"
+      },
+      {
+        "id": "RID9252",
+        "display": "nasal surface of maxilla"
+      },
+      {
+        "id": "RID9261",
+        "display": "zygomatic process of maxilla"
+      },
+      {
+        "id": "RID9271",
+        "display": "alveolar part of maxilla"
+      },
+      {
+        "id": "RID9320",
+        "display": "pterygoid fossa"
+      },
+      {
+        "id": "RID9510",
+        "display": "pterygopalatine fossa"
+      },
+      {
+        "id": "RID726",
+        "display": "superficial temporal artery"
+      },
+      {
+        "id": "RID726_RID5824",
+        "display": "left superficial temporal artery"
+      },
+      {
+        "id": "RID726_RID5825",
+        "display": "right superficial temporal artery"
+      },
+      {
+        "id": "RID718",
+        "display": "posterior auricular artery"
+      }
+    ]
+  },
+  {
+    "_id": "RID1363",
+    "snomedId": "91381003",
+    "snomedDisplay": "Pleural cavity structure",
+    "description": "pleural space",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "containsRefs": [
+      {
+        "id": "RID1301",
+        "display": "lung"
+      }
+    ],
+    "synonyms": [
+      "pleural cavity"
+    ],
+    "leftRef": {
+      "id": "RID1363_RID5824",
+      "display": "left pleural space"
+    },
+    "rightRef": {
+      "id": "RID1363_RID5825",
+      "display": "right pleural space"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "9740"
+      },
+      {
+        "system": "MESH",
+        "code": "A01.923.761.800.650"
+      }
+    ]
+  },
+  {
+    "_id": "RID1363_RID5824",
+    "description": "left pleural space",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "containsRefs": [
+      {
+        "id": "RID1326",
+        "display": "left lung"
+      }
+    ],
+    "rightRef": {
+      "id": "RID1363_RID5825",
+      "display": "right pleural space"
+    },
+    "unsidedRef": {
+      "id": "RID1363",
+      "display": "pleural space"
+    }
+  },
+  {
+    "_id": "RID1363_RID5825",
+    "description": "right pleural space",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "containsRefs": [
+      {
+        "id": "RID1302",
+        "display": "right lung"
+      }
+    ],
+    "leftRef": {
+      "id": "RID1363_RID5824",
+      "display": "left pleural space"
+    },
+    "unsidedRef": {
+      "id": "RID1363",
+      "display": "pleural space"
+    }
+  },
+  {
+    "_id": "RID1384",
+    "acrCommonId": "4014531",
+    "snomedId": "72410000",
+    "snomedDisplay": "Mediastinal structure",
+    "description": "mediastinum",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1243",
+      "display": "thorax"
+    },
+    "containsRefs": [
+      {
+        "id": "RID581",
+        "display": "aortic arch"
+      },
+      {
+        "id": "RID580",
+        "display": "ascending aorta"
+      },
+      {
+        "id": "RID1246",
+        "display": "tracheobronchial tree"
+      },
+      {
+        "id": "RID1248",
+        "display": "carina"
+      },
+      {
+        "id": "RID35844",
+        "display": "descending thoracic aorta"
+      },
+      {
+        "id": "RID95",
+        "display": "esophagus"
+      },
+      {
+        "id": "RID1385",
+        "display": "heart"
+      },
+      {
+        "id": "RID34918",
+        "display": "main bronchus"
+      },
+      {
+        "id": "RID1250",
+        "display": "right main bronchus"
+      },
+      {
+        "id": "RID1275",
+        "display": "left main bronchus"
+      },
+      {
+        "id": "RID993",
+        "display": "left pulmonary artery"
+      },
+      {
+        "id": "RID975",
+        "display": "main pulmonary artery"
+      },
+      {
+        "id": "RID1407",
+        "display": "pericardium"
+      },
+      {
+        "id": "RID974",
+        "display": "pulmonary artery"
+      },
+      {
+        "id": "RID1231",
+        "display": "pulmonary vein"
+      },
+      {
+        "id": "RID976",
+        "display": "right pulmonary artery"
+      },
+      {
+        "id": "RID28727",
+        "display": "set of coronary arteries"
+      },
+      {
+        "id": "RID579",
+        "display": "sinotubular junction"
+      },
+      {
+        "id": "RID1010",
+        "display": "superior vena cava"
+      },
+      {
+        "id": "RID879",
+        "display": "thoracic aorta"
+      },
+      {
+        "id": "RID1430",
+        "display": "thymus"
+      },
+      {
+        "id": "RID1247",
+        "display": "trachea"
+      },
+      {
+        "id": "RID1258",
+        "display": "interlobar bronchus"
+      },
+      {
+        "id": "RID19173",
+        "display": "thoracic sympathetic trunk"
+      },
+      {
+        "id": "RID19174",
+        "display": "right thoracic sympathetic trunk"
+      },
+      {
+        "id": "RID19175",
+        "display": "left thoracic sympathetic trunk"
+      },
+      {
+        "id": "RID28852",
+        "display": "set of mediastinal lymph nodes"
+      },
+      {
+        "id": "RID1477",
+        "display": "aortopulmonary lymph node"
+      },
+      {
+        "id": "RID1521",
+        "display": "pericardial lymph node"
+      }
+    ],
+    "synonyms": [
+      "mediast"
+    ]
+  },
+  {
+    "_id": "RID1385",
+    "acrCommonId": "4013928",
+    "snomedId": "80891009",
+    "snomedDisplay": "Heart structure",
+    "description": "heart",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1384",
+      "display": "mediastinum"
+    },
+    "containsRefs": [
+      {
+        "id": "RID1394",
+        "display": "aortic valve"
+      },
+      {
+        "id": "RID510",
+        "display": "circumflex coronary artery"
+      },
+      {
+        "id": "RID490",
+        "display": "left anterior descending artery"
+      },
+      {
+        "id": "RID1390",
+        "display": "left atrium"
+      },
+      {
+        "id": "RID486",
+        "display": "left coronary artery"
+      },
+      {
+        "id": "RID1392",
+        "display": "left ventricle"
+      },
+      {
+        "id": "RID1395",
+        "display": "mitral valve"
+      },
+      {
+        "id": "RID1396",
+        "display": "pulmonic valve"
+      },
+      {
+        "id": "RID1387",
+        "display": "right atrium"
+      },
+      {
+        "id": "RID544",
+        "display": "right coronary artery"
+      },
+      {
+        "id": "RID1389",
+        "display": "right ventricle"
+      },
+      {
+        "id": "RID1397",
+        "display": "tricuspid valve"
+      },
+      {
+        "id": "RID1216",
+        "display": "coronary sinus"
+      },
+      {
+        "id": "RID1400",
+        "display": "papillary muscle"
+      },
+      {
+        "id": "RID1401",
+        "display": "chordae tendineae"
+      },
+      {
+        "id": "RID39309",
+        "display": "leaflet of tricuspid valve"
+      },
+      {
+        "id": "RID1404",
+        "display": "interventricular septum"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID1394",
+        "display": "aortic valve"
+      },
+      {
+        "id": "RID1390",
+        "display": "left atrium"
+      },
+      {
+        "id": "RID1392",
+        "display": "left ventricle"
+      },
+      {
+        "id": "RID1395",
+        "display": "mitral valve"
+      },
+      {
+        "id": "RID1396",
+        "display": "pulmonic valve"
+      },
+      {
+        "id": "RID1387",
+        "display": "right atrium"
+      },
+      {
+        "id": "RID1389",
+        "display": "right ventricle"
+      },
+      {
+        "id": "RID1400",
+        "display": "papillary muscle"
+      },
+      {
+        "id": "RID1401",
+        "display": "chordae tendineae"
+      },
+      {
+        "id": "RID39309",
+        "display": "leaflet of tricuspid valve"
+      },
+      {
+        "id": "RID1404",
+        "display": "interventricular septum"
+      }
+    ],
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "14550"
+      }
+    ],
+    "definition": "The hollow, muscular organ that maintains the circulation of the blood. [MeSH]"
+  },
+  {
+    "_id": "RID2638",
+    "acrCommonId": "4014457",
+    "snomedId": "61685007",
+    "snomedDisplay": "Lower limb structure",
+    "description": "lower extremity",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "containsRefs": [
+      {
+        "id": "RID2639",
+        "display": "hip"
+      },
+      {
+        "id": "RID2660",
+        "display": "thigh"
+      },
+      {
+        "id": "RID2743",
+        "display": "knee"
+      },
+      {
+        "id": "RID2869",
+        "display": "leg"
+      },
+      {
+        "id": "RID28545",
+        "display": "ankle"
+      },
+      {
+        "id": "RID28829",
+        "display": "foot"
+      },
+      {
+        "id": "RID1197",
+        "display": "greater saphenous vein"
+      }
+    ],
+    "synonyms": [
+      "le"
+    ],
+    "leftRef": {
+      "id": "RID2638_RID5824",
+      "display": "left lower extremity"
+    },
+    "rightRef": {
+      "id": "RID2638_RID5825",
+      "display": "right lower extremity"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "7184"
+      },
+      {
+        "system": "MESH",
+        "code": "A01.378.610"
+      }
+    ],
+    "definition": "The region of the lower limb in animals, extending from the gluteal region to the foot, and including the buttocks; hip; and leg. [MeSH]"
+  },
+  {
+    "_id": "RID2638_RID5824",
+    "snomedId": "32153003",
+    "snomedDisplay": "Structure of left lower limb",
+    "description": "left lower extremity",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "containsRefs": [
+      {
+        "id": "RID2639_RID5824",
+        "display": "left hip"
+      },
+      {
+        "id": "RID2660_RID5824",
+        "display": "left thigh"
+      },
+      {
+        "id": "RID49360",
+        "display": "left knee"
+      },
+      {
+        "id": "RID2869_RID5824",
+        "display": "left leg"
+      },
+      {
+        "id": "RID28545_RID5824",
+        "display": "left ankle"
+      },
+      {
+        "id": "RID28829_RID5824",
+        "display": "left foot"
+      },
+      {
+        "id": "RID1197_RID5824",
+        "display": "left greater saphenous vein"
+      }
+    ],
+    "rightRef": {
+      "id": "RID2638_RID5825",
+      "display": "right lower extremity"
+    },
+    "unsidedRef": {
+      "id": "RID2638",
+      "display": "lower extremity"
+    }
+  },
+  {
+    "_id": "RID2638_RID5825",
+    "snomedId": "62175007",
+    "snomedDisplay": "Structure of right lower limb",
+    "description": "right lower extremity",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "containsRefs": [
+      {
+        "id": "RID2639_RID5825",
+        "display": "right hip"
+      },
+      {
+        "id": "RID2660_RID5825",
+        "display": "right thigh"
+      },
+      {
+        "id": "RID49359",
+        "display": "right knee"
+      },
+      {
+        "id": "RID2869_RID5825",
+        "display": "right leg"
+      },
+      {
+        "id": "RID28545_RID5825",
+        "display": "right ankle"
+      },
+      {
+        "id": "RID28829_RID5825",
+        "display": "right foot"
+      },
+      {
+        "id": "RID1197_RID5825",
+        "display": "right greater saphenous vein"
+      }
+    ],
+    "leftRef": {
+      "id": "RID2638_RID5824",
+      "display": "left lower extremity"
+    },
+    "unsidedRef": {
+      "id": "RID2638",
+      "display": "lower extremity"
+    }
+  },
+  {
+    "_id": "RID2743",
+    "acrCommonId": "4014028",
+    "snomedId": "72696002",
+    "snomedDisplay": "Knee region structure",
+    "description": "knee",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID2638",
+      "display": "lower extremity"
+    },
+    "containsRefs": [
+      {
+        "id": "RID2683",
+        "display": "medial epicondyle of femur"
+      },
+      {
+        "id": "RID2682",
+        "display": "lateral epicondyle of femur"
+      },
+      {
+        "id": "RID2688",
+        "display": "medial condyle of femur"
+      },
+      {
+        "id": "RID2686",
+        "display": "lateral condyle of femur"
+      },
+      {
+        "id": "RID2751",
+        "display": "knee joint"
+      },
+      {
+        "id": "RID2892",
+        "display": "medial tibial spine"
+      },
+      {
+        "id": "RID2889",
+        "display": "lateral tibial spine"
+      },
+      {
+        "id": "RID2745",
+        "display": "fabella"
+      },
+      {
+        "id": "RID962",
+        "display": "popliteal artery"
+      },
+      {
+        "id": "RID1201",
+        "display": "popliteal vein"
+      }
+    ],
+    "synonyms": [
+      "genu",
+      "genu"
+    ],
+    "leftRef": {
+      "id": "RID49360",
+      "display": "left knee"
+    },
+    "rightRef": {
+      "id": "RID49359",
+      "display": "right knee"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "24974"
+      },
+      {
+        "system": "MESH",
+        "code": "A01.378.610.450"
+      }
+    ]
+  },
+  {
+    "_id": "RID2751",
+    "acrCommonId": "4014029",
+    "snomedId": "49076000",
+    "snomedDisplay": "Knee joint structure",
+    "description": "knee joint",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID2743",
+      "display": "knee"
+    },
+    "containsRefs": [
+      {
+        "id": "RID2746",
+        "display": "patella"
+      },
+      {
+        "id": "RID2848",
+        "display": "quadriceps tendon"
+      },
+      {
+        "id": "RID2851",
+        "display": "biceps femoris tendon"
+      },
+      {
+        "id": "RID2849",
+        "display": "patellar ligament"
+      },
+      {
+        "id": "RID2781",
+        "display": "anterior cruciate ligament"
+      },
+      {
+        "id": "RID2784",
+        "display": "posterior cruciate ligament"
+      },
+      {
+        "id": "RID2797",
+        "display": "lateral collateral ligament"
+      },
+      {
+        "id": "RID48947",
+        "display": "medial collateral ligament"
+      },
+      {
+        "id": "RID2763",
+        "display": "lateral meniscus"
+      },
+      {
+        "id": "RID2772",
+        "display": "medial meniscus"
+      },
+      {
+        "id": "RID2872",
+        "display": "head of fibula"
+      },
+      {
+        "id": "RID2875",
+        "display": "neck of fibula"
+      },
+      {
+        "id": "RID39626",
+        "display": "medial condyle of tibia"
+      },
+      {
+        "id": "RID39629",
+        "display": "lateral condyle of tibia"
+      }
+    ],
+    "synonyms": [
+      "articulatio genus"
+    ],
+    "leftRef": {
+      "id": "RID49393",
+      "display": "left knee joint"
+    },
+    "rightRef": {
+      "id": "RID49392",
+      "display": "right knee joint"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "35175"
+      },
+      {
+        "system": "MESH",
+        "code": "A02.835.583.475"
+      }
+    ]
+  },
+  {
+    "_id": "RID2772",
+    "acrCommonId": "4014516",
+    "snomedId": "182446003",
+    "snomedDisplay": "Entire medial meniscus",
+    "description": "medial meniscus",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID2751",
+      "display": "knee joint"
+    },
+    "synonyms": [
+      "meniscus medialis",
+      "meniscus medialis"
+    ],
+    "leftRef": {
+      "id": "RID49363",
+      "display": "left medial meniscus"
+    },
+    "rightRef": {
+      "id": "RID49362",
+      "display": "right medial meniscus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "44620"
+      },
+      {
+        "system": "MESH",
+        "code": "A02.835.583.475.590"
+      }
+    ]
+  },
+  {
+    "_id": "RID28731",
+    "acrCommonId": "4013539",
+    "snomedId": "31467002",
+    "snomedDisplay": "Base of skull structure",
+    "description": "base of cranium",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9196",
+      "display": "skull"
+    },
+    "containsRefs": [
+      {
+        "id": "RID9199",
+        "display": "ethmoid bone"
+      },
+      {
+        "id": "RID9207",
+        "display": "frontal bone"
+      },
+      {
+        "id": "RID9330",
+        "display": "occipital bone"
+      },
+      {
+        "id": "RID9281",
+        "display": "sphenoid bone"
+      }
+    ],
+    "synonyms": [
+      "cranial base",
+      "basicranium",
+      "skull base",
+      "base of skull"
+    ]
+  },
+  {
+    "_id": "RID29955",
+    "acrCommonId": "4013432",
+    "snomedId": "18166000",
+    "snomedDisplay": "Accessory breast",
+    "description": "accessory breast",
+    "region": "Breast",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "synonyms": [
+      "mamma accessoria"
+    ],
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "77861"
+      }
+    ]
+  },
+  {
+    "_id": "RID39006",
+    "acrCommonId": "4015149",
+    "snomedId": "91590006",
+    "snomedDisplay": "Structure of right submaxillary gland",
+    "description": "right submandibular gland",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID7540",
+      "display": "suprahyoid neck"
+    },
+    "leftRef": {
+      "id": "RID39007",
+      "display": "left submandibular gland"
+    },
+    "unsidedRef": {
+      "id": "RID9968",
+      "display": "submandibular gland"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "59802"
+      }
+    ]
+  },
+  {
+    "_id": "RID39007",
+    "acrCommonId": "4014378",
+    "snomedId": "48065005",
+    "snomedDisplay": "Structure of left submaxillary gland",
+    "description": "left submandibular gland",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID7540",
+      "display": "suprahyoid neck"
+    },
+    "rightRef": {
+      "id": "RID39006",
+      "display": "right submandibular gland"
+    },
+    "unsidedRef": {
+      "id": "RID9968",
+      "display": "submandibular gland"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "59803"
+      }
+    ]
+  },
+  {
+    "_id": "RID39569",
+    "acrCommonId": "4013399",
+    "snomedId": "261188006",
+    "snomedDisplay": "Whole body",
+    "description": "whole body",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "containsRefs": [
+      {
+        "id": "RID56",
+        "display": "abdomen"
+      },
+      {
+        "id": "RID480",
+        "display": "aorta"
+      },
+      {
+        "id": "RID29955",
+        "display": "accessory breast"
+      },
+      {
+        "id": "RID9080",
+        "display": "head"
+      },
+      {
+        "id": "RID7488",
+        "display": "neck"
+      },
+      {
+        "id": "RID2507",
+        "display": "pelvis"
+      },
+      {
+        "id": "RID7741",
+        "display": "spine"
+      },
+      {
+        "id": "RID1243",
+        "display": "thorax"
+      },
+      {
+        "id": "RID39569",
+        "display": "whole body"
+      },
+      {
+        "id": "RID2638",
+        "display": "lower extremity"
+      },
+      {
+        "id": "RID2638_RID5824",
+        "display": "left lower extremity"
+      },
+      {
+        "id": "RID2638_RID5825",
+        "display": "right lower extremity"
+      },
+      {
+        "id": "RID1850",
+        "display": "upper extremity"
+      },
+      {
+        "id": "RID1850_RID5824",
+        "display": "left upper extremity"
+      },
+      {
+        "id": "RID1850_RID5825",
+        "display": "right upper extremity"
+      },
+      {
+        "id": "RID16280",
+        "display": "set of autonomic nerves"
+      },
+      {
+        "id": "RID13183",
+        "display": "arterial system"
+      },
+      {
+        "id": "RID30781",
+        "display": "back"
+      },
+      {
+        "id": "RID29154",
+        "display": "vertebra"
+      },
+      {
+        "id": "RID28847",
+        "display": "lymph node group"
+      },
+      {
+        "id": "RID13209",
+        "display": "musculoskeletal system"
+      },
+      {
+        "id": "RID789",
+        "display": "anterior spinal artery"
+      },
+      {
+        "id": "RID44638",
+        "display": "right anterior spinal artery"
+      },
+      {
+        "id": "RID44639",
+        "display": "left anterior spinal artery"
+      },
+      {
+        "id": "RID7361",
+        "display": "spinal cord"
+      },
+      {
+        "id": "RID17726",
+        "display": "tract of spinal cord"
+      }
+    ],
+    "codes": [
+      {
+        "system": "UMLS",
+        "code": "C0017421"
+      }
+    ]
+  },
+  {
+    "_id": "RID397",
+    "acrCommonId": "4014711",
+    "snomedId": "83670000",
+    "snomedDisplay": "Peritoneal cavity structure",
+    "description": "peritoneal cavity",
+    "region": "Abdomen",
+    "containedByRef": {
+      "id": "RID56",
+      "display": "abdomen"
+    },
+    "containsRefs": [
+      {
+        "id": "RID81",
+        "display": "falciform ligament"
+      },
+      {
+        "id": "RID187",
+        "display": "gallbladder"
+      },
+      {
+        "id": "RID430",
+        "display": "greater omentum"
+      },
+      {
+        "id": "RID153",
+        "display": "ileocecal valve"
+      },
+      {
+        "id": "RID150",
+        "display": "ileum"
+      },
+      {
+        "id": "RID148",
+        "display": "jejunum"
+      },
+      {
+        "id": "RID86",
+        "display": "spleen"
+      },
+      {
+        "id": "RID114",
+        "display": "stomach"
+      },
+      {
+        "id": "RID927",
+        "display": "superior mesenteric artery"
+      },
+      {
+        "id": "RID151",
+        "display": "terminal ileum"
+      },
+      {
+        "id": "RID159",
+        "display": "transverse colon"
+      },
+      {
+        "id": "RID147",
+        "display": "ligament of Treitz"
+      },
+      {
+        "id": "RID413",
+        "display": "gastrohepatic ligament"
+      },
+      {
+        "id": "RID417",
+        "display": "gastrocolic ligament"
+      },
+      {
+        "id": "RID415",
+        "display": "hepatoduodenal ligament"
+      },
+      {
+        "id": "RID33180",
+        "display": "mesentery"
+      },
+      {
+        "id": "RID29245",
+        "display": "first part of duodenum"
+      },
+      {
+        "id": "RID146",
+        "display": "fourth part of duodenum"
+      },
+      {
+        "id": "RID115",
+        "display": "gastric cardia"
+      },
+      {
+        "id": "RID38289",
+        "display": "middle colic vein"
+      },
+      {
+        "id": "RID38291",
+        "display": "ileocolic vein"
+      },
+      {
+        "id": "RID38290",
+        "display": "right colic vein"
+      },
+      {
+        "id": "RID931",
+        "display": "middle colic artery"
+      },
+      {
+        "id": "RID934",
+        "display": "ileocolic artery"
+      },
+      {
+        "id": "RID940",
+        "display": "left colic artery"
+      },
+      {
+        "id": "RID929",
+        "display": "right colic artery"
+      },
+      {
+        "id": "RID942",
+        "display": "superior rectal artery"
+      },
+      {
+        "id": "RID31968",
+        "display": "mesenteric lymph node group"
+      },
+      {
+        "id": "RID58",
+        "display": "liver"
+      }
+    ],
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "14704"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0031138"
+      }
+    ],
+    "definition": "Cavity of serous sac surrounded by the peritoneum. [FMA]"
+  },
+  {
+    "_id": "RID480",
+    "acrCommonId": "4013402",
+    "snomedId": "15825003",
+    "snomedDisplay": "Aortic structure",
+    "description": "aorta",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID905",
+        "display": "abdominal aorta"
+      },
+      {
+        "id": "RID579",
+        "display": "sinotubular junction"
+      },
+      {
+        "id": "RID879",
+        "display": "thoracic aorta"
+      }
+    ],
+    "codes": [
+      {
+        "system": "UMLS",
+        "code": "C0003483"
+      }
+    ],
+    "definition": "The main trunk of the systemic arteries. [MeSH]"
+  },
+  {
+    "_id": "RID49359",
+    "acrCommonId": "4014994",
+    "snomedId": "6757004",
+    "snomedDisplay": "Structure of right knee",
+    "description": "right knee",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID2638_RID5825",
+      "display": "right lower extremity"
+    },
+    "containsRefs": [
+      {
+        "id": "RID49266",
+        "display": "medial epicondyle of right femur"
+      },
+      {
+        "id": "RID49284",
+        "display": "lateral epicondyle of right femur"
+      },
+      {
+        "id": "RID39857",
+        "display": "medial condyle of right femur"
+      },
+      {
+        "id": "RID39859",
+        "display": "lateral condyle of right femur"
+      },
+      {
+        "id": "RID49392",
+        "display": "right knee joint"
+      },
+      {
+        "id": "RID39648",
+        "display": "right medial tibial spine"
+      },
+      {
+        "id": "RID39646",
+        "display": "right lateral tibial spine"
+      },
+      {
+        "id": "RID49394",
+        "display": "right fabella"
+      },
+      {
+        "id": "RID962_RID5825",
+        "display": "right popliteal artery"
+      },
+      {
+        "id": "RID1201_RID5825",
+        "display": "right popliteal vein"
+      }
+    ],
+    "leftRef": {
+      "id": "RID49360",
+      "display": "left knee"
+    },
+    "unsidedRef": {
+      "id": "RID2743",
+      "display": "knee"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "24977"
+      }
+    ]
+  },
+  {
+    "_id": "RID49360",
+    "acrCommonId": "4014223",
+    "snomedId": "82169009",
+    "snomedDisplay": "Structure of left knee",
+    "description": "left knee",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID2638_RID5824",
+      "display": "left lower extremity"
+    },
+    "containsRefs": [
+      {
+        "id": "RID49267",
+        "display": "medial epicondyle of left femur"
+      },
+      {
+        "id": "RID49285",
+        "display": "lateral epicondyle of left femur"
+      },
+      {
+        "id": "RID39858",
+        "display": "medial condyle of left femur"
+      },
+      {
+        "id": "RID39860",
+        "display": "lateral condyle of left femur"
+      },
+      {
+        "id": "RID49393",
+        "display": "left knee joint"
+      },
+      {
+        "id": "RID39649",
+        "display": "left medial tibial spine"
+      },
+      {
+        "id": "RID39647",
+        "display": "left lateral tibial spine"
+      },
+      {
+        "id": "RID49395",
+        "display": "left fabella"
+      },
+      {
+        "id": "RID962_RID5824",
+        "display": "left popliteal artery"
+      },
+      {
+        "id": "RID1201_RID5824",
+        "display": "left popliteal vein"
+      }
+    ],
+    "rightRef": {
+      "id": "RID49359",
+      "display": "right knee"
+    },
+    "unsidedRef": {
+      "id": "RID2743",
+      "display": "knee"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "24978"
+      }
+    ]
+  },
+  {
+    "_id": "RID49362",
+    "acrCommonId": "4015041",
+    "snomedId": "723247004",
+    "snomedDisplay": "Structure of medial meniscus of right knee joint",
+    "description": "right medial meniscus",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID49392",
+      "display": "right knee joint"
+    },
+    "leftRef": {
+      "id": "RID49363",
+      "display": "left medial meniscus"
+    },
+    "unsidedRef": {
+      "id": "RID2772",
+      "display": "medial meniscus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "44622"
+      }
+    ]
+  },
+  {
+    "_id": "RID49363",
+    "acrCommonId": "4014270",
+    "snomedId": "723246008",
+    "snomedDisplay": "Structure of medial meniscus of left knee joint",
+    "description": "left medial meniscus",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID49393",
+      "display": "left knee joint"
+    },
+    "rightRef": {
+      "id": "RID49362",
+      "display": "right medial meniscus"
+    },
+    "unsidedRef": {
+      "id": "RID2772",
+      "display": "medial meniscus"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "44623"
+      }
+    ]
+  },
+  {
+    "_id": "RID49392",
+    "acrCommonId": "4014995",
+    "snomedId": "735264009",
+    "snomedDisplay": "Entire right knee joint",
+    "description": "right knee joint",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID49359",
+      "display": "right knee"
+    },
+    "containsRefs": [
+      {
+        "id": "RID48530",
+        "display": "right patella"
+      },
+      {
+        "id": "RID48532",
+        "display": "right quadriceps tendon"
+      },
+      {
+        "id": "RID41143",
+        "display": "tendon of right biceps femoris"
+      },
+      {
+        "id": "RID48958",
+        "display": "right patellar ligament"
+      },
+      {
+        "id": "RID48971",
+        "display": "right anterior cruciate ligament"
+      },
+      {
+        "id": "RID48973",
+        "display": "right posterior cruciate ligament"
+      },
+      {
+        "id": "RID48950",
+        "display": "right lateral collateral ligament"
+      },
+      {
+        "id": "RID48948",
+        "display": "right medial collateral ligament"
+      },
+      {
+        "id": "RID49364",
+        "display": "right lateral meniscus"
+      },
+      {
+        "id": "RID49362",
+        "display": "right medial meniscus"
+      },
+      {
+        "id": "RID2872_RID5825",
+        "display": "right head of fibula"
+      },
+      {
+        "id": "RID2875_RID5825",
+        "display": "right neck of fibula"
+      },
+      {
+        "id": "RID39627",
+        "display": "medial condyle of right tibia"
+      },
+      {
+        "id": "RID39630",
+        "display": "lateral condyle of right tibia"
+      }
+    ],
+    "leftRef": {
+      "id": "RID49393",
+      "display": "left knee joint"
+    },
+    "unsidedRef": {
+      "id": "RID2751",
+      "display": "knee joint"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "35176"
+      }
+    ]
+  },
+  {
+    "_id": "RID49393",
+    "acrCommonId": "4014224",
+    "snomedId": "735263003",
+    "snomedDisplay": "Entire left knee joint",
+    "description": "left knee joint",
+    "region": "Lower Extremity",
+    "containedByRef": {
+      "id": "RID49360",
+      "display": "left knee"
+    },
+    "containsRefs": [
+      {
+        "id": "RID48531",
+        "display": "left patella"
+      },
+      {
+        "id": "RID48533",
+        "display": "left quadriceps tendon"
+      },
+      {
+        "id": "RID41144",
+        "display": "tendon of left biceps femoris"
+      },
+      {
+        "id": "RID48959",
+        "display": "left patellar ligament"
+      },
+      {
+        "id": "RID48972",
+        "display": "left anterior cruciate ligament"
+      },
+      {
+        "id": "RID48974",
+        "display": "left posterior cruciate ligament"
+      },
+      {
+        "id": "RID48951",
+        "display": "left lateral collateral ligament"
+      },
+      {
+        "id": "RID48949",
+        "display": "left medial collateral ligament"
+      },
+      {
+        "id": "RID49365",
+        "display": "left lateral meniscus"
+      },
+      {
+        "id": "RID49363",
+        "display": "left medial meniscus"
+      },
+      {
+        "id": "RID2872_RID5824",
+        "display": "left head of fibula"
+      },
+      {
+        "id": "RID2875_RID5824",
+        "display": "left neck of fibula"
+      },
+      {
+        "id": "RID39628",
+        "display": "medial condyle of left tibia"
+      },
+      {
+        "id": "RID39631",
+        "display": "lateral condyle of left tibia"
+      }
+    ],
+    "rightRef": {
+      "id": "RID49392",
+      "display": "right knee joint"
+    },
+    "unsidedRef": {
+      "id": "RID2751",
+      "display": "knee joint"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "35177"
+      }
+    ]
+  },
+  {
+    "_id": "RID56",
+    "acrCommonId": "4013398",
+    "snomedId": "818983003",
+    "snomedDisplay": "Structure of abdominopelvic cavity and/or content of abdominopelvic cavity and/or anterior abdominal wall",
+    "description": "abdomen",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "containsRefs": [
+      {
+        "id": "RID199",
+        "display": "common bile duct"
+      },
+      {
+        "id": "RID201",
+        "display": "cystic duct"
+      },
+      {
+        "id": "RID910",
+        "display": "gastroduodenal artery"
+      },
+      {
+        "id": "RID1211",
+        "display": "inferior mesenteric vein"
+      },
+      {
+        "id": "RID152",
+        "display": "large intestine"
+      },
+      {
+        "id": "RID193",
+        "display": "left hepatic duct"
+      },
+      {
+        "id": "RID908",
+        "display": "left gastric artery"
+      },
+      {
+        "id": "RID916",
+        "display": "left hepatic artery"
+      },
+      {
+        "id": "RID397",
+        "display": "peritoneal cavity"
+      },
+      {
+        "id": "RID410",
+        "display": "peritoneum"
+      },
+      {
+        "id": "RID914",
+        "display": "proper hepatic artery"
+      },
+      {
+        "id": "RID431",
+        "display": "retroperitoneum"
+      },
+      {
+        "id": "RID194",
+        "display": "right hepatic duct"
+      },
+      {
+        "id": "RID920",
+        "display": "right gastric artery"
+      },
+      {
+        "id": "RID918",
+        "display": "right hepatic artery"
+      },
+      {
+        "id": "RID1209",
+        "display": "splenic vein"
+      },
+      {
+        "id": "RID1212",
+        "display": "superior mesenteric vein"
+      },
+      {
+        "id": "RID204",
+        "display": "urinary tract"
+      },
+      {
+        "id": "RID200",
+        "display": "common hepatic duct"
+      },
+      {
+        "id": "RID30014",
+        "display": "wall of abdomen"
+      },
+      {
+        "id": "RID50378",
+        "display": "set of visceral vessels"
+      },
+      {
+        "id": "RID49921",
+        "display": "set of abdominal vessels"
+      },
+      {
+        "id": "RID912",
+        "display": "superior pancreaticoduodenal artery"
+      },
+      {
+        "id": "RID928",
+        "display": "inferior pancreaticoduodenal artery"
+      },
+      {
+        "id": "RID38296",
+        "display": "pancreatic tributary of splenic vein"
+      },
+      {
+        "id": "RID38297",
+        "display": "short gastric vein"
+      },
+      {
+        "id": "RID38283",
+        "display": "left gastric vein"
+      },
+      {
+        "id": "RID38284",
+        "display": "right gastric vein"
+      },
+      {
+        "id": "RID38281",
+        "display": "right gastroepiploic vein"
+      },
+      {
+        "id": "RID38298",
+        "display": "left gastroepiploic vein"
+      },
+      {
+        "id": "RID911",
+        "display": "right gastroepiploic artery"
+      },
+      {
+        "id": "RID925",
+        "display": "left gastroepiploic artery"
+      },
+      {
+        "id": "RID38762",
+        "display": "inferior phrenic artery"
+      },
+      {
+        "id": "RID38762_RID5824",
+        "display": "left inferior phrenic artery"
+      },
+      {
+        "id": "RID38762_RID5825",
+        "display": "right inferior phrenic artery"
+      },
+      {
+        "id": "RID31997",
+        "display": "hepatoportal lymph node group"
+      },
+      {
+        "id": "RID31919",
+        "display": "gastric lymph node group"
+      },
+      {
+        "id": "RID28854",
+        "display": "abdominal lymph node group"
+      },
+      {
+        "id": "RID31977",
+        "display": "precaval lymph node group"
+      },
+      {
+        "id": "RID31959",
+        "display": "paracolic lymph node group"
+      },
+      {
+        "id": "RID453",
+        "display": "gastrohepatic ligament node"
+      },
+      {
+        "id": "RID31931",
+        "display": "pancreatic lymph node group"
+      },
+      {
+        "id": "RID28857",
+        "display": "pancreaticoduodenal lymph node"
+      },
+      {
+        "id": "RID103",
+        "display": "lower esophageal sphincter"
+      },
+      {
+        "id": "RID32811",
+        "display": "musculature of abdomen"
+      },
+      {
+        "id": "RID32954",
+        "display": "abdominal cavity"
+      }
+    ],
+    "synonyms": [
+      "abdominopelvis",
+      "abdominopelvic region"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID30014",
+        "display": "wall of abdomen"
+      }
+    ],
+    "codes": [
+      {
+        "system": "MESH",
+        "code": "A01.923.047"
+      }
+    ],
+    "definition": "Subdivision of trunk proper which is demarcated from the thorax internally by the inferior surface of the sternocostal part of the diaphragm and externally by the costal margin, from the back of abdomen by the external surface of the posterior abdominal wall,  from the perineum by the superior surface of the urogenital diaphragm and from the lower limbs by the inguinal folds; together with the thorax, and perineum, it constitutes the trunk proper. Examples: There is only one abdomen. [FMA]"
+  },
+  {
+    "_id": "RID58",
+    "acrCommonId": "4014450",
+    "snomedId": "10200004",
+    "snomedDisplay": "Liver structure",
+    "description": "liver",
+    "region": "Abdomen",
+    "containedByRef": {
+      "id": "RID397",
+      "display": "peritoneal cavity"
+    },
+    "containsRefs": [
+      {
+        "id": "RID1179",
+        "display": "hepatic vein"
+      },
+      {
+        "id": "RID74",
+        "display": "right lobe of liver"
+      },
+      {
+        "id": "RID69",
+        "display": "left lobe of liver"
+      },
+      {
+        "id": "RID77",
+        "display": "caudate lobe of liver"
+      },
+      {
+        "id": "RID33237",
+        "display": "lateral superior area of lateral segment of left lobe of liver"
+      },
+      {
+        "id": "RID33238",
+        "display": "lateral inferior area of lateral segment of left lobe of liver"
+      },
+      {
+        "id": "RID33243",
+        "display": "medial superior area of medial segment of left lobe of liver"
+      },
+      {
+        "id": "RID33244",
+        "display": "medial inferior area of medial segment of left lobe of liver"
+      },
+      {
+        "id": "RID33240",
+        "display": "anterior inferior area of anterior segment of right lobe of liver"
+      },
+      {
+        "id": "RID33242",
+        "display": "posterior inferior area of posterior segment of right lobe of liver"
+      },
+      {
+        "id": "RID33241",
+        "display": "posterior superior area of posterior segment of right lobe of liver"
+      },
+      {
+        "id": "RID33239",
+        "display": "anterior superior area of anterior segment of right lobe of liver"
+      },
+      {
+        "id": "RID31748",
+        "display": "fossa for gallbladder"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID74",
+        "display": "right lobe of liver"
+      },
+      {
+        "id": "RID69",
+        "display": "left lobe of liver"
+      },
+      {
+        "id": "RID31748",
+        "display": "fossa for gallbladder"
+      }
+    ],
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "7197"
+      },
+      {
+        "system": "MESH",
+        "code": "A03.620"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0023884"
+      }
+    ],
+    "definition": "Lobular organ which has as its parts lobules connected to the biliary tree. Examples: There is only one liver."
+  },
+  {
+    "_id": "RID6379_RID9080",
+    "acrCommonId": "4013812",
+    "snomedId": "303232006",
+    "snomedDisplay": "Extracranial",
+    "description": "extracranial head",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9080",
+      "display": "head"
+    }
+  },
+  {
+    "_id": "RID6383_RID9080",
+    "acrCommonId": "4014019",
+    "snomedId": "303231004",
+    "snomedDisplay": "Intracranial",
+    "description": "intracranial head",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9080",
+      "display": "head"
+    },
+    "containsRefs": [
+      {
+        "id": "RID6389_RID6434",
+        "display": "supratentorial brain"
+      },
+      {
+        "id": "RID6381_RID6434",
+        "display": "infratentorial brain"
+      }
+    ]
+  },
+  {
+    "_id": "RID7540",
+    "acrCommonId": "4015352",
+    "description": "suprahyoid neck",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID13284",
+      "display": "face"
+    },
+    "containsRefs": [
+      {
+        "id": "RID9532",
+        "display": "nasal cavity"
+      },
+      {
+        "id": "RID9990",
+        "display": "nasopharynx"
+      },
+      {
+        "id": "RID10003",
+        "display": "oropharynx"
+      },
+      {
+        "id": "RID9938",
+        "display": "oral cavity"
+      },
+      {
+        "id": "RID7565",
+        "display": "retropharyngeal space of head"
+      },
+      {
+        "id": "RID7565_RID5824",
+        "display": "left retropharyngeal space of head"
+      },
+      {
+        "id": "RID7565_RID5825",
+        "display": "right retropharyngeal space of head"
+      },
+      {
+        "id": "RID7569",
+        "display": "masticator space"
+      },
+      {
+        "id": "RID7569_RID5824",
+        "display": "left masticator space"
+      },
+      {
+        "id": "RID7569_RID5825",
+        "display": "right masticator space"
+      },
+      {
+        "id": "RID7572",
+        "display": "perivertebral space"
+      },
+      {
+        "id": "RID7572_RID5824",
+        "display": "left perivertebral space"
+      },
+      {
+        "id": "RID7572_RID5825",
+        "display": "right perivertebral space"
+      },
+      {
+        "id": "RID7568",
+        "display": "carotid space"
+      },
+      {
+        "id": "RID7568_RID5824",
+        "display": "left carotid space"
+      },
+      {
+        "id": "RID7568_RID5825",
+        "display": "right carotid space"
+      },
+      {
+        "id": "RID39003",
+        "display": "sublingual gland"
+      },
+      {
+        "id": "RID39004",
+        "display": "right sublingual gland"
+      },
+      {
+        "id": "RID39005",
+        "display": "left sublingual gland"
+      },
+      {
+        "id": "RID9968",
+        "display": "submandibular gland"
+      },
+      {
+        "id": "RID39006",
+        "display": "right submandibular gland"
+      },
+      {
+        "id": "RID39007",
+        "display": "left submandibular gland"
+      },
+      {
+        "id": "RID28744",
+        "display": "parotid gland"
+      },
+      {
+        "id": "RID38998",
+        "display": "right parotid gland"
+      },
+      {
+        "id": "RID38999",
+        "display": "left parotid gland"
+      }
+    ]
+  },
+  {
+    "_id": "RID9080",
+    "acrCommonId": "4013917",
+    "snomedId": "69536005",
+    "snomedDisplay": "Head structure",
+    "description": "head",
+    "region": "Body",
+    "containedByRef": {
+      "id": "RID39569",
+      "display": "whole body"
+    },
+    "containsRefs": [
+      {
+        "id": "RID6379_RID9080",
+        "display": "extracranial head"
+      },
+      {
+        "id": "RID6383_RID9080",
+        "display": "intracranial head"
+      },
+      {
+        "id": "RID13284",
+        "display": "face"
+      },
+      {
+        "id": "RID9887",
+        "display": "occipitofrontalis muscle"
+      },
+      {
+        "id": "RID9887_RID5824",
+        "display": "left occipitofrontalis muscle"
+      },
+      {
+        "id": "RID9887_RID5825",
+        "display": "right occipitofrontalis muscle"
+      },
+      {
+        "id": "RID9196",
+        "display": "skull"
+      },
+      {
+        "id": "RID9919",
+        "display": "scalp"
+      },
+      {
+        "id": "RID9807",
+        "display": "lambdoid suture"
+      },
+      {
+        "id": "RID28599",
+        "display": "zygomatic arch"
+      },
+      {
+        "id": "RID9779",
+        "display": "temporomandibular joint"
+      },
+      {
+        "id": "RID9779_RID5824",
+        "display": "left temporomandibular joint"
+      },
+      {
+        "id": "RID9779_RID5825",
+        "display": "right temporomandibular joint"
+      },
+      {
+        "id": "RID9470",
+        "display": "nasal bone"
+      },
+      {
+        "id": "RID9458",
+        "display": "zygomatic bone"
+      },
+      {
+        "id": "RID9471",
+        "display": "lacrimal bone"
+      },
+      {
+        "id": "RID9280",
+        "display": "parietal bone"
+      },
+      {
+        "id": "RID9578",
+        "display": "supraorbital margin"
+      },
+      {
+        "id": "RID9364",
+        "display": "mastoid process of temporal bone"
+      },
+      {
+        "id": "RID9415",
+        "display": "styloid process of temporal bone"
+      },
+      {
+        "id": "RID9316",
+        "display": "pterygoid process of sphenoid bone"
+      },
+      {
+        "id": "RID6434",
+        "display": "brain"
+      },
+      {
+        "id": "RID7196",
+        "display": "great auricular nerve"
+      },
+      {
+        "id": "RID27708",
+        "display": "right great auricular nerve"
+      },
+      {
+        "id": "RID27709",
+        "display": "left great auricular nerve"
+      },
+      {
+        "id": "RID7449",
+        "display": "lesser occipital nerve"
+      },
+      {
+        "id": "RID23087",
+        "display": "right lesser occipital nerve"
+      },
+      {
+        "id": "RID23088",
+        "display": "left lesser occipital nerve"
+      },
+      {
+        "id": "RID12024",
+        "display": "trigeminal nerve"
+      }
+    ]
+  },
+  {
+    "_id": "RID9196",
+    "acrCommonId": "4015259",
+    "snomedId": "89546000",
+    "snomedDisplay": "Bone structure of cranium",
+    "description": "skull",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID9080",
+      "display": "head"
+    },
+    "containsRefs": [
+      {
+        "id": "RID34446",
+        "display": "superficial cerebral vein"
+      },
+      {
+        "id": "RID34446_RID5824",
+        "display": "left superficial cerebral vein"
+      },
+      {
+        "id": "RID34446_RID5825",
+        "display": "right superficial cerebral vein"
+      },
+      {
+        "id": "RID36147",
+        "display": "superior anastomotic vein"
+      },
+      {
+        "id": "RID36148",
+        "display": "right superior anastomotic vein"
+      },
+      {
+        "id": "RID36149",
+        "display": "left superior anastomotic vein"
+      },
+      {
+        "id": "RID36150",
+        "display": "right inferior anastomotic vein"
+      },
+      {
+        "id": "RID36151",
+        "display": "left inferior anastomotic vein"
+      },
+      {
+        "id": "RID1127",
+        "display": "superior sagittal sinus"
+      },
+      {
+        "id": "RID1131",
+        "display": "inferior sagittal sinus"
+      },
+      {
+        "id": "RID1129",
+        "display": "straight sinus"
+      },
+      {
+        "id": "RID28731",
+        "display": "base of cranium"
+      },
+      {
+        "id": "RID9805",
+        "display": "coronal suture"
+      },
+      {
+        "id": "RID9806",
+        "display": "sagittal suture"
+      },
+      {
+        "id": "RID10148",
+        "display": "petrosquamous suture"
+      },
+      {
+        "id": "RID9814",
+        "display": "metopic suture"
+      },
+      {
+        "id": "RID9361",
+        "display": "temporal bone"
+      },
+      {
+        "id": "RID9361_RID5824",
+        "display": "left temporal bone"
+      },
+      {
+        "id": "RID9361_RID5825",
+        "display": "right temporal bone"
+      },
+      {
+        "id": "RID9501",
+        "display": "jugular foramen"
+      },
+      {
+        "id": "RID7091",
+        "display": "meningeal cluster"
+      },
+      {
+        "id": "RID7094",
+        "display": "falx cerebri"
+      }
+    ],
+    "synonyms": [
+      "calvarium",
+      "cranium"
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID9805",
+        "display": "coronal suture"
+      },
+      {
+        "id": "RID9806",
+        "display": "sagittal suture"
+      },
+      {
+        "id": "RID9807",
+        "display": "lambdoid suture"
+      },
+      {
+        "id": "RID10148",
+        "display": "petrosquamous suture"
+      },
+      {
+        "id": "RID9814",
+        "display": "metopic suture"
+      },
+      {
+        "id": "RID28599",
+        "display": "zygomatic arch"
+      },
+      {
+        "id": "RID9590",
+        "display": "superior orbital fissure"
+      },
+      {
+        "id": "RID9590_RID5824",
+        "display": "left superior orbital fissure"
+      },
+      {
+        "id": "RID9590_RID5825",
+        "display": "right superior orbital fissure"
+      },
+      {
+        "id": "RID9591",
+        "display": "inferior orbital fissure"
+      },
+      {
+        "id": "RID9591_RID5824",
+        "display": "left inferior orbital fissure"
+      },
+      {
+        "id": "RID9591_RID5825",
+        "display": "right inferior orbital fissure"
+      },
+      {
+        "id": "RID9361",
+        "display": "temporal bone"
+      },
+      {
+        "id": "RID9361_RID5824",
+        "display": "left temporal bone"
+      },
+      {
+        "id": "RID9361_RID5825",
+        "display": "right temporal bone"
+      },
+      {
+        "id": "RID9470",
+        "display": "nasal bone"
+      },
+      {
+        "id": "RID9199",
+        "display": "ethmoid bone"
+      },
+      {
+        "id": "RID9458",
+        "display": "zygomatic bone"
+      },
+      {
+        "id": "RID9207",
+        "display": "frontal bone"
+      },
+      {
+        "id": "RID9330",
+        "display": "occipital bone"
+      },
+      {
+        "id": "RID9281",
+        "display": "sphenoid bone"
+      },
+      {
+        "id": "RID9471",
+        "display": "lacrimal bone"
+      },
+      {
+        "id": "RID9280",
+        "display": "parietal bone"
+      },
+      {
+        "id": "RID9236",
+        "display": "maxilla"
+      },
+      {
+        "id": "RID9335",
+        "display": "foramen magnum"
+      },
+      {
+        "id": "RID9501",
+        "display": "jugular foramen"
+      }
+    ],
+    "codes": [
+      {
+        "system": "UMLS",
+        "code": "C0037303"
+      }
+    ],
+    "definition": "The skeleton of the head including the facial bones and the bones enclosing the brain. [MeSH]"
+  },
+  {
+    "_id": "RID9199",
+    "acrCommonId": "4013774",
+    "snomedId": "52374004",
+    "snomedDisplay": "Ethmoid bone structure",
+    "description": "ethmoid bone",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID28731",
+      "display": "base of cranium"
+    },
+    "containsRefs": [
+      {
+        "id": "RID9202",
+        "display": "crista galli"
+      }
+    ],
+    "synonyms": [
+      "ethmoid"
+    ],
+    "partOfRef": {
+      "id": "RID9196",
+      "display": "skull"
+    },
+    "hasPartsRefs": [
+      {
+        "id": "RID10039",
+        "display": "nasal septum"
+      },
+      {
+        "id": "RID9567",
+        "display": "ethmoidal infundibulum"
+      },
+      {
+        "id": "RID10049",
+        "display": "superior nasal turbinate"
+      },
+      {
+        "id": "RID10049_RID5824",
+        "display": "left superior nasal turbinate"
+      },
+      {
+        "id": "RID10049_RID5825",
+        "display": "right superior nasal turbinate"
+      },
+      {
+        "id": "RID10050",
+        "display": "middle nasal turbinate"
+      },
+      {
+        "id": "RID10050_RID5824",
+        "display": "left middle nasal turbinate"
+      },
+      {
+        "id": "RID10050_RID5825",
+        "display": "right middle nasal turbinate"
+      },
+      {
+        "id": "RID10051",
+        "display": "inferior nasal turbinate"
+      },
+      {
+        "id": "RID10051_RID5824",
+        "display": "left inferior nasal turbinate"
+      },
+      {
+        "id": "RID10051_RID5825",
+        "display": "right inferior nasal turbinate"
+      },
+      {
+        "id": "RID9206",
+        "display": "uncinate process of ethmoid"
+      },
+      {
+        "id": "RID9206_RID5824",
+        "display": "left uncinate process of ethmoid"
+      },
+      {
+        "id": "RID9206_RID5825",
+        "display": "right uncinate process of ethmoid"
+      },
+      {
+        "id": "RID9202",
+        "display": "crista galli"
+      }
+    ],
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "52740"
+      },
+      {
+        "system": "MESH",
+        "code": "A02.835.232.781.292"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0015027"
+      }
+    ]
+  },
+  {
+    "_id": "RID9532",
+    "acrCommonId": "4014600",
+    "snomedId": "279549004",
+    "snomedDisplay": "Nasal cavity structure",
+    "description": "nasal cavity",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID7540",
+      "display": "suprahyoid neck"
+    },
+    "containsRefs": [
+      {
+        "id": "RID10039",
+        "display": "nasal septum"
+      },
+      {
+        "id": "RID9567",
+        "display": "ethmoidal infundibulum"
+      },
+      {
+        "id": "RID9535",
+        "display": "superior nasal meatus"
+      },
+      {
+        "id": "RID9535_RID5824",
+        "display": "left superior nasal meatus"
+      },
+      {
+        "id": "RID9535_RID5825",
+        "display": "right superior nasal meatus"
+      },
+      {
+        "id": "RID9536",
+        "display": "middle nasal meatus"
+      },
+      {
+        "id": "RID9536_RID5824",
+        "display": "left middle nasal meatus"
+      },
+      {
+        "id": "RID9536_RID5825",
+        "display": "right middle nasal meatus"
+      },
+      {
+        "id": "RID9537",
+        "display": "inferior nasal meatus"
+      },
+      {
+        "id": "RID9537_RID5824",
+        "display": "left inferior nasal meatus"
+      },
+      {
+        "id": "RID9537_RID5825",
+        "display": "right inferior nasal meatus"
+      },
+      {
+        "id": "RID9566",
+        "display": "ethmoidal bulla"
+      },
+      {
+        "id": "RID9566_RID5824",
+        "display": "left ethmoidal bulla"
+      },
+      {
+        "id": "RID9566_RID5825",
+        "display": "right ethmoidal bulla"
+      },
+      {
+        "id": "RID10049",
+        "display": "superior nasal turbinate"
+      },
+      {
+        "id": "RID10049_RID5824",
+        "display": "left superior nasal turbinate"
+      },
+      {
+        "id": "RID10049_RID5825",
+        "display": "right superior nasal turbinate"
+      },
+      {
+        "id": "RID10050",
+        "display": "middle nasal turbinate"
+      },
+      {
+        "id": "RID10050_RID5824",
+        "display": "left middle nasal turbinate"
+      },
+      {
+        "id": "RID10050_RID5825",
+        "display": "right middle nasal turbinate"
+      },
+      {
+        "id": "RID10051",
+        "display": "inferior nasal turbinate"
+      },
+      {
+        "id": "RID10051_RID5824",
+        "display": "left inferior nasal turbinate"
+      },
+      {
+        "id": "RID10051_RID5825",
+        "display": "right inferior nasal turbinate"
+      },
+      {
+        "id": "RID9206",
+        "display": "uncinate process of ethmoid"
+      },
+      {
+        "id": "RID9206_RID5824",
+        "display": "left uncinate process of ethmoid"
+      },
+      {
+        "id": "RID9206_RID5825",
+        "display": "right uncinate process of ethmoid"
+      },
+      {
+        "id": "RID28571",
+        "display": "inferior nasal concha"
+      },
+      {
+        "id": "RID28571_RID5824",
+        "display": "left inferior nasal concha"
+      },
+      {
+        "id": "RID28571_RID5825",
+        "display": "right inferior nasal concha"
+      },
+      {
+        "id": "RID9554",
+        "display": "paranasal sinus"
+      },
+      {
+        "id": "RID9554_RID5824",
+        "display": "left paranasal sinus"
+      },
+      {
+        "id": "RID9554_RID5825",
+        "display": "right paranasal sinus"
+      },
+      {
+        "id": "RID9558",
+        "display": "ostiomeatal unit"
+      }
+    ],
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "54378"
+      },
+      {
+        "system": "MESH",
+        "code": "A04.531.449"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0027423"
+      }
+    ],
+    "definition": "The proximal portion of the respiratory passages on either side of the nasal septum, lined with ciliated mucosa, extending from the nares to the pharynx. [MeSH]"
+  },
+  {
+    "_id": "RID9968",
+    "acrCommonId": "4015303",
+    "snomedId": "385296007",
+    "snomedDisplay": "Submandibular salivary gland structure",
+    "description": "submandibular gland",
+    "region": "Head",
+    "containedByRef": {
+      "id": "RID7540",
+      "display": "suprahyoid neck"
+    },
+    "synonyms": [
+      "glandula submandibularis",
+      "glandula submandibularis"
+    ],
+    "leftRef": {
+      "id": "RID39007",
+      "display": "left submandibular gland"
+    },
+    "rightRef": {
+      "id": "RID39006",
+      "display": "right submandibular gland"
+    },
+    "codes": [
+      {
+        "system": "FMA",
+        "code": "55093"
+      },
+      {
+        "system": "MESH",
+        "code": "A03.556.500.760.812"
+      },
+      {
+        "system": "UMLS",
+        "code": "C0038556"
+      }
+    ],
+    "definition": "One of two salivary glands in the neck, located in the space bound by the two bellies of the digastric muscle and the angle of the mandible. It discharges through the submandibular duct. The secretory units are predominantly serous although a few mucous alveoli, some with serous demilunes, occur. (Stedman, 25th ed) [MeSH]"
+  }
+]
