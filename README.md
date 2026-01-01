@@ -5,7 +5,7 @@ A Python library for managing Open Imaging Finding Models - structured data mode
 ## Features
 
 - **Finding Model Management**: Create and manage structured medical finding models with attributes
-- **AI-Powered Tools**: Generate finding descriptions, synonyms, and detailed information using OpenAI or Anthropic models with Tavily search
+- **AI-Powered Tools**: Generate finding descriptions, synonyms, and detailed information using OpenAI, Anthropic, Google Gemini, or local Ollama models with Tavily search
 - **Medical Ontology Integration**: Search and match concepts across multiple backends:
   - **BioOntology API**: Access to 800+ medical ontologies including SNOMED-CT, ICD-10, LOINC
   - **DuckDB Search**: High-performance vector and full-text search with HNSW indexing
@@ -21,56 +21,39 @@ pip install findingmodel
 
 ## Configuration
 
-Configure the library by creating a `.env` file in your project root. See `.env.sample` for all available options.
+Configure the library by creating a `.env` file in your project root. See the [Configuration Guide](docs/configuration.md) for complete documentation.
 
-### API Keys (Required/Optional by Feature)
-
-Different features require different API keys:
-
-| Feature | Required Key | Purpose |
-|---------|--------------|---------|
-| **Core AI Features** | `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` | Generate descriptions, synonyms, create models from markdown |
-| **Detailed Finding Info** | `TAVILY_API_KEY` | Add citations and detailed descriptions (requires AI provider key too) |
-| **800+ Medical Ontologies** | `BIOONTOLOGY_API_KEY` | Access BioOntology.org for SNOMED-CT, ICD-10, LOINC, etc. |
+### Quick Start
 
 ```bash
-# AI Model Configuration (Pydantic AI format: "provider:model")
-# DEFAULT_MODEL=openai:gpt-5-mini          # or anthropic:claude-sonnet-4-5
-# DEFAULT_MODEL_FULL=openai:gpt-5          # for complex tasks
-# DEFAULT_MODEL_SMALL=openai:gpt-5-nano    # for simple/fast tasks
-
-# API Keys - at least one required for AI tools
+# Minimum: One AI provider key
 OPENAI_API_KEY=your_key_here
-# ANTHROPIC_API_KEY=your_key_here          # if using anthropic:* models
-# PYDANTIC_AI_GATEWAY_API_KEY=your_key     # if using gateway/* models
 
-# Optional - only needed for add_details_to_info()
+# Optional: For detailed finding info with citations
 TAVILY_API_KEY=your_key_here
-
-# Optional - only needed for BioOntology backend in ontology searches
-BIOONTOLOGY_API_KEY=your_key_here
 ```
 
-**Note:** The Index and anatomic location search work without any API keys (DuckDB backend). An AI provider (OpenAI or Anthropic) is only needed when using AI-powered tools.
+### Supported AI Providers
 
-### Local Database Configuration
+| Provider | Example | API Key |
+|----------|---------|---------|
+| OpenAI | `openai:gpt-5-mini` | `OPENAI_API_KEY` |
+| Anthropic | `anthropic:claude-sonnet-4-5` | `ANTHROPIC_API_KEY` |
+| Google Gemini | `google:gemini-3-flash-preview` | `GOOGLE_API_KEY` |
+| Ollama (local) | `ollama:llama3` | None required |
+| Gateway | `gateway/openai:gpt-5-mini` | `PYDANTIC_AI_GATEWAY_API_KEY` |
 
-By default, the up-to-date finding models index database from the [GitHub repository](https://github.com/openimagingdata/findingmodels) is automatically downloaded to a data directory based on an online manifest. To use a pre-downloaded version (e.g., in production/Docker deployments), you can specify its path:
+Override the default model: `DEFAULT_MODEL=google:gemini-3-flash-preview`
+
+### Database Auto-Download
+
+The finding model index and anatomic location databases are automatically downloaded on first use. For production/Docker deployments, you can pre-mount databases:
 
 ```bash
-# Production: use pre-mounted files
 DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
 ```
 
-Alternatively, you can also lock to a specific version of the index database by specifying a download URL and its hash.
-
-**Configuration Priority:**
-1. If file exists and no URL/hash specified → uses file directly (no download)
-2. If file exists with URL/hash → verifies hash, re-downloads if mismatch
-3. If file doesn't exist with URL/hash → downloads from URL
-4. If nothing specified → downloads from manifest.json (default)
-
-The anatomic locations database for ontologic lookups works similarly. See `.env.sample` for more configuration options including custom download URLs and relative paths.
+See [Configuration Guide](docs/configuration.md) for model tiers, all providers, database options, and troubleshooting.
 
 ## CLI
 
