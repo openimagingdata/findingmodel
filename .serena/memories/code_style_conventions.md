@@ -64,8 +64,30 @@
 - Test files mirror source structure
 
 ## Model Configuration
-- **ModelSpec Type**: Use validated `ModelSpec` type for model strings (pattern: `provider:model` or `gateway/provider:model`)
+
+### Supported Providers
+
+| Provider | Prefix | Config Env Var |
+|----------|--------|----------------|
+| OpenAI | `openai:` | `OPENAI_API_KEY` |
+| Anthropic | `anthropic:` | `ANTHROPIC_API_KEY` |
+| Google (GLA) | `google:` or `google-gla:` | `GOOGLE_API_KEY` |
+| Ollama | `ollama:` | `OLLAMA_BASE_URL` |
+| Gateway | `gateway/openai:`, `gateway/anthropic:`, `gateway/google:` | `PYDANTIC_AI_GATEWAY_API_KEY` |
+
+### Tier-Based Selection
+
+| Tier | Default | Use Case |
+|------|---------|----------|
+| `small` | `openai:gpt-5-nano` | Simple classification, query generation |
+| `base` | `openai:gpt-5-mini` | Most agent workflows |
+| `full` | `openai:gpt-5.2` | Complex reasoning, editing |
+
+Access via: `settings.get_model("base")` or `settings.get_model("small")`
+
+### Coding Rules
+- **ModelSpec Type**: Use validated `ModelSpec` type for model strings (see `MODEL_SPEC_PATTERN` in config.py)
 - **Test Constants**: Use `TEST_OPENAI_MODEL` and `TEST_ANTHROPIC_MODEL` from conftest.py (cheapest models for testing)
-- **Production Config**: Use tier-based selection (`base`/`full`/`small`) via `settings.get_model(tier)`
 - **Never hard-code**: Avoid hard-coded model strings like `"openai:gpt-4o-mini"` in test/production code
 - **Gateway tests**: Construct gateway models from constants: `f"gateway/{TEST_OPENAI_MODEL}"`
+- **API Key Validation**: Use `settings.validate_default_model_keys()` at app startup for fail-fast behavior

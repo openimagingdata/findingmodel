@@ -4,7 +4,7 @@ from typing import Annotated, Any, Literal
 import httpx
 import openai
 from platformdirs import user_data_dir
-from pydantic import BeforeValidator, Field, SecretStr, model_validator
+from pydantic import BeforeValidator, Field, PrivateAttr, SecretStr, model_validator
 from pydantic_ai.models import Model
 from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -24,17 +24,22 @@ class ConfigurationError(RuntimeError):
 ModelTier = Literal["base", "small", "full"]
 
 # Pattern validates: provider:model or gateway/provider:model
-# Providers: openai, anthropic, gemini, ollama
-# Gateway providers: openai, anthropic, gemini
+# Direct providers:
+#   - openai, anthropic, ollama: standard providers
+#   - google, google-gla: Google Generative Language API (requires GOOGLE_API_KEY)
+# Gateway providers (via Pydantic AI Gateway):
+#   - gateway/openai, gateway/anthropic: standard gateway routing
+#   - gateway/google, gateway/google-vertex: Google Vertex AI (gateway only supports Vertex)
 # Model names: alphanumeric, hyphens, dots, colons (for versions), underscores
-# Update this pattern when adding new providers
-MODEL_SPEC_PATTERN = r"^(openai|anthropic|gemini|ollama|gateway/(openai|anthropic|gemini)):[\w.:-]+$"
+MODEL_SPEC_PATTERN = (
+    r"^(openai|anthropic|google|google-gla|ollama|gateway/(openai|anthropic|google|google-vertex)):[\w.:-]+$"
+)
 
 ModelSpec = Annotated[
     str,
     Field(
         pattern=MODEL_SPEC_PATTERN,
-        description="Model spec: 'provider:model' (e.g., 'openai:gpt-5-mini', 'ollama:llama3.2:70b')",
+        description="Model spec: 'provider:model' (e.g., 'openai:gpt-5-mini', 'google:gemini-3-flash-preview')",
     ),
 ]
 
@@ -59,10 +64,15 @@ class FindingModelConfig(BaseSettings):
     # API Keys
     openai_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
     anthropic_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    google_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
     pydantic_ai_gateway_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
     pydantic_ai_gateway_base_url: str = Field(
         default="https://gateway.pydantic.dev/proxy/",
         description="Base URL for Pydantic AI Gateway (default: hosted gateway)",
+    )
+    ollama_base_url: str = Field(
+        default="http://localhost:11434/v1",
+        description="Base URL for Ollama API",
     )
 
     # Model configuration (Pydantic AI string format: "provider:model")
@@ -135,6 +145,9 @@ class FindingModelConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # Private instance cache for Ollama available models
+    _ollama_models_cache: set[str] | None = PrivateAttr(default=None)
+
     @model_validator(mode="after")
     def validate_remote_db_config(self) -> Self:
         """Validate that remote URL and hash are provided together (or neither)."""
@@ -160,6 +173,62 @@ class FindingModelConfig(BaseSettings):
         if not self.tavily_api_key.get_secret_value():
             raise ConfigurationError("Tavily API key is not set")
         return True
+
+    def _get_required_key_field(self, model_string: str) -> str | None:
+        """Return the API key field name required for a model string.
+
+        Args:
+            model_string: Model specification (e.g., "openai:gpt-5-mini")
+
+        Returns:
+            Field name (e.g., "openai_api_key") or None if no key needed (Ollama)
+        """
+        if ":" not in model_string:
+            return None
+
+        provider_part = model_string.split(":")[0]
+
+        # Gateway providers all use gateway key
+        if provider_part.startswith("gateway/"):
+            return "pydantic_ai_gateway_api_key"
+
+        # Map direct providers to their API key fields
+        return {
+            "openai": "openai_api_key",
+            "anthropic": "anthropic_api_key",
+            "google": "google_api_key",
+            "google-gla": "google_api_key",
+            "ollama": None,  # No API key required
+        }.get(provider_part)
+
+    def validate_default_model_keys(self) -> None:
+        """Validate that API keys are configured for all default models.
+
+        Call this at application startup to fail fast if required API keys
+        are missing for the configured default models.
+
+        Raises:
+            ConfigurationError: If any required API key is missing, with a
+                message listing which keys need to be set.
+        """
+        models_to_check = [
+            ("default_model", self.default_model),
+            ("default_model_full", self.default_model_full),
+            ("default_model_small", self.default_model_small),
+        ]
+
+        missing: list[tuple[str, str, str]] = []
+        for tier_name, model_string in models_to_check:
+            key_field = self._get_required_key_field(model_string)
+            if key_field:
+                key_value = getattr(self, key_field).get_secret_value()
+                if not key_value:
+                    missing.append((tier_name, model_string, key_field))
+
+        if missing:
+            # Format: "default_model (openai:gpt-5-mini): OPENAI_API_KEY"
+            details = "; ".join(f"{tier} ({model}): {key.upper()}" for tier, model, key in missing)
+            raise ConfigurationError(f"Missing API keys for default models: {details}")
 
     def get_model(self, model_tier: ModelTier = "base") -> Model:
         """Get a Pydantic AI model instance for the requested tier.
@@ -198,10 +267,18 @@ class FindingModelConfig(BaseSettings):
             return self._make_openai_model(model_name, openai_settings)
         elif parts == ["anthropic"]:
             return self._make_anthropic_model(model_name)
+        elif parts in [["google"], ["google-gla"]]:
+            # Both 'google:' and 'google-gla:' map to Generative Language API
+            return self._make_google_gla_model(model_name)
+        elif parts == ["ollama"]:
+            return self._make_ollama_model(model_name)
         elif parts == ["gateway", "openai"]:
             return self._make_gateway_openai_model(model_name, openai_settings)
         elif parts == ["gateway", "anthropic"]:
             return self._make_gateway_anthropic_model(model_name)
+        elif parts in [["gateway", "google"], ["gateway", "google-vertex"]]:
+            # Both 'gateway/google:' and 'gateway/google-vertex:' map to Vertex AI
+            return self._make_gateway_google_vertex_model(model_name)
         else:
             raise ConfigurationError(f"Unknown provider '{provider_part}'")
 
@@ -221,6 +298,20 @@ class FindingModelConfig(BaseSettings):
         if not api_key:
             raise ConfigurationError("ANTHROPIC_API_KEY not configured")
         return AnthropicModel(model_name, provider=AnthropicProvider(api_key=api_key))
+
+    def _make_google_gla_model(self, model_name: str) -> Model:
+        """Create a Google Gemini model via Generative Language API.
+
+        Used for direct Google API access (google: or google-gla: prefixes).
+        Requires GOOGLE_API_KEY from aistudio.google.com.
+        """
+        from pydantic_ai.models.google import GoogleModel
+        from pydantic_ai.providers.google import GoogleProvider
+
+        api_key = self.google_api_key.get_secret_value()
+        if not api_key:
+            raise ConfigurationError("GOOGLE_API_KEY not configured")
+        return GoogleModel(model_name, provider=GoogleProvider(api_key=api_key))
 
     def _make_gateway_openai_model(self, model_name: str, settings: ModelSettings | None) -> OpenAIResponsesModel:
         """Create an OpenAI model via Pydantic AI Gateway."""
@@ -242,6 +333,118 @@ class FindingModelConfig(BaseSettings):
             raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
         provider = gateway_provider("anthropic", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
         return AnthropicModel(model_name, provider=provider)
+
+    def _make_gateway_google_vertex_model(self, model_name: str) -> Model:
+        """Create a Google Gemini model via Pydantic AI Gateway (Vertex AI).
+
+        Used for gateway/google: or gateway/google-vertex: prefixes.
+        Gateway only supports Google via Vertex AI backend.
+        Requires PYDANTIC_AI_GATEWAY_API_KEY.
+        """
+        from pydantic_ai.models.google import GoogleModel
+        from pydantic_ai.providers.gateway import gateway_provider
+
+        api_key = self.pydantic_ai_gateway_api_key.get_secret_value()
+        if not api_key:
+            raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
+        provider = gateway_provider("google-vertex", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
+        return GoogleModel(model_name, provider=provider)
+
+    # -------------------------------------------------------------------------
+    # Ollama model validation and creation
+    # -------------------------------------------------------------------------
+
+    def _get_ollama_native_base_url(self) -> str:
+        """Get Ollama native API base URL (strips /v1 suffix if present).
+
+        The ollama_base_url setting points to the OpenAI-compatible endpoint (/v1),
+        but the native Ollama API (e.g., /api/tags) is at the root.
+        """
+        base = self.ollama_base_url
+        if base.endswith("/v1"):
+            base = base[:-3]
+        return base.rstrip("/")
+
+    def _fetch_ollama_models(self) -> set[str]:
+        """Fetch available model names from Ollama server.
+
+        Returns:
+            Set of model names (e.g., {"gpt-oss:20b", "llama3:latest"})
+
+        Raises:
+            httpx.ConnectError: If server is unreachable
+            httpx.HTTPStatusError: If server returns error status
+        """
+        url = f"{self._get_ollama_native_base_url()}/api/tags"
+        response = httpx.get(url, timeout=5.0)
+        response.raise_for_status()
+        data = response.json()
+        return {model["name"] for model in data.get("models", [])}
+
+    def _get_ollama_available_models(self) -> set[str]:
+        """Get available Ollama models with caching.
+
+        Returns cached result if available, otherwise fetches from server.
+        Use clear_ollama_models_cache() to invalidate.
+        """
+        if self._ollama_models_cache is None:
+            self._ollama_models_cache = self._fetch_ollama_models()
+        return self._ollama_models_cache
+
+    def clear_ollama_models_cache(self) -> None:
+        """Clear the cached Ollama models list.
+
+        Call this after pulling new models or changing ollama_base_url.
+        """
+        self._ollama_models_cache = None
+
+    def _validate_ollama_model(self, model_name: str) -> None:
+        """Validate that model is available on Ollama server.
+
+        Args:
+            model_name: Model name to validate (e.g., "llama3" or "llama3:70b")
+
+        Raises:
+            ConfigurationError: If server is unreachable, returns an error,
+                or the model is not available.
+        """
+        try:
+            available = self._get_ollama_available_models()
+        except httpx.ConnectError as e:
+            raise ConfigurationError(
+                f"Ollama server not reachable at {self._get_ollama_native_base_url()}. "
+                f"Ensure Ollama is running: ollama serve"
+            ) from e
+        except httpx.HTTPStatusError as e:
+            raise ConfigurationError(
+                f"Ollama server returned status {e.response.status_code} at {self._get_ollama_native_base_url()}"
+            ) from e
+        except Exception as e:
+            raise ConfigurationError(f"Cannot connect to Ollama server: {e}") from e
+
+        # Check for exact match or implicit :latest tag
+        if model_name in available:
+            return
+        if f"{model_name}:latest" in available:
+            return
+
+        # Model not found - raise helpful error
+        available_list = ", ".join(sorted(available)[:10])
+        if len(available) > 10:
+            available_list += f", ... ({len(available)} total)"
+
+        raise ConfigurationError(
+            f"Ollama model '{model_name}' not found. Available: {available_list}. Pull with: ollama pull {model_name}"
+        )
+
+    def _make_ollama_model(self, model_name: str) -> Model:
+        """Create an Ollama model, validating availability first."""
+        self._validate_ollama_model(model_name)
+
+        from pydantic_ai.models.openai import OpenAIChatModel
+        from pydantic_ai.providers.ollama import OllamaProvider
+
+        return OpenAIChatModel(model_name, provider=OllamaProvider(base_url=self.ollama_base_url))
 
 
 settings = FindingModelConfig()

@@ -1,5 +1,7 @@
+from collections.abc import Generator
 from types import SimpleNamespace
 
+import httpx
 import pytest
 from conftest import TEST_OPENAI_MODEL
 from pydantic_ai import models
@@ -18,6 +20,7 @@ models.ALLOW_MODEL_REQUESTS = False
 HAS_TAVILY_API_KEY = bool(settings.tavily_api_key.get_secret_value())
 HAS_OPENAI_API_KEY = bool(settings.openai_api_key.get_secret_value())
 HAS_ANTHROPIC_API_KEY = bool(settings.anthropic_api_key.get_secret_value())
+HAS_GOOGLE_API_KEY = bool(settings.google_api_key.get_secret_value())
 
 
 def test_create_stub(finding_info: FindingInfo) -> None:
@@ -843,6 +846,26 @@ def test_settings_get_model_validates_anthropic_api_key(monkeypatch: pytest.Monk
         config.settings.default_model = original_model
 
 
+def test_settings_get_model_validates_google_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test settings.get_model() raises ConfigurationError when Google API key missing."""
+    from pydantic import SecretStr
+
+    from findingmodel import config
+    from findingmodel.config import ConfigurationError
+
+    # Temporarily override settings with empty key
+    original_key = config.settings.google_api_key
+    original_model = config.settings.default_model
+    try:
+        config.settings.google_api_key = SecretStr("")
+        config.settings.default_model = "google:gemini-3-flash-preview"
+        with pytest.raises(ConfigurationError, match="GOOGLE_API_KEY not configured"):
+            config.settings.get_model("base")
+    finally:
+        config.settings.google_api_key = original_key
+        config.settings.default_model = original_model
+
+
 def test_settings_get_model_validates_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() raises ConfigurationError when Gateway API key missing."""
     from pydantic import SecretStr
@@ -879,7 +902,291 @@ def test_settings_get_model_raises_for_unknown_provider(monkeypatch: pytest.Monk
         config.settings.default_model = original_model
 
 
-@pytest.mark.skip(reason="Pydantic AI Gateway has intermittent Cloudflare routing issues causing 403 errors")
+# =============================================================================
+# Ollama Model Validation Tests
+# =============================================================================
+
+
+class TestOllamaModelValidation:
+    """Unit tests for Ollama model validation (mocked, no real server)."""
+
+    @pytest.fixture(autouse=True)
+    def clear_cache(self) -> Generator[None, None, None]:
+        """Clear Ollama models cache before and after each test."""
+        from findingmodel import config
+
+        config.settings.clear_ollama_models_cache()
+        yield
+        config.settings.clear_ollama_models_cache()
+
+    def test_validate_exact_match(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Model with exact name match passes validation."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"models": [{"name": "gpt-oss:20b"}]}
+        mock_response.raise_for_status = Mock()
+
+        monkeypatch.setattr(httpx, "get", Mock(return_value=mock_response))
+
+        # Should not raise
+        config.settings._validate_ollama_model("gpt-oss:20b")
+
+    def test_validate_implicit_latest(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Model without tag matches model:latest."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"models": [{"name": "llama3:latest"}]}
+        mock_response.raise_for_status = Mock()
+
+        monkeypatch.setattr(httpx, "get", Mock(return_value=mock_response))
+
+        # "llama3" should match "llama3:latest"
+        config.settings._validate_ollama_model("llama3")
+
+    def test_validate_not_found_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Missing model raises ConfigurationError with helpful message."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+        from findingmodel.config import ConfigurationError
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"models": [{"name": "gpt-oss:20b"}]}
+        mock_response.raise_for_status = Mock()
+
+        monkeypatch.setattr(httpx, "get", Mock(return_value=mock_response))
+
+        with pytest.raises(ConfigurationError) as exc_info:
+            config.settings._validate_ollama_model("nonexistent")
+
+        error_msg = str(exc_info.value)
+        assert "nonexistent" in error_msg
+        assert "gpt-oss:20b" in error_msg
+        assert "ollama pull" in error_msg
+
+    def test_validate_server_unreachable_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Unreachable server raises ConfigurationError (fail fast)."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+        from findingmodel.config import ConfigurationError
+
+        monkeypatch.setattr(httpx, "get", Mock(side_effect=httpx.ConnectError("Connection refused")))
+
+        with pytest.raises(ConfigurationError) as exc_info:
+            config.settings._validate_ollama_model("any-model")
+
+        assert "not reachable" in str(exc_info.value)
+        assert "ollama serve" in str(exc_info.value)
+
+    def test_validate_server_error_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Server error raises ConfigurationError (fail fast)."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+        from findingmodel.config import ConfigurationError
+
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Server Error", request=Mock(), response=mock_response
+        )
+
+        monkeypatch.setattr(httpx, "get", Mock(return_value=mock_response))
+
+        with pytest.raises(ConfigurationError) as exc_info:
+            config.settings._validate_ollama_model("any-model")
+
+        assert "500" in str(exc_info.value)
+
+    def test_validate_caching(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Models list is cached across calls."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+
+        mock_get = Mock()
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"models": [{"name": "test:latest"}]}
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        monkeypatch.setattr(httpx, "get", mock_get)
+
+        config.settings._get_ollama_available_models()
+        config.settings._get_ollama_available_models()
+
+        assert mock_get.call_count == 1  # Only one HTTP call
+
+    def test_clear_cache(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """clear_ollama_models_cache() invalidates the cache."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+
+        mock_get = Mock()
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"models": [{"name": "test:latest"}]}
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        monkeypatch.setattr(httpx, "get", mock_get)
+
+        config.settings._get_ollama_available_models()
+        assert mock_get.call_count == 1
+
+        config.settings.clear_ollama_models_cache()
+        config.settings._get_ollama_available_models()
+        assert mock_get.call_count == 2  # Called again after cache clear
+
+    def test_make_ollama_model_validates(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """_make_ollama_model calls validation before creating model."""
+        from unittest.mock import Mock
+
+        from findingmodel import config
+        from findingmodel.config import ConfigurationError
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"models": [{"name": "valid:latest"}]}
+        mock_response.raise_for_status = Mock()
+
+        monkeypatch.setattr(httpx, "get", Mock(return_value=mock_response))
+
+        with pytest.raises(ConfigurationError) as exc_info:
+            config.settings._make_ollama_model("invalid-model")
+
+        assert "invalid-model" in str(exc_info.value)
+
+
+class TestDefaultModelKeyValidation:
+    """Tests for validate_default_model_keys() functionality."""
+
+    def test_get_required_key_field_openai(self) -> None:
+        """OpenAI provider requires openai_api_key."""
+        from findingmodel import config
+
+        assert config.settings._get_required_key_field("openai:gpt-5-mini") == "openai_api_key"
+
+    def test_get_required_key_field_anthropic(self) -> None:
+        """Anthropic provider requires anthropic_api_key."""
+        from findingmodel import config
+
+        assert config.settings._get_required_key_field("anthropic:claude-sonnet-4-5") == "anthropic_api_key"
+
+    def test_get_required_key_field_google(self) -> None:
+        """Google providers require google_api_key."""
+        from findingmodel import config
+
+        assert config.settings._get_required_key_field("google:gemini-2.0-flash") == "google_api_key"
+        assert config.settings._get_required_key_field("google-gla:gemini-2.0-flash") == "google_api_key"
+
+    def test_get_required_key_field_gateway(self) -> None:
+        """Gateway providers require pydantic_ai_gateway_api_key."""
+        from findingmodel import config
+
+        assert config.settings._get_required_key_field("gateway/openai:gpt-5-mini") == "pydantic_ai_gateway_api_key"
+        assert (
+            config.settings._get_required_key_field("gateway/anthropic:claude-sonnet-4-5")
+            == "pydantic_ai_gateway_api_key"
+        )
+        assert (
+            config.settings._get_required_key_field("gateway/google:gemini-2.0-flash") == "pydantic_ai_gateway_api_key"
+        )
+
+    def test_get_required_key_field_ollama(self) -> None:
+        """Ollama provider requires no API key."""
+        from findingmodel import config
+
+        assert config.settings._get_required_key_field("ollama:llama3") is None
+
+    def test_get_required_key_field_invalid(self) -> None:
+        """Invalid model string returns None."""
+        from findingmodel import config
+
+        assert config.settings._get_required_key_field("no-colon") is None
+
+    def test_validate_passes_with_keys(self) -> None:
+        """Validation passes when required keys are present."""
+        from pydantic import SecretStr
+
+        from findingmodel.config import FindingModelConfig
+
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-key"),
+            default_model="openai:gpt-5-mini",
+            default_model_full="openai:gpt-5.2",
+            default_model_small="openai:gpt-5-nano",
+        )
+
+        # Should not raise
+        config.validate_default_model_keys()
+
+    def test_validate_fails_missing_key(self) -> None:
+        """Validation fails when required key is missing."""
+        from pydantic import SecretStr
+
+        from findingmodel.config import ConfigurationError, FindingModelConfig
+
+        config = FindingModelConfig(
+            openai_api_key=SecretStr(""),  # Empty key
+            default_model="openai:gpt-5-mini",
+            default_model_full="openai:gpt-5.2",
+            default_model_small="openai:gpt-5-nano",
+        )
+
+        with pytest.raises(ConfigurationError) as exc_info:
+            config.validate_default_model_keys()
+
+        error_msg = str(exc_info.value)
+        assert "OPENAI_API_KEY" in error_msg
+        assert "default_model" in error_msg
+
+    def test_validate_mixed_providers(self) -> None:
+        """Validation checks all providers correctly."""
+        from pydantic import SecretStr
+
+        from findingmodel.config import FindingModelConfig
+
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("openai-key"),
+            anthropic_api_key=SecretStr("anthropic-key"),
+            default_model="openai:gpt-5-mini",
+            default_model_full="anthropic:claude-opus-4-5",
+            default_model_small="openai:gpt-5-nano",
+        )
+
+        # Should not raise - both keys are present
+        config.validate_default_model_keys()
+
+    def test_validate_ollama_no_key_required(self) -> None:
+        """Ollama defaults don't require API key validation."""
+        from pydantic import SecretStr
+
+        from findingmodel.config import FindingModelConfig
+
+        config = FindingModelConfig(
+            openai_api_key=SecretStr(""),  # Empty key
+            default_model="ollama:llama3",
+            default_model_full="ollama:llama3:70b",
+            default_model_small="ollama:llama3:8b",
+        )
+
+        # Should not raise - Ollama doesn't require API keys
+        config.validate_default_model_keys()
+
+
 @pytest.mark.callout
 @pytest.mark.asyncio
 async def test_gateway_openai_integration() -> None:
@@ -915,6 +1222,129 @@ async def test_gateway_openai_integration() -> None:
             result = await agent.run("Reply with exactly: GATEWAY_TEST_OK")
 
             # Verify we got a response (content doesn't matter, just that it worked)
+            assert result.output is not None
+            assert len(result.output) > 0
+        finally:
+            config.settings.default_model = original_model
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_gemini_integration() -> None:
+    """Integration test: Verify gemini model works with real API.
+
+    This test verifies that the Gemini provider is correctly configured
+    and can make actual API calls to Google's Gemini API.
+    """
+    from pydantic_ai import Agent
+
+    from findingmodel import config
+
+    # Skip if Google API key not configured
+    if not config.settings.google_api_key.get_secret_value():
+        pytest.skip("GOOGLE_API_KEY not configured")
+
+    # Enable model requests for this callout test
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
+
+    try:
+        # Temporarily override settings to use Gemini
+        original_model = config.settings.default_model
+        config.settings.default_model = "google:gemini-3-flash-preview"
+
+        try:
+            # Get model from settings
+            model = config.settings.get_model("base")
+
+            # Create a simple agent and make a real API call
+            agent = Agent(model, output_type=str)
+            result = await agent.run("Reply with exactly: GEMINI_TEST_OK")
+
+            # Verify we got a response
+            assert result.output is not None
+            assert len(result.output) > 0
+        finally:
+            config.settings.default_model = original_model
+    finally:
+        models.ALLOW_MODEL_REQUESTS = original
+
+
+# Preferred models for Ollama integration testing (in order of preference)
+# These are small/fast models suitable for quick integration tests
+PREFERRED_OLLAMA_MODELS = [
+    "gpt-oss:20b",  # Good balance of speed and capability
+    "qwen2.5:3b",  # Very fast, capable
+    "qwen2.5:7b",  # Fast, more capable
+    "llama3.2:3b",  # Fast, common
+    "gemma3:4b",  # Fast, Google's small model
+    "phi4-mini",  # Microsoft's small model
+]
+
+
+@pytest.mark.callout
+@pytest.mark.asyncio
+async def test_ollama_integration() -> None:
+    """Integration test: Verify ollama model works with local Ollama server.
+
+    This test verifies that the Ollama provider is correctly configured
+    and can make actual API calls to a local Ollama server.
+    Requires Ollama running locally with a model available.
+    Prefers smaller/faster models from PREFERRED_OLLAMA_MODELS list.
+    """
+    import httpx
+    from pydantic_ai import Agent
+
+    from findingmodel import config
+
+    # Check if Ollama server is running
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{config.settings.ollama_base_url.rstrip('/v1')}/api/tags", timeout=2.0)
+            if response.status_code != 200:
+                pytest.skip("Ollama server not responding")
+            # Check if any models are available
+            tags = response.json()
+            if not tags.get("models"):
+                pytest.skip("No models available in Ollama")
+
+            # Get list of available model names
+            available_models = {m["name"] for m in tags["models"]}
+
+            # Prefer models from our list, in order
+            selected_model = None
+            for preferred in PREFERRED_OLLAMA_MODELS:
+                if preferred in available_models:
+                    selected_model = preferred
+                    break
+
+            # Fall back to first available if no preferred model found
+            if selected_model is None:
+                selected_model = tags["models"][0]["name"]
+
+    except (httpx.ConnectError, httpx.TimeoutException):
+        pytest.skip("Ollama server not running at " + config.settings.ollama_base_url)
+
+    # Enable model requests for this callout test
+    original = models.ALLOW_MODEL_REQUESTS
+    models.ALLOW_MODEL_REQUESTS = True
+
+    try:
+        # Temporarily override settings to use Ollama
+        original_model = config.settings.default_model
+        config.settings.default_model = f"ollama:{selected_model}"
+
+        try:
+            # Get model from settings
+            model = config.settings.get_model("base")
+
+            # Create a simple agent and make a real API call
+            agent = Agent(model, output_type=str)
+            result = await agent.run("Reply with exactly: OLLAMA_TEST_OK")
+
+            # Verify we got a response
             assert result.output is not None
             assert len(result.output) > 0
         finally:
