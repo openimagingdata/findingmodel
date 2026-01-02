@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pydantic AI Gateway Support** - Use hosted gateway for unified API access:
   - Configure via `PYDANTIC_AI_GATEWAY_API_KEY` and `gateway/openai:*` or `gateway/anthropic:*` model strings
   - Customizable base URL via `PYDANTIC_AI_GATEWAY_BASE_URL`
+- **Google Gemini Provider Support** - Use Google's Gemini models via `google:gemini-3-flash-preview` (GLA API) or `gateway/google:*` (Vertex AI via Gateway)
+- **Ollama Provider Support** - Run local models with `ollama:model-name`; includes fail-fast validation that checks model availability before use
+- **Finding Enrichment Pipeline** - New `enrich_finding()` function for comprehensive finding enrichment:
+  - Parallel search for SNOMED/RadLex ontology codes and anatomic locations
+  - AI agent classifies body regions, etiologies, modalities, and subspecialties
+- **Multi-Provider Configuration Guide** - New `docs/configuration.md` documenting all five providers, model tiers, database setup, and troubleshooting
 
 ### Changed
 
