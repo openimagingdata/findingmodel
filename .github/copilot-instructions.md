@@ -3,9 +3,14 @@
 1. **Use Serena MCP for everything.** Before answering questions or editing code, run Serena lookups:
 
    - `read_memory` → load canonical context (`project_overview`, `code_style_conventions`, `suggested_commands`).
-   - `find_symbol` / `search_for_pattern` → inspect code instead of manual greps.
+   - `find_symbol` / `get_symbols_overview` / `find_referencing_symbols` → prefer Serena for symbol-aware navigation (definitions + references).
+   - `search_for_pattern` → use when you need plain-text pattern matching (strings, config keys, etc.).
    - `write_memory` → record new learnings or workflow changes (see `ai_assistant_usage_2025`).
      Keep Serena open; every substantial change must update or add a memory.
+
+   - **CRITICAL: `.serena/memories/**` is off-limits as a folder.\*\*
+     - Do not open, read, edit, or delete memory files via filesystem tools.
+     - Only access memories through Serena MCP memory commands: `read_memory`, `write_memory`, `edit_memory`, `delete_memory`.
 
 2. **Project snapshot** (full detail lives in Serena `project_overview`).
 
@@ -17,15 +22,18 @@
 
    - Ruff handles formatting (120 char max) and linting; run `task check` before commits.
    - Strict typing: annotate everything, prefer async for IO, keep validators pure.
-   - Naming: snake_case functions/vars, PascalCase classes, OIFM IDs `OIFM_{SOURCE}_{6_DIGITS}`.
+   - Naming: snake*case functions/vars, PascalCase classes, OIFM IDs `OIFM*{SOURCE}\_{6_DIGITS}`.
 
 4. **Development workflow** (see Serena `suggested_commands`).
 
    - Tests: `task test` (local), `task test-full` (includes callouts). Unit tests use `TestModel`/`FunctionModel` with mocks; integration tests marked `@pytest.mark.callout` call real APIs.
    - Quality: `task check` (format/lint/mypy), `uv run ruff format`, `uv run ruff check --fix`, `uv run mypy src` as fallbacks.
    - CLI: `python -m findingmodel` lists subcommands for config, info generation, markdown conversions.
+   - **Taskfile is canonical**: Prefer Task targets because they bake in required markers/flags (e.g., `-m "not callout"`). Use raw `uv run …` only when no task exists or when deliberately overriding defaults.
+   - **uv-first + lockfile**: Use uv for install/test/build/publish; commit and honor `uv.lock` (`uv sync --frozen` in CI).
 
 5. **Documentation + knowledge flow.**
    - Treat this file as the quick-start card; defer to Serena memories for depth.
    - When new architecture, conventions, or commands appear, capture them via `write_memory` (update `instruction_files_plan_2025`).
    - Mirror updates in `CLAUDE.md` so all assistants stay aligned.
+   - When creating new repos (oidm-common, anatomic-locations), copy/adapt this quick card and CLAUDE.md, and seed Serena memories (project_overview, code_style_conventions, suggested_commands, ai_assistant_usage_2025, plus repo-specific ones like duckdb_development_patterns or anatomic_location_search_implementation).

@@ -6,9 +6,12 @@ Claude Code must follow these instructions when working in this repository.
 
 - Keep the Serena MCP server connected; treat it as the source of truth.
 - **Look up context** with `read_memory` before inspecting files (start with `project_overview`, `code_style_conventions`, `suggested_commands`, `ai_assistant_usage_2025`).
-- **Explore code** using Serena tools (`find_symbol`, `search_for_pattern`, `get_symbols_overview`) rather than ad-hoc greps.
+- **Explore code** using Serena tools (`find_symbol`, `get_symbols_overview`, `find_referencing_symbols`) for symbol-aware navigation; use `search_for_pattern` for plain-text matching.
 - **Maintain reference system**: Update existing memories rather than creating new ones; consolidate related information into cohesive references (e.g., DuckDB download info goes in Index/anatomic location memories, not standalone). Keep memories compact and organized.
 - Do not create private scratch notes—Serena memories are mandatory so Copilot and Claude stay in sync.
+- **CRITICAL: Do not access `.serena/memories/**` via file operations.\*\*
+  - Do not use filesystem reads/edits (including editor open, `read_file`, patches, deletes) on memory files.
+  - Only access/update memories through Serena MCP memory commands: `read_memory`, `write_memory`, `edit_memory`, `delete_memory`.
 
 ## 1. Project snapshot (see Serena `project_overview`)
 
@@ -41,11 +44,13 @@ Claude Code must follow these instructions when working in this repository.
 FindingModel uses a clear separation between tests and evaluations:
 
 1. **Unit Tests** (`test/test_*.py`) - Verify logic correctness with mocked dependencies
+
    - Fast, no API calls
    - Run with `task test`
    - Default: block external calls by setting `models.ALLOW_MODEL_REQUESTS = False`
 
 2. **Integration Tests** (`test/test_*.py` with `@pytest.mark.callout`) - Verify wiring with real APIs
+
    - Real API calls, specific scenarios
    - Run with `task test-full`
    - Use `TestModel` / `FunctionModel` for deterministic AI agent tests
@@ -77,6 +82,8 @@ task build         # package build
 ## 5. Workflow expectations
 
 - Follow `suggested_commands` memory for canonical dev commands and CLI usage (`uv run python -m findingmodel ...`).
+- **Taskfile is canonical**: Prefer `task …` targets because they carry required markers/flags (e.g., `-m "not callout"`). Use raw `uv run …` only when no task exists or when you intentionally need different flags.
+- **uv-first + lockfile**: Use uv for install/test/build/publish; commit and honor `uv.lock` (`uv sync --frozen` in CI).
 - Use `task_completion_checklist` when wrapping a feature or PR.
 - Prefer programmatic solutions before invoking LLMs; agents should perform judgment, not heavy data munging.
 - When adding features:
@@ -89,6 +96,7 @@ task build         # package build
 - Treat `.github/copilot-instructions.md` as the quick card. Any detail removed from there must exist in Serena memories and, if broader team context is needed, here.
 - Mirror updates between this file and Copilot instructions to prevent drift (see Serena `instruction_files_plan_2025`).
 - If guidance grows beyond comfortable scan length, create shared references under `docs/` and link via Serena memories.
+- When spinning out new repos (oidm-common, anatomic-locations), copy/adapt CLAUDE.md + .github/copilot-instructions.md, and seed Serena memories (project_overview, code_style_conventions, suggested_commands, ai_assistant_usage_2025, plus repo-specific ones like duckdb_development_patterns or anatomic_location_search_implementation).
 
 ## 7. Security & secrets
 

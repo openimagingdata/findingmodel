@@ -1,0 +1,10 @@
+{
+  // Rules-only config for the VS Code markdownlint extension.
+  // Keep this intentionally low-noise.
+  "default": false,
+
+  // Mostly objective formatting issues (optional but useful).
+  "MD009": true,
+  "MD010": true,
+  "MD012": true
+}
