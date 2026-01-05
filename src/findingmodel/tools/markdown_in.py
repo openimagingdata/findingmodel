@@ -40,7 +40,7 @@ async def create_model_from_markdown(
         outline=markdown_text,
     )
     agent = Agent[None, FindingModelBase](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("import_markdown", default_tier=model_tier),
         output_type=FindingModelBase,
         instructions=instructions,
     )

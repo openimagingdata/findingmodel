@@ -100,7 +100,7 @@ def create_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditRes
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("edit_instructions", default_tier=model_tier),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,
@@ -141,7 +141,7 @@ def create_markdown_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("edit_markdown", default_tier=model_tier),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,

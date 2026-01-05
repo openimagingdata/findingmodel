@@ -24,6 +24,7 @@ from findingmodel.finding_model import (
 
 TEST_OPENAI_MODEL = "openai:gpt-5-nano"
 TEST_ANTHROPIC_MODEL = "anthropic:claude-haiku-4-5"
+TEST_GOOGLE_MODEL = "google:gemini-2.0-flash-exp"
 
 
 @pytest.fixture(scope="session", autouse=True)

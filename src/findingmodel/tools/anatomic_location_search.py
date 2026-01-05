@@ -54,7 +54,7 @@ async def generate_anatomic_query_terms(
         List of anatomic location search terms
     """
     agent = Agent[None, AnatomicQueryTerms](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("anatomic_search", default_tier=model_tier),
         output_type=AnatomicQueryTerms,
         system_prompt="""You are an anatomic location specialist for medical imaging findings.
         
@@ -165,7 +165,7 @@ def create_location_selection_agent(model_tier: ModelTier = "small") -> Agent[No
         Agent configured for location selection
     """
     return Agent[None, LocationSearchResponse](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("anatomic_select", default_tier=model_tier),
         output_type=LocationSearchResponse,
         system_prompt="""You are a medical imaging specialist who selects appropriate anatomic 
 locations for imaging findings. Given search results from medical ontology databases, you must 

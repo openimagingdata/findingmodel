@@ -130,7 +130,7 @@ def create_agentic_enrichment_agent(
     This agent uses tools to gather information, then classifies the finding.
     """
     agent: Agent[AgenticEnrichmentContext, AgenticEnrichmentOutput] = Agent(
-        model=model if model else settings.get_model(model_tier),
+        model=model if model else settings.get_agent_model("enrich_research", default_tier=model_tier),
         output_type=AgenticEnrichmentOutput,
         deps_type=AgenticEnrichmentContext,
         system_prompt=_create_agentic_system_prompt(),
@@ -290,7 +290,12 @@ async def enrich_finding_agentic(identifier: str, model: str | None = None) -> F
         for loc_id in output.anatomic_location_ids
     ]
 
-    model_used = model if model else str(settings.get_model("base"))
+    if model:
+        model_used = model
+    elif "enrich_research" in settings.agent_model_overrides:
+        model_used = settings.agent_model_overrides["enrich_research"]
+    else:
+        model_used = settings.default_model
 
     return FindingEnrichmentResult(
         finding_name=finding_name,

@@ -1351,3 +1351,303 @@ async def test_ollama_integration() -> None:
             config.settings.default_model = original_model
     finally:
         models.ALLOW_MODEL_REQUESTS = original
+
+
+# =============================================================================
+# Per-Agent Model Override Tests
+# =============================================================================
+
+
+class TestAgentModelOverrides:
+    """Tests for per-agent model configuration overrides via get_agent_model()."""
+
+    def test_returns_tier_default_when_no_override(self) -> None:
+        """get_agent_model() falls back to tier when agent not in overrides."""
+        from conftest import TEST_OPENAI_MODEL
+        from pydantic import SecretStr
+        from pydantic_ai.models.openai import OpenAIResponsesModel
+
+        from findingmodel.config import FindingModelConfig
+
+        # Create config with empty overrides
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-key"),
+            default_model=TEST_OPENAI_MODEL,
+            default_model_small=TEST_OPENAI_MODEL,
+            default_model_full=TEST_OPENAI_MODEL,
+            agent_model_overrides={},
+        )
+
+        # Agent not in overrides should use tier default
+        model = config.get_agent_model("enrich_classify", default_tier="base")
+
+        # Should return OpenAI model (same as get_model("base"))
+        assert isinstance(model, OpenAIResponsesModel)
+
+    def test_returns_override_when_configured(self) -> None:
+        """get_agent_model() uses override from agent_model_overrides dict."""
+        from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
+        from pydantic import SecretStr
+        from pydantic_ai.models.anthropic import AnthropicModel
+
+        from findingmodel.config import FindingModelConfig
+
+        # Create config with override for specific agent
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-openai-key"),
+            anthropic_api_key=SecretStr("test-anthropic-key"),
+            default_model=TEST_OPENAI_MODEL,
+            agent_model_overrides={"enrich_classify": TEST_ANTHROPIC_MODEL},
+        )
+
+        # Agent in overrides should use the override model
+        model = config.get_agent_model("enrich_classify", default_tier="base")
+
+        # Should return Anthropic model (from override), not OpenAI (from default)
+        assert isinstance(model, AnthropicModel)
+
+    def test_requires_explicit_agent_tag(self) -> None:
+        """get_agent_model() requires explicit agent_tag parameter (no introspection)."""
+        from conftest import TEST_OPENAI_MODEL
+        from pydantic import SecretStr
+
+        from findingmodel.config import FindingModelConfig
+
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-key"),
+            default_model=TEST_OPENAI_MODEL,
+        )
+
+        # Should fail if called without agent_tag
+        with pytest.raises(TypeError) as exc_info:
+            config.get_agent_model(default_tier="base")  # type: ignore[call-arg]
+
+        # Error should indicate missing required argument
+        assert "agent_tag" in str(exc_info.value)
+
+    def test_validates_model_spec_pattern(self) -> None:
+        """Invalid model strings in overrides fail Pydantic validation."""
+        from conftest import TEST_OPENAI_MODEL
+        from pydantic import SecretStr, ValidationError
+
+        from findingmodel.config import FindingModelConfig
+
+        # Try to create config with invalid override value
+        with pytest.raises(ValidationError) as exc_info:
+            FindingModelConfig(
+                openai_api_key=SecretStr("test-key"),
+                default_model=TEST_OPENAI_MODEL,
+                agent_model_overrides={
+                    "enrich_classify": "invalid-model-string"  # Missing provider:model format
+                },
+            )
+
+        # Verify the validation error mentions the invalid override
+        error_msg = str(exc_info.value)
+        assert "agent_model_overrides" in error_msg
+
+    def test_override_respects_default_tier(self) -> None:
+        """Override model string is used but tier affects settings (e.g., reasoning effort)."""
+        from conftest import TEST_OPENAI_MODEL
+        from pydantic import SecretStr
+
+        from findingmodel.config import FindingModelConfig
+
+        # Create config with OpenAI override
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-key"),
+            default_model=TEST_OPENAI_MODEL,
+            agent_model_overrides={"edit_instructions": "openai:gpt-5-mini"},
+        )
+
+        # Tier affects internal settings like reasoning effort
+        model_small = config.get_agent_model("edit_instructions", default_tier="small")
+        model_base = config.get_agent_model("edit_instructions", default_tier="base")
+
+        # Both should use the override model name, but tier affects settings
+        # (We can't easily inspect the internal settings, but we verify both succeed)
+        assert model_small is not None
+        assert model_base is not None
+
+    def test_multiple_overrides_isolated(self) -> None:
+        """Multiple agent overrides don't interfere with each other."""
+        from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
+        from pydantic import SecretStr
+        from pydantic_ai.models.anthropic import AnthropicModel
+        from pydantic_ai.models.openai import OpenAIResponsesModel
+
+        from findingmodel.config import FindingModelConfig
+
+        # Create config with overrides for multiple agents
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-openai-key"),
+            anthropic_api_key=SecretStr("test-anthropic-key"),
+            default_model=TEST_OPENAI_MODEL,
+            agent_model_overrides={
+                "anatomic_search": "openai:gpt-5-nano",
+                "ontology_match": TEST_ANTHROPIC_MODEL,
+            },
+        )
+
+        # Each agent gets its own override
+        model_one = config.get_agent_model("anatomic_search")
+        model_two = config.get_agent_model("ontology_match")
+
+        assert isinstance(model_one, OpenAIResponsesModel)
+        assert isinstance(model_two, AnthropicModel)
+
+    def test_override_with_gateway_provider(self) -> None:
+        """Override can use gateway provider prefix."""
+        from conftest import TEST_OPENAI_MODEL
+        from pydantic import SecretStr
+        from pydantic_ai.models.openai import OpenAIResponsesModel
+
+        from findingmodel.config import FindingModelConfig
+
+        # Create config with gateway override
+        config = FindingModelConfig(
+            pydantic_ai_gateway_api_key=SecretStr("test-gateway-key"),
+            default_model=TEST_OPENAI_MODEL,
+            openai_api_key=SecretStr("test-openai-key"),
+            agent_model_overrides={"similar_search": f"gateway/{TEST_OPENAI_MODEL}"},
+        )
+
+        # Should create model successfully with gateway provider
+        model = config.get_agent_model("similar_search")
+        assert isinstance(model, OpenAIResponsesModel)
+
+    def test_agent_model_overrides_from_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Environment variable AGENT_MODEL_OVERRIDES__<tag> sets override."""
+        from conftest import TEST_ANTHROPIC_MODEL
+        from pydantic import SecretStr
+
+        from findingmodel.config import FindingModelConfig
+
+        # Set env var with nested delimiter
+        monkeypatch.setenv("AGENT_MODEL_OVERRIDES__enrich_classify", TEST_ANTHROPIC_MODEL)
+
+        # Create fresh config (reads from env)
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-key"),
+            anthropic_api_key=SecretStr("test-key"),
+        )
+
+        # Verify the override was loaded from env
+        assert "enrich_classify" in config.agent_model_overrides
+        assert config.agent_model_overrides["enrich_classify"] == TEST_ANTHROPIC_MODEL
+
+    def test_rejects_invalid_agent_tag(self) -> None:
+        """Invalid agent tag in overrides dict raises ValidationError."""
+        from conftest import TEST_OPENAI_MODEL
+        from pydantic import SecretStr, ValidationError
+
+        from findingmodel.config import FindingModelConfig
+
+        with pytest.raises(ValidationError) as exc_info:
+            FindingModelConfig(
+                openai_api_key=SecretStr("test-key"),
+                default_model=TEST_OPENAI_MODEL,
+                agent_model_overrides={"not_a_valid_tag": TEST_OPENAI_MODEL},  # Invalid tag
+            )
+
+        error_msg = str(exc_info.value)
+        assert "agent_model_overrides" in error_msg
+
+
+# =============================================================================
+# Per-Agent Model Override Integration Tests
+# =============================================================================
+
+
+class TestAgentModelOverridesIntegration:
+    """Integration tests verifying agent_model_overrides work end-to-end with real API calls.
+
+    These tests modify settings.agent_model_overrides directly (no monkeypatch needed) and
+    verify that the override flows through to actual workflow execution with real AI models.
+    """
+
+    @pytest.mark.callout
+    @pytest.mark.asyncio
+    async def test_agent_override_integration_anthropic(self) -> None:
+        """Agent override flows through to real API call with Anthropic model."""
+        if not HAS_ANTHROPIC_API_KEY:
+            pytest.skip("ANTHROPIC_API_KEY not set - skipping integration test")
+
+        from conftest import TEST_ANTHROPIC_MODEL
+
+        from findingmodel.tools.finding_enrichment import enrich_finding
+
+        # Enable model requests for this test
+        original_allow = models.ALLOW_MODEL_REQUESTS
+        models.ALLOW_MODEL_REQUESTS = True
+
+        # Set override directly on global settings singleton
+        settings.agent_model_overrides["enrich_classify"] = TEST_ANTHROPIC_MODEL
+
+        try:
+            # Call workflow WITHOUT passing model parameter
+            # This forces it to use get_agent_model() which should pick up our override
+            result = await enrich_finding("pneumonia")
+
+            # Validate result structure - finding_name may be canonical form from Index
+            assert result.finding_name.lower() == "pneumonia"
+            assert isinstance(result.snomed_codes, list)
+            assert isinstance(result.radlex_codes, list)
+            assert isinstance(result.body_regions, list)
+            assert isinstance(result.etiologies, list)
+            assert isinstance(result.modalities, list)
+            assert isinstance(result.subspecialties, list)
+            assert isinstance(result.anatomic_locations, list)
+            assert result.enrichment_timestamp is not None
+
+            # Verify model used in metadata matches our override
+            assert result.model_used == TEST_ANTHROPIC_MODEL
+
+        finally:
+            # Clean up: remove override and restore ALLOW_MODEL_REQUESTS
+            if "enrich_classify" in settings.agent_model_overrides:
+                del settings.agent_model_overrides["enrich_classify"]
+            models.ALLOW_MODEL_REQUESTS = original_allow
+
+    @pytest.mark.callout
+    @pytest.mark.asyncio
+    async def test_agent_override_integration_gemini(self) -> None:
+        """Agent override flows through to real API call with Google Gemini model."""
+        if not HAS_GOOGLE_API_KEY:
+            pytest.skip("GOOGLE_API_KEY not set - skipping integration test")
+
+        from conftest import TEST_GOOGLE_MODEL
+
+        from findingmodel.tools.finding_enrichment import enrich_finding
+
+        # Enable model requests for this test
+        original_allow = models.ALLOW_MODEL_REQUESTS
+        models.ALLOW_MODEL_REQUESTS = True
+
+        # Set override directly on global settings singleton
+        settings.agent_model_overrides["enrich_classify"] = TEST_GOOGLE_MODEL
+
+        try:
+            # Call workflow WITHOUT passing model parameter
+            # This forces it to use get_agent_model() which should pick up our override
+            result = await enrich_finding("fracture")
+
+            # Validate result structure - finding_name may be canonical form from Index
+            assert result.finding_name.lower() == "fracture"
+            assert isinstance(result.snomed_codes, list)
+            assert isinstance(result.radlex_codes, list)
+            assert isinstance(result.body_regions, list)
+            assert isinstance(result.etiologies, list)
+            assert isinstance(result.modalities, list)
+            assert isinstance(result.subspecialties, list)
+            assert isinstance(result.anatomic_locations, list)
+            assert result.enrichment_timestamp is not None
+
+            # Verify model used in metadata matches our override
+            assert result.model_used == TEST_GOOGLE_MODEL
+
+        finally:
+            # Clean up: remove override and restore ALLOW_MODEL_REQUESTS
+            if "enrich_classify" in settings.agent_model_overrides:
+                del settings.agent_model_overrides["enrich_classify"]
+            models.ALLOW_MODEL_REQUESTS = original_allow

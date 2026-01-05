@@ -177,6 +177,93 @@ DEFAULT_MODEL_FULL=anthropic:claude-opus-4-5
 DEFAULT_MODEL_SMALL=ollama:llama3
 ```
 
+## Per-Agent Model Overrides
+
+For advanced use cases, you can override the model used by specific agents without modifying code.
+
+### Configuration
+
+Override agents via environment variables:
+
+```bash
+AGENT_MODEL_OVERRIDES__enrich_classify=anthropic:claude-opus-4-5
+AGENT_MODEL_OVERRIDES__edit_instructions=ollama:llama3
+```
+
+The agent checks for an override first, then falls back to its default tier.
+
+### Agent Tags by Workflow
+
+#### Finding Enrichment
+
+Used by: `enrich_finding()`, `make-stub-model` CLI
+
+| Tag | What It Does | Default |
+|-----|--------------|---------|
+| `enrich_classify` | Classifies finding category, modality, anatomy from search results | base |
+| `enrich_unified` | Runs the full unified enrichment pipeline | base |
+| `enrich_research` | Agentic enrichment that searches web before classifying | base |
+
+#### Model Editing
+
+Used by: `edit-model` CLI, `apply_edits()`
+
+| Tag | What It Does | Default |
+|-----|--------------|---------|
+| `edit_instructions` | Applies natural language edit instructions to a finding model | base |
+| `edit_markdown` | Applies edits from a modified markdown representation | base |
+
+#### Finding Description
+
+Used by: `make-info` CLI, `create_info_from_name()`, `add_details_to_info()`
+
+| Tag | What It Does | Default |
+|-----|--------------|---------|
+| `describe_finding` | Generates initial FindingInfo from a finding name | caller-specified |
+| `describe_details` | Adds citations and detailed descriptions via web search | small |
+
+#### Similar Finding Search
+
+Used by: `find_similar_models()`
+
+| Tag | What It Does | Default |
+|-----|--------------|---------|
+| `similar_search` | Plans search strategy and generates search terms (2 agents share this tag) | base or small |
+| `similar_assess` | Analyzes and ranks similar finding results | base |
+
+#### Anatomic Location
+
+Used by: anatomic location search during enrichment
+
+| Tag | What It Does | Default |
+|-----|--------------|---------|
+| `anatomic_search` | Generates query terms for anatomic location lookup | small |
+| `anatomic_select` | Selects best anatomic locations from search candidates | small |
+
+#### Ontology Matching
+
+Used by: ontology concept matching during enrichment
+
+| Tag | What It Does | Default |
+|-----|--------------|---------|
+| `ontology_match` | Scores and categorizes ontology concept candidates | base |
+| `ontology_search` | Generates query terms for ontology search | small |
+
+#### Markdown Import
+
+Used by: `markdown-to-fm` CLI, `create_model_from_markdown()`
+
+| Tag | What It Does | Default |
+|-----|--------------|---------|
+| `import_markdown` | Converts markdown outline to structured FindingModel | base |
+
+### When to Use
+
+- **Cost optimization**: Use cheaper models for high-volume agents (e.g., `anatomic_search`)
+- **Quality boost**: Use Claude Opus for complex editing tasks
+- **Local development**: Override to Ollama for offline testing
+- **A/B testing**: Compare model performance on specific workflows
+
 ### Startup Validation
 
 For production applications, validate API keys are configured at startup:
@@ -280,6 +367,7 @@ BIOONTOLOGY_API_KEY=...
 | `DEFAULT_MODEL` | No | `openai:gpt-5-mini` | Base tier model |
 | `DEFAULT_MODEL_FULL` | No | `openai:gpt-5.2` | Full tier model |
 | `DEFAULT_MODEL_SMALL` | No | `openai:gpt-5-nano` | Small tier model |
+| `AGENT_MODEL_OVERRIDES__<tag>` | No | - | Override model for specific agent tag (e.g., enrich_classify) |
 | `TAVILY_API_KEY` | For citations | - | Tavily search API key |
 | `TAVILY_SEARCH_DEPTH` | No | `advanced` | Search depth: basic/advanced |
 | `BIOONTOLOGY_API_KEY` | For BioOntology | - | BioPortal API key |

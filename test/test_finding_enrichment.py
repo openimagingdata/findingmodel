@@ -806,12 +806,12 @@ class TestCreateEnrichmentAgent:
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
 
         with patch("findingmodel.tools.finding_enrichment.settings") as mock_settings:
-            mock_settings.get_model.return_value = TestModel()
+            mock_settings.get_agent_model.return_value = TestModel()
 
             create_enrichment_agent(model_tier="base")
 
-            # Verify settings.get_model was called with correct tier
-            mock_settings.get_model.assert_called_once_with("base")
+            # Verify settings.get_agent_model was called with correct tag and tier
+            mock_settings.get_agent_model.assert_called_once_with("enrich_classify", default_tier="base")
 
     def test_agent_has_no_tools(self) -> None:
         """Test that agent has no tools registered.

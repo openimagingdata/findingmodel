@@ -578,7 +578,7 @@ def create_enrichment_agent(
         Configured Pydantic AI agent for finding enrichment (no tools - classification only)
     """
     agent: Agent[EnrichmentContext, EnrichmentClassification] = Agent(
-        model=model if model else settings.get_model(model_tier),
+        model=model if model else settings.get_agent_model("enrich_classify", default_tier=model_tier),
         output_type=EnrichmentClassification,
         deps_type=EnrichmentContext,
         system_prompt=_create_enrichment_system_prompt(),
@@ -795,7 +795,7 @@ async def enrich_finding_unified(  # noqa: C901
     logger.debug("Step 6: Running unified classifier agent")
 
     agent: Agent[None, UnifiedEnrichmentOutput] = Agent(
-        model=model if model else settings.get_model("base"),
+        model=model if model else settings.get_agent_model("enrich_unified", default_tier="base"),
         output_type=UnifiedEnrichmentOutput,
         system_prompt=system_prompt,
         retries=2,  # Allow 2 retries for validation errors
@@ -1025,8 +1025,13 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
     logger.debug("Step 5: Assembling final enrichment result")
 
     # Determine model used for metadata
-    model_tier_str = "base"  # We use base tier for enrichment agent (Sonnet 4.5)
-    model_used = model if model else str(settings.get_model("base"))
+    model_tier_str = "base"  # We use base tier for enrichment agent
+    if model:
+        model_used = model
+    elif "enrich_classify" in settings.agent_model_overrides:
+        model_used = settings.agent_model_overrides["enrich_classify"]
+    else:
+        model_used = settings.default_model
 
     enrichment_result = FindingEnrichmentResult(
         finding_name=finding_name,

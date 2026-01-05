@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Parallel search for SNOMED/RadLex ontology codes and anatomic locations
   - AI agent classifies body regions, etiologies, modalities, and subspecialties
 - **Multi-Provider Configuration Guide** - New `docs/configuration.md` documenting all five providers, model tiers, database setup, and troubleshooting
+- **Per-Agent Model Overrides** - Configure different models for specific AI agents:
+  - Override via environment variables: `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
+  - 14 agent tags covering enrichment, search, editing, and import workflows
+  - See `docs/configuration.md` for tag reference and examples
 
 ### Changed
 

@@ -23,6 +23,32 @@ class ConfigurationError(RuntimeError):
 # Type definitions for model configuration
 ModelTier = Literal["base", "small", "full"]
 
+# Agent tags for per-agent model configuration
+# Pattern: {domain}_{verb} - describes what the agent DOES
+AgentTag = Literal[
+    # Enrichment domain
+    "enrich_classify",  # Classifies finding attributes
+    "enrich_unified",  # Unified enrichment workflow
+    "enrich_research",  # Researches with tools before classifying
+    # Anatomic location domain
+    "anatomic_search",  # Searches for anatomic locations
+    "anatomic_select",  # Selects from location candidates
+    # Similar models domain
+    "similar_search",  # Searches for similar findings (covers 2 agents)
+    "similar_assess",  # Assesses similarity results
+    # Ontology domain
+    "ontology_match",  # Matches to ontology concepts
+    "ontology_search",  # Searches ontologies
+    # Editing domain
+    "edit_instructions",  # Edits from natural language instructions
+    "edit_markdown",  # Edits from markdown input
+    # Description domain
+    "describe_finding",  # Describes a finding from its name
+    "describe_details",  # Adds details/citations to description
+    # Import domain
+    "import_markdown",  # Imports finding model from markdown
+]
+
 # Pattern validates: provider:model or gateway/provider:model
 # Direct providers:
 #   - openai, anthropic, ollama: standard providers
@@ -80,6 +106,9 @@ class FindingModelConfig(BaseSettings):
     default_model: ModelSpec = Field(default="openai:gpt-5-mini")
     default_model_full: ModelSpec = Field(default="openai:gpt-5.2")
     default_model_small: ModelSpec = Field(default="openai:gpt-5-nano")
+
+    # Per-agent model overrides
+    agent_model_overrides: dict[AgentTag, ModelSpec] = Field(default_factory=dict)
 
     # Tavily API
     tavily_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
@@ -143,7 +172,7 @@ class FindingModelConfig(BaseSettings):
         description="URL to JSON manifest for database versions",
     )
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
 
     # Private instance cache for Ollama available models
     _ollama_models_cache: set[str] | None = PrivateAttr(default=None)
@@ -230,24 +259,19 @@ class FindingModelConfig(BaseSettings):
             details = "; ".join(f"{tier} ({model}): {key.upper()}" for tier, model, key in missing)
             raise ConfigurationError(f"Missing API keys for default models: {details}")
 
-    def get_model(self, model_tier: ModelTier = "base") -> Model:
-        """Get a Pydantic AI model instance for the requested tier.
+    def _create_model_from_string(self, model_string: str, default_tier: ModelTier = "base") -> Model:
+        """Create a Pydantic AI model instance from a model string.
 
         Args:
-            model_tier: "base", "small", or "full"
+            model_string: Model specification (e.g., "openai:gpt-5-mini", "anthropic:claude-sonnet-4-5")
+            default_tier: Tier to use for tier-specific settings (e.g., "small" enables minimal reasoning)
 
         Returns:
             Configured Model instance
 
         Raises:
-            ConfigurationError: If API key missing or provider unknown
+            ConfigurationError: If model string is invalid, API key missing, or provider unknown
         """
-        model_string = {
-            "base": self.default_model,
-            "full": self.default_model_full,
-            "small": self.default_model_small,
-        }[model_tier]
-
         if ":" not in model_string:
             raise ConfigurationError(f"Invalid model format '{model_string}'. Expected 'provider:model_name'")
 
@@ -259,7 +283,7 @@ class FindingModelConfig(BaseSettings):
         supports_reasoning = model_name.startswith(("gpt-5", "o1"))
         openai_settings = (
             ModelSettings(extra_body={"reasoning": {"effort": "minimal"}})
-            if model_tier == "small" and supports_reasoning
+            if default_tier == "small" and supports_reasoning
             else None
         )
 
@@ -281,6 +305,47 @@ class FindingModelConfig(BaseSettings):
             return self._make_gateway_google_vertex_model(model_name)
         else:
             raise ConfigurationError(f"Unknown provider '{provider_part}'")
+
+    def get_agent_model(self, agent_tag: AgentTag, *, default_tier: ModelTier = "base") -> Model:
+        """Get model for a named agent, with optional per-agent override.
+
+        Args:
+            agent_tag: Agent identifier (e.g., "enrich_classify", "edit_instructions")
+            default_tier: Tier to use if no override configured
+
+        Returns:
+            Configured Model instance
+
+        Example:
+            model = settings.get_agent_model("enrich_classify", default_tier="base")
+
+            # User overrides via environment:
+            # AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-opus-4-5
+        """
+        if agent_tag in self.agent_model_overrides:
+            model_string = self.agent_model_overrides[agent_tag]
+            return self._create_model_from_string(model_string, default_tier)
+        return self.get_model(default_tier)
+
+    def get_model(self, model_tier: ModelTier = "base") -> Model:
+        """Get a Pydantic AI model instance for the requested tier.
+
+        Args:
+            model_tier: "base", "small", or "full"
+
+        Returns:
+            Configured Model instance
+
+        Raises:
+            ConfigurationError: If API key missing or provider unknown
+        """
+        model_string = {
+            "base": self.default_model,
+            "full": self.default_model_full,
+            "small": self.default_model_small,
+        }[model_tier]
+
+        return self._create_model_from_string(model_string, model_tier)
 
     def _make_openai_model(self, model_name: str, settings: ModelSettings | None) -> OpenAIResponsesModel:
         """Create an OpenAI model with configured API key."""
@@ -722,6 +787,7 @@ def clear_manifest_cache() -> None:
 
 
 __all__ = [
+    "AgentTag",
     "ConfigurationError",
     "FindingModelConfig",
     "ModelTier",

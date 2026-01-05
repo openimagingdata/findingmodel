@@ -92,7 +92,7 @@ def create_search_agent(model_tier: ModelTier = "base") -> Agent[SearchContext, 
         model_tier: Model tier to use (defaults to "base")
     """
     return Agent[SearchContext, SearchStrategy](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("similar_search", default_tier=model_tier),
         output_type=SearchStrategy,
         deps_type=SearchContext,
         tools=[search_models_tool],
@@ -128,7 +128,7 @@ def create_term_generation_agent(model_tier: ModelTier = "small") -> Agent[None,
         model_tier: Model tier to use (defaults to "small")
     """
     return Agent[None, SearchTerms](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("similar_search", default_tier=model_tier),
         output_type=SearchTerms,
         system_prompt="""You are a medical terminology specialist. Your job is to generate 3-5 effective search terms 
 for finding existing medical imaging finding definitions that might be similar to a proposed new finding.
@@ -165,7 +165,7 @@ def create_analysis_agent(model_tier: ModelTier = "base") -> Agent[None, Similar
         model_tier: Model tier to use (defaults to "base")
     """
     return Agent[None, SimilarModelAnalysis](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("similar_assess", default_tier=model_tier),
         output_type=SimilarModelAnalysis,
         retries=3,
         system_prompt="""You are an expert medical imaging informatics analyst specializing in mapping natural language

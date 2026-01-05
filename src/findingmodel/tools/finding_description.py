@@ -79,7 +79,7 @@ def _create_finding_info_agent(
     """Factory to build the finding info agent, extracted for easier testing overrides."""
 
     return Agent[None, FindingInfo](
-        model=settings.get_model(model_tier),
+        model=settings.get_agent_model("describe_finding", default_tier=model_tier),
         output_type=FindingInfo,
         instructions=instructions,
     )
@@ -157,7 +157,7 @@ async def add_details_to_info(
 
     # Create agent with search tool
     agent = Agent[FindingInfo, str](
-        settings.get_model("small"),
+        settings.get_agent_model("describe_details", default_tier="small"),
         deps_type=FindingInfo,
         output_type=str,
         tools=[search_radiology_sources],
