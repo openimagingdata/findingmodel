@@ -10,7 +10,7 @@
 2. **Project snapshot** (full detail lives in Serena `project_overview`).
 
    - Purpose: Python library for Open Imaging Finding Models with AI tooling.
-   - Stack: Python 3.11+, uv, Taskfile, Pydantic v2, multi-provider AI (OpenAI/Anthropic/Gateway via `DEFAULT_MODEL` in Pydantic AI format), optional MongoDB.
+   - Stack: Python 3.11+, uv, Taskfile, Pydantic v2, multi-provider AI (OpenAI/Anthropic/Gemini/Ollama/Gateway via `DEFAULT_MODEL`; per-agent overrides via `AGENT_MODEL_OVERRIDES__<tag>`), DuckDB for index/search.
    - Layout: `src/findingmodel/` (core models + tools), `test/` (pytest, fixtures), `notebooks/` (demos).
 
 3. **Coding standards** (reference Serena `code_style_conventions`).

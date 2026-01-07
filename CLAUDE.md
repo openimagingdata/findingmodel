@@ -13,17 +13,16 @@ Claude Code must follow these instructions when working in this repository.
 ## 1. Project snapshot (see Serena `project_overview`)
 
 - Purpose: Python 3.11+ library for Open Imaging Finding Models with AI-assisted authoring.
-- Core stack: uv, Taskfile, Pydantic v2, OpenAI/Anthropic AI tooling, Tavily search, optional MongoDB + DuckDB search.
+- Core stack: uv, Taskfile, Pydantic v2, OpenAI/Anthropic AI tooling, Tavily search, DuckDB for index/search.
 - Layout: `src/findingmodel/` (models, tools, config, CLI), `test/` (pytest + fixtures), `notebooks/` (demos), `Taskfile.yml`, `.env.sample`.
 - Key modules to know: `finding_model.py`, `finding_info.py`, `tools/` (LLM workflows), `index.py`, `config.py`.
 
 ## 2. Architecture touchpoints
 
 - Protocol-based backend pattern documented in Serena `protocol_based_architecture_2025`; follow that interface when adding search providers.
-- Multi-provider AI support: OpenAI, Anthropic, and Gateway backends with tier-based model selection (base/full/small); configure via `DEFAULT_MODEL` env var using Pydantic AI format (e.g., `openai:gpt-5-mini`, `anthropic:claude-sonnet-4-5`, `gateway/openai:gpt-5`).
+- Multi-provider AI support: OpenAI, Anthropic, Google Gemini, Ollama, and Gateway backends with tier-based model selection (base/full/small); configure via `DEFAULT_MODEL` env var using Pydantic AI format (e.g., `openai:gpt-5-mini`, `anthropic:claude-sonnet-4-5`, `google:gemini-3-flash`). Per-agent overrides available via `AGENT_MODEL_OVERRIDES__<tag>=provider:model`; see `docs/configuration.md` for tag reference.
 - AI workflow conventions rely on two-agent patterns and structured outputs—review Serena `ontology_concept_search_refactoring` and `anatomic_location_search_implementation` before refactoring those areas.
-- Mongo/JSONL index behaviour summarized in `project_state_january_2025` and `ontology_search_optimizations_2025` memories.
-- DuckDB index migration drops search indexes before any write, clears denormalized tables manually, and rebuilds HNSW/FTS afterward; no foreign keys remain (see Serena `index_duckdb_migration_decisions_2025`).
+- DuckDB index: drops search indexes before writes, clears denormalized tables manually, rebuilds HNSW/FTS afterward; no foreign keys (see Serena `index_duckdb_migration_decisions_2025`).
 
 ## 3. Coding standards (Serena `code_style_conventions`)
 
@@ -94,7 +93,7 @@ task build         # package build
 ## 7. Security & secrets
 
 - Keep API keys in `.env`; never print or commit them. Classes should read `SecretStr` directly (Serena `documentation_corrections_2025`).
-- Required: Either `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` (or both); optional: `TAVILY_API_KEY` for enhanced search.
+- Required: At least one of `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GOOGLE_API_KEY`; optional: `TAVILY_API_KEY` for enhanced search, `OLLAMA_BASE_URL` for local models.
 - When testing external integrations, guard credentials and clean up connections.
 
 ## 8. Quick Serena reference

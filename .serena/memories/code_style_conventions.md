@@ -26,6 +26,16 @@
 - **Framework**: loguru for all logging
 - **Singleton**: `from findingmodel import logger`
 - **String formatting**: Use f-strings, NOT placeholder syntax
+- **Library default**: Logger is disabled in `__init__.py` via `logger.disable("findingmodel")`
+- **Application/test activation**: Call `logger.enable("findingmodel")` to see logs
+- **Test pattern**: Session-scoped fixture in `conftest.py` enables logging and adds file handler
+
+## Configuration & Secrets
+- **Settings class**: `FindingModelConfig` extends Pydantic `BaseSettings`
+- **Access**: `from findingmodel.config import settings` (singleton, auto-loads `.env`)
+- **Secret fields**: Use `QuoteStrippedSecretStr` (handles shell-quoted values from .env)
+- **NEVER use os.getenv**: All config access through `settings.*` - ensures validation and type safety
+- **Validation**: Call `settings.validate_default_model_keys()` at app startup for fail-fast
 
 ## Testing
 - pytest with asyncio support
@@ -87,7 +97,14 @@ Access via: `settings.get_model("base")` or `settings.get_model("small")`
 
 ### Coding Rules
 - **ModelSpec Type**: Use validated `ModelSpec` type for model strings (see `MODEL_SPEC_PATTERN` in config.py)
-- **Test Constants**: Use `TEST_OPENAI_MODEL` and `TEST_ANTHROPIC_MODEL` from conftest.py (cheapest models for testing)
+- **Test Constants**: Use `TEST_OPENAI_MODEL`, `TEST_ANTHROPIC_MODEL`, `TEST_GOOGLE_MODEL` from conftest.py (cheapest models for testing)
 - **Never hard-code**: Avoid hard-coded model strings like `"openai:gpt-4o-mini"` in test/production code
 - **Gateway tests**: Construct gateway models from constants: `f"gateway/{TEST_OPENAI_MODEL}"`
 - **API Key Validation**: Use `settings.validate_default_model_keys()` at app startup for fail-fast behavior
+
+### Per-Agent Model Configuration
+- **AgentTag type**: Use `AgentTag` Literal for valid agent identifiers (14 tags, `{domain}_{verb}` pattern)
+- **Agent model selection**: Use `settings.get_agent_model("tag", default_tier="base")` in agent factories
+- **Model string for metadata**: Use `settings.get_effective_model_string("tag", "base")` when recording which model was used
+- **Environment overrides**: Users configure via `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
+- See `docs/configuration.md` for complete tag reference by workflow
