@@ -306,6 +306,24 @@ class FindingModelConfig(BaseSettings):
         else:
             raise ConfigurationError(f"Unknown provider '{provider_part}'")
 
+    def get_effective_model_string(self, agent_tag: AgentTag, default_tier: ModelTier = "base") -> str:
+        """Return the model string that would be used for an agent.
+
+        Useful for metadata/logging when you need the string, not the Model object.
+
+        Args:
+            agent_tag: Agent identifier
+            default_tier: Tier to use if no override configured
+
+        Returns:
+            Model specification string (e.g., "openai:gpt-5-mini")
+        """
+        if agent_tag in self.agent_model_overrides:
+            return self.agent_model_overrides[agent_tag]
+        return {"base": self.default_model, "full": self.default_model_full, "small": self.default_model_small}[
+            default_tier
+        ]
+
     def get_agent_model(self, agent_tag: AgentTag, *, default_tier: ModelTier = "base") -> Model:
         """Get model for a named agent, with optional per-agent override.
 

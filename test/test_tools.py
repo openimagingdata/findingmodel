@@ -1553,6 +1553,28 @@ class TestAgentModelOverrides:
         error_msg = str(exc_info.value)
         assert "agent_model_overrides" in error_msg
 
+    def test_get_effective_model_string_returns_override(self) -> None:
+        """get_effective_model_string() returns override when configured."""
+        from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
+        from pydantic import SecretStr
+
+        from findingmodel.config import FindingModelConfig
+
+        config = FindingModelConfig(
+            openai_api_key=SecretStr("test-key"),
+            anthropic_api_key=SecretStr("test-key"),
+            default_model=TEST_OPENAI_MODEL,
+            agent_model_overrides={"enrich_classify": TEST_ANTHROPIC_MODEL},
+        )
+
+        # Should return override string
+        result = config.get_effective_model_string("enrich_classify", "base")
+        assert result == TEST_ANTHROPIC_MODEL
+
+        # Non-overridden agent should return tier default
+        result = config.get_effective_model_string("edit_instructions", "base")
+        assert result == TEST_OPENAI_MODEL
+
 
 # =============================================================================
 # Per-Agent Model Override Integration Tests

@@ -290,12 +290,7 @@ async def enrich_finding_agentic(identifier: str, model: str | None = None) -> F
         for loc_id in output.anatomic_location_ids
     ]
 
-    if model:
-        model_used = model
-    elif "enrich_research" in settings.agent_model_overrides:
-        model_used = settings.agent_model_overrides["enrich_research"]
-    else:
-        model_used = settings.default_model
+    model_used = model if model else settings.get_effective_model_string("enrich_research", "base")
 
     return FindingEnrichmentResult(
         finding_name=finding_name,

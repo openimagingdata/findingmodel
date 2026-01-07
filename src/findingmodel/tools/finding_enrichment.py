@@ -1026,12 +1026,7 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
 
     # Determine model used for metadata
     model_tier_str = "base"  # We use base tier for enrichment agent
-    if model:
-        model_used = model
-    elif "enrich_classify" in settings.agent_model_overrides:
-        model_used = settings.agent_model_overrides["enrich_classify"]
-    else:
-        model_used = settings.default_model
+    model_used = model if model else settings.get_effective_model_string("enrich_classify", "base")
 
     enrichment_result = FindingEnrichmentResult(
         finding_name=finding_name,
