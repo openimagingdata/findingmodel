@@ -126,6 +126,85 @@ pip install findingmodel      # Core: models, index, search, MCP server
 pip install findingmodel-ai   # Full: adds AI authoring tools
 ```
 
+## Package Responsibilities Detail
+
+### oidm-common: Shared Infrastructure
+
+The `oidm-common` package provides infrastructure shared by all OIDM packages.
+
+#### distribution/ - Database Distribution
+
+Both findingmodel and anatomic-locations need pre-built DuckDB databases. The distribution module handles:
+
+- **Manifest reading**: Parse `manifest.json` to find database URLs, versions, and checksums
+- **Download**: Fetch pre-built DuckDB files from remote storage (S3, HTTP)
+- **Version checking**: Compare local version against manifest, re-download when updated
+- **Hash verification**: Validate SHA256 checksums after download
+- **Caching**: Store databases in platform-specific user data directories
+- **Path resolution**: Provide consistent paths across platforms
+
+```python
+# Example usage from findingmodel or anatomic-locations
+from oidm_common.distribution import ensure_database, get_manifest
+
+manifest = get_manifest()  # Fetches/caches manifest.json
+db_path = ensure_database("finding_models.duckdb", manifest)  # Downloads if needed
+```
+
+#### duckdb/ - Database Utilities
+
+- **Connection management**: Open/close, read-only mode, extension loading
+- **Bulk loading**: Efficient JSON loading with `read_json()` for FLOAT[]/STRUCT[]
+- **Search utilities**: Hybrid FTS + vector search, weighted fusion
+- **Index management**: HNSW and FTS index creation/rebuilding
+
+#### embeddings/ - Embedding Infrastructure
+
+- **Cache**: DuckDB-based cache for OpenAI embeddings (avoids redundant API calls)
+- **Provider protocol**: Abstract interface for embedding providers
+- **OpenAI provider**: Default implementation using text-embedding-3-small
+
+**OPENAI_API_KEY requirement:**
+- **Not needed** for search queries - pre-built databases include pre-computed embeddings
+- **Required** when generating new embeddings:
+  - Building/rebuilding anatomic-locations database (`anatomic build`)
+  - Adding new entries that need vector search support
+  - Any operation that calls the embedding provider
+
+This is why oidm-common has `openai` as an optional dependency:
+```toml
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+```
+
+Users who only search don't need the OpenAI package or API key. Users who build databases install with `pip install oidm-common[openai]` and set `OPENAI_API_KEY`.
+
+#### models/ - Shared Data Models
+
+- **IndexCode**: Standardized code representation (system, code, display)
+- **WebReference**: URL + title for citations
+
+### anatomic-locations: Anatomic Ontology
+
+- **Models**: AnatomicLocation with laterality, hierarchy (materialized path)
+- **Index**: AnatomicLocationIndex with hybrid search (FTS + vector)
+- **Migration**: Database builder from source ontologies
+- **CLI**: `anatomic search`, `anatomic show`, `anatomic build`
+
+### findingmodel: Core Library
+
+- **Models**: FindingModel, FindingInfo, AbstractFindingModel, Contributor
+- **Index**: FindingModelIndex with search, validation
+- **MCP Server**: IDE integration for index queries (no AI)
+- **CLI**: `fm-tool search`, `fm-tool show`, `fm-tool validate`
+
+### findingmodel-ai: AI Authoring Tools
+
+- **Tools**: 8 tool modules with 14 AI agents across 5 providers
+- **Model management**: Three-tier system (base/small/full) + per-agent overrides
+- **Evals**: Agent evaluation suites
+- **CLI**: `findingmodel-ai enrich`, `findingmodel-ai edit`, etc.
+
 ## Configuration
 
 ### Root pyproject.toml
@@ -306,10 +385,10 @@ findingmodel_ai/config.py  → API keys, model selection, Tavily settings
 
 | Package | Config Responsibility | Key Settings |
 |---------|----------------------|--------------|
-| **oidm-common** | Infrastructure defaults | `OIDM_CACHE_DIR`, `OIDM_MANIFEST_URL`, download timeouts |
-| **anatomic-locations** | Anatomic database | `ANATOMIC_DB_PATH`, search limits, embedding model |
-| **findingmodel** | Core index/MCP | `FINDINGMODEL_DB_PATH`, `MCP_SERVER_PORT`, index settings |
-| **findingmodel-ai** | AI configuration | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, model tiers |
+| **oidm-common** | Infrastructure, embeddings, observability | `OIDM_CACHE_DIR`, `OIDM_MANIFEST_URL`, `OPENAI_API_KEY` (embeddings), `LOGFIRE_TOKEN` |
+| **anatomic-locations** | Anatomic database paths | `ANATOMIC_DB_PATH` |
+| **findingmodel** | Core index/MCP | `FINDINGMODEL_DB_PATH`, `FINDINGMODEL_MCP_PORT` |
+| **findingmodel-ai** | AI model management (5 providers, 14 agents) | `DEFAULT_MODEL*`, `AGENT_MODEL_OVERRIDES__*`, all API keys, `TAVILY_*`, `BIOONTOLOGY_*` |
 
 ### Implementation Pattern
 
@@ -357,56 +436,107 @@ class FindingModelSettings(BaseSettings):
 
 ```python
 # packages/findingmodel-ai/src/findingmodel_ai/config.py
+from typing import Literal
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_ai import Model
+
+# Type definitions
+ModelTier = Literal["base", "small", "full"]
+AgentTag = Literal[
+    "enrich_classify", "enrich_unified", "enrich_research",  # Enrichment
+    "anatomic_search", "anatomic_select",                     # Anatomic
+    "similar_search", "similar_assess",                       # Similar models
+    "ontology_match", "ontology_search",                      # Ontology
+    "edit_instructions", "edit_markdown",                     # Editing
+    "describe_finding", "describe_details",                   # Description
+    "import_markdown",                                        # Import
+]
+ModelSpec = str  # e.g., "openai:gpt-5-mini", "anthropic:claude-sonnet-4-5"
 
 class FindingModelAISettings(BaseSettings):
-    """AI tool settings - uses prefix for package-specific, standard names for API keys."""
-    model_config = SettingsConfigDict(env_prefix="FINDINGMODEL_AI_")
+    """AI tool settings - manages models for all 14 agent tags across 5 providers."""
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
 
-    # Package-specific settings (use prefix)
-    model_provider: str = "openai"  # or "anthropic"
-    model_tier: str = "main"  # main, full, small
+    # API keys - standard names (no prefix)
+    openai_api_key: SecretStr = Field(default=SecretStr(""))
+    anthropic_api_key: SecretStr = Field(default=SecretStr(""))
+    google_api_key: SecretStr = Field(default=SecretStr(""))
+    pydantic_ai_gateway_api_key: SecretStr = Field(default=SecretStr(""))
+    ollama_base_url: str = Field(default="http://localhost:11434/v1")
+    tavily_api_key: SecretStr = Field(default=SecretStr(""))
+    bioontology_api_key: SecretStr | None = Field(default=None)
 
-    # Standard API keys - use validation_alias to read standard env var names
-    openai_api_key: SecretStr | None = Field(default=None, validation_alias="OPENAI_API_KEY")
-    anthropic_api_key: SecretStr | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
-    google_api_key: SecretStr | None = Field(default=None, validation_alias="GOOGLE_API_KEY")
-    tavily_api_key: SecretStr | None = Field(default=None, validation_alias="TAVILY_API_KEY")
-    bioontology_api_key: SecretStr | None = Field(default=None, validation_alias="BIOONTOLOGY_API_KEY")
+    # Model tier defaults - standard names (no prefix)
+    default_model: ModelSpec = Field(default="openai:gpt-5-mini")
+    default_model_full: ModelSpec = Field(default="openai:gpt-5.2")
+    default_model_small: ModelSpec = Field(default="openai:gpt-5-nano")
+
+    # Per-agent overrides via AGENT_MODEL_OVERRIDES__<tag>=provider:model
+    agent_model_overrides: dict[AgentTag, ModelSpec] = Field(default_factory=dict)
+
+    def get_model(self, tier: ModelTier = "base") -> Model:
+        """Get model instance for tier."""
+        model_string = {"base": self.default_model, "full": self.default_model_full,
+                        "small": self.default_model_small}[tier]
+        return self._create_model_from_string(model_string, tier)
+
+    def get_agent_model(self, tag: AgentTag, *, default_tier: ModelTier = "base") -> Model:
+        """Get model for agent, with per-agent override support."""
+        if tag in self.agent_model_overrides:
+            return self._create_model_from_string(self.agent_model_overrides[tag], default_tier)
+        return self.get_model(default_tier)
+
+    def _create_model_from_string(self, model_string: str, tier: ModelTier) -> Model:
+        """Factory method dispatching to provider-specific model creation."""
+        # Dispatches to _make_openai_model, _make_anthropic_model, etc.
+        ...
 ```
 
 ### Environment Variable Strategy
 
-**Principle:** Use prefixes for package-specific settings, but standard names for common API keys.
+**Principle:** Maintain compatibility with existing env var names. Use prefixes only for new package-specific settings.
 
-#### Standard API Keys (No Prefix)
+#### AI Configuration (findingmodel-ai) - No Prefix
 
-These use their conventional names across all packages:
+These match the current implementation and require no changes for existing users:
 
-| Variable | Used By |
+| Variable | Purpose |
 |----------|---------|
-| `OPENAI_API_KEY` | findingmodel-ai, oidm-common (embeddings) |
-| `ANTHROPIC_API_KEY` | findingmodel-ai |
-| `GOOGLE_API_KEY` | findingmodel-ai |
-| `TAVILY_API_KEY` | findingmodel-ai |
-| `BIOONTOLOGY_API_KEY` | findingmodel-ai |
-| `LOGFIRE_TOKEN` | All (observability) |
-| `AWS_ACCESS_KEY_ID` | oidm-common (S3 distribution) |
-| `AWS_SECRET_ACCESS_KEY` | oidm-common (S3 distribution) |
+| `OPENAI_API_KEY` | OpenAI API access |
+| `ANTHROPIC_API_KEY` | Anthropic API access |
+| `GOOGLE_API_KEY` | Google Gemini API access |
+| `PYDANTIC_AI_GATEWAY_API_KEY` | Pydantic AI Gateway |
+| `OLLAMA_BASE_URL` | Ollama server URL |
+| `DEFAULT_MODEL` | Base tier model (e.g., `openai:gpt-5-mini`) |
+| `DEFAULT_MODEL_FULL` | Full tier model (e.g., `openai:gpt-5.2`) |
+| `DEFAULT_MODEL_SMALL` | Small tier model (e.g., `openai:gpt-5-nano`) |
+| `AGENT_MODEL_OVERRIDES__<tag>` | Per-agent override (e.g., `AGENT_MODEL_OVERRIDES__enrich_classify=anthropic:claude-opus-4-5`) |
+| `TAVILY_API_KEY` | Tavily search API |
+| `BIOONTOLOGY_API_KEY` | BioOntology.org API |
+
+#### Infrastructure (oidm-common) - No Prefix for Standard Keys
+
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` | For embeddings (shared with findingmodel-ai) |
+| `AWS_ACCESS_KEY_ID` | S3 distribution access |
+| `AWS_SECRET_ACCESS_KEY` | S3 distribution access |
+| `LOGFIRE_TOKEN` | Observability |
 
 #### Package-Specific Settings (With Prefix)
 
 | Package | Env Prefix | Examples |
 |---------|-----------|----------|
 | oidm-common | `OIDM_` | `OIDM_CACHE_DIR`, `OIDM_MANIFEST_URL` |
-| anatomic-locations | `ANATOMIC_` | `ANATOMIC_DB_PATH`, `ANATOMIC_SEARCH_LIMIT` |
+| anatomic-locations | `ANATOMIC_` | `ANATOMIC_DB_PATH` |
 | findingmodel | `FINDINGMODEL_` | `FINDINGMODEL_DB_PATH`, `FINDINGMODEL_MCP_PORT` |
-| findingmodel-ai | `FINDINGMODEL_AI_` | `FINDINGMODEL_AI_MODEL_PROVIDER`, `FINDINGMODEL_AI_MODEL_TIER` |
+
+**Note:** findingmodel-ai does NOT use a prefix for AI settings - this maintains backward compatibility with the current implementation.
 
 #### Implementation Pattern
 
-Use `validation_alias` to read standard env var names while keeping the prefix for other settings:
+For oidm-common which needs both prefixed settings and standard API keys:
 
 ```python
 from pydantic import Field, SecretStr
@@ -425,12 +555,69 @@ class OidmCommonSettings(BaseSettings):
     aws_secret_access_key: SecretStr | None = Field(default=None, validation_alias="AWS_SECRET_ACCESS_KEY")
 ```
 
+For findingmodel-ai which uses all standard names:
+
+```python
+class FindingModelAISettings(BaseSettings):
+    # No env_prefix - all fields use their natural names
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
+
+    openai_api_key: SecretStr = ...      # reads OPENAI_API_KEY
+    default_model: str = ...              # reads DEFAULT_MODEL
+    agent_model_overrides: dict = ...     # reads AGENT_MODEL_OVERRIDES__*
+```
+
 ### Migration Notes
 
-Current `src/findingmodel/config.py` will be split:
-- Distribution/download logic → `oidm_common/config.py` + `oidm_common/distribution/`
-- Index paths → `findingmodel/config.py`
-- API keys/model selection → `findingmodel_ai/config.py`
+Current `src/findingmodel/config.py` is a monolith that must be carefully split. The table below shows exactly where each field goes:
+
+#### FindingModelConfig Field Migration
+
+| Current Field | Target Package | Target Config | Notes |
+|---------------|----------------|---------------|-------|
+| **API Keys** ||||
+| `openai_api_key` | findingmodel-ai | FindingModelAISettings | Standard env var name |
+| `anthropic_api_key` | findingmodel-ai | FindingModelAISettings | Standard env var name |
+| `google_api_key` | findingmodel-ai | FindingModelAISettings | Standard env var name |
+| `pydantic_ai_gateway_api_key` | findingmodel-ai | FindingModelAISettings | Standard env var name |
+| `ollama_base_url` | findingmodel-ai | FindingModelAISettings | Standard env var name |
+| `tavily_api_key` | findingmodel-ai | FindingModelAISettings | Standard env var name |
+| `bioontology_api_key` | findingmodel-ai | FindingModelAISettings | Standard env var name |
+| **Model Configuration** ||||
+| `default_model` | findingmodel-ai | FindingModelAISettings | DEFAULT_MODEL env var |
+| `default_model_full` | findingmodel-ai | FindingModelAISettings | DEFAULT_MODEL_FULL env var |
+| `default_model_small` | findingmodel-ai | FindingModelAISettings | DEFAULT_MODEL_SMALL env var |
+| `agent_model_overrides` | findingmodel-ai | FindingModelAISettings | AGENT_MODEL_OVERRIDES__* |
+| `AgentTag` type | findingmodel-ai | types.py | 14 agent tag literals |
+| `ModelTier` type | findingmodel-ai | types.py | Literal["base", "small", "full"] |
+| `get_model()` method | findingmodel-ai | FindingModelAISettings | Model factory by tier |
+| `get_agent_model()` method | findingmodel-ai | FindingModelAISettings | Model factory by agent tag |
+| `_make_*_model()` methods | findingmodel-ai | FindingModelAISettings | 7 provider factory methods |
+| **Database Paths** ||||
+| `duckdb_index_path` | findingmodel | FindingModelSettings | FINDINGMODEL_DB_PATH |
+| `duckdb_anatomic_path` | anatomic-locations | AnatomicSettings | ANATOMIC_DB_PATH |
+| **Distribution** ||||
+| `remote_manifest_url` | oidm-common | OidmCommonSettings | OIDM_MANIFEST_URL |
+| `remote_index_db_url/hash` | findingmodel | FindingModelSettings | For locked versions |
+| `remote_anatomic_db_url/hash` | anatomic-locations | AnatomicSettings | For locked versions |
+| **Embeddings** ||||
+| `openai_embedding_model` | oidm-common | OidmCommonSettings | Shared by anatomic search |
+| `openai_embedding_dimensions` | oidm-common | OidmCommonSettings | Shared by anatomic search |
+| **Observability** ||||
+| `logfire_token` | oidm-common | OidmCommonSettings | LOGFIRE_TOKEN |
+| `disable_send_to_logfire` | oidm-common | OidmCommonSettings | For dev |
+| `logfire_verbose` | oidm-common | OidmCommonSettings | For debug |
+
+#### Key Insight: AI Model Management is Entirely in findingmodel-ai
+
+All `get_agent_model()` calls are in `tools/` modules that move to findingmodel-ai. The core findingmodel package does NOT use AI models - it only provides:
+- Data models (FindingModel, FindingInfo)
+- Index access (read-only search)
+- MCP server (index queries, no AI)
+
+This clean separation means:
+- `pip install findingmodel` → No AI dependencies, no API keys needed
+- `pip install findingmodel-ai` → Full AI tools, all provider support
 
 ## Test Topology
 
