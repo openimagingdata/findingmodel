@@ -245,6 +245,8 @@ markers = [
 ]
 ```
 
+**Python Version Note:** All packages target `requires-python = ">=3.11"`. uv workspaces enforce a single `requires-python` by taking the intersection of all members' values. This is intentional—we commit to Python 3.11+ across the entire workspace. If a future package needs Python 3.12+ features, we would bump the entire workspace.
+
 ### packages/oidm-common/pyproject.toml
 
 ```toml
@@ -266,7 +268,7 @@ dependencies = [
 openai = ["openai>=1.0"]
 
 [build-system]
-requires = ["uv_build>=0.7.19,<0.8.0"]
+requires = ["uv_build>=0.9,<0.10"]
 build-backend = "uv_build"
 ```
 
@@ -294,7 +296,7 @@ build = ["openai>=1.0"]
 anatomic = "anatomic_locations.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.7.19,<0.8.0"]
+requires = ["uv_build>=0.9,<0.10"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
@@ -325,7 +327,7 @@ fm-tool = "findingmodel.cli:cli"
 findingmodel-mcp = "findingmodel.mcp_server:main"
 
 [build-system]
-requires = ["uv_build>=0.7.19,<0.8.0"]
+requires = ["uv_build>=0.9,<0.10"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
@@ -354,7 +356,7 @@ dependencies = [
 findingmodel-ai = "findingmodel_ai.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.7.19,<0.8.0"]
+requires = ["uv_build>=0.9,<0.10"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
@@ -645,6 +647,8 @@ Each package can override root pytest settings in its pyproject.toml:
 testpaths = ["tests"]
 ```
 
+**Assessment Note:** This per-package `testpaths` override may not be necessary—`uv run --package <name> pytest` already scopes to that package's directory. Test this assumption during Phase 1 implementation before adding config to all packages. If `uv run --package findingmodel pytest` correctly discovers `packages/findingmodel/tests/` without explicit config, skip these overrides.
+
 ### Cross-Package Tests
 
 Some tests may need to verify integration between packages. Options:
@@ -652,15 +656,52 @@ Some tests may need to verify integration between packages. Options:
 1. **Keep in dependent package**: A test in `findingmodel-ai/tests/` that uses `anatomic-locations` is fine since it has that dependency
 2. **Integration test directory** (if needed later): `tests/integration/` at workspace root
 
-### Test Data
+### Test Data and Fixture Sharing
 
-Test data lives with the package that owns it:
+**Principle:** Test data lives with the package that owns the domain. Cross-package access uses pytest fixtures that resolve paths at runtime.
 
-| Package | Test Data |
-|---------|-----------|
-| anatomic-locations | `tests/data/anatomic_*.json` |
-| findingmodel | `tests/data/finding_models/`, `tests/data/embeddings/` |
-| findingmodel-ai | Inherits from findingmodel via dependency |
+| Package | Owns Test Data | Accesses From |
+|---------|----------------|---------------|
+| oidm-common | `tests/data/` (DuckDB fixtures) | — |
+| anatomic-locations | `tests/data/anatomic_*.json` | oidm-common |
+| findingmodel | `tests/data/finding_models/`, `tests/data/embeddings/` | oidm-common |
+| findingmodel-ai | `tests/data/` (AI-specific mocks) | findingmodel, anatomic-locations |
+
+#### Cross-Package Fixture Access Pattern
+
+When `findingmodel-ai` tests need finding model fixtures from `findingmodel`:
+
+```python
+# packages/findingmodel-ai/tests/conftest.py
+from pathlib import Path
+import pytest
+
+@pytest.fixture
+def findingmodel_test_data_dir() -> Path:
+    """Resolve path to findingmodel's test data directory."""
+    # Navigate from findingmodel-ai/tests/ to findingmodel/tests/data/
+    return Path(__file__).parent.parent.parent / "findingmodel" / "tests" / "data"
+
+@pytest.fixture
+def sample_finding_model_path(findingmodel_test_data_dir: Path) -> Path:
+    """Path to a sample finding model JSON for testing."""
+    return findingmodel_test_data_dir / "finding_models" / "sample.fm.json"
+```
+
+#### Why This Pattern?
+
+1. **No duplication** - Single source of truth for test data
+2. **Clear ownership** - Each package owns its domain's fixtures
+3. **Works in CI** - Relative paths from workspace root
+4. **Explicit dependencies** - Fixture names document the cross-package relationship
+5. **IDE-friendly** - Standard pytest patterns, no magic
+
+#### Alternative Considered: Shared Test Utils Package
+
+Creating a `packages/test-utils/` package was considered but rejected:
+- Adds maintenance overhead for a non-publishable package
+- YAGNI—conftest.py fixtures are sufficient
+- Would need special handling in CI/publishing
 
 ### Running Tests
 
@@ -827,9 +868,16 @@ mkdir -p packages/findingmodel-ai/evals
 
 1. Update root CLAUDE.md (workspace overview)
 2. Create packages/*/CLAUDE.md (package-specific)
-3. Update Serena memories for workspace structure
-4. Update Taskfile.yml for per-package tasks
-5. Update GitHub workflows
+3. Create `.claude/rules/` with path-scoped rules:
+   - `duckdb-patterns.md` (unconditional—shared DuckDB patterns)
+   - `testing.md` (paths: `**/tests/**`)
+   - `oidm-common.md` (paths: `packages/oidm-common/**`)
+   - `anatomic-locations.md` (paths: `packages/anatomic-locations/**`)
+   - `findingmodel-core.md` (paths: `packages/findingmodel/**`)
+   - `findingmodel-ai.md` (paths: `packages/findingmodel-ai/**`)
+4. Update Serena memories for workspace structure
+5. Update Taskfile.yml for per-package tasks
+6. Update GitHub workflows
 
 ## Claude Code Configuration
 
