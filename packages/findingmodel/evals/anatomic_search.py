@@ -61,13 +61,12 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 
 import time
 
+from findingmodel.tools.anatomic_location_search import LocationSearchResponse, find_anatomic_locations
+from findingmodel.tools.evaluators import PerformanceEvaluator
 from pydantic import BaseModel, Field
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
-
-from findingmodel.tools.anatomic_location_search import LocationSearchResponse, find_anatomic_locations
-from findingmodel.tools.evaluators import PerformanceEvaluator
 
 
 class AnatomicSearchInput(BaseModel):

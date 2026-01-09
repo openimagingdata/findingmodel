@@ -16,8 +16,6 @@ from openai import AsyncOpenAI
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-from pydantic_ai import models
-
 from findingmodel.anatomic_migration import (
     _prepare_record_for_insert,
     build_children_struct,
@@ -43,6 +41,7 @@ from findingmodel.tools.anatomic_location_search import (
 )
 from findingmodel.tools.duckdb_search import DuckDBOntologySearchClient
 from findingmodel.tools.ontology_search import OntologySearchResult
+from pydantic_ai import models
 
 # Prevent accidental model requests in unit tests
 # Tests marked with @pytest.mark.callout can enable this as needed

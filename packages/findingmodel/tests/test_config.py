@@ -84,9 +84,8 @@ def test_remote_config_with_neither_succeeds(monkeypatch: MonkeyPatch) -> None:
 
 def test_check_ready_for_tavily_with_key_succeeds() -> None:
     """Test that check_ready_for_tavily succeeds when API key is set."""
-    from pydantic import SecretStr
-
     from findingmodel.config import FindingModelConfig
+    from pydantic import SecretStr
 
     config = FindingModelConfig(tavily_api_key=SecretStr("test-tavily-key"))
     assert config.check_ready_for_tavily() is True
@@ -94,9 +93,8 @@ def test_check_ready_for_tavily_with_key_succeeds() -> None:
 
 def test_check_ready_for_tavily_without_key_raises_error() -> None:
     """Test that check_ready_for_tavily raises ConfigurationError when API key missing."""
-    from pydantic import SecretStr
-
     from findingmodel.config import ConfigurationError, FindingModelConfig
+    from pydantic import SecretStr
 
     config = FindingModelConfig(tavily_api_key=SecretStr(""))
     with pytest.raises(ConfigurationError, match="Tavily API key is not set"):

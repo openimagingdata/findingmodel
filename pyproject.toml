@@ -1,52 +1,11 @@
 [project]
-name = "findingmodel"
-version = "0.6.1"
-description = "Definition and tools for Open Imaging Finding Models"
-authors = [
-    { name = "Tarik Alkasab", email = "tarik@alkasab.org" },
-    { name = "Vijay Dawal", email = "vijaydawal@microsoft.com" },
-]
+name = "findingmodel-workspace"
+version = "0.0.0"
+description = "Workspace root for OIDM packages"
 requires-python = ">=3.11"
-readme = "README.md"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
-]
-license = "MIT"
-license-files = ["LICEN[CS]E*"]
-keywords = [
-    "finding model",
-    "common data element",
-    "medical imaging",
-    "data model",
-    "radiology"
-]
 
-dependencies = [
-    "click>=8.1.8",
-    "jinja2>=3.1.6",
-    "openai>=1.76",
-    "platformdirs>=4.0.0",
-    "pooch>=1.8.0",
-    "pydantic[email]>=2.11.3",
-    "pydantic-settings>=2.9.1",
-    "rich>=13.9.4",
-    "prompt-toolkit>=3.0.48",
-    "loguru>=0.7.3",
-    "pydantic-ai-slim[openai,tavily,anthropic,google]>=0.3.2",
-    "tavily-python>=0.6.0",
-    "duckdb>=1.3.2",
-    "httpx>=0.28.0",
-    "mcp>=1.0.0",
-    "boto3>=1.40.75",
-    "boto3-stubs[s3]>=1.40.75",
-]
-
-[project.optional-dependencies]
-
-[project.urls]
-Homepage = "https://github.com/openimagingdata/findingmodel"
-Issues = "https://github.com/openimagingdata/findingmodel/issues"
+[tool.uv.workspace]
+members = ["packages/*"]
 
 [dependency-groups]
 dev = [
@@ -55,18 +14,12 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "ruff>=0.7.2",
     "jupyter>=1.1.1",
-    "logfire>=1.0.0", # OpenTelemetry observability platform
+    "logfire>=1.0.0",
     "pydantic-evals>=0.1.0",
     "go-task-bin>=3.43.3",
 ]
 
-[project.scripts]
-fm-tool = "findingmodel.cli:cli"
-findingmodel-mcp = "findingmodel.mcp_server:main"
-
-[build-system]
-requires = ["uv_build>=0.7.19,<0.8.0"]
-build-backend = "uv_build"
+# Shared tool configuration
 
 [tool.ruff]
 line-length = 120
@@ -76,9 +29,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 extend-select = [
-    "B", # flake8-bugbear
-    "C", # flake8-comprehensions
-    "I", # isort
+    "B",   # flake8-bugbear
+    "C",   # flake8-comprehensions
+    "I",   # isort
     "ANN", # type annotations
     "SIM", # flake8-simplify
     "TID", # flake8-tidy-imports
@@ -88,13 +41,13 @@ fixable = ["ALL"]
 unfixable = []
 
 [tool.ruff.lint.per-file-ignores]
-"test/**/*.py" = ["ANN401"]  # Allow Any type in test files for mock functions
+"**/tests/**/*.py" = ["ANN401"]  # Allow Any type in test files for mock functions
+"**/evals/**/*.py" = ["ANN401"]  # Allow Any type in eval files
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["test"]
-pythonpath = ["."]
+testpaths = ["packages/findingmodel/tests"]
 markers = [
     "callout: Marks test as calling on non-local services",
 ]
@@ -111,7 +64,6 @@ strict = true
 ignore_missing_imports = true
 warn_unused_ignores = true
 warn_return_any = true
-# Only check file sin the src directory
 files = [
-    "src/findingmodel",
+    "packages/findingmodel/src/findingmodel",
 ]

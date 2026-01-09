@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import duckdb
 import pytest
-
 from findingmodel.tools.duckdb_utils import (
     create_fts_index,
     create_hnsw_index,

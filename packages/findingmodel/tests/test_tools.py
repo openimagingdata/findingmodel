@@ -1,17 +1,16 @@
 from collections.abc import Generator
 from types import SimpleNamespace
 
+import findingmodel.tools
+import findingmodel.tools.finding_description as finding_description
 import httpx
 import pytest
 from conftest import TEST_OPENAI_MODEL
-from pydantic_ai import models
-
-import findingmodel.tools
-import findingmodel.tools.finding_description as finding_description
 from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, logger
 from findingmodel.config import settings
 from findingmodel.finding_model import AttributeType, ChoiceAttributeIded
 from findingmodel.index_code import IndexCode
+from pydantic_ai import models
 
 # Prevent accidental model requests in unit tests
 # Tests marked with @pytest.mark.callout can enable this as needed
@@ -55,9 +54,8 @@ def test_add_ids_to_finding_model(base_model: FindingModelBase) -> None:
 
 def test_render_agent_prompt() -> None:
     """Test render_agent_prompt extracts instructions and user prompt correctly."""
-    from jinja2 import Template
-
     from findingmodel.tools.prompt_template import render_agent_prompt
+    from jinja2 import Template
 
     # Create a simple test template
     template_text = """# SYSTEM
@@ -76,9 +74,8 @@ Please help with: {{task}}
 
 def test_render_agent_prompt_missing_user_section() -> None:
     """Test render_agent_prompt raises error if USER section missing."""
-    from jinja2 import Template
-
     from findingmodel.tools.prompt_template import render_agent_prompt
+    from jinja2 import Template
 
     template_text = """# SYSTEM
 Only system instructions.
@@ -408,10 +405,9 @@ async def test_add_details_to_info_empty_output_returns_none(monkeypatch: pytest
     """
     from unittest.mock import AsyncMock, patch
 
-    from pydantic_ai import Agent
-
     from findingmodel.config import FindingModelConfig
     from findingmodel.tools import add_details_to_info
+    from pydantic_ai import Agent
 
     # Create test FindingInfo
     finding = FindingInfo(
@@ -533,11 +529,10 @@ async def test_create_model_from_markdown_with_test_model() -> None:
     """
     from unittest.mock import patch
 
-    from pydantic_ai.models.test import TestModel
-
     from findingmodel.config import FindingModelConfig
     from findingmodel.finding_model import ChoiceAttribute, ChoiceValue, FindingModelBase
     from findingmodel.tools import create_model_from_markdown
+    from pydantic_ai.models.test import TestModel
 
     # ALLOW_MODEL_REQUESTS is already False at module level
 
@@ -709,11 +704,10 @@ def test_concurrent_id_generation(base_model: FindingModelBase) -> None:
 
 def test_get_async_tavily_client_with_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that get_async_tavily_client returns client when API key is set."""
-    from pydantic import SecretStr
-    from tavily import AsyncTavilyClient
-
     from findingmodel import config
     from findingmodel.tools.common import get_async_tavily_client
+    from pydantic import SecretStr
+    from tavily import AsyncTavilyClient
 
     # Temporarily override settings with test key
     original_key = config.settings.tavily_api_key
@@ -727,11 +721,10 @@ def test_get_async_tavily_client_with_key(monkeypatch: pytest.MonkeyPatch) -> No
 
 def test_get_async_tavily_client_without_key_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that get_async_tavily_client raises ConfigurationError when API key missing."""
-    from pydantic import SecretStr
-
     from findingmodel import config
     from findingmodel.config import ConfigurationError
     from findingmodel.tools.common import get_async_tavily_client
+    from pydantic import SecretStr
 
     # Temporarily override settings with empty key
     original_key = config.settings.tavily_api_key
@@ -748,10 +741,9 @@ def test_get_async_tavily_client_without_key_raises_error(monkeypatch: pytest.Mo
 
 def test_settings_get_model_returns_openai_model_for_base_tier(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() returns OpenAIResponsesModel for base tier with OpenAI provider."""
+    from findingmodel import config
     from pydantic import SecretStr
     from pydantic_ai.models.openai import OpenAIResponsesModel
-
-    from findingmodel import config
 
     # Temporarily override settings with test key and model
     original_key = config.settings.openai_api_key
@@ -768,10 +760,9 @@ def test_settings_get_model_returns_openai_model_for_base_tier(monkeypatch: pyte
 
 def test_settings_get_model_returns_openai_model_for_small_tier(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() returns OpenAIResponsesModel for small tier with OpenAI provider."""
+    from findingmodel import config
     from pydantic import SecretStr
     from pydantic_ai.models.openai import OpenAIResponsesModel
-
-    from findingmodel import config
 
     # Temporarily override settings with test key and model
     original_key = config.settings.openai_api_key
@@ -788,10 +779,9 @@ def test_settings_get_model_returns_openai_model_for_small_tier(monkeypatch: pyt
 
 def test_settings_get_model_returns_openai_model_for_full_tier(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() returns OpenAIResponsesModel for full tier with OpenAI provider."""
+    from findingmodel import config
     from pydantic import SecretStr
     from pydantic_ai.models.openai import OpenAIResponsesModel
-
-    from findingmodel import config
 
     # Temporarily override settings with test key and model
     original_key = config.settings.openai_api_key
@@ -808,10 +798,9 @@ def test_settings_get_model_returns_openai_model_for_full_tier(monkeypatch: pyte
 
 def test_settings_get_model_validates_openai_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() raises ConfigurationError when OpenAI API key missing."""
-    from pydantic import SecretStr
-
     from findingmodel import config
     from findingmodel.config import ConfigurationError
+    from pydantic import SecretStr
 
     # Temporarily override settings with empty key
     original_key = config.settings.openai_api_key
@@ -828,10 +817,9 @@ def test_settings_get_model_validates_openai_api_key(monkeypatch: pytest.MonkeyP
 
 def test_settings_get_model_validates_anthropic_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() raises ConfigurationError when Anthropic API key missing."""
-    from pydantic import SecretStr
-
     from findingmodel import config
     from findingmodel.config import ConfigurationError
+    from pydantic import SecretStr
 
     # Temporarily override settings with empty key
     original_key = config.settings.anthropic_api_key
@@ -848,10 +836,9 @@ def test_settings_get_model_validates_anthropic_api_key(monkeypatch: pytest.Monk
 
 def test_settings_get_model_validates_google_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() raises ConfigurationError when Google API key missing."""
-    from pydantic import SecretStr
-
     from findingmodel import config
     from findingmodel.config import ConfigurationError
+    from pydantic import SecretStr
 
     # Temporarily override settings with empty key
     original_key = config.settings.google_api_key
@@ -868,10 +855,9 @@ def test_settings_get_model_validates_google_api_key(monkeypatch: pytest.MonkeyP
 
 def test_settings_get_model_validates_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test settings.get_model() raises ConfigurationError when Gateway API key missing."""
-    from pydantic import SecretStr
-
     from findingmodel import config
     from findingmodel.config import ConfigurationError
+    from pydantic import SecretStr
 
     # Temporarily override settings with empty key
     original_key = config.settings.pydantic_ai_gateway_api_key
@@ -1119,9 +1105,8 @@ class TestDefaultModelKeyValidation:
 
     def test_validate_passes_with_keys(self) -> None:
         """Validation passes when required keys are present."""
-        from pydantic import SecretStr
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr
 
         config = FindingModelConfig(
             openai_api_key=SecretStr("test-key"),
@@ -1135,9 +1120,8 @@ class TestDefaultModelKeyValidation:
 
     def test_validate_fails_missing_key(self) -> None:
         """Validation fails when required key is missing."""
-        from pydantic import SecretStr
-
         from findingmodel.config import ConfigurationError, FindingModelConfig
+        from pydantic import SecretStr
 
         config = FindingModelConfig(
             openai_api_key=SecretStr(""),  # Empty key
@@ -1155,9 +1139,8 @@ class TestDefaultModelKeyValidation:
 
     def test_validate_mixed_providers(self) -> None:
         """Validation checks all providers correctly."""
-        from pydantic import SecretStr
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr
 
         config = FindingModelConfig(
             openai_api_key=SecretStr("openai-key"),
@@ -1172,9 +1155,8 @@ class TestDefaultModelKeyValidation:
 
     def test_validate_ollama_no_key_required(self) -> None:
         """Ollama defaults don't require API key validation."""
-        from pydantic import SecretStr
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr
 
         config = FindingModelConfig(
             openai_api_key=SecretStr(""),  # Empty key
@@ -1195,9 +1177,8 @@ async def test_gateway_openai_integration() -> None:
     This test verifies that the gateway provider is correctly configured
     and can make actual API calls through the Pydantic AI Gateway.
     """
-    from pydantic_ai import Agent
-
     from findingmodel import config
+    from pydantic_ai import Agent
 
     # Skip if gateway API key not configured
     if not config.settings.pydantic_ai_gateway_api_key.get_secret_value():
@@ -1238,9 +1219,8 @@ async def test_gemini_integration() -> None:
     This test verifies that the Gemini provider is correctly configured
     and can make actual API calls to Google's Gemini API.
     """
-    from pydantic_ai import Agent
-
     from findingmodel import config
+    from pydantic_ai import Agent
 
     # Skip if Google API key not configured
     if not config.settings.google_api_key.get_secret_value():
@@ -1295,9 +1275,8 @@ async def test_ollama_integration() -> None:
     Prefers smaller/faster models from PREFERRED_OLLAMA_MODELS list.
     """
     import httpx
-    from pydantic_ai import Agent
-
     from findingmodel import config
+    from pydantic_ai import Agent
 
     # Check if Ollama server is running
     try:
@@ -1364,10 +1343,9 @@ class TestAgentModelOverrides:
     def test_returns_tier_default_when_no_override(self) -> None:
         """get_agent_model() falls back to tier when agent not in overrides."""
         from conftest import TEST_OPENAI_MODEL
+        from findingmodel.config import FindingModelConfig
         from pydantic import SecretStr
         from pydantic_ai.models.openai import OpenAIResponsesModel
-
-        from findingmodel.config import FindingModelConfig
 
         # Create config with empty overrides
         config = FindingModelConfig(
@@ -1387,10 +1365,9 @@ class TestAgentModelOverrides:
     def test_returns_override_when_configured(self) -> None:
         """get_agent_model() uses override from agent_model_overrides dict."""
         from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
+        from findingmodel.config import FindingModelConfig
         from pydantic import SecretStr
         from pydantic_ai.models.anthropic import AnthropicModel
-
-        from findingmodel.config import FindingModelConfig
 
         # Create config with override for specific agent
         config = FindingModelConfig(
@@ -1409,9 +1386,8 @@ class TestAgentModelOverrides:
     def test_requires_explicit_agent_tag(self) -> None:
         """get_agent_model() requires explicit agent_tag parameter (no introspection)."""
         from conftest import TEST_OPENAI_MODEL
-        from pydantic import SecretStr
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr
 
         config = FindingModelConfig(
             openai_api_key=SecretStr("test-key"),
@@ -1428,9 +1404,8 @@ class TestAgentModelOverrides:
     def test_validates_model_spec_pattern(self) -> None:
         """Invalid model strings in overrides fail Pydantic validation."""
         from conftest import TEST_OPENAI_MODEL
-        from pydantic import SecretStr, ValidationError
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr, ValidationError
 
         # Try to create config with invalid override value
         with pytest.raises(ValidationError) as exc_info:
@@ -1449,9 +1424,8 @@ class TestAgentModelOverrides:
     def test_override_respects_default_tier(self) -> None:
         """Override model string is used but tier affects settings (e.g., reasoning effort)."""
         from conftest import TEST_OPENAI_MODEL
-        from pydantic import SecretStr
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr
 
         # Create config with OpenAI override
         config = FindingModelConfig(
@@ -1472,11 +1446,10 @@ class TestAgentModelOverrides:
     def test_multiple_overrides_isolated(self) -> None:
         """Multiple agent overrides don't interfere with each other."""
         from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
+        from findingmodel.config import FindingModelConfig
         from pydantic import SecretStr
         from pydantic_ai.models.anthropic import AnthropicModel
         from pydantic_ai.models.openai import OpenAIResponsesModel
-
-        from findingmodel.config import FindingModelConfig
 
         # Create config with overrides for multiple agents
         config = FindingModelConfig(
@@ -1499,10 +1472,9 @@ class TestAgentModelOverrides:
     def test_override_with_gateway_provider(self) -> None:
         """Override can use gateway provider prefix."""
         from conftest import TEST_OPENAI_MODEL
+        from findingmodel.config import FindingModelConfig
         from pydantic import SecretStr
         from pydantic_ai.models.openai import OpenAIResponsesModel
-
-        from findingmodel.config import FindingModelConfig
 
         # Create config with gateway override
         config = FindingModelConfig(
@@ -1519,9 +1491,8 @@ class TestAgentModelOverrides:
     def test_agent_model_overrides_from_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Environment variable AGENT_MODEL_OVERRIDES__<tag> sets override."""
         from conftest import TEST_ANTHROPIC_MODEL
-        from pydantic import SecretStr
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr
 
         # Set env var with nested delimiter
         monkeypatch.setenv("AGENT_MODEL_OVERRIDES__enrich_classify", TEST_ANTHROPIC_MODEL)
@@ -1539,9 +1510,8 @@ class TestAgentModelOverrides:
     def test_rejects_invalid_agent_tag(self) -> None:
         """Invalid agent tag in overrides dict raises ValidationError."""
         from conftest import TEST_OPENAI_MODEL
-        from pydantic import SecretStr, ValidationError
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr, ValidationError
 
         with pytest.raises(ValidationError) as exc_info:
             FindingModelConfig(
@@ -1556,9 +1526,8 @@ class TestAgentModelOverrides:
     def test_get_effective_model_string_returns_override(self) -> None:
         """get_effective_model_string() returns override when configured."""
         from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
-        from pydantic import SecretStr
-
         from findingmodel.config import FindingModelConfig
+        from pydantic import SecretStr
 
         config = FindingModelConfig(
             openai_api_key=SecretStr("test-key"),
@@ -1596,7 +1565,6 @@ class TestAgentModelOverridesIntegration:
             pytest.skip("ANTHROPIC_API_KEY not set - skipping integration test")
 
         from conftest import TEST_ANTHROPIC_MODEL
-
         from findingmodel.tools.finding_enrichment import enrich_finding
 
         # Enable model requests for this test
@@ -1639,7 +1607,6 @@ class TestAgentModelOverridesIntegration:
             pytest.skip("GOOGLE_API_KEY not set - skipping integration test")
 
         from conftest import TEST_GOOGLE_MODEL
-
         from findingmodel.tools.finding_enrichment import enrich_finding
 
         # Enable model requests for this test

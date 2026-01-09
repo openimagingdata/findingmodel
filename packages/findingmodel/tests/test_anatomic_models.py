@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from findingmodel.anatomic_location import (
     AnatomicLocation,
     AnatomicRef,

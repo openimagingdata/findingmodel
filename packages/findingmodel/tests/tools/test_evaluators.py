@@ -10,11 +10,10 @@ All tests use simple Pydantic models and execute quickly without external depend
 
 from typing import Any
 
+from findingmodel.tools.evaluators import PerformanceEvaluator
 from pydantic import BaseModel
 from pydantic_ai import models
 from pydantic_evals.evaluators import EvaluatorContext
-
-from findingmodel.tools.evaluators import PerformanceEvaluator
 
 # Prevent accidental API calls during unit tests
 models.ALLOW_MODEL_REQUESTS = False

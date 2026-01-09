@@ -11,9 +11,8 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 """
 
 import logfire
-from logfire import ConsoleOptions
-
 from findingmodel.config import settings
+from logfire import ConsoleOptions
 
 # Track instrumentation state to make ensure_instrumented() idempotent
 _instrumented = False

@@ -10,8 +10,6 @@ from pathlib import Path
 
 import duckdb
 import pytest
-from pydantic_ai import models
-
 from findingmodel.anatomic_migration import (
     _bulk_load_table,
     _create_indexes,
@@ -20,6 +18,7 @@ from findingmodel.anatomic_migration import (
 )
 from findingmodel.config import settings
 from findingmodel.tools.duckdb_utils import setup_duckdb_connection
+from pydantic_ai import models
 
 # Prevent accidental model requests in unit tests
 models.ALLOW_MODEL_REQUESTS = False
@@ -129,9 +128,7 @@ def test_bulk_load_preserves_vectors(schema_conn: duckdb.DuckDBPyConnection) -> 
 
 def test_bulk_load_preserves_struct_arrays(schema_conn: duckdb.DuckDBPyConnection) -> None:
     """Verify STRUCT[] arrays survive JSON round-trip."""
-    schema_conn.execute(
-        "CREATE TABLE test (id VARCHAR, children STRUCT(id VARCHAR, display VARCHAR)[])"
-    )
+    schema_conn.execute("CREATE TABLE test (id VARCHAR, children STRUCT(id VARCHAR, display VARCHAR)[])")
 
     children = [{"id": "child1", "display": "Child 1"}, {"id": "child2", "display": "Child 2"}]
     data = [{"id": "TEST001", "children": children}]
@@ -162,9 +159,7 @@ def test_prepare_all_records(
     # Use first 3 records from sample data
     records = anatomic_sample_data[:3]
 
-    location_rows, searchable_texts, synonym_rows, code_rows = _prepare_all_records(
-        records, anatomic_records_by_id
-    )
+    location_rows, searchable_texts, synonym_rows, code_rows = _prepare_all_records(records, anatomic_records_by_id)
 
     # Should have successfully prepared all 3 records
     assert len(location_rows) == 3

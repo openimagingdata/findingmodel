@@ -8,8 +8,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from pydantic_ai import models
-
 from findingmodel.anatomic_index import AnatomicLocationIndex
 from findingmodel.anatomic_location import (
     AnatomicLocation,
@@ -17,6 +15,7 @@ from findingmodel.anatomic_location import (
     Laterality,
 )
 from findingmodel.anatomic_migration import create_anatomic_database
+from pydantic_ai import models
 
 # Block all AI model requests - embeddings are pre-generated fixtures
 models.ALLOW_MODEL_REQUESTS = False

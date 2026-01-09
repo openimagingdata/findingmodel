@@ -1,13 +1,12 @@
 from collections.abc import Iterator
 
 import pytest
-from pydantic_ai import models
-from pydantic_ai.models.test import TestModel
-
 from findingmodel import Index
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel.tools import model_editor
+from pydantic_ai import models
+from pydantic_ai.models.test import TestModel
 
 
 @pytest.fixture(autouse=True)

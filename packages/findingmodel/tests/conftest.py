@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from findingmodel import logger
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import (

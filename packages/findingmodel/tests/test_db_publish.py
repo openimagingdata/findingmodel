@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from findingmodel.db_publish import (
     DatabaseStats,
     ManifestDatabaseEntry,
@@ -216,7 +215,6 @@ def test_update_and_publish_manifest_cleanup_on_error(
 def test_publish_command_requires_option() -> None:
     """Test that publish command fails when neither --defs-dir nor --database is provided."""
     from click.testing import CliRunner
-
     from findingmodel.cli import cli
 
     runner = CliRunner()
@@ -229,7 +227,6 @@ def test_publish_command_requires_option() -> None:
 def test_publish_command_mutually_exclusive(tmp_path: Path) -> None:
     """Test that publish command fails when both --defs-dir and --database are provided."""
     from click.testing import CliRunner
-
     from findingmodel.cli import cli
 
     # Create dummy paths
@@ -258,7 +255,6 @@ def test_publish_command_with_database_mock(
 ) -> None:
     """Test publish-only mode with mocked S3 operations."""
     from click.testing import CliRunner
-
     from findingmodel.cli import cli
     from findingmodel.db_publish import DatabaseStats
 
@@ -310,7 +306,6 @@ def test_publish_command_with_skip_checks(
 ) -> None:
     """Test that --skip-checks flag bypasses sanity check."""
     from click.testing import CliRunner
-
     from findingmodel.cli import cli
     from findingmodel.db_publish import DatabaseStats
 
@@ -385,7 +380,6 @@ def test_create_s3_client_missing_credentials() -> None:
 def test_load_manifest_creates_empty_on_missing() -> None:
     """Test that load_manifest_from_s3 creates empty manifest when file not found."""
     from botocore.exceptions import ClientError
-
     from findingmodel.db_publish import load_manifest_from_s3
 
     # Setup mock S3 client that raises NoSuchKey error
@@ -453,7 +447,6 @@ def test_update_manifest_entry_preserves_other_databases() -> None:
 def test_upload_handles_s3_error() -> None:
     """Test that S3 upload failures are handled correctly."""
     from botocore.exceptions import ClientError
-
     from findingmodel.db_publish import (
         ManifestUpdateInfo,
         PublishConfig,

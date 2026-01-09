@@ -3,7 +3,7 @@
 version: "3"
 
 tasks:
-  default: 
+  default:
     cmds:
       - task -l
     silent: true
@@ -26,6 +26,7 @@ tasks:
 
   evals:
     desc: "Run all agent evaluation suites"
+    dir: packages/findingmodel
     cmds:
       - echo "Running all agent evaluations..."
       - uv run python -m evals.model_editor
@@ -39,6 +40,7 @@ tasks:
 
   evals:model_editor:
     desc: "Run model_editor evaluation suite"
+    dir: packages/findingmodel
     cmds:
       - echo "Running model_editor evaluations..."
       - uv run python -m evals.model_editor
@@ -46,6 +48,7 @@ tasks:
 
   evals:similar_models:
     desc: "Run similar_models evaluation suite"
+    dir: packages/findingmodel
     cmds:
       - echo "Running similar_models evaluations..."
       - uv run python -m evals.similar_models
@@ -53,6 +56,7 @@ tasks:
 
   evals:ontology_match:
     desc: "Run ontology_match evaluation suite"
+    dir: packages/findingmodel
     cmds:
       - echo "Running ontology_match evaluations..."
       - uv run python -m evals.ontology_match
@@ -60,6 +64,7 @@ tasks:
 
   evals:anatomic_search:
     desc: "Run anatomic_search evaluation suite"
+    dir: packages/findingmodel
     cmds:
       - echo "Running anatomic_search evaluations..."
       - uv run python -m evals.anatomic_search
@@ -67,6 +72,7 @@ tasks:
 
   evals:markdown_in:
     desc: "Run markdown_in evaluation suite"
+    dir: packages/findingmodel
     cmds:
       - echo "Running markdown_in evaluations..."
       - uv run python -m evals.markdown_in
@@ -74,6 +80,7 @@ tasks:
 
   evals:finding_description:
     desc: "Run finding_description evaluation suite"
+    dir: packages/findingmodel
     cmds:
       - echo "Running finding_description evaluations..."
       - uv run python -m evals.finding_description
@@ -83,27 +90,27 @@ tasks:
     desc: "Check the findingmodel library"
     cmds:
       - echo "Checking library..."
-      - uv run ruff format
-      - uv run ruff check --fix
-      - uv run mypy src
+      - uv run ruff format packages/
+      - uv run ruff check --fix packages/
+      - uv run mypy packages/findingmodel/src/findingmodel
     silent: true
 
   build:
     desc: "Build the findingmodel library"
     cmds:
       - echo "Building library..."
-      - uv build {{.CLI_ARGS}}
+      - uv build --package findingmodel {{.CLI_ARGS}}
     silent: true
 
   quiet:
     desc: "Run checks quietly"
     cmds:
-      - uv run ruff format --quiet
-      - uv run ruff check --fix --quiet
-      - uv run mypy src --no-error-summary --no-pretty
+      - uv run ruff format --quiet packages/
+      - uv run ruff check --fix --quiet packages/
+      - uv run mypy packages/findingmodel/src/findingmodel --no-error-summary --no-pretty
       - uv run pytest -q {{.CLI_ARGS}}
     silent: true
-  
+
   publish:
     desc: "Publish the findingmodel library"
     cmds:
@@ -130,4 +137,3 @@ tasks:
     desc: "Release specific version (use: task release:version -- --version X.Y.Z)"
     cmds:
       - uv run python scripts/release.py {{.CLI_ARGS}}
-  

@@ -5,8 +5,6 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from openai import AsyncOpenAI
-
 from findingmodel.anatomic_index import AnatomicLocationIndex
 from findingmodel.anatomic_location import (
     AnatomicRegion,
@@ -17,6 +15,7 @@ from findingmodel.anatomic_location import (
 )
 from findingmodel.anatomic_migration import create_anatomic_database
 from findingmodel.config import settings
+from openai import AsyncOpenAI
 
 # =============================================================================
 # Fixtures

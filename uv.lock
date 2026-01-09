@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 
+[manifest]
+members = [
+    "findingmodel",
+    "findingmodel-workspace",
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.7.0"
@@ -539,7 +545,7 @@ wheels = [
 [[package]]
 name = "findingmodel"
 version = "0.6.1"
-source = { editable = "." }
+source = { editable = "packages/findingmodel" }
 dependencies = [
     { name = "boto3" },
     { name = "boto3-stubs", extra = ["s3"] },
@@ -558,18 +564,6 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "rich" },
     { name = "tavily-python" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "go-task-bin" },
-    { name = "jupyter" },
-    { name = "logfire" },
-    { name = "mypy" },
-    { name = "pydantic-evals" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
 ]
 
 [package.metadata]
@@ -592,6 +586,25 @@ requires-dist = [
     { name = "rich", specifier = ">=13.9.4" },
     { name = "tavily-python", specifier = ">=0.6.0" },
 ]
+
+[[package]]
+name = "findingmodel-workspace"
+version = "0.0.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "go-task-bin" },
+    { name = "jupyter" },
+    { name = "logfire" },
+    { name = "mypy" },
+    { name = "pydantic-evals" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
+[package.metadata]
 
 [package.metadata.requires-dev]
 dev = [

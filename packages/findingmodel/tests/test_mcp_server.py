@@ -10,7 +10,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from findingmodel.index import AttributeInfo, DuckDBIndex, IndexEntry
 from findingmodel.mcp_server import (
     count_finding_models,

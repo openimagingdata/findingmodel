@@ -18,7 +18,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 from findingmodel.config import clear_manifest_cache, settings
 from findingmodel.index import DuckDBIndex
 

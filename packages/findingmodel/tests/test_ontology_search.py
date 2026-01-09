@@ -4,9 +4,6 @@ import inspect
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pydantic_ai import models
-from pydantic_ai.models.test import TestModel
-
 from findingmodel.config import settings
 from findingmodel.tools.ontology_concept_match import (
     CategorizationContext,
@@ -23,6 +20,8 @@ from findingmodel.tools.ontology_search import (
     BioOntologySearchResult,
     OntologySearchResult,
 )
+from pydantic_ai import models
+from pydantic_ai.models.test import TestModel
 
 # Prevent accidental model requests in unit tests
 # Tests marked with @pytest.mark.callout can enable this as needed

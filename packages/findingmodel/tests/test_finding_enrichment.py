@@ -14,9 +14,6 @@ from typing import Any
 
 import pytest
 from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
-from pydantic import ValidationError
-from pydantic_ai import models
-
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index_code import IndexCode
 from findingmodel.tools.finding_enrichment import (
@@ -29,6 +26,8 @@ from findingmodel.tools.finding_enrichment import (
     Subspecialty,
 )
 from findingmodel.tools.ontology_search import OntologySearchResult
+from pydantic import ValidationError
+from pydantic_ai import models
 
 # Prevent accidental model requests in unit tests
 # Tests marked with @pytest.mark.callout can enable this as needed
@@ -801,9 +800,8 @@ class TestCreateEnrichmentAgent:
         """Test that agent is created with correct model tier."""
         from unittest.mock import patch
 
-        from pydantic_ai.models.test import TestModel
-
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
+        from pydantic_ai.models.test import TestModel
 
         with patch("findingmodel.tools.finding_enrichment.settings") as mock_settings:
             mock_settings.get_agent_model.return_value = TestModel()
@@ -857,9 +855,8 @@ class TestCreateEnrichmentAgent:
 
     def test_agent_with_custom_model(self) -> None:
         """Test creating agent with custom model string."""
-        from pydantic_ai.models.test import TestModel
-
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
+        from pydantic_ai.models.test import TestModel
 
         # Use TestModel to avoid needing API keys
         agent = create_enrichment_agent(model=TestModel())
@@ -881,9 +878,8 @@ class TestEnrichmentAgentBehavior:
     @pytest.mark.asyncio
     async def test_agent_produces_valid_classification(self, mock_enrichment_context: EnrichmentContext) -> None:
         """Test that agent produces valid EnrichmentClassification output."""
-        from pydantic_ai.models.test import TestModel
-
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
+        from pydantic_ai.models.test import TestModel
 
         # Create controlled classification response
         controlled_classification = EnrichmentClassification(
@@ -906,9 +902,8 @@ class TestEnrichmentAgentBehavior:
     @pytest.mark.asyncio
     async def test_agent_accepts_context_with_existing_model(self, mock_enrichment_context: EnrichmentContext) -> None:
         """Test that agent runs with context containing existing_model."""
-        from pydantic_ai.models.test import TestModel
-
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
+        from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
             body_regions=["Abdomen"],
@@ -931,9 +926,8 @@ class TestEnrichmentAgentBehavior:
     @pytest.mark.asyncio
     async def test_agent_accepts_context_without_existing_model(self) -> None:
         """Test that agent runs with context without existing_model."""
-        from pydantic_ai.models.test import TestModel
-
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
+        from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
             body_regions=["Head"],
@@ -960,9 +954,8 @@ class TestEnrichmentAgentBehavior:
     @pytest.mark.asyncio
     async def test_agent_output_has_required_fields(self) -> None:
         """Test that agent output has all required classification fields."""
-        from pydantic_ai.models.test import TestModel
-
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
+        from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
             body_regions=["Chest", "Abdomen"],
@@ -988,9 +981,8 @@ class TestEnrichmentAgentBehavior:
     @pytest.mark.asyncio
     async def test_agent_allows_empty_classifications(self) -> None:
         """Test that agent accepts empty classification lists."""
-        from pydantic_ai.models.test import TestModel
-
         from findingmodel.tools.finding_enrichment import create_enrichment_agent
+        from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
             body_regions=[],

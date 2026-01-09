@@ -64,15 +64,14 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 
 import time
 
-from pydantic import BaseModel, Field
-from pydantic_evals import Case, Dataset
-from pydantic_evals.evaluators import Evaluator, EvaluatorContext
-from pydantic_evals.reporting import EvaluationReport
-
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase
 from findingmodel.tools.evaluators import PerformanceEvaluator
 from findingmodel.tools.markdown_in import create_model_from_markdown
+from pydantic import BaseModel, Field
+from pydantic_evals import Case, Dataset
+from pydantic_evals.evaluators import Evaluator, EvaluatorContext
+from pydantic_evals.reporting import EvaluationReport
 
 
 class MarkdownInInput(BaseModel):

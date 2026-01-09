@@ -4,8 +4,6 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-from pydantic import ValidationError
-
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import (
     AttributeType,
@@ -15,6 +13,7 @@ from findingmodel.finding_model import (
     FindingModelFull,
     NumericAttribute,
 )
+from pydantic import ValidationError
 
 # ============================================================================
 # Core Model Tests

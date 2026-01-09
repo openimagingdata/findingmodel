@@ -54,14 +54,13 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 
 import time
 
+from findingmodel.index import DuckDBIndex as Index
+from findingmodel.tools.evaluators import PerformanceEvaluator
+from findingmodel.tools.similar_finding_models import SimilarModelAnalysis, find_similar_models
 from pydantic import BaseModel, Field
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
-
-from findingmodel.index import DuckDBIndex as Index
-from findingmodel.tools.evaluators import PerformanceEvaluator
-from findingmodel.tools.similar_finding_models import SimilarModelAnalysis, find_similar_models
 
 
 class SimilarModelsInput(BaseModel):
