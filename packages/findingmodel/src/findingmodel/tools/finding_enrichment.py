@@ -11,6 +11,7 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Annotated
 
+from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field, field_validator
 from pydantic_ai import Agent
 from typing_extensions import Literal
@@ -19,7 +20,6 @@ from findingmodel import logger
 from findingmodel.config import ModelTier, settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import DuckDBIndex
-from findingmodel.index_code import IndexCode
 from findingmodel.tools.ontology_search import OntologySearchResult
 
 # Type aliases for constrained value sets

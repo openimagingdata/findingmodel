@@ -1,7 +1,8 @@
 from typing import Protocol, Sequence
 
+from oidm_common.models import IndexCode
+
 from findingmodel.finding_model import ChoiceAttributeIded, FindingModelFull, IndexCodeList
-from findingmodel.index_code import IndexCode
 
 
 class Codeable(Protocol):

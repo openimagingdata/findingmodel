@@ -537,7 +537,7 @@ def test_publish_integration_with_fm_test_bucket(tmp_path: Path, full_model: Fin
     test_db_path = tmp_path / "test_integration.duckdb"
 
     # Import DuckDB utilities
-    from findingmodel.tools.duckdb_utils import setup_duckdb_connection
+    from oidm_common.duckdb import setup_duckdb_connection
 
     conn = setup_duckdb_connection(test_db_path, read_only=False)
     try:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from array import array
 from pathlib import Path
 from typing import Final
@@ -10,7 +11,7 @@ from typing import Final
 import duckdb
 from platformdirs import user_cache_dir
 
-from findingmodel import logger
+logger = logging.getLogger(__name__)
 
 _DEFAULT_CACHE_PATH: Final[Path] = (
     Path(user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True)) / "embeddings.duckdb"

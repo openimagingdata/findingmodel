@@ -1,5 +1,10 @@
 from loguru import logger as logger
 
+# Re-export from oidm_common for backward compatibility
+from oidm_common.embeddings import EmbeddingCache as EmbeddingCache
+from oidm_common.models import IndexCode as IndexCode
+from oidm_common.models import WebReference as WebReference
+
 import findingmodel.tools as tools
 
 from .anatomic_location import AnatomicLocation as AnatomicLocation
@@ -21,8 +26,6 @@ from .finding_model import NumericAttribute as NumericAttribute
 from .finding_model import NumericAttributeIded as NumericAttributeIded
 from .index import DuckDBIndex as DuckDBIndex
 from .index import DuckDBIndex as Index  # DuckDB is now the default Index
-from .index_code import IndexCode as IndexCode
-from .web_reference import WebReference as WebReference
 
 __all__ = [
     "AnatomicLocation",
@@ -30,6 +33,7 @@ __all__ = [
     "AnatomicRegion",
     "BodySystem",
     "DuckDBIndex",
+    "EmbeddingCache",
     "FindingInfo",
     "FindingModelBase",
     "FindingModelFull",

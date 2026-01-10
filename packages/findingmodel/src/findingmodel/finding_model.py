@@ -3,12 +3,12 @@ import re
 from enum import Enum
 from typing import Annotated, Any, Iterable, Literal, Sequence
 
+from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field, model_validator
 
 from findingmodel.contributor import Organization, Person
 
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
-from .index_code import IndexCode
 
 # TODO: Move random digits and ID generation to common.py
 # TODO: Add `slug_name` properties to the models, attributes, and choice values

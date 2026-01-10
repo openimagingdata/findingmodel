@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import duckdb
+from oidm_common.duckdb import setup_duckdb_connection
+from oidm_common.models import IndexCode, WebReference
 
 from findingmodel.anatomic_location import (
     AnatomicLocation,
@@ -21,9 +23,6 @@ from findingmodel.anatomic_location import (
     LocationType,
     StructureType,
 )
-from findingmodel.index_code import IndexCode
-from findingmodel.tools.duckdb_utils import setup_duckdb_connection
-from findingmodel.web_reference import WebReference
 
 if TYPE_CHECKING:
     from typing_extensions import Self

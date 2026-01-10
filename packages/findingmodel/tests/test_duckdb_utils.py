@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import duckdb
 import pytest
-from findingmodel.tools.duckdb_utils import (
+from oidm_common.duckdb import (
     create_fts_index,
     create_hnsw_index,
     drop_search_indexes,

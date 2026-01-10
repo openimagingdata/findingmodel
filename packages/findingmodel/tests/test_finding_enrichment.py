@@ -14,8 +14,8 @@ from typing import Any
 
 import pytest
 from conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
+from findingmodel import IndexCode
 from findingmodel.finding_model import FindingModelFull
-from findingmodel.index_code import IndexCode
 from findingmodel.tools.finding_enrichment import (
     ETIOLOGIES,
     BodyRegion,

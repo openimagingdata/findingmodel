@@ -10,6 +10,7 @@ resolution-markers = [
 members = [
     "findingmodel",
     "findingmodel-workspace",
+    "oidm-common",
 ]
 
 [[package]]
@@ -555,6 +556,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "loguru" },
     { name = "mcp" },
+    { name = "oidm-common" },
     { name = "openai" },
     { name = "platformdirs" },
     { name = "pooch" },
@@ -576,6 +578,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "mcp", specifier = ">=1.0.0" },
+    { name = "oidm-common", editable = "packages/oidm-common" },
     { name = "openai", specifier = ">=1.76" },
     { name = "platformdirs", specifier = ">=4.0.0" },
     { name = "pooch", specifier = ">=1.8.0" },
@@ -1572,6 +1575,38 @@ sdist = { url = "https://files.pythonhosted.org/packages/54/d2/92fa3243712b9a3e8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/33/bd5b9137445ea4b680023eb0469b2bb969d61303dedb2aac6560ff3d14a1/notebook_shim-0.2.4-py3-none-any.whl", hash = "sha256:411a5be4e9dc882a074ccbcae671eda64cceb068767e9a3419096986560e1cef", size = 13307, upload-time = "2024-02-14T23:35:16.286Z" },
 ]
+
+[[package]]
+name = "oidm-common"
+version = "0.1.0"
+source = { editable = "packages/oidm-common" }
+dependencies = [
+    { name = "duckdb" },
+    { name = "httpx" },
+    { name = "loguru" },
+    { name = "platformdirs" },
+    { name = "pooch" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+]
+
+[package.optional-dependencies]
+openai = [
+    { name = "openai" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "duckdb", specifier = ">=1.0" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "loguru", specifier = ">=0.7" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0" },
+    { name = "platformdirs", specifier = ">=4.0" },
+    { name = "pooch", specifier = ">=1.8" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pydantic-settings", specifier = ">=2.9" },
+]
+provides-extras = ["openai"]
 
 [[package]]
 name = "openai"

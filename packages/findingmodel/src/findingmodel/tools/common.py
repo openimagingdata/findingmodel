@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
+from oidm_common.embeddings import EmbeddingCache
 from openai import AsyncOpenAI
 from tavily import AsyncTavilyClient
 
 from findingmodel import logger
 from findingmodel.config import settings
-from findingmodel.embedding_cache import EmbeddingCache
 
 # Module-level singleton for embedding cache
 _embedding_cache: EmbeddingCache | None = None

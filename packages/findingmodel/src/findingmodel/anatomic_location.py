@@ -6,10 +6,8 @@ import weakref
 from enum import Enum
 from typing import TYPE_CHECKING, cast
 
+from oidm_common.models import IndexCode, WebReference
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
-
-from findingmodel.index_code import IndexCode
-from findingmodel.web_reference import WebReference
 
 if TYPE_CHECKING:
     from findingmodel.anatomic_index import AnatomicLocationIndex

@@ -11,16 +11,12 @@ from typing import Any
 
 import duckdb
 import httpx
+from oidm_common.duckdb import create_fts_index, create_hnsw_index, setup_duckdb_connection
 from openai import AsyncOpenAI
 
 from findingmodel import logger
 from findingmodel.config import settings
-from findingmodel.tools.duckdb_utils import (
-    batch_embeddings_for_duckdb,
-    create_fts_index,
-    create_hnsw_index,
-    setup_duckdb_connection,
-)
+from findingmodel.tools.duckdb_utils import batch_embeddings_for_duckdb
 
 # Column type definitions for bulk JSON loading
 SYNONYM_COLUMNS = {

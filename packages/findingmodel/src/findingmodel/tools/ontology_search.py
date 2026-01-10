@@ -12,11 +12,11 @@ import asyncio
 from typing import Any, ClassVar, Optional, Protocol, cast
 
 import httpx
+from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field
 
 from findingmodel import logger
 from findingmodel.config import settings
-from findingmodel.index_code import IndexCode
 
 # Table name to index code system mapping
 TABLE_TO_INDEX_CODE_SYSTEM = {

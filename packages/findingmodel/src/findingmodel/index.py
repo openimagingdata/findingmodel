@@ -12,6 +12,15 @@ from types import TracebackType
 from typing import Literal
 
 import duckdb
+from oidm_common.duckdb import (
+    create_fts_index,
+    create_hnsw_index,
+    drop_search_indexes,
+    l2_to_cosine_similarity,
+    normalize_scores,
+    rrf_fusion,
+    setup_duckdb_connection,
+)
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
@@ -20,17 +29,7 @@ from findingmodel.common import normalize_name
 from findingmodel.config import ConfigurationError, settings
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
-from findingmodel.tools.duckdb_utils import (
-    batch_embeddings_for_duckdb,
-    create_fts_index,
-    create_hnsw_index,
-    drop_search_indexes,
-    get_embedding_for_duckdb,
-    l2_to_cosine_similarity,
-    normalize_scores,
-    rrf_fusion,
-    setup_duckdb_connection,
-)
+from findingmodel.tools.duckdb_utils import batch_embeddings_for_duckdb, get_embedding_for_duckdb
 
 DEFAULT_CONTRIBUTOR_ROLE = "contributor"
 PLACEHOLDER_ATTRIBUTE_ID: str = "OIFMA_XXXX_000000"

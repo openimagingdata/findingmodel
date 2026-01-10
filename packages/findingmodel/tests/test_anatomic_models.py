@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from findingmodel import IndexCode, WebReference
 from findingmodel.anatomic_location import (
     AnatomicLocation,
     AnatomicRef,
@@ -12,8 +13,6 @@ from findingmodel.anatomic_location import (
     LocationType,
     StructureType,
 )
-from findingmodel.index_code import IndexCode
-from findingmodel.web_reference import WebReference
 
 # =============================================================================
 # AnatomicRef Tests

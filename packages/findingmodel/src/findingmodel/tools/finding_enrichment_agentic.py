@@ -9,6 +9,7 @@ This approach is simpler and lets the model orchestrate the workflow.
 
 from datetime import datetime, timezone
 
+from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 
@@ -16,7 +17,6 @@ from findingmodel import logger
 from findingmodel.config import ModelTier, settings
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import DuckDBIndex
-from findingmodel.index_code import IndexCode
 
 # Import shared types from the main module
 from findingmodel.tools.finding_enrichment import (

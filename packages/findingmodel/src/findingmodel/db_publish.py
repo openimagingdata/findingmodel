@@ -262,7 +262,7 @@ def get_database_stats(db_path: Path) -> DatabaseStats:
         raise FileNotFoundError(f"Database file not found: {db_path}")
 
     # Import locally to avoid circular dependency
-    from findingmodel.tools.duckdb_utils import setup_duckdb_connection
+    from oidm_common.duckdb import setup_duckdb_connection
 
     logger.debug(f"Querying database stats for {db_path}")
 
@@ -311,7 +311,7 @@ def get_sample_oifm_ids(db_path: Path, limit: int = 3) -> list[str]:
         raise FileNotFoundError(f"Database file not found: {db_path}")
 
     # Import locally to avoid circular dependency
-    from findingmodel.tools.duckdb_utils import setup_duckdb_connection
+    from oidm_common.duckdb import setup_duckdb_connection
 
     logger.debug(f"Querying {limit} sample OIFM IDs from {db_path}")
 
@@ -351,7 +351,7 @@ def get_complete_model_json(db_path: Path, oifm_id: str) -> str:
         raise FileNotFoundError(f"Database file not found: {db_path}")
 
     # Import locally to avoid circular dependency
-    from findingmodel.tools.duckdb_utils import setup_duckdb_connection
+    from oidm_common.duckdb import setup_duckdb_connection
 
     logger.debug(f"Querying model JSON for {oifm_id} from {db_path}")
 

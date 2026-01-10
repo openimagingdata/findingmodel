@@ -6,10 +6,9 @@ import findingmodel.tools.finding_description as finding_description
 import httpx
 import pytest
 from conftest import TEST_OPENAI_MODEL
-from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, logger
+from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
 from findingmodel.config import settings
 from findingmodel.finding_model import AttributeType, ChoiceAttributeIded
-from findingmodel.index_code import IndexCode
 from pydantic_ai import models
 
 # Prevent accidental model requests in unit tests

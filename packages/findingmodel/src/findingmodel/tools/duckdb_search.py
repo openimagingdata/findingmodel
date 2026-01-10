@@ -4,10 +4,11 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
+from oidm_common.duckdb import rrf_fusion, setup_duckdb_connection
 from openai import AsyncOpenAI
 
 from findingmodel.config import settings
-from findingmodel.tools.duckdb_utils import get_embedding_for_duckdb, rrf_fusion, setup_duckdb_connection
+from findingmodel.tools.duckdb_utils import get_embedding_for_duckdb
 from findingmodel.tools.ontology_search import OntologySearchProtocol, OntologySearchResult
 
 

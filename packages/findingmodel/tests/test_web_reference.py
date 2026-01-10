@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from findingmodel.web_reference import WebReference
+from findingmodel import WebReference
 
 
 class TestWebReference:

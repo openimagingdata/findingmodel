@@ -17,7 +17,7 @@ from findingmodel.anatomic_migration import (
     _prepare_all_records,
 )
 from findingmodel.config import settings
-from findingmodel.tools.duckdb_utils import setup_duckdb_connection
+from oidm_common.duckdb import setup_duckdb_connection
 from pydantic_ai import models
 
 # Prevent accidental model requests in unit tests
@@ -314,7 +314,7 @@ def test_index_creation_fts(schema_conn: duckdb.DuckDBPyConnection) -> None:
     schema_conn.commit()
 
     # Create FTS index
-    from findingmodel.tools.duckdb_utils import create_fts_index
+    from oidm_common.duckdb import create_fts_index
 
     create_fts_index(
         schema_conn,
@@ -363,7 +363,7 @@ def test_index_creation_hnsw(schema_conn: duckdb.DuckDBPyConnection) -> None:
     schema_conn.commit()
 
     # Create HNSW index
-    from findingmodel.tools.duckdb_utils import create_hnsw_index
+    from oidm_common.duckdb import create_hnsw_index
 
     try:
         create_hnsw_index(

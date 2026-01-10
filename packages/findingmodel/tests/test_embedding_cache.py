@@ -11,7 +11,7 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-from findingmodel.embedding_cache import EmbeddingCache
+from findingmodel import EmbeddingCache
 
 
 @pytest.fixture
