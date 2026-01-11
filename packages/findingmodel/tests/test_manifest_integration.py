@@ -19,8 +19,8 @@ from unittest.mock import patch
 
 import pytest
 from findingmodel.config import settings
-from oidm_common.distribution import clear_manifest_cache
 from findingmodel.index import DuckDBIndex
+from oidm_common.distribution import clear_manifest_cache
 
 
 def test_duckdb_index_uses_manifest_when_no_db_path_provided() -> None:

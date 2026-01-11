@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated, Literal, cast
+from typing import Annotated, Literal
 
 import httpx
 import openai
@@ -520,16 +520,13 @@ def ensure_index_db() -> Path:
     Returns:
         Path to the finding models index database
     """
-    return cast(
-        Path,
-        oidm_ensure_db_file(
-            file_path=settings.duckdb_index_path,
-            remote_url=settings.remote_index_db_url,
-            remote_hash=settings.remote_index_db_hash,
-            manifest_key="finding_models",
-            manifest_url=settings.remote_manifest_url,
-            app_name="findingmodel",
-        ),
+    return oidm_ensure_db_file(
+        file_path=settings.duckdb_index_path,
+        remote_url=settings.remote_index_db_url,
+        remote_hash=settings.remote_index_db_hash,
+        manifest_key="finding_models",
+        manifest_url=settings.remote_manifest_url,
+        app_name="findingmodel",
     )
 
 

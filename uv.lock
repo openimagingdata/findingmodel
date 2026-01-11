@@ -12,6 +12,7 @@ members = [
     "findingmodel",
     "findingmodel-workspace",
     "oidm-common",
+    "oidm-maintenance",
 ]
 
 [[package]]
@@ -245,16 +246,16 @@ wheels = [
 
 [[package]]
 name = "boto3-stubs"
-version = "1.40.75"
+version = "1.42.25"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore-stubs" },
     { name = "types-s3transfer" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/86/91167946eec229012960136aae62218cd27f21fa867a9ef3eae16e6ac561/boto3_stubs-1.40.75.tar.gz", hash = "sha256:5bba917ad4b2d905a6ae4cf07ac5e82bdd06815a25b74aec738e9115bd76d8a3", size = 99529, upload-time = "2025-11-17T22:17:37.385Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/d4/b36e0c588664a126f7a1d3e9885c606d53f0432e27c3640321f659aa8c44/boto3_stubs-1.42.25.tar.gz", hash = "sha256:fd40c758991ae1bcbd1adbb153d513a028bf525642f193f9a77f71220c493cf6", size = 100896, upload-time = "2026-01-09T20:44:53.587Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/87/34d65b2774cb1b7a6966f5f271872c5845c4e2f19d68224fe73d9bf8dae8/boto3_stubs-1.40.75-py3-none-any.whl", hash = "sha256:c31c013a1bff3b2440518e5e91baef13598537459c9f885ce372bea4c888efc2", size = 69049, upload-time = "2025-11-17T22:17:29.059Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/3e/5279b24cbd0f92dd52a0ad1d81cb7d59c889ab60d19aaaaad6d64c8ad2e7/boto3_stubs-1.42.25-py3-none-any.whl", hash = "sha256:a61a4caaf2199d11510bb18d044254fa0fd1929a6b07817f00faa8e23437adc5", size = 69782, upload-time = "2026-01-09T20:44:47.033Z" },
 ]
 
 [package.optional-dependencies]
@@ -1508,14 +1509,14 @@ wheels = [
 
 [[package]]
 name = "mypy-boto3-s3"
-version = "1.40.61"
+version = "1.42.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/1e/27cebe8c95fa9899f4e4ee5f4d3d15fe946ca2dfac43470bc427069f30c4/mypy_boto3_s3-1.40.61.tar.gz", hash = "sha256:2655db143cae37fbc68b53aae34fbc5c904925d04b0f263ae7c38fb560b6a85f", size = 76037, upload-time = "2025-10-28T19:45:14.647Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a0/32/aa7208348dc8db8bd4ea357e5e6e1e8bcba44419033d03456c3b767a6c98/mypy_boto3_s3-1.42.21.tar.gz", hash = "sha256:cab71c918aac7d98c4d742544c722e37d8e7178acb8bc88a0aead7b1035026d2", size = 76024, upload-time = "2026-01-03T02:46:35.161Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/46/f10a3266c1676d385afdbb2588875d5128b6c69ae46a1c1ee75540271ebd/mypy_boto3_s3-1.40.61-py3-none-any.whl", hash = "sha256:51666977f81b6f7a88fe22eaf041b755a2873d0225e481ad5241bb28e6f6bd47", size = 82826, upload-time = "2025-10-28T19:45:12.542Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/c0/01babfa8cef5f992a2a0f3d52fc1123fbbc336ab6decfdfc8f702e88a8af/mypy_boto3_s3-1.42.21-py3-none-any.whl", hash = "sha256:f5b7d1ed718ba5b00f67e95a9a38c6a021159d3071ea235e6cf496e584115ded", size = 83169, upload-time = "2026-01-03T02:46:33.356Z" },
 ]
 
 [[package]]
@@ -1650,6 +1651,35 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.9" },
 ]
 provides-extras = ["openai"]
+
+[[package]]
+name = "oidm-maintenance"
+version = "0.1.0"
+source = { editable = "packages/oidm-maintenance" }
+dependencies = [
+    { name = "anatomic-locations" },
+    { name = "boto3" },
+    { name = "boto3-stubs", extra = ["s3"] },
+    { name = "click" },
+    { name = "findingmodel" },
+    { name = "oidm-common" },
+    { name = "openai" },
+    { name = "pooch" },
+    { name = "rich" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anatomic-locations", editable = "packages/anatomic-locations" },
+    { name = "boto3", specifier = ">=1.40" },
+    { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.42.25" },
+    { name = "click", specifier = ">=8.0" },
+    { name = "findingmodel", editable = "packages/findingmodel" },
+    { name = "oidm-common", editable = "packages/oidm-common" },
+    { name = "openai", specifier = ">=1.0" },
+    { name = "pooch", specifier = ">=1.8.0" },
+    { name = "rich", specifier = ">=13.0" },
+]
 
 [[package]]
 name = "openai"
