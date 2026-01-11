@@ -821,7 +821,7 @@ def verify_database_populated() -> None:
     Raises:
         RuntimeError: If database is not found or not populated with required test data
     """
-    from findingmodel.config import ensure_anatomic_db
+    from anatomic_locations.config import ensure_anatomic_db
     from findingmodel.tools.duckdb_utils import setup_duckdb_connection
 
     # Get database path

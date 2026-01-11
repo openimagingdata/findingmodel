@@ -18,7 +18,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from findingmodel.config import clear_manifest_cache, settings
+from findingmodel.config import settings
+from oidm_common.distribution import clear_manifest_cache
 from findingmodel.index import DuckDBIndex
 
 
@@ -51,7 +52,7 @@ def test_duckdb_index_uses_manifest_when_no_db_path_provided() -> None:
 
     # Mock fetch_manifest to return our test manifest
     with (
-        patch("findingmodel.config.fetch_manifest", return_value=test_manifest) as mock_fetch,
+        patch("oidm_common.distribution.manifest.fetch_manifest", return_value=test_manifest) as mock_fetch,
         patch("pooch.retrieve") as mock_retrieve,
         # Mock Path.exists to return False so manifest will be called
         patch("pathlib.Path.exists", return_value=False),
@@ -186,7 +187,7 @@ async def test_manifest_integration_with_mock_download(tmp_path: Path) -> None:
         temp_index.conn.close()
 
     with (
-        patch("findingmodel.config.fetch_manifest", return_value=test_manifest) as mock_fetch,
+        patch("oidm_common.distribution.manifest.fetch_manifest", return_value=test_manifest) as mock_fetch,
         patch("pooch.retrieve", return_value=str(real_db_path)) as mock_retrieve,
         # Mock Path.exists to return False so manifest will be called
         patch("pathlib.Path.exists", return_value=False),
@@ -221,7 +222,7 @@ def test_ensure_db_file_with_manifest_key_fetches_manifest() -> None:
 
     EXPECTED RESULT: This test should PASS, showing how the fix should work.
     """
-    from findingmodel.config import ensure_db_file
+    from oidm_common.distribution import ensure_db_file
 
     clear_manifest_cache()
 
@@ -237,7 +238,7 @@ def test_ensure_db_file_with_manifest_key_fetches_manifest() -> None:
     }
 
     with (
-        patch("findingmodel.config.fetch_manifest", return_value=test_manifest) as mock_fetch,
+        patch("oidm_common.distribution.manifest.fetch_manifest", return_value=test_manifest) as mock_fetch,
         patch("pooch.retrieve") as mock_retrieve,
         # Mock Path.exists to return False so manifest will be called
         patch("pathlib.Path.exists", return_value=False),
@@ -251,6 +252,7 @@ def test_ensure_db_file_with_manifest_key_fetches_manifest() -> None:
             remote_url=settings.remote_index_db_url,
             remote_hash=settings.remote_index_db_hash,
             manifest_key="finding_models",  # CORRECT: Provide manifest_key
+            manifest_url=settings.remote_manifest_url,  # Required for managed downloads
         )
 
         # CORRECT BEHAVIOR: fetch_manifest should be called

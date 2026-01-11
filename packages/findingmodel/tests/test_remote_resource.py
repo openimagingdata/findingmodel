@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from findingmodel.config import ensure_db_file
+from oidm_common.distribution import ensure_db_file
 
 
 class TestEnsureDbFileMocked:
@@ -17,7 +17,7 @@ class TestEnsureDbFileMocked:
         test_file.write_text("existing data")
 
         with (
-            patch("findingmodel.config.user_data_dir") as mock_user_data_dir,
+            patch("oidm_common.distribution.paths.user_data_dir") as mock_user_data_dir,
             patch("pooch.retrieve") as mock_pooch_retrieve,
             patch("pooch.file_hash") as mock_file_hash,
         ):
@@ -50,7 +50,7 @@ class TestEnsureDbFileMocked:
         actual_hash = pooch.file_hash(str(test_file), alg="sha256")
 
         with (
-            patch("findingmodel.config.user_data_dir") as mock_user_data_dir,
+            patch("oidm_common.distribution.paths.user_data_dir") as mock_user_data_dir,
             patch("pooch.retrieve") as mock_pooch_retrieve,
         ):
             mock_user_data_dir.return_value = str(data_dir)
@@ -75,7 +75,7 @@ class TestEnsureDbFileMocked:
         test_file.write_text("existing data")
 
         with (
-            patch("findingmodel.config.user_data_dir") as mock_user_data_dir,
+            patch("oidm_common.distribution.paths.user_data_dir") as mock_user_data_dir,
             patch("pooch.retrieve") as mock_pooch_retrieve,
         ):
             mock_user_data_dir.return_value = str(data_dir)
@@ -104,7 +104,7 @@ class TestEnsureDbFileMocked:
         # Don't create file - ensure_db_file should do that
         downloaded_file = data_dir / "test.duckdb"
 
-        with patch("findingmodel.config.user_data_dir") as mock_user_data_dir:
+        with patch("oidm_common.distribution.paths.user_data_dir") as mock_user_data_dir:
             mock_user_data_dir.return_value = str(data_dir)
             with patch("pooch.retrieve") as mock_pooch_retrieve:
                 # Mock pooch to create the file when called
@@ -138,20 +138,21 @@ class TestEnsureDbFileMocked:
         data_dir = tmp_path
 
         with (
-            patch("findingmodel.config.user_data_dir") as mock_user_data_dir,
+            patch("oidm_common.distribution.paths.user_data_dir") as mock_user_data_dir,
             patch("pooch.retrieve") as mock_pooch_retrieve,
-            patch("findingmodel.config.fetch_manifest", side_effect=Exception("Network error")),
+            patch("oidm_common.distribution.manifest.fetch_manifest", side_effect=Exception("Network error")),
         ):
             mock_user_data_dir.return_value = str(data_dir)
-            # Should raise ConfigurationError when manifest fails and no fallback config
-            from findingmodel.config import ConfigurationError
+            # Should raise DistributionError when manifest fails and no fallback config
+            from oidm_common.distribution import DistributionError
 
-            with pytest.raises(ConfigurationError, match="Cannot fetch manifest"):
+            with pytest.raises(DistributionError, match="Cannot fetch manifest"):
                 ensure_db_file(
                     None,  # Use managed download mode
                     None,
                     None,
                     manifest_key="test",
+                    manifest_url="http://example.com/manifest.json",
                 )
 
             # Should not call pooch
@@ -163,7 +164,7 @@ class TestEnsureDbFileMocked:
         data_dir = tmp_path
         downloaded_file = data_dir / "test.duckdb"
 
-        with patch("findingmodel.config.user_data_dir") as mock_user_data_dir:
+        with patch("oidm_common.distribution.paths.user_data_dir") as mock_user_data_dir:
             mock_user_data_dir.return_value = str(data_dir)
             with patch("pooch.retrieve") as mock_pooch_retrieve:
                 # Create the file as part of the mock
@@ -196,7 +197,7 @@ class TestEnsureDbFileRealDownload:
 
         data_dir = tmp_path
 
-        with patch("findingmodel.config.user_data_dir") as mock_user_data_dir:
+        with patch("oidm_common.distribution.paths.user_data_dir") as mock_user_data_dir:
             mock_user_data_dir.return_value = str(data_dir)
 
             # First call - should download
@@ -234,56 +235,33 @@ class TestEnsureDbFileRealDownload:
 
 
 class TestWrapperFunctions:
-    """Tests for ensure_index_db() and ensure_anatomic_db() wrappers."""
+    """Tests for ensure_index_db() wrapper."""
 
     def test_ensure_index_db_calls_ensure_db_file_correctly(self, tmp_path: Path) -> None:
-        """Test that ensure_index_db() calls ensure_db_file() with correct parameters."""
+        """Test that ensure_index_db() calls oidm_ensure_db_file() with correct parameters."""
         from unittest.mock import patch
 
         from findingmodel.config import ensure_index_db
 
         with (
-            patch("findingmodel.config.ensure_db_file") as mock_ensure,
+            patch("findingmodel.config.oidm_ensure_db_file") as mock_ensure,
             patch("findingmodel.config.settings") as mock_settings,
         ):
             mock_settings.duckdb_index_path = "test.duckdb"
             mock_settings.remote_index_db_url = "http://example.com/index.duckdb"
             mock_settings.remote_index_db_hash = "sha256:abc123"
+            mock_settings.remote_manifest_url = "http://example.com/manifest.json"
             mock_ensure.return_value = tmp_path / "test.duckdb"
 
             result = ensure_index_db()
 
-            # Verify ensure_db_file was called with correct parameters
+            # Verify oidm_ensure_db_file was called with correct parameters
             mock_ensure.assert_called_once_with(
-                "test.duckdb",
-                "http://example.com/index.duckdb",
-                "sha256:abc123",
+                file_path="test.duckdb",
+                remote_url="http://example.com/index.duckdb",
+                remote_hash="sha256:abc123",
                 manifest_key="finding_models",
+                manifest_url="http://example.com/manifest.json",
+                app_name="findingmodel",
             )
             assert result == tmp_path / "test.duckdb"
-
-    def test_ensure_anatomic_db_calls_ensure_db_file_correctly(self, tmp_path: Path) -> None:
-        """Test that ensure_anatomic_db() calls ensure_db_file() with correct parameters."""
-        from unittest.mock import patch
-
-        from findingmodel.config import ensure_anatomic_db
-
-        with (
-            patch("findingmodel.config.ensure_db_file") as mock_ensure,
-            patch("findingmodel.config.settings") as mock_settings,
-        ):
-            mock_settings.duckdb_anatomic_path = "anatomic.duckdb"
-            mock_settings.remote_anatomic_db_url = "http://example.com/anatomic.duckdb"
-            mock_settings.remote_anatomic_db_hash = "sha256:def456"
-            mock_ensure.return_value = tmp_path / "anatomic.duckdb"
-
-            result = ensure_anatomic_db()
-
-            # Verify ensure_db_file was called with correct parameters
-            mock_ensure.assert_called_once_with(
-                "anatomic.duckdb",
-                "http://example.com/anatomic.duckdb",
-                "sha256:def456",
-                manifest_key="anatomic_locations",
-            )
-            assert result == tmp_path / "anatomic.duckdb"

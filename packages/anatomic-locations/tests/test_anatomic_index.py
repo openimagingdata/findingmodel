@@ -5,17 +5,30 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from findingmodel.anatomic_index import AnatomicLocationIndex
-from findingmodel.anatomic_location import (
+from anatomic_locations import (
+    AnatomicLocationIndex,
     AnatomicRegion,
     BodySystem,
     Laterality,
     LocationType,
     StructureType,
 )
-from findingmodel.anatomic_migration import create_anatomic_database
-from findingmodel.config import settings
+from anatomic_locations.migration import create_anatomic_database
 from openai import AsyncOpenAI
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+# Create a minimal settings class for tests
+class TestSettings(BaseSettings):
+    """Minimal settings for anatomic location tests."""
+
+    model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)
+
+    openai_embedding_dimensions: int = 512
+
+
+test_settings = TestSettings()
+
 
 # =============================================================================
 # Fixtures
@@ -106,10 +119,15 @@ async def test_database(tmp_path: Path) -> Path:
 
     # Create database with mocked embeddings
     mock_client = AsyncMock(spec=AsyncOpenAI)
-    mock_embeddings = [[0.1] * settings.openai_embedding_dimensions] * len(test_records)
+    mock_embeddings = [[0.1] * test_settings.openai_embedding_dimensions] * len(test_records)
 
-    with patch("findingmodel.anatomic_migration.batch_embeddings_for_duckdb", return_value=mock_embeddings):
-        await create_anatomic_database(db_path, test_records, mock_client)
+    with patch(
+        "anatomic_locations.migration.generate_embeddings_batch",
+        new=AsyncMock(return_value=mock_embeddings),
+    ):
+        await create_anatomic_database(
+            db_path, test_records, mock_client, dimensions=test_settings.openai_embedding_dimensions
+        )
 
     return db_path
 

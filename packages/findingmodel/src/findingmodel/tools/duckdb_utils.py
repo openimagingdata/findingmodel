@@ -1,18 +1,17 @@
 """Embedding utilities for DuckDB-based search components.
 
-This module contains OpenAI-specific embedding functions that were not extracted
-to oidm-common. For general DuckDB utilities, see oidm_common.duckdb.
+This module provides convenience wrappers around oidm-common embedding generation
+with config-based defaults. For general DuckDB utilities, see oidm_common.duckdb.
 """
 
 from __future__ import annotations
 
-from array import array
 from collections.abc import Sequence
 
+from oidm_common.embeddings import generate_embedding, generate_embeddings_batch
 from openai import AsyncOpenAI
 
 from findingmodel.config import settings
-from findingmodel.tools.common import get_embedding, get_embeddings_batch
 
 
 async def get_embedding_for_duckdb(
@@ -22,20 +21,35 @@ async def get_embedding_for_duckdb(
     model: str | None = None,
     dimensions: int | None = None,
 ) -> list[float] | None:
-    """Generate a float32 embedding suitable for DuckDB storage."""
+    """Generate a float32 embedding suitable for DuckDB storage.
+
+    Args:
+        text: Text to embed
+        client: Optional OpenAI client (creates one if not provided)
+        model: Embedding model to use (default: from config settings)
+        dimensions: Number of dimensions for the embedding (default: from config settings)
+
+    Returns:
+        Float32 embedding vector or None if failed
+    """
+    # Create client if not provided
+    if client is None:
+        if not settings.openai_api_key:
+            return None
+        client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+
+    # Resolve config defaults
     resolved_model = model or settings.openai_embedding_model
     resolved_dimensions = dimensions or settings.openai_embedding_dimensions
-    embedding = await get_embedding(
-        text,
+
+    # Use oidm-common function (already returns float32)
+    result: list[float] | None = await generate_embedding(
+        text=text,
         client=client,
         model=resolved_model,
         dimensions=resolved_dimensions,
     )
-
-    if embedding is None:
-        return None
-
-    return _to_float32(embedding)
+    return result
 
 
 async def batch_embeddings_for_duckdb(
@@ -45,29 +59,38 @@ async def batch_embeddings_for_duckdb(
     model: str | None = None,
     dimensions: int | None = None,
 ) -> list[list[float] | None]:
-    """Generate float32 embeddings for several texts in a single API call."""
+    """Generate float32 embeddings for several texts in a single API call.
+
+    Args:
+        texts: Sequence of texts to embed
+        client: Optional OpenAI client (creates one if not provided)
+        model: Embedding model to use (default: from config settings)
+        dimensions: Number of dimensions for the embeddings (default: from config settings)
+
+    Returns:
+        List of float32 embedding vectors (or None for failed items)
+    """
     if not texts:
         return []
 
+    # Create client if not provided
+    if client is None:
+        if not settings.openai_api_key:
+            return [None] * len(texts)
+        client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
+
+    # Resolve config defaults
     resolved_model = model or settings.openai_embedding_model
     resolved_dimensions = dimensions or settings.openai_embedding_dimensions
-    embeddings = await get_embeddings_batch(
-        list(texts),
+
+    # Use oidm-common function (already returns float32)
+    result: list[list[float] | None] = await generate_embeddings_batch(
+        texts=list(texts),
         client=client,
         model=resolved_model,
         dimensions=resolved_dimensions,
     )
-
-    results: list[list[float] | None] = []
-    for embedding in embeddings:
-        results.append(None if embedding is None else _to_float32(embedding))
-
-    return results
-
-
-def _to_float32(values: Sequence[float]) -> list[float]:
-    """Convert an iterable of floats to 32-bit precision."""
-    return list(array("f", values))
+    return result
 
 
 __all__ = [

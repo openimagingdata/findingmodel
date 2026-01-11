@@ -8,13 +8,8 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from findingmodel.anatomic_index import AnatomicLocationIndex
-from findingmodel.anatomic_location import (
-    AnatomicLocation,
-    AnatomicRegion,
-    Laterality,
-)
-from findingmodel.anatomic_migration import create_anatomic_database
+from anatomic_locations import AnatomicLocation, AnatomicLocationIndex, AnatomicRegion, Laterality
+from anatomic_locations.migration import create_anatomic_database
 from pydantic_ai import models
 
 # Block all AI model requests - embeddings are pre-generated fixtures
@@ -50,8 +45,12 @@ async def built_test_db(
     # Mock the embeddings function to return pre-generated embeddings
     mock_client = AsyncMock()
 
-    with patch("findingmodel.anatomic_migration.batch_embeddings_for_duckdb", return_value=ordered_embeddings):
-        await create_anatomic_database(db_path, anatomic_sample_data, mock_client)
+    # Sample embeddings use 512 dimensions
+    with patch(
+        "anatomic_locations.migration.generate_embeddings_batch",
+        new=AsyncMock(return_value=ordered_embeddings),
+    ):
+        await create_anatomic_database(db_path, anatomic_sample_data, mock_client, dimensions=512)
 
     return db_path
 

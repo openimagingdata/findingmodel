@@ -8,10 +8,53 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "anatomic-locations",
     "findingmodel",
     "findingmodel-workspace",
     "oidm-common",
 ]
+
+[[package]]
+name = "anatomic-locations"
+version = "0.1.0"
+source = { editable = "packages/anatomic-locations" }
+dependencies = [
+    { name = "click" },
+    { name = "duckdb" },
+    { name = "oidm-common" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "rich" },
+]
+
+[package.optional-dependencies]
+build = [
+    { name = "loguru" },
+    { name = "openai" },
+]
+test = [
+    { name = "openai" },
+    { name = "pydantic-ai-slim" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.0" },
+    { name = "duckdb", specifier = ">=1.0" },
+    { name = "loguru", marker = "extra == 'build'", specifier = ">=0.7" },
+    { name = "oidm-common", editable = "packages/oidm-common" },
+    { name = "openai", marker = "extra == 'build'", specifier = ">=1.0" },
+    { name = "openai", marker = "extra == 'test'", specifier = ">=1.0" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pydantic-ai-slim", marker = "extra == 'test'", specifier = ">=0.1" },
+    { name = "pydantic-settings", specifier = ">=2.9" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0" },
+    { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.24" },
+    { name = "rich", specifier = ">=13.0" },
+]
+provides-extras = ["build", "test"]
 
 [[package]]
 name = "annotated-types"

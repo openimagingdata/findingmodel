@@ -3,8 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from findingmodel import IndexCode, WebReference
-from findingmodel.anatomic_location import (
+from anatomic_locations import (
     AnatomicLocation,
     AnatomicRef,
     AnatomicRegion,
@@ -13,6 +12,7 @@ from findingmodel.anatomic_location import (
     LocationType,
     StructureType,
 )
+from oidm_common import IndexCode, WebReference
 
 # =============================================================================
 # AnatomicRef Tests

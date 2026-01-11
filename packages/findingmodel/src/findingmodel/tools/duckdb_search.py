@@ -25,7 +25,7 @@ class DuckDBOntologySearchClient(OntologySearchProtocol):
             self.db_path = Path(db_path)  # Honor explicit path
         else:
             # Use package data directory with optional download
-            from findingmodel.config import ensure_anatomic_db
+            from anatomic_locations.config import ensure_anatomic_db
 
             self.db_path = ensure_anatomic_db()
         self.conn: duckdb.DuckDBPyConnection | None = None
