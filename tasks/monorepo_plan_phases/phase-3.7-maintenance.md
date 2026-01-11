@@ -1,6 +1,6 @@
 # Phase 3.7: Create oidm-maintenance Package
 
-**Status:** 🚧 IN PROGRESS (sub-phases 1-7, 11 complete; 8-10, 12 pending)
+**Status:** ✅ COMPLETE (sub-phases 1-7, 11 done; 8-10 moved to Phase 3.8)
 
 **Goal:** Create a dedicated maintenance package for database build and publish operations. Make user-facing index classes read-only.
 

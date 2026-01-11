@@ -149,7 +149,8 @@ pip install findingmodel-ai   # Full: adds AI authoring tools
 | [3](monorepo_plan_phases/phase-3-anatomic.md) | Create anatomic-locations | ✅ COMPLETE | Anatomic ontology package |
 | [3.5](monorepo_plan_phases/phase-3.5-embeddings.md) | Embedding Utilities Cleanup | ✅ COMPLETE | Consolidated in oidm-common |
 | [3.6](monorepo_plan_phases/phase-3.6-distribution.md) | Distribution Code Cleanup | ✅ COMPLETE | anatomic-locations has ZERO findingmodel imports |
-| [3.7](monorepo_plan_phases/phase-3.7-maintenance.md) | Create oidm-maintenance | 🚧 IN PROGRESS | Package created; sub-phases 8-10, 12 pending |
+| [3.7](monorepo_plan_phases/phase-3.7-maintenance.md) | Create oidm-maintenance | ✅ COMPLETE | Package created; read-only migration moved to 3.8 |
+| [3.8](monorepo_plan_phases/phase-3.8-critical-fixes.md) | Complete read-only migration | 📋 PLANNED | Strip DuckDBIndex to read-only, fix tests |
 | [4](monorepo_plan_phases/phase-4-findingmodel-ai.md) | Create findingmodel-ai | ⏳ PENDING | Extract AI tools |
 | [5](monorepo_plan_phases/phase-5-cleanup.md) | Clean up findingmodel | ⏳ PENDING | Remove extracted code |
 | [6](monorepo_plan_phases/phase-6-documentation.md) | Documentation and AI Setup | ⏳ PENDING | CLAUDE.md, rules, Serena |
