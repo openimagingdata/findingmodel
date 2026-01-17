@@ -1,4 +1,4 @@
-"""DuckDB integration tests for anatomic location migration.
+"""DuckDB integration tests for anatomic location build internals.
 
 These tests verify schema creation, STRUCT[] insertion, duplicate handling,
 and index creation with real DuckDB instances (using temp files).
@@ -10,13 +10,14 @@ from pathlib import Path
 
 import duckdb
 import pytest
-from anatomic_locations.migration import (
+from oidm_common.duckdb import setup_duckdb_connection
+from oidm_maintenance.anatomic.build import (
     _bulk_load_table,
     _create_indexes,
     _create_schema,
+    _get_location_columns,
     _prepare_all_records,
 )
-from oidm_common.duckdb import setup_duckdb_connection
 from pydantic_ai import models
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,7 +26,7 @@ models.ALLOW_MODEL_REQUESTS = False
 
 
 # Create a minimal settings class for tests
-class TestSettings(BaseSettings):
+class _TestSettings(BaseSettings):
     """Minimal settings for anatomic location tests."""
 
     model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)
@@ -33,7 +34,7 @@ class TestSettings(BaseSettings):
     openai_embedding_dimensions: int = 512
 
 
-test_settings = TestSettings()
+test_settings = _TestSettings()
 
 
 @pytest.fixture
@@ -207,8 +208,6 @@ def test_bulk_load_with_real_data(
     anatomic_records_by_id: dict[str, dict[str, object]],
 ) -> None:
     """Verify bulk load works with real anatomic data."""
-    from anatomic_locations.migration import _get_location_columns
-
     # Prepare records
     location_rows, _searchable_texts, _synonym_rows, _code_rows = _prepare_all_records(
         anatomic_sample_data[:3], anatomic_records_by_id

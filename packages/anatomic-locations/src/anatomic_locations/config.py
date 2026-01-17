@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import cast
 
 from loguru import logger
 from oidm_common.distribution import ensure_db_file
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +18,9 @@ class AnatomicLocationSettings(BaseSettings):
     - ANATOMIC_REMOTE_DB_URL: URL to download database from
     - ANATOMIC_REMOTE_DB_HASH: Expected hash for database file (format: "sha256:...")
     - ANATOMIC_MANIFEST_URL: URL to JSON manifest for database versions
+    - ANATOMIC_OPENAI_API_KEY: OpenAI API key for embeddings (optional, enables semantic search)
+    - ANATOMIC_OPENAI_EMBEDDING_MODEL: OpenAI embedding model (default: text-embedding-3-small)
+    - ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS: Embedding dimensions (default: 512)
     """
 
     model_config = SettingsConfigDict(env_prefix="ANATOMIC_")
@@ -26,6 +29,11 @@ class AnatomicLocationSettings(BaseSettings):
     remote_db_url: str | None = None
     remote_db_hash: str | None = None
     manifest_url: str = "https://findingmodelsdata.t3.storage.dev/manifest.json"
+
+    # Embedding configuration (for hybrid search)
+    openai_api_key: SecretStr | None = Field(default=None)
+    openai_embedding_model: str = Field(default="text-embedding-3-small")
+    openai_embedding_dimensions: int = Field(default=512)
 
 
 # Singleton instance
@@ -62,16 +70,13 @@ def ensure_anatomic_db() -> Path:
         f"remote_url={'set' if s.remote_db_url else 'unset'}, "
         f"manifest_url={s.manifest_url})"
     )
-    return cast(
-        Path,
-        ensure_db_file(
-            file_path=s.db_path,
-            remote_url=s.remote_db_url,
-            remote_hash=s.remote_db_hash,
-            manifest_key="anatomic_locations",
-            manifest_url=s.manifest_url,
-            app_name="anatomic-locations",
-        ),
+    return ensure_db_file(
+        file_path=s.db_path,
+        remote_url=s.remote_db_url,
+        remote_hash=s.remote_db_hash,
+        manifest_key="anatomic_locations",
+        manifest_url=s.manifest_url,
+        app_name="anatomic-locations",
     )
 
 

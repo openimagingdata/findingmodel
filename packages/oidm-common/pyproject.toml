@@ -11,6 +11,7 @@ dependencies = [
     "platformdirs>=4.0",
     "loguru>=0.7",
     "pooch>=1.8",
+    "asyncer==0.0.12",
 ]
 
 [project.optional-dependencies]

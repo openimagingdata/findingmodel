@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import weakref
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from oidm_common.models import IndexCode, WebReference
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
@@ -29,7 +29,7 @@ class AnatomicRef(BaseModel):
         Returns:
             The full AnatomicLocation object
         """
-        return cast("AnatomicLocation", index.get(self.id))
+        return index.get(self.id)
 
 
 class AnatomicLocation(BaseModel):
@@ -152,7 +152,7 @@ class AnatomicLocation(BaseModel):
         Returns:
             List of ancestor locations
         """
-        return cast("list[AnatomicLocation]", self._get_index(index).get_containment_ancestors(self.id))
+        return self._get_index(index).get_containment_ancestors(self.id)
 
     def get_containment_descendants(self, index: AnatomicLocationIndex | None = None) -> list[AnatomicLocation]:
         """Get all descendants in the containment hierarchy.
@@ -165,7 +165,7 @@ class AnatomicLocation(BaseModel):
         Returns:
             List of descendant locations
         """
-        return cast("list[AnatomicLocation]", self._get_index(index).get_containment_descendants(self.id))
+        return self._get_index(index).get_containment_descendants(self.id)
 
     def get_containment_siblings(self, index: AnatomicLocationIndex | None = None) -> list[AnatomicLocation]:
         """Get siblings (same containment parent).
@@ -178,7 +178,7 @@ class AnatomicLocation(BaseModel):
         """
         if not self.containment_parent:
             return []
-        return cast("list[AnatomicLocation]", self._get_index(index).get_children_of(self.containment_parent.id))
+        return self._get_index(index).get_children_of(self.containment_parent.id)
 
     # =========================================================================
     # Part-Of Hierarchy Navigation
@@ -193,7 +193,7 @@ class AnatomicLocation(BaseModel):
         Returns:
             List of part-of ancestors
         """
-        return cast("list[AnatomicLocation]", self._get_index(index).get_partof_ancestors(self.id))
+        return self._get_index(index).get_partof_ancestors(self.id)
 
     def get_parts(self, index: AnatomicLocationIndex | None = None) -> list[AnatomicLocation]:
         """Get all parts (hasParts references).

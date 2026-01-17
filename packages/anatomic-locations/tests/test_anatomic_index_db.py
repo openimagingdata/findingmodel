@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from anatomic_locations import AnatomicLocation, AnatomicLocationIndex, AnatomicRegion, Laterality
-from anatomic_locations.migration import create_anatomic_database
+from oidm_maintenance.anatomic.build import create_anatomic_database
 from pydantic_ai import models
 
 # Block all AI model requests - embeddings are pre-generated fixtures
@@ -47,7 +47,7 @@ async def built_test_db(
 
     # Sample embeddings use 512 dimensions
     with patch(
-        "anatomic_locations.migration.generate_embeddings_batch",
+        "oidm_maintenance.anatomic.build.generate_embeddings_batch",
         new=AsyncMock(return_value=ordered_embeddings),
     ):
         await create_anatomic_database(db_path, anatomic_sample_data, mock_client, dimensions=512)
@@ -159,11 +159,12 @@ class TestAnatomicLocationIndexHierarchyQueries:
 class TestAnatomicLocationIndexSearch:
     """Tests for search methods (FTS and vector)."""
 
-    def test_fts_search_description(self, built_test_db: Path) -> None:
+    @pytest.mark.asyncio
+    async def test_fts_search_description(self, built_test_db: Path) -> None:
         """Full-text search returns results matching description."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(built_test_db) as index:
             # Search for "turbinate" - should find nasal turbinates
-            results = index.search("turbinate", limit=10)
+            results = await index.search("turbinate", limit=10)
 
             # Should find at least one result
             assert len(results) >= 1
@@ -175,7 +176,8 @@ class TestAnatomicLocationIndexSearch:
             # All results should be bound to index
             assert all(r._index is not None for r in results)
 
-    def test_vector_search(
+    @pytest.mark.asyncio
+    async def test_vector_search(
         self,
         built_test_db: Path,
         anatomic_query_embeddings: dict[str, list[float]],
@@ -186,10 +188,10 @@ class TestAnatomicLocationIndexSearch:
         This test verifies the search infrastructure works and can be
         extended for hybrid search in the future.
         """
-        with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(built_test_db) as index:
             # For now, just verify search returns results
             # When hybrid search is implemented, we can use the query embeddings
-            results = index.search("nasal structures", limit=5)
+            results = await index.search("nasal structures", limit=5)
 
             # Should return some results
             assert isinstance(results, list)
@@ -338,9 +340,10 @@ class TestAnatomicLocationIndexWeakRefBinding:
         with pytest.raises(RuntimeError, match="connection not open"):
             location.get_containment_ancestors()
 
-    def test_all_returned_objects_bound(self, built_test_db: Path) -> None:
+    @pytest.mark.asyncio
+    async def test_all_returned_objects_bound(self, built_test_db: Path) -> None:
         """All objects returned from index methods are bound."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(built_test_db) as index:
             # Test single get
             single = index.get("RID10049")
             assert single._index is not None
@@ -350,7 +353,7 @@ class TestAnatomicLocationIndexWeakRefBinding:
             assert all(loc._index is not None for loc in by_code)
 
             # Test search
-            search_results = index.search("turbinate", limit=5)
+            search_results = await index.search("turbinate", limit=5)
             assert all(loc._index is not None for loc in search_results)
 
             # Test hierarchy methods

@@ -22,7 +22,7 @@ from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn
 from oidm_maintenance.config import get_settings
 
 if TYPE_CHECKING:
-    pass
+    from openai import AsyncOpenAI
 
 console = Console()
 
@@ -610,10 +610,14 @@ def _prepare_record_for_insert(
     seen_codes: set[tuple[str, str]] = set()
     codes: list[tuple[str, str, str, str | None]] = []
     for code in extract_codes(record):
-        code_key = (code["system"], code["code"])
+        system, code_val = code["system"], code["code"]
+        # Skip codes with missing system or code
+        if system is None or code_val is None:
+            continue
+        code_key = (system, code_val)
         if code_key not in seen_codes:
             seen_codes.add(code_key)
-            codes.append((record_id, code["system"], code["code"], code.get("display")))
+            codes.append((record_id, system, code_val, code.get("display")))
 
     return record_data, searchable_text, synonyms, codes
 
@@ -866,6 +870,80 @@ def get_database_stats(db_path: Path) -> dict[str, Any]:
             "total_codes": code_count,
             "file_size_mb": db_path.stat().st_size / (1024 * 1024),
         }
+
+    finally:
+        conn.close()
+
+
+async def create_anatomic_database(
+    db_path: Path,
+    records: list[dict[str, Any]],
+    client: AsyncOpenAI,
+    batch_size: int = 50,
+    dimensions: int = 1536,
+) -> tuple[int, int]:
+    """Create anatomic location database from in-memory records.
+
+    This is a test utility that creates a database from pre-loaded records
+    rather than loading from a file. Used by test fixtures.
+
+    Args:
+        db_path: Path to the database file to create
+        records: List of anatomic location records
+        client: OpenAI client for generating embeddings (AsyncOpenAI)
+        batch_size: Number of records to embed per batch
+        dimensions: Embedding vector dimensions
+
+    Returns:
+        Tuple of (successful_count, failed_count)
+    """
+    conn = setup_duckdb_connection(db_path, read_only=False)
+
+    try:
+        # Drop existing tables
+        conn.execute("DROP TABLE IF EXISTS anatomic_references")
+        conn.execute("DROP TABLE IF EXISTS anatomic_codes")
+        conn.execute("DROP TABLE IF EXISTS anatomic_synonyms")
+        conn.execute("DROP TABLE IF EXISTS anatomic_locations")
+
+        # Create schema
+        _create_schema(conn, dimensions)
+
+        # Build record index
+        records_by_id = {record["_id"]: record for record in records}
+
+        # Prepare records
+        location_rows, searchable_texts, synonym_rows, code_rows = _prepare_all_records(records, records_by_id)
+
+        successful = len(location_rows)
+        failed = len(records) - successful
+
+        if successful == 0:
+            return 0, failed
+
+        # Generate embeddings
+        embeddings: list[list[float] | None] = []
+        for i in range(0, len(searchable_texts), batch_size):
+            batch = searchable_texts[i : i + batch_size]
+            batch_embeddings = await generate_embeddings_batch(
+                batch, client, model="text-embedding-3-small", dimensions=dimensions
+            )
+            embeddings.extend(batch_embeddings)
+
+        # Merge embeddings
+        for location_row, embedding in zip(location_rows, embeddings, strict=True):
+            location_row["vector"] = embedding
+
+        # Bulk load
+        _bulk_load_table(conn, "anatomic_locations", location_rows, _get_location_columns(dimensions))
+        _bulk_load_table(conn, "anatomic_synonyms", synonym_rows, SYNONYM_COLUMNS)
+        _bulk_load_table(conn, "anatomic_codes", code_rows, CODE_COLUMNS)
+
+        conn.commit()
+        _create_indexes(conn, dimensions)
+        _verify_database(conn)
+
+        return successful, failed
 
     finally:
         conn.close()

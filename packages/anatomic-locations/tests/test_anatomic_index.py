@@ -13,7 +13,7 @@ from anatomic_locations import (
     LocationType,
     StructureType,
 )
-from anatomic_locations.migration import create_anatomic_database
+from oidm_maintenance.anatomic.build import create_anatomic_database
 from openai import AsyncOpenAI
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -122,7 +122,7 @@ async def test_database(tmp_path: Path) -> Path:
     mock_embeddings = [[0.1] * test_settings.openai_embedding_dimensions] * len(test_records)
 
     with patch(
-        "anatomic_locations.migration.generate_embeddings_batch",
+        "oidm_maintenance.anatomic.build.generate_embeddings_batch",
         new=AsyncMock(return_value=mock_embeddings),
     ):
         await create_anatomic_database(
@@ -271,8 +271,8 @@ class TestAnatomicLocationIndexLookups:
     @pytest.mark.asyncio
     async def test_search_basic(self, test_database: Path) -> None:
         """Test basic text search."""
-        with AnatomicLocationIndex(test_database) as index:
-            results = index.search("lung", limit=5)
+        async with AnatomicLocationIndex(test_database) as index:
+            results = await index.search("lung", limit=5)
 
             assert len(results) > 0
             # Should find lung-related locations

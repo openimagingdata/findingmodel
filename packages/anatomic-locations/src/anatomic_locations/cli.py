@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import sys
 from pathlib import Path
 
@@ -10,165 +9,13 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from anatomic_locations.index import AnatomicLocationIndex
-from anatomic_locations.migration import (
-    create_anatomic_database,
-    get_database_stats,
-    load_anatomic_data,
-    validate_anatomic_record,
-)
+from anatomic_locations.index import AnatomicLocationIndex, get_database_stats
 
 
 @click.group()
 def main() -> None:
-    """Anatomic location management tools."""
+    """Anatomic location query and statistics tools."""
     pass
-
-
-@main.command("build")
-@click.option(
-    "--source",
-    "-s",
-    help="URL or file path for anatomic location data (default: config setting or standard URL)",
-)
-@click.option("--output", "-o", type=click.Path(path_type=Path), help="Output database path (default: config setting)")
-@click.option("--force", "-f", is_flag=True, help="Overwrite existing database")
-def build(source: str | None, output: Path | None, force: bool) -> None:
-    """Build anatomic location database from source data."""
-
-    console = Console()
-
-    async def _do_build(source: str | None, output: Path | None, force: bool) -> None:
-        # Determine source and output paths
-        # Try to get ensure_anatomic_db from config if available
-        db_path: Path
-        if output:
-            db_path = output
-        else:
-            try:
-                from anatomic_locations.config import ensure_anatomic_db
-
-                db_path = ensure_anatomic_db()
-            except ImportError:
-                console.print("[bold red]Error: --output is required (config module not available for default path)")
-                raise click.Abort() from None
-
-        data_source = source or "https://oidm-public.t3.storage.dev/anatomic_locations_20251220.json"
-
-        # Check if database already exists
-        if db_path.exists() and not force:
-            console.print(f"[yellow]Database already exists at {db_path}")
-            console.print("[yellow]Use --force to overwrite")
-            raise click.Abort()
-
-        if db_path.exists() and force:
-            console.print(f"[yellow]Removing existing database at {db_path}")
-            db_path.unlink()
-
-        console.print("[bold green]Building anatomic location database")
-        console.print(f"[gray]Source: [yellow]{data_source}")
-        console.print(f"[gray]Output: [yellow]{db_path.absolute()}")
-
-        # Ensure parent directory exists
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-
-        try:
-            # Load data
-            with console.status("[bold green]Loading anatomic location data..."):
-                records = await load_anatomic_data(data_source)
-
-            # Create OpenAI client for embeddings
-            # Get API key from environment variable
-            import os
-
-            api_key: str | None = os.getenv("OPENAI_API_KEY")
-
-            if not api_key:
-                console.print("[bold red]Error: OPENAI_API_KEY not configured")
-                console.print("[yellow]Set OPENAI_API_KEY environment variable")
-                raise click.Abort()
-
-            # Import openai here since it's an optional build dependency
-            try:
-                from openai import AsyncOpenAI
-            except ImportError:
-                console.print("[bold red]Error: openai package not installed")
-                console.print("[yellow]Install with: pip install anatomic-locations[build]")
-                raise click.Abort() from None
-
-            client = AsyncOpenAI(api_key=api_key)
-
-            # Enable logging for progress visibility
-            from loguru import logger
-
-            logger.enable("anatomic_locations")
-
-            # Create database (progress logged to console)
-            console.print("[bold green]Creating database and generating embeddings...")
-            console.print(f"[gray]Processing {len(records)} records in batches of 50...\n")
-            successful, failed = await create_anatomic_database(db_path, records, client)
-
-            # Display results
-            console.print("\n[bold green]Database built successfully!")
-            console.print(f"[green]✓ Records inserted: {successful}")
-            if failed > 0:
-                console.print(f"[yellow]⚠ Records failed: {failed}")
-            console.print(f"[gray]Database location: [yellow]{db_path.absolute()}")
-
-        except Exception as e:
-            console.print(f"[bold red]Error building database: {e}")
-            raise
-
-    asyncio.run(_do_build(source, output, force))
-
-
-@main.command("validate")
-@click.option(
-    "--source",
-    "-s",
-    help="URL or file path for anatomic location data (default: standard URL)",
-)
-def validate(source: str | None) -> None:
-    """Validate anatomic location data without building database."""
-
-    console = Console()
-
-    async def _do_validate(source: str | None) -> None:
-        data_source = source or "https://oidm-public.t3.storage.dev/anatomic_locations_20251220.json"
-
-        console.print("[bold green]Validating anatomic location data")
-        console.print(f"[gray]Source: [yellow]{data_source}\n")
-
-        try:
-            # Load data
-            with console.status("[bold green]Loading data..."):
-                records = await load_anatomic_data(data_source)
-
-            # Validate each record
-            validation_errors: dict[str, list[str]] = {}
-            for i, record in enumerate(records, 1):
-                record_id = record.get("_id", f"record_{i}")
-                errors = validate_anatomic_record(record)
-                if errors:
-                    validation_errors[record_id] = errors
-
-            # Display results
-            if validation_errors:
-                console.print(f"[bold red]Validation failed for {len(validation_errors)} record(s):\n")
-                for record_id, errors in validation_errors.items():
-                    console.print(f"[yellow]{record_id}:")
-                    for error in errors:
-                        console.print(f"  [red]✗ {error}")
-                    console.print()
-                sys.exit(1)
-            else:
-                console.print(f"[bold green]✓ All {len(records)} records validated successfully!")
-
-        except Exception as e:
-            console.print(f"[bold red]Error validating data: {e}")
-            raise
-
-    asyncio.run(_do_validate(source))
 
 
 @main.command("stats")

@@ -8,10 +8,12 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import duckdb
-from oidm_common.duckdb import setup_duckdb_connection
+from asyncer import asyncify
+from oidm_common.duckdb import rrf_fusion, setup_duckdb_connection
+from oidm_common.embeddings import get_embedding
 from oidm_common.models import IndexCode, WebReference
 
 from anatomic_locations.models import (
@@ -106,6 +108,18 @@ class AnatomicLocationIndex:
         """Exit context manager, closing connection."""
         self.close()
 
+    async def __aenter__(self) -> Self:
+        """Enter async context manager, opening connection.
+
+        Returns:
+            Self for async context manager pattern
+        """
+        return self.open()
+
+    async def __aexit__(self, *_args: object) -> None:
+        """Exit async context manager, closing connection."""
+        self.close()
+
     # =========================================================================
     # Core Lookups (all methods auto-bind returned objects)
     # =========================================================================
@@ -160,41 +174,50 @@ class AnatomicLocationIndex:
 
         return [self._row_to_location(row) for row in rows]
 
-    def search(self, query: str, limit: int = 10) -> list[AnatomicLocation]:
-        """Hybrid search (FTS + semantic) returning ranked results.
+    async def search(
+        self,
+        query: str,
+        *,
+        limit: int = 10,
+        region: str | None = None,
+        sided_filter: list[str] | None = None,
+    ) -> list[AnatomicLocation]:
+        """Hybrid search combining FTS and semantic search with RRF fusion.
 
         All returned objects are automatically bound to this index.
 
         Args:
             query: Search query string
             limit: Maximum number of results to return
+            region: Optional region filter (e.g., "Head", "Thorax")
+            sided_filter: Optional list of allowed laterality values (e.g., ["generic", "nonlateral"])
 
         Returns:
             List of matching AnatomicLocation objects sorted by relevance
         """
         conn = self._ensure_connection()
 
-        # For now, implement FTS-only search
-        # TODO: Add semantic search when embeddings are available
-        rows = conn.execute(
-            """
-            WITH candidates AS (
-                SELECT
-                    al.id,
-                    fts_main_anatomic_locations.match_bm25(al.id, ?) AS bm25_score
-                FROM anatomic_locations AS al
-            )
-            SELECT al.*
-            FROM candidates c
-            JOIN anatomic_locations al ON c.id = al.id
-            WHERE c.bm25_score IS NOT NULL
-            ORDER BY c.bm25_score DESC
-            LIMIT ?
-            """,
-            [query, limit],
-        ).fetchall()
+        # Check for exact matches first - wrap typed sync helper
+        exact_rows = await asyncify(self._find_exact_match)(conn, query, region, sided_filter)
+        if exact_rows:
+            return [self._row_to_location(r) for r in exact_rows[:limit]]
 
-        return [self._row_to_location(row) for row in rows]
+        # FTS search - wrap typed sync helper
+        fts_rows = await asyncify(self._search_fts)(conn, query, limit * 2, region, sided_filter)
+
+        # Semantic search - embedding API already async, then wrap sync helper
+        embedding = await self._get_embedding(query)
+        semantic_rows = []
+        if embedding is not None:
+            semantic_rows = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
+
+        # If no semantic results, return FTS only
+        if not semantic_rows:
+            return [self._row_to_location(r) for r in fts_rows[:limit]]
+
+        # Apply RRF fusion - CPU-bound, fast, stays sync (no I/O)
+        fused = self._apply_rrf_fusion(fts_rows, semantic_rows, limit)
+        return [self._row_to_location(r) for r in fused]
 
     # =========================================================================
     # Hierarchy Navigation (using pre-computed paths, auto-binds results)
@@ -422,6 +445,208 @@ class AnatomicLocationIndex:
     # Internal Helpers
     # =========================================================================
 
+    def _find_exact_match(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        query: str,
+        region: str | None,
+        sided_filter: list[str] | None,
+    ) -> list[tuple[Any, ...]]:
+        """Find exact matches on description (sync, typed).
+
+        Args:
+            conn: DuckDB connection
+            query: Text to match exactly (case-insensitive)
+            region: Optional region filter
+            sided_filter: Optional list of allowed laterality values
+
+        Returns:
+            List of matching rows from anatomic_locations table
+        """
+        query_lower = query.lower()
+        where_conditions = ["LOWER(description) = ?"]
+        params: list[Any] = [query_lower]
+
+        # Add region filter if specified
+        if region is not None:
+            where_conditions.append("region = ?")
+            params.append(region)
+
+        # Add laterality filter if specified
+        if sided_filter is not None:
+            placeholders = ",".join(["?" for _ in sided_filter])
+            where_conditions.append(f"laterality IN ({placeholders})")
+            params.extend(sided_filter)
+
+        where_clause = " AND ".join(where_conditions)
+
+        sql = f"SELECT * FROM anatomic_locations WHERE {where_clause}"
+        return conn.execute(sql, params).fetchall()
+
+    def _search_fts(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        query: str,
+        limit: int,
+        region: str | None,
+        sided_filter: list[str] | None,
+    ) -> list[tuple[Any, ...]]:
+        """FTS search with BM25 scoring (sync, typed).
+
+        Args:
+            conn: DuckDB connection
+            query: Search query text
+            limit: Maximum number of results
+            region: Optional region filter
+            sided_filter: Optional list of allowed laterality values
+
+        Returns:
+            List of (id, description, ..., score) tuples sorted by BM25 score descending
+        """
+        where_conditions = ["score IS NOT NULL"]
+        params: list[Any] = [query]
+
+        # Add region filter if specified
+        if region is not None:
+            where_conditions.append("region = ?")
+            params.append(region)
+
+        # Add laterality filter if specified
+        if sided_filter is not None:
+            placeholders = ",".join(["?" for _ in sided_filter])
+            where_conditions.append(f"laterality IN ({placeholders})")
+            params.extend(sided_filter)
+
+        where_clause = " AND ".join(where_conditions)
+        params.append(limit)
+
+        sql = f"""
+            SELECT *, fts_main_anatomic_locations.match_bm25(id, ?, fields := 'description') as score
+            FROM anatomic_locations
+            WHERE {where_clause}
+            ORDER BY score DESC LIMIT ?
+        """
+        return conn.execute(sql, params).fetchall()
+
+    def _search_semantic(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        embedding: list[float],
+        limit: int,
+        region: str | None,
+        sided_filter: list[str] | None,
+    ) -> list[tuple[Any, ...]]:
+        """Semantic search with cosine distance (sync, typed).
+
+        Args:
+            conn: DuckDB connection
+            embedding: Query embedding vector
+            limit: Maximum number of results
+            region: Optional region filter
+            sided_filter: Optional list of allowed laterality values
+
+        Returns:
+            List of (id, description, ..., distance) tuples sorted by distance ascending
+        """
+        where_conditions = ["vector IS NOT NULL"]
+        params: list[Any] = [embedding]
+
+        # Add region filter if specified
+        if region is not None:
+            where_conditions.append("region = ?")
+            params.append(region)
+
+        # Add laterality filter if specified
+        if sided_filter is not None:
+            placeholders = ",".join(["?" for _ in sided_filter])
+            where_conditions.append(f"laterality IN ({placeholders})")
+            params.extend(sided_filter)
+
+        where_clause = " AND ".join(where_conditions)
+        params.append(limit)
+
+        # Get dimensions from config
+        from anatomic_locations.config import get_settings
+
+        settings = get_settings()
+        dimensions = settings.openai_embedding_dimensions
+
+        sql = f"""
+            SELECT *, array_cosine_distance(vector, ?::FLOAT[{dimensions}]) as distance
+            FROM anatomic_locations
+            WHERE {where_clause}
+            ORDER BY distance ASC LIMIT ?
+        """
+        return conn.execute(sql, params).fetchall()
+
+    async def _get_embedding(self, text: str) -> list[float] | None:
+        """Get embedding for query text (async - calls OpenAI API).
+
+        Args:
+            text: Text to embed
+
+        Returns:
+            Embedding vector or None if API key not available
+        """
+        from anatomic_locations.config import get_settings
+
+        settings = get_settings()
+        api_key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+        if not api_key:
+            return None
+
+        return await get_embedding(
+            text,
+            api_key=api_key,
+            model=settings.openai_embedding_model,
+            dimensions=settings.openai_embedding_dimensions,
+        )
+
+    def _apply_rrf_fusion(
+        self,
+        fts_results: list[tuple[Any, ...]],
+        semantic_results: list[tuple[Any, ...]],
+        limit: int,
+    ) -> list[tuple[Any, ...]]:
+        """Apply RRF fusion to combine result sets (sync - CPU-bound, fast).
+
+        Args:
+            fts_results: FTS search results (rows with score in last column)
+            semantic_results: Semantic search results (rows with distance in last column)
+            limit: Maximum number of results to return
+
+        Returns:
+            Combined results sorted by RRF score, limited to max results
+        """
+        # If no semantic results, just return FTS results
+        if not semantic_results:
+            return fts_results[:limit]
+
+        # Extract (id, score) tuples from results
+        # FTS results have BM25 score in last column (higher is better)
+        fts_scores = [(str(r[0]), float(r[-1])) for r in fts_results]
+
+        # Semantic results have cosine distance in last column (lower is better)
+        # Convert distance to similarity score (1 - distance for cosine)
+        semantic_scores = [(str(r[0]), 1.0 - float(r[-1])) for r in semantic_results]
+
+        # Apply RRF fusion using utility function
+        fused_scores = rrf_fusion(fts_scores, semantic_scores)
+
+        # Build result lookup by ID (use FTS results as base, they have all columns)
+        result_map = {}
+        for r in fts_results + semantic_results:
+            if r[0] not in result_map:
+                result_map[r[0]] = r
+
+        # Reconstruct results with RRF scores
+        combined_results = []
+        for location_id, _score in fused_scores[:limit]:
+            if location_id in result_map:
+                combined_results.append(result_map[location_id])
+
+        return combined_results
+
     def _ensure_connection(self) -> duckdb.DuckDBPyConnection:
         """Ensure connection is open, raising if not.
 
@@ -586,6 +811,62 @@ class AnatomicLocationIndex:
         )
 
         return location.bind(self)
+
+
+def get_database_stats(db_path: Path) -> dict[str, Any]:
+    """Get statistics about an anatomic location database.
+
+    Args:
+        db_path: Path to the database file
+
+    Returns:
+        Dictionary with database statistics
+    """
+    if not db_path.exists():
+        raise FileNotFoundError(f"Database not found at {db_path}")
+
+    conn = setup_duckdb_connection(db_path, read_only=True)
+    try:
+        # Get counts
+        result = conn.execute("SELECT COUNT(*) FROM anatomic_locations").fetchone()
+        total_records = result[0] if result else 0
+
+        result = conn.execute("SELECT COUNT(*) FROM anatomic_locations WHERE vector IS NOT NULL").fetchone()
+        vector_count = result[0] if result else 0
+
+        # Get region count
+        result = conn.execute(
+            "SELECT COUNT(DISTINCT region) FROM anatomic_locations WHERE region IS NOT NULL"
+        ).fetchone()
+        region_count = result[0] if result else 0
+
+        # Get laterality distribution
+        laterality_dist = conn.execute("""
+            SELECT laterality, COUNT(*) as count
+            FROM anatomic_locations
+            GROUP BY laterality
+            ORDER BY count DESC
+        """).fetchall()
+
+        # Get synonym and code counts
+        result = conn.execute("SELECT COUNT(*) FROM anatomic_synonyms").fetchone()
+        synonym_count = result[0] if result else 0
+
+        result = conn.execute("SELECT COUNT(*) FROM anatomic_codes").fetchone()
+        code_count = result[0] if result else 0
+
+        return {
+            "total_records": total_records,
+            "records_with_vectors": vector_count,
+            "unique_regions": region_count,
+            "laterality_distribution": dict(laterality_dist),
+            "total_synonyms": synonym_count,
+            "total_codes": code_count,
+            "file_size_mb": db_path.stat().st_size / (1024 * 1024),
+        }
+
+    finally:
+        conn.close()
 
 
 __all__ = ["AnatomicLocationIndex"]
