@@ -8,6 +8,7 @@ from oidm_common.models import WebReference as WebReference
 import findingmodel.tools as tools
 
 from .config import settings as settings
+from .create_stub import create_model_stub_from_info as create_model_stub_from_info
 from .finding_info import FindingInfo as FindingInfo
 from .finding_model import ChoiceAttribute as ChoiceAttribute
 from .finding_model import ChoiceAttributeIded as ChoiceAttributeIded
@@ -29,6 +30,7 @@ __all__ = [
     "Index",
     "IndexCode",
     "WebReference",
+    "create_model_stub_from_info",
     "logger",
     "settings",
     "tools",

@@ -59,17 +59,18 @@ See [Configuration Guide](docs/configuration.md) for model tiers, all providers,
 
 The package provides CLI commands for model conversion and database management:
 
-```shell
-$ python -m findingmodel --help
-```
+**Core tools (`fm-tool`):**
+- `fm-to-markdown`: Convert finding model JSON to Markdown format
+- `config`: View current configuration
+- `index stats`: Show finding model index statistics
 
-**Available commands:**
-- `fm-to-markdown` / `markdown-to-fm`: Convert between JSON and Markdown formats
+**AI tools (`fm-ai` from findingmodel-ai package):**
 - `make-info`: Generate finding descriptions and synonyms
 - `make-stub-model`: Create basic finding model templates
-- `config`: View current configuration
-- `index`: Manage finding model index (build, update, stats)
-- `anatomic`: Manage and query anatomic locations (build, validate, stats, query)
+- `markdown-to-fm`: Convert Markdown to finding model JSON
+
+**Database maintenance (`oidm-maintain` for maintainers only):**
+- Build and publish finding model and anatomic location databases
 
 For anatomic location usage, see [Anatomic Locations Guide](docs/anatomic-locations.md). For database maintainers, see [Database Management Guide](docs/database-management.md).
 

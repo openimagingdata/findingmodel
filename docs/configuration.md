@@ -196,7 +196,7 @@ The agent checks for an override first, then falls back to its default tier.
 
 #### Finding Enrichment
 
-Used by: `enrich_finding()`, `make-stub-model` CLI
+Used by: `enrich_finding()`, `fm-ai make-stub-model` CLI
 
 | Tag | What It Does | Default |
 |-----|--------------|---------|
@@ -206,7 +206,7 @@ Used by: `enrich_finding()`, `make-stub-model` CLI
 
 #### Model Editing
 
-Used by: `edit-model` CLI, `apply_edits()`
+Used by: `edit_model_natural_language()`, `edit_model_markdown()`
 
 | Tag | What It Does | Default |
 |-----|--------------|---------|
@@ -215,7 +215,7 @@ Used by: `edit-model` CLI, `apply_edits()`
 
 #### Finding Description
 
-Used by: `make-info` CLI, `create_info_from_name()`, `add_details_to_info()`
+Used by: `fm-ai make-info` CLI, `create_info_from_name()`, `add_details_to_info()`
 
 | Tag | What It Does | Default |
 |-----|--------------|---------|
@@ -251,7 +251,7 @@ Used by: ontology concept matching during enrichment
 
 #### Markdown Import
 
-Used by: `markdown-to-fm` CLI, `create_model_from_markdown()`
+Used by: `fm-ai markdown-to-fm` CLI, `create_model_from_markdown()`
 
 | Tag | What It Does | Default |
 |-----|--------------|---------|

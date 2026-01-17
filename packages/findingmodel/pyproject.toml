@@ -22,24 +22,16 @@ keywords = [
 ]
 
 dependencies = [
-    "oidm-common",
+    "oidm-common[openai]",
     "click>=8.1.8",
+    "duckdb>=1.0",
+    "httpx>=0.27",
     "jinja2>=3.1.6",
-    "openai>=1.76",
-    "platformdirs>=4.0.0",
-    "pooch>=1.8.0",
-    "pydantic[email]>=2.11.3",
-    "pydantic-settings>=2.9.1",
-    "rich>=13.9.4",
-    "prompt-toolkit>=3.0.48",
-    "loguru>=0.7.3",
-    "pydantic-ai-slim[openai,tavily,anthropic,google]>=0.3.2",
-    "tavily-python>=0.6.0",
-    "duckdb>=1.3.2",
-    "httpx>=0.28.0",
+    "loguru>=0.7",
     "mcp>=1.0.0",
-    "boto3>=1.40.75",
-    "boto3-stubs[s3]>=1.40.75",
+    "pydantic[email]>=2.0",
+    "pydantic-settings>=2.9",
+    "rich>=13.9.4",
 ]
 
 [project.urls]

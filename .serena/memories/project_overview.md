@@ -1,45 +1,110 @@
 # FindingModel Project Overview
 
 ## Purpose
-The `findingmodel` package is a Python library for managing Open Imaging Finding Models - structured data models used to describe medical imaging findings in radiology reports. It provides tools for creating, converting, and managing these finding models with AI integration.
+The `findingmodel` monorepo provides Python libraries for managing Open Imaging Finding Models and related medical imaging ontologies. It uses a uv workspace structure with multiple packages.
+
+## Monorepo Structure
+
+```
+findingmodel/                           # Workspace root
+├── pyproject.toml                      # Workspace config (no package)
+├── uv.lock                             # Single lockfile
+├── CLAUDE.md                           # AI instructions
+├── Taskfile.yml                        # Task runner
+├── .serena/memories/                   # Shared AI context
+│
+├── packages/
+│   ├── oidm-common/                    # Shared infrastructure
+│   │   └── src/oidm_common/
+│   │       ├── duckdb/                 # Connection, search, indexes
+│   │       ├── embeddings/             # Cache, OpenAI provider
+│   │       ├── distribution/           # Manifest, download, paths
+│   │       └── models/                 # IndexCode, WebReference
+│   │
+│   ├── anatomic-locations/             # Anatomic ontology (READ-ONLY)
+│   │   └── src/anatomic_locations/
+│   │       ├── models/                 # AnatomicLocation, enums
+│   │       ├── index.py                # AnatomicLocationIndex
+│   │       ├── config.py               # Settings
+│   │       └── cli.py                  # query, stats
+│   │
+│   ├── findingmodel/                   # Core package (READ-ONLY)
+│   │   └── src/findingmodel/
+│   │       ├── tools/                  # AI agents/workflows
+│   │       ├── finding_model.py        # FindingModel classes
+│   │       ├── index.py                # DuckDBIndex (search only)
+│   │       ├── cli.py                  # fm-tool
+│   │       └── mcp_server.py           # MCP for IDE access
+│   │
+│   └── oidm-maintenance/               # Build/publish (maintainers only)
+│       └── src/oidm_maintenance/
+│           ├── anatomic/               # Anatomic DB build
+│           ├── findingmodel/           # FindingModel DB build
+│           ├── s3.py                   # S3 upload, manifest
+│           └── cli.py                  # oidm-maintain
+│
+├── docs/                               # Documentation
+├── tasks/                              # Planning documents
+└── notebooks/                          # Demos
+```
+
+## Package Dependencies
+
+```
+                    ┌─────────────────────┐
+                    │  oidm-maintenance   │  ← Build & publish
+                    └─────────┬───────────┘
+                              │ depends on all
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌──────────────────┐  ┌─────────────────┐  ┌─────────────────────┐
+│  (future)        │  │  findingmodel   │  │ anatomic-locations  │
+│  findingmodel-ai │  │ (core package)  │  │  (anatomic ontology)│
+└───────┬──────────┘  └────────┬────────┘  └─────────┬───────────┘
+        │                      │                     │
+        └──────────────────────┴─────────────────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │     oidm-common     │
+                    │   (infrastructure)  │
+                    └─────────────────────┘
+```
+
+## Key Design Decisions
+
+1. **Read-only user packages**: findingmodel and anatomic-locations only query pre-built databases
+2. **Maintainer-only builds**: oidm-maintenance handles all database creation/publishing
+3. **Explicit dependencies**: Each package declares all dependencies it directly imports
+4. **Single lockfile**: uv.lock ensures consistent versions across all packages
 
 ## Tech Stack
 - **Language**: Python 3.11+
-- **Build System**: uv (modern Python project management)
-- **Task Runner**: Task (go-task) for development commands
-- **Package Format**: Standard Python package with pyproject.toml
-- **Dependencies**:
-  - pydantic (v2) for data models and validation
-  - pydantic-ai-slim for AI-powered tools (OpenAI, Anthropic, Google, Ollama, Gateway)
-  - duckdb for index/search with HNSW vector and FTS indexes
-  - click for CLI
-  - rich for terminal output
-  - loguru for logging
-  - tavily-python for web search in AI workflows
+- **Build System**: uv workspaces
+- **Task Runner**: go-task
+- **Core deps**: pydantic v2, duckdb, pydantic-ai-slim, click, rich, loguru
 
-## Project Structure
-```
-findingmodel/
-├── src/findingmodel/       # Main package source
-│   ├── tools/              # AI-powered tools for finding models
-│   ├── finding_model.py    # Core data models (FindingModelBase, FindingModelFull)
-│   ├── finding_info.py     # FindingInfo data model
-│   ├── index.py            # DuckDB-based indexing system
-│   ├── config.py           # Configuration management
-│   └── cli.py              # Command-line interface
-├── test/                   # Test suite
-│   └── data/              # Test fixtures
-├── evals/                 # Agent evaluation suites
-├── notebooks/             # Example Jupyter notebooks
-├── pyproject.toml         # Project configuration
-├── Taskfile.yml          # Task runner commands
-├── CLAUDE.md             # Project instructions for Claude Code
-└── .env.sample           # Environment variables template
+## CLI Commands
+
+```bash
+# User commands
+fm-tool search "query"              # Search finding models
+fm-tool index stats                 # Show index statistics
+anatomic query "nasal"              # Query anatomic locations
+anatomic stats                      # Show anatomic DB stats
+
+# Maintainer commands (oidm-maintenance)
+oidm-maintain findingmodel build    # Build findingmodel database
+oidm-maintain findingmodel publish  # Publish to S3
+oidm-maintain anatomic build        # Build anatomic database
+oidm-maintain anatomic publish      # Publish to S3
 ```
 
-## Key Features
-1. **Data Models**: Hierarchical finding model classes (FindingInfo → FindingModelBase → FindingModelFull)
-2. **AI Tools**: Generate finding descriptions, create models from markdown, add medical codes
-3. **Index System**: DuckDB-based lookup with HNSW vector search and full-text search
-4. **CLI**: Command-line tools for model conversion and generation
-5. **Evaluation System**: Pydantic Evals-based quality assessment for AI agents
+## Development
+
+```bash
+task test                           # Run all tests (no callout)
+task test-full                      # Run all tests including API calls
+task check                          # Format + lint + type check
+uv sync --all-packages              # Sync workspace
+```

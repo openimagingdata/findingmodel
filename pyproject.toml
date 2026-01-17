@@ -47,7 +47,8 @@ unfixable = []
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/findingmodel/tests"]
+# Note: testpaths not set - use per-package test tasks instead (task test:oidm-common, etc.)
+# This avoids conftest.py collisions when running tests across multiple packages
 markers = [
     "callout: Marks test as calling on non-local services",
 ]
@@ -65,5 +66,10 @@ ignore_missing_imports = true
 warn_unused_ignores = true
 warn_return_any = true
 files = [
+    "packages/oidm-common/src/oidm_common",
+    "packages/anatomic-locations/src/anatomic_locations",
     "packages/findingmodel/src/findingmodel",
+    "packages/findingmodel-ai/src/findingmodel_ai",
+    "packages/findingmodel-ai/scripts",
+    "packages/oidm-maintenance/src/oidm_maintenance",
 ]

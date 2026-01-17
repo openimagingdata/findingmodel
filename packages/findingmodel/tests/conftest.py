@@ -149,3 +149,15 @@ def tmp_defs_path(tmp_path: Path) -> Path:
     defs_path = tmp_path / "defs"
     shutil.copytree(data_dir, defs_path)
     return defs_path
+
+
+@pytest.fixture(scope="session")
+def prebuilt_db_path() -> Path:
+    """Path to pre-built test database (committed to repo)."""
+    db_path = Path(__file__).parent / "data" / "test_index.duckdb"
+    if not db_path.exists():
+        pytest.skip(
+            "Pre-built test database not found. "
+            "Run: uv run python packages/oidm-maintenance/scripts/build_test_fixtures.py"
+        )
+    return db_path

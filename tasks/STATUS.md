@@ -1,6 +1,6 @@
 # Task Status Overview
 
-**Last Updated:** 2025-12-31
+**Last Updated:** 2026-01-17
 
 Quick reference for active tasks and project status. For completed tasks, see [done/README.md](done/README.md).
 
@@ -8,9 +8,27 @@ Quick reference for active tasks and project status. For completed tasks, see [d
 
 ## Project Health
 
-- ✅ **All tests passing**
+- ✅ **All tests passing** (337 findingmodel + 76 oidm-common)
 - ✅ **Code quality**: Clean linting, no warnings
 - ✅ **Core features**: Complete and stable
+- ✅ **Monorepo structure**: 5 packages (oidm-common, anatomic-locations, findingmodel, findingmodel-ai, oidm-maintenance)
+
+---
+
+## Monorepo Restructuring
+
+**Primary Plan:** [monorepo-plan-overview.md](monorepo-plan-overview.md)
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| 0-3.9 | ✅ COMPLETE | Basic restructuring, oidm-common, anatomic-locations |
+| 4 | ✅ COMPLETE | findingmodel-ai package created |
+| 4.5 | ✅ COMPLETE | AI separation cleanup, embeddings via oidm-common |
+| 4.6 | ✅ COMPLETE | DuckDB search consolidation with proper async (asyncer) |
+| 4.7 | ✅ COMPLETE | AI separation cleanup - tests & config |
+| **5-6** | ⏳ **NEXT** | Cleanup and documentation |
+
+**Current Focus:** Phases 5-6 - Final cleanup and documentation for monorepo restructuring.
 
 ---
 

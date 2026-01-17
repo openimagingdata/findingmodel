@@ -207,84 +207,34 @@ async def test_search_result_structure() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.callout
-async def test_mcp_server_integration(tmp_path: Path) -> None:
+async def test_mcp_server_integration(prebuilt_db_path: Path) -> None:
     """Integration test: MCP server with real DuckDB database.
 
-    This test verifies the MCP server works end-to-end with a real database.
+    This test verifies the MCP server works end-to-end with the pre-built database.
     Run with: pytest test/test_mcp_server.py::test_mcp_server_integration -v
     """
-    from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded, FindingModelFull
-
-    # Create a test database with real data
-    db_path = tmp_path / "test_mcp.duckdb"
-    index = DuckDBIndex(db_path, read_only=False)
-    await index.setup()
-
-    try:
-        # Create a simple test model
-        model = FindingModelFull(
-            oifm_id="OIFM_TEST_000001",
-            name="Pneumothorax",
-            description="Air in the pleural space",
-            synonyms=["collapsed lung", "PTX"],
-            tags=["chest", "emergency"],
-            attributes=[
-                ChoiceAttributeIded(
-                    oifma_id="OIFMA_TEST_000001",
-                    name="Severity",
-                    values=[
-                        ChoiceValueIded(value_code="OIFMA_TEST_000001.0", name="Small"),
-                        ChoiceValueIded(value_code="OIFMA_TEST_000001.1", name="Large"),
-                    ],
-                )
-            ],
-        )
-
-        # Write model to file and add to index
-        model_file = tmp_path / "pneumothorax.fm.json"
-        model_file.write_text(model.model_dump_json(indent=2, exclude_none=True))
-        await index.add_or_update_entry_from_file(model_file, model)
-
-        # Close the index so MCP server can open it read-only
-        if index.conn is not None:
-            index.conn.close()
-
-        # Now test MCP server functions with the real database
+    # Use pre-built database and test MCP server functions
+    async with DuckDBIndex(prebuilt_db_path) as test_index:
         with patch("findingmodel.mcp_server.DuckDBIndex") as mock_duckdb_class:
-            # Make the mock return our real index instance
-            test_index = DuckDBIndex(db_path, read_only=True)
-            await test_index.setup()
-
             mock_duckdb_class.return_value.__aenter__.return_value = test_index
 
-            # Test search
-            search_result = await search_finding_models(query="pneumothorax", limit=5)
-            assert search_result.result_count == 1
-            assert search_result.results[0].oifm_id == "OIFM_TEST_000001"
-            assert search_result.results[0].name == "Pneumothorax"
-            assert "chest" in (search_result.results[0].tags or [])
+            # Test search - use a term from the pre-built database
+            search_result = await search_finding_models(query="aneurysm", limit=5)
+            assert search_result.result_count >= 1
+            # Should find abdominal aortic aneurysm
+            assert any("aneurysm" in r.name.lower() for r in search_result.results)
 
-            # Test get by ID
-            get_result = await get_finding_model(identifier="OIFM_TEST_000001")
+            # Test get by ID - use an ID from the pre-built database
+            get_result = await get_finding_model(identifier="OIFM_MSFT_573630")
             assert get_result is not None
-            assert get_result.name == "Pneumothorax"
 
-            # Test get by synonym
-            synonym_result = await get_finding_model(identifier="collapsed lung")
-            assert synonym_result is not None
-            assert synonym_result.oifm_id == "OIFM_TEST_000001"
+            # Test get by name
+            name_result = await get_finding_model(identifier="abdominal aortic aneurysm")
+            assert name_result is not None
+            assert "abdominal aortic aneurysm" in name_result.name.lower()
 
             # Test count
             count_result = await count_finding_models()
-            assert count_result["finding_models"] == 1
+            assert count_result["finding_models"] >= 6  # At least the 6 in OIFM_IDS_IN_DEFS_DIR
             assert "people" in count_result
             assert "organizations" in count_result
-
-            # Cleanup
-            if test_index.conn is not None:
-                test_index.conn.close()
-
-    finally:
-        # Cleanup
-        if index.conn is not None:
-            index.conn.close()

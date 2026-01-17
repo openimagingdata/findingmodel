@@ -1,6 +1,6 @@
 # Plan: Monorepo Restructure with uv Workspaces
 
-**Status:** In Progress (Phase 3.6 Complete, Phase 3.7 Planned)
+**Status:** In Progress (Phase 4.7 Complete, Phases 5-6 Pending)
 **Supersedes:** [oidm-common-package-plan.md](oidm-common-package-plan.md), [anatomic-locations-package-plan.md](anatomic-locations-package-plan.md)
 
 ## Rationale
@@ -149,9 +149,13 @@ pip install findingmodel-ai   # Full: adds AI authoring tools
 | [3](monorepo_plan_phases/phase-3-anatomic.md) | Create anatomic-locations | ✅ COMPLETE | Anatomic ontology package |
 | [3.5](monorepo_plan_phases/phase-3.5-embeddings.md) | Embedding Utilities Cleanup | ✅ COMPLETE | Consolidated in oidm-common |
 | [3.6](monorepo_plan_phases/phase-3.6-distribution.md) | Distribution Code Cleanup | ✅ COMPLETE | anatomic-locations has ZERO findingmodel imports |
-| [3.7](monorepo_plan_phases/phase-3.7-maintenance.md) | Create oidm-maintenance | ✅ COMPLETE | Package created; read-only migration moved to 3.8 |
-| [3.8](monorepo_plan_phases/phase-3.8-critical-fixes.md) | Complete read-only migration | 📋 PLANNED | Strip DuckDBIndex to read-only, fix tests |
-| [4](monorepo_plan_phases/phase-4-findingmodel-ai.md) | Create findingmodel-ai | ⏳ PENDING | Extract AI tools |
+| [3.7](monorepo_plan_phases/phase-3.7-maintenance.md) | Create oidm-maintenance | ✅ COMPLETE | Build/publish ops in dedicated package |
+| [3.8](monorepo_plan_phases/phase-3.8-critical-fixes.md) | Complete read-only migration | ✅ COMPLETE | DuckDBIndex read-only, tests use pre-built fixture |
+| [3.9](monorepo_plan_phases/phase-3.9-dependency-cleanup.md) | Dependency cleanup | ✅ COMPLETE | Each package declares what it imports directly |
+| [4](monorepo_plan_phases/phase-4-findingmodel-ai.md) | Create findingmodel-ai | ✅ COMPLETE | Package created, tools moved |
+| [4.5](monorepo_plan_phases/phase-4.5-ai-separation-cleanup.md) | AI Separation Cleanup | ✅ COMPLETE | Clean separation (config, CLI, embeddings via oidm-common) |
+| [4.6](monorepo_plan_phases/phase-4.6-duckdb-search-consolidation.md) | DuckDB Search Consolidation | ✅ COMPLETE | Proper async patterns with asyncer, hybrid search in anatomic-locations |
+| [4.7](monorepo_plan_phases/phase-4.7-ai-separation-cleanup.md) | AI Separation Cleanup | ⏳ PENDING | Move misplaced tests, clean config cruft |
 | [5](monorepo_plan_phases/phase-5-cleanup.md) | Clean up findingmodel | ⏳ PENDING | Remove extracted code |
 | [6](monorepo_plan_phases/phase-6-documentation.md) | Documentation and AI Setup | ⏳ PENDING | CLAUDE.md, rules, Serena |
 

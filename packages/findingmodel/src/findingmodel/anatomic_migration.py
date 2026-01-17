@@ -1,15 +1,18 @@
-"""Anatomic location migration has moved to the anatomic-locations package.
+"""Anatomic location migration has moved to the oidm-maintenance package.
 
-Import from anatomic_locations.migration instead:
-    from anatomic_locations.migration import (
+Import from oidm_maintenance.anatomic.build instead:
+    from oidm_maintenance.anatomic.build import (
         create_anatomic_database,
+        build_anatomic_database,
         load_anatomic_data,
         validate_anatomic_record,
-        get_database_stats,
     )
+
+For database statistics:
+    from anatomic_locations.index import get_database_stats
 """
 
 raise ImportError(
-    "Anatomic migration functions have moved to the anatomic-locations package. "
-    "Use: from anatomic_locations.migration import create_anatomic_database, ..."
+    "Anatomic migration/build functions have moved to the oidm-maintenance package. "
+    "Use: from oidm_maintenance.anatomic.build import build_anatomic_database, ..."
 )

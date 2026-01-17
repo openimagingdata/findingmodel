@@ -8,20 +8,78 @@ tasks:
       - task -l
     silent: true
 
-  test:
-    desc: "Test the findingmodel library"
+  # =============================================================================
+  # Per-package test tasks
+  # =============================================================================
+
+  test:oidm-common:
+    desc: "Test oidm-common package"
     cmds:
-      - echo "Testing library without callout test..."
-      - uv run pytest -rs -m "not callout" {{.CLI_ARGS}}
+      - uv run pytest packages/oidm-common/tests -rs {{.CLI_ARGS}}
     silent: true
 
-  test-full:
-    desc: "Test the findingmodel library"
+  test:anatomic:
+    desc: "Test anatomic-locations package"
+    cmds:
+      - uv run pytest packages/anatomic-locations/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel:
+    desc: "Test findingmodel package (no callouts)"
+    cmds:
+      - uv run pytest packages/findingmodel/tests -rs -m "not callout" {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel-full:
+    desc: "Test findingmodel package (with callouts)"
+    cmds:
+      - uv run pytest packages/findingmodel/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel-ai:
+    desc: "Test findingmodel-ai package (no callouts)"
+    cmds:
+      - uv run pytest packages/findingmodel-ai/tests -rs -m "not callout" {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel-ai-full:
+    desc: "Test findingmodel-ai package (with callouts)"
     env:
       PYDANTIC_ALLOW_MODEL_REQUESTS: "1"
     cmds:
-      - echo "Testing library (including call-outs)..."
-      - uv run pytest -rs {{.CLI_ARGS}}
+      - uv run pytest packages/findingmodel-ai/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  test:maintenance:
+    desc: "Test oidm-maintenance package"
+    cmds:
+      - uv run pytest packages/oidm-maintenance/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  # =============================================================================
+  # Aggregate test tasks
+  # =============================================================================
+
+  test:
+    desc: "Test all packages (no callouts)"
+    cmds:
+      - echo "Testing all packages (excluding callouts)..."
+      - task: test:oidm-common
+      - task: test:anatomic
+      - task: test:findingmodel
+      - task: test:findingmodel-ai
+      - task: test:maintenance
+    silent: true
+
+  test-full:
+    desc: "Test all packages (with callouts)"
+    cmds:
+      - echo "Testing all packages (including callouts)..."
+      - task: test:oidm-common
+      - task: test:anatomic
+      - task: test:findingmodel-full
+      - task: test:findingmodel-ai-full
+      - task: test:maintenance
     silent: true
 
   evals:
@@ -87,12 +145,12 @@ tasks:
     silent: true
 
   check:
-    desc: "Check the findingmodel library"
+    desc: "Check all packages (format, lint, type-check)"
     cmds:
-      - echo "Checking library..."
+      - echo "Checking all packages..."
       - uv run ruff format packages/
       - uv run ruff check --fix packages/
-      - uv run mypy packages/findingmodel/src/findingmodel
+      - uv run mypy
     silent: true
 
   build:
@@ -107,7 +165,7 @@ tasks:
     cmds:
       - uv run ruff format --quiet packages/
       - uv run ruff check --fix --quiet packages/
-      - uv run mypy packages/findingmodel/src/findingmodel --no-error-summary --no-pretty
+      - uv run mypy --no-error-summary --no-pretty
       - uv run pytest -q {{.CLI_ARGS}}
     silent: true
 
