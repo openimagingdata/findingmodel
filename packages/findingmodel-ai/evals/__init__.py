@@ -5,13 +5,16 @@ Individual eval modules require NO additional Logfire code - instrumentation is 
 - Pydantic Evals: Dataset.evaluate() creates root + per-case spans
 - Pydantic AI: logfire.instrument_pydantic_ai() traces agent/model/tool calls
 
-Configuration is read from .env via findingmodel.config.settings.
+Configuration via environment:
+- LOGFIRE_TOKEN: Set to send to Logfire cloud (optional)
+- LOGFIRE_CONSOLE: Set to "true" for verbose console output
 
 See: https://ai.pydantic.dev/evals/#integration-with-logfire
 """
 
+import os
+
 import logfire
-from findingmodel.config import settings
 from logfire import ConsoleOptions
 
 # Track instrumentation state to make ensure_instrumented() idempotent
@@ -30,15 +33,11 @@ def ensure_instrumented() -> None:
         return
 
     # Configure Logfire once for entire evals package
+    # Uses environment variables: LOGFIRE_TOKEN, LOGFIRE_CONSOLE
+    console_enabled = os.getenv("LOGFIRE_CONSOLE", "").lower() in ("true", "1", "yes")
     logfire.configure(
-        token=settings.logfire_token.get_secret_value() if settings.logfire_token else None,
-        send_to_logfire=False if settings.disable_send_to_logfire else "if-token-present",
-        console=ConsoleOptions(
-            colors="auto",
-            min_log_level="debug",
-        )
-        if settings.logfire_verbose
-        else False,
+        send_to_logfire="if-token-present",
+        console=ConsoleOptions(colors="auto", min_log_level="debug") if console_enabled else False,
     )
 
     # Instrument Pydantic AI once for automatic agent/model/tool tracing

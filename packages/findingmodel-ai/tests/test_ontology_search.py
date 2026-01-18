@@ -4,7 +4,7 @@ import inspect
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from findingmodel.config import settings
+from findingmodel_ai.config import settings
 from findingmodel.protocols import OntologySearchResult
 from findingmodel_ai import config as ai_config
 from findingmodel_ai.search.bioontology import (

@@ -54,9 +54,9 @@ import os
 import re
 import time
 
-from findingmodel.config import settings
 from findingmodel.finding_info import FindingInfo
 from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
+from findingmodel_ai.config import settings
 from findingmodel_ai.evaluators import PerformanceEvaluator
 from pydantic import BaseModel, Field
 from pydantic_evals import Case, Dataset
@@ -993,7 +993,7 @@ Be strict but fair. Medical professionals will use these descriptions.""",
         include_expected_output=True,
         score={"evaluation_name": "quality", "include_reason": True},
         assertion=False,
-        model=settings.get_model("small"),  # Use small model from settings
+        model=settings.default_model_small,  # Use string model name from settings
     ),
     PerformanceEvaluator(time_limit=45.0),  # Accommodate Tavily cases which take longest
 ]

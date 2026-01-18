@@ -84,7 +84,7 @@ tasks:
 
   evals:
     desc: "Run all agent evaluation suites"
-    dir: packages/findingmodel
+    dir: packages/findingmodel-ai
     cmds:
       - echo "Running all agent evaluations..."
       - uv run python -m evals.model_editor
@@ -93,12 +93,11 @@ tasks:
       - uv run python -m evals.anatomic_search
       - uv run python -m evals.markdown_in
       - uv run python -m evals.finding_description
-      # Future: add other agent evals here
     silent: true
 
   evals:model_editor:
     desc: "Run model_editor evaluation suite"
-    dir: packages/findingmodel
+    dir: packages/findingmodel-ai
     cmds:
       - echo "Running model_editor evaluations..."
       - uv run python -m evals.model_editor
@@ -106,7 +105,7 @@ tasks:
 
   evals:similar_models:
     desc: "Run similar_models evaluation suite"
-    dir: packages/findingmodel
+    dir: packages/findingmodel-ai
     cmds:
       - echo "Running similar_models evaluations..."
       - uv run python -m evals.similar_models
@@ -114,7 +113,7 @@ tasks:
 
   evals:ontology_match:
     desc: "Run ontology_match evaluation suite"
-    dir: packages/findingmodel
+    dir: packages/findingmodel-ai
     cmds:
       - echo "Running ontology_match evaluations..."
       - uv run python -m evals.ontology_match
@@ -122,7 +121,7 @@ tasks:
 
   evals:anatomic_search:
     desc: "Run anatomic_search evaluation suite"
-    dir: packages/findingmodel
+    dir: packages/findingmodel-ai
     cmds:
       - echo "Running anatomic_search evaluations..."
       - uv run python -m evals.anatomic_search
@@ -130,7 +129,7 @@ tasks:
 
   evals:markdown_in:
     desc: "Run markdown_in evaluation suite"
-    dir: packages/findingmodel
+    dir: packages/findingmodel-ai
     cmds:
       - echo "Running markdown_in evaluations..."
       - uv run python -m evals.markdown_in
@@ -138,7 +137,7 @@ tasks:
 
   evals:finding_description:
     desc: "Run finding_description evaluation suite"
-    dir: packages/findingmodel
+    dir: packages/findingmodel-ai
     cmds:
       - echo "Running finding_description evaluations..."
       - uv run python -m evals.finding_description
