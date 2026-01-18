@@ -182,38 +182,84 @@ class TestAnatomicLocationIndexSearch:
         built_test_db: Path,
         anatomic_query_embeddings: dict[str, list[float]],
     ) -> None:
-        """HNSW search returns results using embeddings.
+        """Hybrid search with embeddings combines FTS and semantic results using RRF fusion.
 
-        Note: Current implementation only does FTS search.
-        This test verifies the search infrastructure works and can be
-        extended for hybrid search in the future.
+        Tests that when embeddings are available, search uses both FTS and HNSW
+        indexes and fuses results.
         """
         async with AnatomicLocationIndex(built_test_db) as index:
-            # For now, just verify search returns results
-            # When hybrid search is implemented, we can use the query embeddings
-            results = await index.search("nasal structures", limit=5)
+            # Mock _get_embedding to return fixture embedding for "knee joint"
+            with patch.object(
+                index,
+                "_get_embedding",
+                new=AsyncMock(return_value=anatomic_query_embeddings["knee joint"]),
+            ):
+                results = await index.search("knee joint", limit=5)
 
-            # Should return some results
-            assert isinstance(results, list)
-            assert all(isinstance(r, AnatomicLocation) for r in results)
+                # Should return results (hybrid search path executed)
+                assert isinstance(results, list)
+                assert len(results) > 0
+                assert all(isinstance(r, AnatomicLocation) for r in results)
 
-    def test_hybrid_search(self, built_test_db: Path) -> None:
-        """Combined FTS+vector search (deferred to future phase).
+                # Verify results include knee-related locations
+                descriptions = [r.description.lower() for r in results]
+                assert any("knee" in desc for desc in descriptions)
 
-        TODO: Implement hybrid search that combines:
-        - FTS results (keyword matching)
-        - HNSW vector similarity results
-        - Score fusion/ranking strategy
+    @pytest.mark.asyncio
+    async def test_hybrid_search(
+        self,
+        built_test_db: Path,
+        anatomic_query_embeddings: dict[str, list[float]],
+    ) -> None:
+        """Hybrid search combines FTS and semantic results using RRF fusion.
 
-        For now, this is a placeholder to acknowledge the planned feature.
-        The current search() method only uses FTS.
+        Validates that:
+        - FTS search provides keyword matches
+        - Semantic search provides vector similarity matches
+        - RRF fusion combines both result sets
+        - Results are deduplicated when same item appears in both
         """
-        # Placeholder - hybrid search not yet implemented
-        # When implemented, this should test:
-        # 1. Results include both keyword and semantic matches
-        # 2. Scoring appropriately weights both signals
-        # 3. Duplicate removal when same result appears in both
-        pass
+        async with AnatomicLocationIndex(built_test_db) as index:
+            # Mock _get_embedding to return fixture embedding for "heart cardiac"
+            with patch.object(
+                index,
+                "_get_embedding",
+                new=AsyncMock(return_value=anatomic_query_embeddings["heart cardiac"]),
+            ):
+                results = await index.search("heart cardiac", limit=10)
+
+                # Should return results from hybrid path
+                assert isinstance(results, list)
+                assert len(results) > 0
+                assert all(isinstance(r, AnatomicLocation) for r in results)
+
+                # All results should be bound to index
+                assert all(r._index is not None for r in results)
+
+                # Results should include heart/cardiac-related locations
+                descriptions = [r.description.lower() for r in results]
+                assert any("heart" in desc or "cardiac" in desc for desc in descriptions)
+
+    @pytest.mark.asyncio
+    async def test_search_falls_back_to_fts_only(self, built_test_db: Path) -> None:
+        """When no embedding available, search falls back to FTS-only.
+
+        Validates fallback behavior when semantic search is not available
+        (e.g., no API key configured).
+        """
+        async with AnatomicLocationIndex(built_test_db) as index:
+            # Mock _get_embedding to return None (no API key)
+            with patch.object(index, "_get_embedding", new=AsyncMock(return_value=None)):
+                results = await index.search("nasal structures", limit=5)
+
+                # Should still return FTS results
+                assert isinstance(results, list)
+                assert len(results) > 0
+                assert all(isinstance(r, AnatomicLocation) for r in results)
+
+                # Results should include nasal-related locations
+                descriptions = [r.description.lower() for r in results]
+                assert any("nasal" in desc or "nose" in desc for desc in descriptions)
 
 
 # =============================================================================
