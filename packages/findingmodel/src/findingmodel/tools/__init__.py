@@ -6,12 +6,10 @@ from findingmodel.index import DuckDBIndex as Index
 from .index_codes import add_standard_codes_to_finding_model, add_standard_codes_to_model  # deprecated alias
 
 # NOTE: AI tools have moved to findingmodel_ai package.
-# For backward compatibility during migration, we keep stubs here that will be removed in Phase 4.5.
-# New code should import directly from findingmodel_ai.tools.
-#
-# Example:
-#   OLD: from findingmodel.tools import find_anatomic_locations
-#   NEW: from findingmodel_ai.tools import find_anatomic_locations
+# Import from the appropriate subpackage:
+#   - findingmodel_ai.enrichment (enrich_finding, enrich_finding_unified, enrich_finding_agentic)
+#   - findingmodel_ai.search (find_anatomic_locations, find_similar_models, match_ontology_concepts)
+#   - findingmodel_ai.authoring (create_info_from_name, create_model_from_markdown, edit_model_natural_language)
 
 
 def add_ids_to_model(

@@ -4,7 +4,7 @@ from typing import Any
 
 from jinja2 import Template
 
-PROMPT_TEMPLATE_DIR = Path(__file__).parent / "prompt_templates"
+PROMPT_TEMPLATE_DIR = Path(__file__).parent.parent / "prompt_templates"
 
 
 def load_prompt_template(template_file_name: str) -> Template:

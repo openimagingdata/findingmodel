@@ -155,7 +155,7 @@ pip install findingmodel-ai   # Full: adds AI authoring tools
 | [4](monorepo_plan_phases/phase-4-findingmodel-ai.md) | Create findingmodel-ai | ✅ COMPLETE | Package created, tools moved |
 | [4.5](monorepo_plan_phases/phase-4.5-ai-separation-cleanup.md) | AI Separation Cleanup | ✅ COMPLETE | Clean separation (config, CLI, embeddings via oidm-common) |
 | [4.6](monorepo_plan_phases/phase-4.6-duckdb-search-consolidation.md) | DuckDB Search Consolidation | ✅ COMPLETE | Proper async patterns with asyncer, hybrid search in anatomic-locations |
-| [4.7](monorepo_plan_phases/phase-4.7-ai-separation-cleanup.md) | AI Separation Cleanup | ⏳ PENDING | Move misplaced tests, clean config cruft |
+| [4.7](monorepo_plan_phases/phase-4.7-ai-separation-cleanup.md) | AI Separation Cleanup | ✅ COMPLETE | Tests moved to findingmodel-ai, config trimmed |
 | [5](monorepo_plan_phases/phase-5-cleanup.md) | Clean up findingmodel | ⏳ PENDING | Remove extracted code |
 | [6](monorepo_plan_phases/phase-6-documentation.md) | Documentation and AI Setup | ⏳ PENDING | CLAUDE.md, rules, Serena |
 

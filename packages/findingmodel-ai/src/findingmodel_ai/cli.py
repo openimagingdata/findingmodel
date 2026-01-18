@@ -7,12 +7,8 @@ from findingmodel.finding_model import FindingModelBase, FindingModelFull
 from findingmodel.tools import add_ids_to_finding_model, add_standard_codes_to_finding_model
 from rich.console import Console
 
-from findingmodel_ai.tools import (
-    create_finding_model_from_markdown,
-    create_finding_model_stub_from_finding_info,
-    describe_finding_name,
-    get_detail_on_finding,
-)
+from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
+from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
 
 
 @click.group()
@@ -40,12 +36,12 @@ def make_info(finding_name: str, detailed: bool, output: Path | None) -> None:
 
     async def _do_make_info(finding_name: str, detailed: bool, output: Path | None) -> None:
         with console.status("[bold green]Getting description and synonyms..."):
-            described_finding = await describe_finding_name(finding_name)
+            described_finding = await create_info_from_name(finding_name)
         if not isinstance(described_finding, FindingInfo):
             raise ValueError("Finding info not returned.")
         if detailed:
             with console.status("Getting detailed information... "):
-                detailed_response = await get_detail_on_finding(described_finding)
+                detailed_response = await add_details_to_info(described_finding)
             if not isinstance(detailed_response, FindingInfo):
                 raise ValueError("Detailed finding info not returned.")
             described_finding = detailed_response
@@ -78,12 +74,14 @@ def make_stub_model(
     async def _do_make_stub_model(
         finding_name: str, tags: list[str], with_codes: bool, with_ids: bool, source: str | None, output: Path | None
     ) -> None:
+        from findingmodel.create_stub import create_model_stub_from_info
+
         console.print(f"[gray] Getting stub model for [yellow bold]{finding_name}")
         # Get it from the database if it's already there
         with console.status("[bold green]Getting description and synonyms..."):
-            described_finding = await describe_finding_name(finding_name)
+            described_finding = await create_info_from_name(finding_name)
         assert isinstance(described_finding, FindingInfo)
-        stub: FindingModelBase | FindingModelFull = create_finding_model_stub_from_finding_info(described_finding, tags)
+        stub: FindingModelBase | FindingModelFull = create_model_stub_from_info(described_finding, list(tags))
         if with_ids:
             if source and len(source) in [3, 4]:
                 stub = add_ids_to_finding_model(stub, source.upper())
@@ -120,13 +118,16 @@ def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, outpu
     async def _do_markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, output: Path | None) -> None:
         finding_name = finding_path.stem.replace("_", " ").replace("-", " ")
         with console.status("[bold green]Getting description..."):
-            described_finding = await describe_finding_name(finding_name)
+            described_finding = await create_info_from_name(finding_name)
         print_info_truncate_detail(console, described_finding)
         assert isinstance(described_finding, FindingInfo), "Finding info not returned."
 
+        # Read markdown file
+        markdown_text = finding_path.read_text()
+
         with console.status("Creating model from Markdown description..."):
-            model: FindingModelBase | FindingModelFull = await create_finding_model_from_markdown(
-                described_finding, markdown_path=finding_path
+            model: FindingModelBase | FindingModelFull = await create_model_from_markdown(
+                described_finding, markdown_text=markdown_text
             )
         if with_ids:
             if source and len(source) in [3, 4]:

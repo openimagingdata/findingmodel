@@ -1,28 +1,39 @@
 # Phase 4.8: findingmodel-ai Module Reorganization
 
-**Status:** PLANNED
+**Status:** ✅ COMPLETE (2026-01-18)
 **Depends on:** Phase 4.7 (AI Separation Cleanup)
-**Priority:** Low - organizational cleanup, not blocking functionality
+**Priority:** Medium - improves code organization before first publish
 
 ## Problem Statement
 
-The `findingmodel-ai` package has grown organically and has some structural issues:
+The `findingmodel-ai` package has a structural issue: the `tools/` directory is meaninglessly named since the **entire library** is AI tools. The name adds no organizational value.
 
-1. **Flat tools/ directory** - 12 Python modules in a single directory mixing different concerns:
-   - AI-powered tools using pydantic-ai (9 files)
-   - Pure utility code (prompt_template.py - jinja2 only)
-   - External API clients (ontology_search.py - httpx/BioOntology)
-   - Evaluator infrastructure (evaluators.py - pydantic_evals)
+### Current Issues
 
-2. **Unclear module boundaries** - Some tools are logically related but scattered:
-   - Enrichment: `finding_enrichment.py`, `finding_enrichment_agentic.py`
-   - Search: `ontology_search.py`, `ontology_concept_match.py`, `anatomic_location_search.py`, `similar_finding_models.py`
-   - Model creation: `finding_description.py`, `markdown_in.py`
-   - Model editing: `model_editor.py`
+1. **Redundant `tools/` layer** - The whole package is AI tools, so `tools/` is meaningless
+2. **Flat structure** - 12 Python modules in one directory mixing different concerns:
+   - AI-powered agents (9 files)
+   - External API client (ontology_search.py)
+   - Internal utilities (common.py, prompt_template.py)
+   - Evaluator infrastructure (evaluators.py)
+3. **Unclear module boundaries** - Related functionality is scattered
 
-3. **Evaluator placement** - `tools/evaluators.py` contains pydantic_evals evaluators but there's also a separate `evals/` directory at package root
+### Current Module Categories
 
-4. **Backward compatibility debt** - Previous phases required re-exports for compatibility; should document what's deprecated
+| Module | Category | Purpose |
+|--------|----------|---------|
+| `finding_enrichment.py` | Enrichment | Unified enrichment pipeline (3-stage) |
+| `finding_enrichment_agentic.py` | Enrichment | Alternative tool-calling approach |
+| `ontology_concept_match.py` | Search | SNOMED/RadLex matching (4-stage) |
+| `anatomic_location_search.py` | Search | Anatomic location finding (3-stage) |
+| `similar_finding_models.py` | Search | Find similar models to edit |
+| `ontology_search.py` | Search | BioOntology API client (httpx) |
+| `finding_description.py` | Authoring | Generate FindingInfo from name |
+| `markdown_in.py` | Authoring | Create model from markdown |
+| `model_editor.py` | Authoring | Natural language/markdown editing |
+| `common.py` | Internal | Embedding cache, Tavily client |
+| `prompt_template.py` | Internal | Jinja2 template loading |
+| `evaluators.py` | Evals | pydantic_evals evaluator classes |
 
 ---
 
@@ -45,7 +56,7 @@ packages/findingmodel-ai/
 │   ├── ontology_concept_match.py
 │   └── test_unified_enrichment.py
 ├── src/findingmodel_ai/
-│   ├── tools/                # All AI tools (flat)
+│   ├── tools/                # <-- Redundant name
 │   │   ├── __init__.py
 │   │   ├── anatomic_location_search.py
 │   │   ├── common.py
@@ -68,163 +79,236 @@ packages/findingmodel-ai/
 
 ---
 
-## Proposed Changes
+## Proposed Structure
 
-### Option A: Minimal - Document and Clean (Recommended)
-
-**Philosophy:** The current structure works. Focus on documentation and minor cleanup rather than major reorganization that could break imports.
-
-#### A1. Document Module Organization
-
-Create `packages/findingmodel-ai/src/findingmodel_ai/tools/README.md`:
-
-```markdown
-# findingmodel_ai.tools
-
-## Module Categories
-
-### AI-Powered Tools (pydantic-ai)
-- `finding_description.py` - Generate FindingInfo from name
-- `finding_enrichment.py` - Unified finding enrichment
-- `finding_enrichment_agentic.py` - Agentic enrichment alternative
-- `markdown_in.py` - Create FindingModel from markdown
-- `model_editor.py` - Natural language model editing
-- `ontology_concept_match.py` - AI categorization of ontology concepts
-- `anatomic_location_search.py` - Anatomic location matching
-- `similar_finding_models.py` - Find similar models
-
-### External API Clients
-- `ontology_search.py` - BioOntology API client (httpx)
-
-### Utilities
-- `common.py` - Shared utilities for AI tools
-- `prompt_template.py` - Jinja2 template loading
-- `evaluators.py` - pydantic_evals evaluator classes
-
-### Template Files
-- `prompt_templates/` - Jinja2 templates for AI prompts
-```
-
-#### A2. Move evaluators.py to evals/ (Optional)
-
-The `evaluators.py` file contains `Evaluator` subclasses for pydantic_evals. These are used by the eval suites in `evals/`. Consider moving:
+Organize by functional domain, eliminate the redundant `tools/` layer:
 
 ```
-tools/evaluators.py → evals/evaluators.py
-```
-
-Update imports in:
-- `evals/*.py` files
-- `tests/tools/test_evaluators.py`
-
-#### A3. Update Deprecation Notices
-
-In `tools/__init__.py`, clearly document deprecated re-exports:
-
-```python
-# Deprecated re-exports for backward compatibility
-# These functions moved to findingmodel core - import from findingmodel.create_stub instead
-from findingmodel.create_stub import (
-    create_finding_model_stub_from_finding_info,  # DEPRECATED
-    create_model_stub_from_info,                   # Use findingmodel.create_model_stub_from_info
-)
+src/findingmodel_ai/
+├── __init__.py              # Package API exports
+├── cli.py
+├── config.py
+│
+├── enrichment/              # Finding enrichment workflows
+│   ├── __init__.py          # exports: enrich_finding_unified, enrich_finding_agentic
+│   ├── unified.py           # Main 3-stage pipeline
+│   └── agentic.py           # Alternative tool-calling approach
+│
+├── search/                  # Search and matching workflows
+│   ├── __init__.py          # exports: match_ontology_concepts, find_anatomic_locations, etc.
+│   ├── ontology.py          # ontology_concept_match (4-stage pipeline)
+│   ├── anatomic.py          # anatomic_location_search (3-stage pipeline)
+│   ├── similar.py           # similar_finding_models
+│   └── bioontology.py       # BioOntology API client (public)
+│
+├── authoring/               # Model creation and editing
+│   ├── __init__.py          # exports: create_info_from_name, create_model_from_markdown, etc.
+│   ├── description.py       # finding_description (name → FindingInfo)
+│   ├── markdown_in.py       # markdown → FindingModel
+│   └── editor.py            # model_editor (natural language + markdown editing)
+│
+├── _internal/               # Non-public utilities
+│   ├── __init__.py
+│   ├── prompts.py           # prompt_template functionality
+│   └── common.py            # embedding cache, Tavily client
+│
+├── evaluators.py            # Keep at top-level (must be in src for installability)
+└── prompt_templates/        # Move up from tools/
 ```
 
 ---
 
-### Option B: Subpackage Reorganization (Future)
+## Implementation Steps
 
-**Philosophy:** Group related functionality into subpackages for better discoverability.
+### Step 1: Create new directory structure
 
-**Not recommended now** because:
-- Breaks many imports
-- Requires extensive re-export setup
-- Current flat structure is manageable
-
-If pursued later, proposed structure:
-
+```bash
+mkdir -p packages/findingmodel-ai/src/findingmodel_ai/{enrichment,search,authoring,_internal}
 ```
-tools/
-├── __init__.py           # Re-exports for backward compatibility
-├── enrichment/           # Finding enrichment tools
-│   ├── unified.py
-│   └── agentic.py
-├── search/               # Search and matching tools
-│   ├── ontology.py
-│   ├── anatomic.py
-│   └── similar.py
-├── creation/             # Model creation tools
-│   ├── description.py
-│   └── markdown.py
-├── editing/              # Model editing tools
-│   └── editor.py
-└── _internal/            # Internal utilities
-    ├── common.py
-    └── prompts.py
+
+### Step 2: Move and rename files
+
+| From | To |
+|------|-----|
+| `tools/finding_enrichment.py` | `enrichment/unified.py` |
+| `tools/finding_enrichment_agentic.py` | `enrichment/agentic.py` |
+| `tools/ontology_concept_match.py` | `search/ontology.py` |
+| `tools/anatomic_location_search.py` | `search/anatomic.py` |
+| `tools/similar_finding_models.py` | `search/similar.py` |
+| `tools/ontology_search.py` | `search/bioontology.py` |
+| `tools/finding_description.py` | `authoring/description.py` |
+| `tools/markdown_in.py` | `authoring/markdown_in.py` |
+| `tools/model_editor.py` | `authoring/editor.py` |
+| `tools/common.py` | `_internal/common.py` |
+| `tools/prompt_template.py` | `_internal/prompts.py` |
+| `tools/evaluators.py` | `evaluators.py` (top-level) |
+| `tools/prompt_templates/` | `prompt_templates/` (top-level) |
+
+### Step 3: Create subpackage `__init__.py` files
+
+**enrichment/__init__.py:**
+```python
+from findingmodel_ai.enrichment.unified import enrich_finding, enrich_finding_unified
+from findingmodel_ai.enrichment.agentic import enrich_finding_agentic
+
+__all__ = ["enrich_finding", "enrich_finding_unified", "enrich_finding_agentic"]
 ```
+
+**search/__init__.py:**
+```python
+from findingmodel_ai.search.ontology import match_ontology_concepts
+from findingmodel_ai.search.anatomic import find_anatomic_locations
+from findingmodel_ai.search.similar import find_similar_models
+from findingmodel_ai.search.bioontology import BioOntologySearchClient
+
+__all__ = [
+    "match_ontology_concepts",
+    "find_anatomic_locations",
+    "find_similar_models",
+    "BioOntologySearchClient",
+]
+```
+
+**authoring/__init__.py:**
+```python
+from findingmodel_ai.authoring.description import create_info_from_name, add_details_to_info
+from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
+from findingmodel_ai.authoring.editor import (
+    EditResult,
+    edit_model_natural_language,
+    edit_model_markdown,
+    export_model_for_editing,
+    assign_real_attribute_ids,
+    create_edit_agent,
+    create_markdown_edit_agent,
+)
+
+__all__ = [
+    "create_info_from_name",
+    "add_details_to_info",
+    "create_model_from_markdown",
+    "EditResult",
+    "edit_model_natural_language",
+    "edit_model_markdown",
+    "export_model_for_editing",
+    "assign_real_attribute_ids",
+    "create_edit_agent",
+    "create_markdown_edit_agent",
+]
+```
+
+**_internal/__init__.py:**
+```python
+# Internal utilities - not part of public API
+```
+
+### Step 4: Update main package `__init__.py`
+
+Re-export everything for flat import access:
+```python
+from findingmodel_ai.enrichment import enrich_finding_unified, enrich_finding_agentic
+from findingmodel_ai.search import match_ontology_concepts, find_anatomic_locations, find_similar_models
+from findingmodel_ai.authoring import (
+    create_info_from_name,
+    add_details_to_info,
+    create_model_from_markdown,
+    edit_model_natural_language,
+    edit_model_markdown,
+)
+```
+
+### Step 5: Update internal imports in moved files
+
+Each moved file needs import path updates for:
+- Cross-module imports (e.g., `from .common import` → `from findingmodel_ai._internal.common import`)
+- Prompt template paths
+
+### Step 6: Update all consumer imports
+
+Files to update:
+- `cli.py`
+- `scripts/*.py` (5 files)
+- `evals/*.py` (6 files)
+- `tests/*.py` (test files)
+
+### Step 7: Delete old `tools/` directory
+
+After all imports updated and tests pass.
+
+---
+
+## Files Summary
+
+### Create (4 files):
+- `enrichment/__init__.py`
+- `search/__init__.py`
+- `authoring/__init__.py`
+- `_internal/__init__.py`
+
+### Move/Rename (13 items):
+- 12 Python modules from `tools/` to new locations
+- `prompt_templates/` directory
+
+### Update imports (~20 files):
+- `cli.py`
+- `scripts/edit_finding_model.py`
+- `scripts/enrich_finding.py`
+- `scripts/enrich_findings_batch.py`
+- `scripts/ontology_concept_match.py`
+- `scripts/test_unified_enrichment.py`
+- `evals/anatomic_search.py`
+- `evals/finding_description.py`
+- `evals/markdown_in.py`
+- `evals/model_editor.py`
+- `evals/ontology_match.py`
+- `evals/similar_models.py`
+- `tests/test_*.py`
+- All moved modules (internal imports)
+
+### Delete:
+- `tools/` directory (after migration complete)
 
 ---
 
 ## Acceptance Criteria
 
-### For Option A (Minimal):
-
-- [ ] `tools/README.md` created documenting module organization
-- [ ] Deprecation notices added to `tools/__init__.py` for re-exports
-- [ ] (Optional) `evaluators.py` moved to `evals/` with import updates
-- [ ] All tests pass
-- [ ] All checks pass
-
-### For Option B (Future):
-
-- [ ] Subpackage structure created
-- [ ] All public APIs re-exported from `tools/__init__.py`
-- [ ] All existing imports continue to work
-- [ ] Documentation updated
-- [ ] All tests pass
+- [ ] New directory structure created (enrichment/, search/, authoring/, _internal/)
+- [ ] All modules moved to new locations with updated names
+- [ ] Subpackage `__init__.py` files export public APIs
+- [ ] Main `__init__.py` re-exports for flat access
+- [ ] All internal imports updated in moved files
+- [ ] All consumer imports updated (cli, scripts, evals, tests)
+- [ ] `tools/` directory deleted
+- [ ] All tests pass (`task test`)
+- [ ] All checks pass (`task check`)
 
 ---
 
 ## Verification
 
 ```bash
-# Verify all tests pass
-task test
-
-# Verify all checks pass
+# All checks pass
 task check
 
-# Verify backward compatibility - these imports should work
-python -c "from findingmodel_ai.tools import enrich_finding_unified"
-python -c "from findingmodel_ai.tools import create_model_stub_from_info"
-python -c "from findingmodel_ai.tools.finding_enrichment import enrich_finding"
+# All tests pass
+task test
+
+# CLI still works
+uv run fm-ai --help
+
+# New import paths work
+python -c "from findingmodel_ai import enrich_finding_unified"
+python -c "from findingmodel_ai.enrichment import enrich_finding_unified"
+python -c "from findingmodel_ai.search import find_anatomic_locations"
+python -c "from findingmodel_ai.authoring import edit_model_natural_language"
+python -c "from findingmodel_ai.search import BioOntologySearchClient"
 ```
 
 ---
 
-## Files Summary
+## Design Decisions
 
-### Option A - Create:
-- `packages/findingmodel-ai/src/findingmodel_ai/tools/README.md`
-
-### Option A - Modify:
-- `packages/findingmodel-ai/src/findingmodel_ai/tools/__init__.py` - add deprecation docs
-
-### Option A - Optional Move:
-- `tools/evaluators.py` → `evals/evaluators.py`
-- Update imports in `evals/*.py` and `tests/tools/test_evaluators.py`
-
----
-
-## Notes
-
-This phase is **low priority** because:
-1. Current structure works and tests pass
-2. Import paths are documented in `tools/__init__.py`
-3. No user-facing issues reported
-4. Focus should be on feature work, not reorganization
-
-Consider implementing only if:
-- New developers find the structure confusing
-- Adding many new tools that would benefit from grouping
-- Implementing features that require clearer module boundaries
+1. **BioOntology client is public** - Users can import `BioOntologySearchClient` directly for custom searches
+2. **evaluators.py stays in src** - Must be installable for users to use in their own evals
+3. **No backward compatibility for `tools.*`** - This is the first publish, no existing users
+4. **_internal/ prefix** - Signals these modules are not public API

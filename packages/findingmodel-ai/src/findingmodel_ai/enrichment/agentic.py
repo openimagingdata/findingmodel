@@ -18,9 +18,7 @@ from pydantic_ai import Agent, RunContext
 
 from findingmodel_ai import logger
 from findingmodel_ai.config import ModelTier, settings
-
-# Import shared types from the main module
-from findingmodel_ai.tools.finding_enrichment import (
+from findingmodel_ai.enrichment.unified import (
     ETIOLOGIES,
     BodyRegion,
     FindingEnrichmentResult,
@@ -144,7 +142,7 @@ def create_agentic_enrichment_agent(
 
         Returns codes that represent this finding (excludes anatomic location codes).
         """
-        from findingmodel_ai.tools.finding_enrichment import search_ontology_codes_for_finding
+        from findingmodel_ai.enrichment.unified import search_ontology_codes_for_finding
 
         finding_name = ctx.deps.finding_name
         description = ctx.deps.finding_description
@@ -183,9 +181,7 @@ def create_agentic_enrichment_agent(
 
         Returns ranked list of anatomic locations with concept IDs.
         """
-        from findingmodel_ai.tools.anatomic_location_search import (
-            find_anatomic_locations as _find_locations,
-        )
+        from findingmodel_ai.search.anatomic import find_anatomic_locations as _find_locations
 
         finding_name = ctx.deps.finding_name
         description = ctx.deps.finding_description

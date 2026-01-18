@@ -55,7 +55,7 @@ class PerformanceEvaluator(Evaluator[InputT, OutputT, MetadataT]):
 
     Example usage:
         >>> from pydantic_evals import Dataset, Case
-        >>> from findingmodel_ai.tools.evaluators import PerformanceEvaluator
+        >>> from findingmodel_ai.evaluators import PerformanceEvaluator
         >>>
         >>> # Create evaluator with 5-second time limit
         >>> perf_evaluator = PerformanceEvaluator(time_limit=5.0)

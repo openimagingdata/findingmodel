@@ -1,10 +1,10 @@
 from types import SimpleNamespace
 
 import findingmodel.tools
-import findingmodel_ai.tools.finding_description as finding_description
 import pytest
 from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
 from findingmodel.finding_model import AttributeType, ChoiceAttributeIded
+from findingmodel_ai.authoring import description as finding_description
 from findingmodel_ai.config import settings as ai_settings
 from pydantic_ai import models
 
@@ -20,9 +20,9 @@ HAS_GOOGLE_API_KEY = bool(ai_settings.google_api_key.get_secret_value())
 
 def test_create_stub(finding_info: FindingInfo) -> None:
     """Test creating a stub finding model from a FindingInfo object."""
-    from findingmodel_ai.tools import create_finding_model_stub_from_finding_info
+    from findingmodel.create_stub import create_model_stub_from_info
 
-    stub = create_finding_model_stub_from_finding_info(finding_info)
+    stub = create_model_stub_from_info(finding_info)
     assert isinstance(stub, FindingModelBase)
     assert stub.name == finding_info.name.lower()
     assert stub.description == finding_info.description
@@ -52,7 +52,7 @@ def test_add_ids_to_finding_model(base_model: FindingModelBase) -> None:
 
 def test_render_agent_prompt() -> None:
     """Test render_agent_prompt extracts instructions and user prompt correctly."""
-    from findingmodel_ai.tools.prompt_template import render_agent_prompt
+    from findingmodel_ai._internal.prompts import render_agent_prompt
     from jinja2 import Template
 
     # Create a simple test template
@@ -72,7 +72,7 @@ Please help with: {{task}}
 
 def test_render_agent_prompt_missing_user_section() -> None:
     """Test render_agent_prompt raises error if USER section missing."""
-    from findingmodel_ai.tools.prompt_template import render_agent_prompt
+    from findingmodel_ai._internal.prompts import render_agent_prompt
     from jinja2 import Template
 
     template_text = """# SYSTEM
@@ -211,7 +211,7 @@ def test_add_index_codes_to_finding_model_no_duplicates(full_model: FindingModel
 
 def test_create_model_stub_from_info_new_api(finding_info: FindingInfo) -> None:
     """Test creating a stub finding model using the new function name."""
-    from findingmodel_ai.tools import create_model_stub_from_info
+    from findingmodel.create_stub import create_model_stub_from_info
 
     stub = create_model_stub_from_info(finding_info)
     assert isinstance(stub, FindingModelBase)
@@ -288,7 +288,7 @@ async def test_create_info_from_name_basic_wiring() -> None:
         pytest.skip("OpenAI API key not configured")
 
     from findingmodel.finding_info import FindingInfo
-    from findingmodel_ai.tools import create_info_from_name
+    from findingmodel_ai.authoring.description import create_info_from_name
 
     # Save and restore ALLOW_MODEL_REQUESTS state
     original = models.ALLOW_MODEL_REQUESTS
@@ -330,8 +330,8 @@ async def test_add_details_to_info_with_test_model(monkeypatch: pytest.MonkeyPat
     """
     from unittest.mock import AsyncMock, patch
 
+    from findingmodel_ai.authoring.description import add_details_to_info
     from findingmodel_ai.config import FindingModelAIConfig
-    from findingmodel_ai.tools import add_details_to_info
 
     # Create test FindingInfo
     finding = FindingInfo(
@@ -405,8 +405,8 @@ async def test_add_details_to_info_empty_output_returns_none(monkeypatch: pytest
     """
     from unittest.mock import AsyncMock, patch
 
+    from findingmodel_ai.authoring.description import add_details_to_info
     from findingmodel_ai.config import FindingModelAIConfig
-    from findingmodel_ai.tools import add_details_to_info
     from pydantic_ai import Agent
 
     # Create test FindingInfo
@@ -443,8 +443,8 @@ async def test_add_details_to_info_search_depth_parameter(search_depth: str, mon
     from typing import Any
     from unittest.mock import AsyncMock, patch
 
+    from findingmodel_ai.authoring.description import add_details_to_info
     from findingmodel_ai.config import FindingModelAIConfig
-    from findingmodel_ai.tools import add_details_to_info
 
     # Create test FindingInfo
     finding = FindingInfo(
@@ -466,7 +466,7 @@ async def test_add_details_to_info_search_depth_parameter(search_depth: str, mon
     )
 
     # Mock get_async_tavily_client to return our mock client
-    monkeypatch.setattr("findingmodel_ai.tools.finding_description.get_async_tavily_client", lambda: mock_client)
+    monkeypatch.setattr("findingmodel_ai.authoring.description.get_async_tavily_client", lambda: mock_client)
 
     # Enable model requests for this test since we're using TestModel
     monkeypatch.setattr("pydantic_ai.models.ALLOW_MODEL_REQUESTS", True)
@@ -497,7 +497,7 @@ async def test_add_details_to_info_basic_wiring() -> None:
         pytest.skip("Tavily API key not configured")
 
     from findingmodel.finding_info import FindingInfo
-    from findingmodel_ai.tools import add_details_to_info
+    from findingmodel_ai.authoring.description import add_details_to_info
 
     # Save and restore ALLOW_MODEL_REQUESTS state
     original = models.ALLOW_MODEL_REQUESTS
@@ -530,8 +530,8 @@ async def test_create_model_from_markdown_with_test_model() -> None:
     from unittest.mock import patch
 
     from findingmodel.finding_model import ChoiceAttribute, ChoiceValue, FindingModelBase
+    from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
     from findingmodel_ai.config import FindingModelAIConfig
-    from findingmodel_ai.tools import create_model_from_markdown
     from pydantic_ai.models.test import TestModel
 
     # ALLOW_MODEL_REQUESTS is already False at module level
@@ -602,7 +602,8 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
         pytest.skip("OpenAI API key not configured")
 
     from findingmodel.finding_model import FindingModelBase
-    from findingmodel_ai.tools import create_info_from_name, create_model_from_markdown
+    from findingmodel_ai.authoring.description import create_info_from_name
+    from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
 
     # Save and restore ALLOW_MODEL_REQUESTS state
     original = models.ALLOW_MODEL_REQUESTS
@@ -643,8 +644,7 @@ async def test_find_similar_models_basic_wiring() -> None:
     All comprehensive behavioral testing is in evals/similar_models.py.
     This test only verifies the tool can be called successfully.
     """
-    from findingmodel_ai.tools import find_similar_models
-    from findingmodel_ai.tools.similar_finding_models import SimilarModelAnalysis
+    from findingmodel_ai.search.similar import SimilarModelAnalysis, find_similar_models
 
     # Skip if API key not configured
     if not ai_settings.openai_api_key or not ai_settings.openai_api_key.get_secret_value():
@@ -671,16 +671,6 @@ async def test_find_similar_models_basic_wiring() -> None:
         models.ALLOW_MODEL_REQUESTS = original
 
 
-def test_tools_import_failures() -> None:
-    """Test graceful handling when optional dependencies are missing."""
-    # This tests the robustness of the import system - verify re-exports work
-    import findingmodel_ai.tools
-
-    # Verify create_stub functions are re-exported for backward compatibility
-    assert hasattr(findingmodel_ai.tools, "create_model_stub_from_info")
-    assert hasattr(findingmodel_ai.tools, "create_finding_model_stub_from_finding_info")
-
-
 def test_concurrent_id_generation(base_model: FindingModelBase) -> None:
     """Test ID generation under concurrent access."""
     import concurrent.futures
@@ -704,7 +694,7 @@ def test_concurrent_id_generation(base_model: FindingModelBase) -> None:
 def test_get_async_tavily_client_with_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that get_async_tavily_client returns client when API key is set."""
     from findingmodel_ai import config as ai_cfg
-    from findingmodel_ai.tools.common import get_async_tavily_client
+    from findingmodel_ai._internal.common import get_async_tavily_client
     from pydantic import SecretStr
     from tavily import AsyncTavilyClient
 
@@ -722,7 +712,7 @@ def test_get_async_tavily_client_without_key_raises_error(monkeypatch: pytest.Mo
     """Test that get_async_tavily_client raises ConfigurationError when API key missing."""
     from findingmodel.config import ConfigurationError
     from findingmodel_ai import config as ai_cfg
-    from findingmodel_ai.tools.common import get_async_tavily_client
+    from findingmodel_ai._internal.common import get_async_tavily_client
     from pydantic import SecretStr
 
     # Temporarily override AI settings with empty key

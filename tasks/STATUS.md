@@ -1,6 +1,6 @@
 # Task Status Overview
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-18
 
 Quick reference for active tasks and project status. For completed tasks, see [done/README.md](done/README.md).
 
@@ -26,6 +26,7 @@ Quick reference for active tasks and project status. For completed tasks, see [d
 | 4.5 | ✅ COMPLETE | AI separation cleanup, embeddings via oidm-common |
 | 4.6 | ✅ COMPLETE | DuckDB search consolidation with proper async (asyncer) |
 | 4.7 | ✅ COMPLETE | AI separation cleanup - tests & config |
+| 4.8 | ✅ COMPLETE | findingmodel-ai module reorganization (tools/ → enrichment/, search/, authoring/) |
 | **5-6** | ⏳ **NEXT** | Cleanup and documentation |
 
 **Current Focus:** Phases 5-6 - Final cleanup and documentation for monorepo restructuring.

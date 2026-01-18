@@ -17,7 +17,7 @@ from pydantic_ai import Agent
 
 from findingmodel_ai import logger
 from findingmodel_ai.config import ModelTier, settings
-from findingmodel_ai.tools.ontology_search import BioOntologySearchClient
+from findingmodel_ai.search.bioontology import BioOntologySearchClient
 
 
 class CategorizedConcepts(BaseModel):

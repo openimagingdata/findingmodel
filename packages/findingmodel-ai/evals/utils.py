@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from findingmodel.finding_model import FindingModelFull
 
 if TYPE_CHECKING:
-    from findingmodel_ai.tools import model_editor
+    from findingmodel_ai.authoring import editor as model_editor
 
 
 def load_fm_json(filename: str) -> str:
@@ -70,7 +70,7 @@ def create_mock_edit_result(
         >>> assert result.model == model
         >>> assert "severity" in result.changes[0]
     """
-    from findingmodel_ai.tools import model_editor
+    from findingmodel_ai.authoring import editor as model_editor
 
     return model_editor.EditResult(
         model=model,

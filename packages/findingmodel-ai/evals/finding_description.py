@@ -56,8 +56,8 @@ import time
 
 from findingmodel.config import settings
 from findingmodel.finding_info import FindingInfo
-from findingmodel_ai.tools.evaluators import PerformanceEvaluator
-from findingmodel_ai.tools.finding_description import add_details_to_info, create_info_from_name
+from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
+from findingmodel_ai.evaluators import PerformanceEvaluator
 from pydantic import BaseModel, Field
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext, LLMJudge

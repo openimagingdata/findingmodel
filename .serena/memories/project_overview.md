@@ -30,11 +30,30 @@ findingmodel/                           # Workspace root
 │   │
 │   ├── findingmodel/                   # Core package (READ-ONLY)
 │   │   └── src/findingmodel/
-│   │       ├── tools/                  # AI agents/workflows
+│   │       ├── tools/                  # Non-AI utilities
 │   │       ├── finding_model.py        # FindingModel classes
 │   │       ├── index.py                # DuckDBIndex (search only)
 │   │       ├── cli.py                  # fm-tool
 │   │       └── mcp_server.py           # MCP for IDE access
+│   │
+│   ├── findingmodel-ai/                # AI-powered workflows
+│   │   └── src/findingmodel_ai/
+│   │       ├── enrichment/             # Finding enrichment pipelines
+│   │       │   ├── unified.py          # 3-stage enrichment
+│   │       │   └── agentic.py          # Tool-calling approach
+│   │       ├── search/                 # Search & matching
+│   │       │   ├── ontology.py         # SNOMED/RadLex matching
+│   │       │   ├── anatomic.py         # Anatomic location search
+│   │       │   ├── similar.py          # Similar model search
+│   │       │   └── bioontology.py      # BioOntology API client
+│   │       ├── authoring/              # Model creation & editing
+│   │       │   ├── description.py      # FindingInfo generation
+│   │       │   ├── markdown_in.py      # Markdown → FindingModel
+│   │       │   └── editor.py           # NL/markdown editing
+│   │       ├── _internal/              # Private utilities
+│   │       ├── evaluators.py           # pydantic_evals classes
+│   │       ├── config.py               # AI settings
+│   │       └── cli.py                  # fm-ai
 │   │
 │   └── oidm-maintenance/               # Build/publish (maintainers only)
 │       └── src/oidm_maintenance/
@@ -59,8 +78,8 @@ findingmodel/                           # Workspace root
         │                     │                     │
         ▼                     ▼                     ▼
 ┌──────────────────┐  ┌─────────────────┐  ┌─────────────────────┐
-│  (future)        │  │  findingmodel   │  │ anatomic-locations  │
-│  findingmodel-ai │  │ (core package)  │  │  (anatomic ontology)│
+│  findingmodel-ai │  │  findingmodel   │  │ anatomic-locations  │
+│ (AI workflows)   │  │ (core package)  │  │  (anatomic ontology)│
 └───────┬──────────┘  └────────┬────────┘  └─────────┬───────────┘
         │                      │                     │
         └──────────────────────┴─────────────────────┘
@@ -77,12 +96,14 @@ findingmodel/                           # Workspace root
 2. **Maintainer-only builds**: oidm-maintenance handles all database creation/publishing
 3. **Explicit dependencies**: Each package declares all dependencies it directly imports
 4. **Single lockfile**: uv.lock ensures consistent versions across all packages
+5. **AI separation**: findingmodel-ai contains all AI/LLM dependencies, core findingmodel has none
 
 ## Tech Stack
 - **Language**: Python 3.11+
 - **Build System**: uv workspaces
 - **Task Runner**: go-task
-- **Core deps**: pydantic v2, duckdb, pydantic-ai-slim, click, rich, loguru
+- **Core deps**: pydantic v2, duckdb, click, rich, loguru
+- **AI deps** (findingmodel-ai only): pydantic-ai-slim, tavily, httpx
 
 ## CLI Commands
 
@@ -92,6 +113,11 @@ fm-tool search "query"              # Search finding models
 fm-tool index stats                 # Show index statistics
 anatomic query "nasal"              # Query anatomic locations
 anatomic stats                      # Show anatomic DB stats
+
+# AI commands (findingmodel-ai)
+fm-ai make-info "pneumothorax"      # Generate FindingInfo from name
+fm-ai make-stub-model "finding"     # Generate stub model
+fm-ai markdown-to-fm file.md        # Convert markdown to model
 
 # Maintainer commands (oidm-maintenance)
 oidm-maintain findingmodel build    # Build findingmodel database

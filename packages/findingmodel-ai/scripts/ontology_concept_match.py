@@ -8,9 +8,9 @@ from typing import Any
 
 from findingmodel import logger
 from findingmodel.finding_info import FindingInfo
+from findingmodel_ai.authoring.description import create_info_from_name
 from findingmodel_ai.config import settings
-from findingmodel_ai.tools import create_info_from_name
-from findingmodel_ai.tools.ontology_concept_match import (
+from findingmodel_ai.search.ontology import (
     build_final_output,
     categorize_with_validation,
     execute_ontology_search,

@@ -52,9 +52,9 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 import math
 import time
 
-from findingmodel_ai.tools.evaluators import PerformanceEvaluator
-from findingmodel_ai.tools.ontology_concept_match import CategorizedOntologyConcepts, match_ontology_concepts
-from findingmodel_ai.tools.ontology_search import OntologySearchResult
+from findingmodel_ai.evaluators import PerformanceEvaluator
+from findingmodel_ai.search.bioontology import OntologySearchResult
+from findingmodel_ai.search.ontology import CategorizedOntologyConcepts, match_ontology_concepts
 from pydantic import BaseModel, Field
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext

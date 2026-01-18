@@ -10,7 +10,7 @@ from typing import TypeVar
 
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
-from findingmodel_ai.tools.model_editor import (
+from findingmodel_ai.authoring.editor import (
     EditResult,
     assign_real_attribute_ids,
     edit_model_markdown,

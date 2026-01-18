@@ -18,6 +18,7 @@ from pydantic_ai import Agent, RunContext
 from typing_extensions import NotRequired, TypedDict
 
 from findingmodel_ai import logger
+from findingmodel_ai._internal.common import get_markdown_text_from_path_or_text  # noqa: F401
 from findingmodel_ai.config import ModelTier, settings
 
 

@@ -219,7 +219,7 @@ async def search_ontology_codes_for_finding(
         >>> print(f"Found {len(snomed)} SNOMED codes and {len(radlex)} RadLex codes")
         Found 3 SNOMED codes and 2 RadLex codes
     """
-    from findingmodel_ai.tools.ontology_concept_match import match_ontology_concepts
+    from findingmodel_ai.search.ontology import match_ontology_concepts
 
     logger.info(f"Searching ontology codes for finding: {finding_name}")
 
@@ -633,9 +633,9 @@ async def enrich_finding_unified(  # noqa: C901
     """
     from time import perf_counter
 
-    from findingmodel_ai.tools.anatomic_location_search import generate_anatomic_query_terms
-    from findingmodel_ai.tools.ontology_concept_match import generate_finding_query_terms
-    from findingmodel_ai.tools.prompt_template import load_prompt_template, render_agent_prompt
+    from findingmodel_ai._internal.prompts import load_prompt_template, render_agent_prompt
+    from findingmodel_ai.search.anatomic import generate_anatomic_query_terms
+    from findingmodel_ai.search.ontology import generate_finding_query_terms
 
     timings: dict[str, float] = {}
     total_start = perf_counter()
@@ -694,7 +694,7 @@ async def enrich_finding_unified(  # noqa: C901
     # Search ontology codes (SNOMED/RadLex) via BioOntology API
     ontology_search_start = perf_counter()
     try:
-        from findingmodel_ai.tools.ontology_concept_match import execute_ontology_search
+        from findingmodel_ai.search.ontology import execute_ontology_search
 
         ontology_results = await execute_ontology_search(
             query_terms=ontology_queries,
@@ -714,7 +714,7 @@ async def enrich_finding_unified(  # noqa: C901
     try:
         from anatomic_locations import AnatomicLocationIndex
 
-        from findingmodel_ai.tools.anatomic_location_search import AnatomicQueryTerms, execute_anatomic_search
+        from findingmodel_ai.search.anatomic import AnatomicQueryTerms, execute_anatomic_search
 
         async with AnatomicLocationIndex() as index:
             query_info = AnatomicQueryTerms(region=anatomic_region, terms=anatomic_queries)
@@ -874,7 +874,7 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
         >>> print(f"Body regions: {result.body_regions}")
         >>> print(f"Anatomic locations: {[loc.concept_text for loc in result.anatomic_locations]}")
     """
-    from findingmodel_ai.tools.anatomic_location_search import find_anatomic_locations
+    from findingmodel_ai.search.anatomic import find_anatomic_locations
 
     logger.info(f"Starting enrichment workflow for: {identifier}")
 

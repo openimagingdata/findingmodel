@@ -17,7 +17,7 @@ from typing import Any
 
 from findingmodel import logger
 from findingmodel.index import DuckDBIndex
-from findingmodel_ai.tools.finding_enrichment import enrich_finding_unified
+from findingmodel_ai.enrichment.unified import enrich_finding_unified
 
 # Enable loguru logger
 logger.enable("findingmodel")

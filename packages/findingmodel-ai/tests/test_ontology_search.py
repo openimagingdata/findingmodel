@@ -7,7 +7,11 @@ import pytest
 from findingmodel.config import settings
 from findingmodel.protocols import OntologySearchResult
 from findingmodel_ai import config as ai_config
-from findingmodel_ai.tools.ontology_concept_match import (
+from findingmodel_ai.search.bioontology import (
+    BioOntologySearchClient,
+    BioOntologySearchResult,
+)
+from findingmodel_ai.search.ontology import (
     CategorizationContext,
     CategorizedConcepts,
     create_categorization_agent,
@@ -16,10 +20,6 @@ from findingmodel_ai.tools.ontology_concept_match import (
     execute_ontology_search,
     generate_finding_query_terms,
     match_ontology_concepts,
-)
-from findingmodel_ai.tools.ontology_search import (
-    BioOntologySearchClient,
-    BioOntologySearchResult,
 )
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
@@ -176,7 +176,7 @@ def test_query_terms_deduplication() -> None:
 async def test_generate_finding_query_terms_single_word() -> None:
     """Test query generation for single word."""
     # Mock the query generator agent to avoid API calls
-    with patch("findingmodel_ai.tools.ontology_concept_match.create_query_generator_agent") as mock_create:
+    with patch("findingmodel_ai.search.ontology.create_query_generator_agent") as mock_create:
         mock_agent = MagicMock()
         mock_result = MagicMock()
         mock_result.output = ["pneumonia", "lung infection", "pneumonitis", "bronchitis"]
@@ -193,7 +193,7 @@ async def test_generate_finding_query_terms_single_word() -> None:
 async def test_generate_finding_query_terms_with_description() -> None:
     """Test query generation with description."""
     # Mock the query generator agent
-    with patch("findingmodel_ai.tools.ontology_concept_match.create_query_generator_agent") as mock_create:
+    with patch("findingmodel_ai.search.ontology.create_query_generator_agent") as mock_create:
         mock_agent = MagicMock()
         mock_result = MagicMock()
         mock_result.output = ["pneumonia", "lung infection", "lung pneumonia"]  # Should infer anatomy
@@ -245,8 +245,8 @@ async def test_execute_ontology_search() -> None:
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
     with (
-        patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel_ai.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel_ai.search.ontology.settings") as mock_settings,
+        patch("findingmodel_ai.search.ontology.BioOntologySearchClient", return_value=mock_client),
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
@@ -287,8 +287,8 @@ async def test_execute_ontology_search_with_custom_ontologies() -> None:
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
     with (
-        patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel_ai.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel_ai.search.ontology.settings") as mock_settings,
+        patch("findingmodel_ai.search.ontology.BioOntologySearchClient", return_value=mock_client),
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
@@ -330,8 +330,8 @@ async def test_execute_ontology_search_with_none_ontologies() -> None:
     mock_client.__aexit__ = AsyncMock(return_value=None)
 
     with (
-        patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel_ai.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel_ai.search.ontology.settings") as mock_settings,
+        patch("findingmodel_ai.search.ontology.BioOntologySearchClient", return_value=mock_client),
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
@@ -357,7 +357,7 @@ async def test_execute_ontology_search_with_none_ontologies() -> None:
 @pytest.mark.asyncio
 async def test_execute_ontology_search_missing_api_key() -> None:
     """Test that execute_ontology_search raises ValueError when BioOntology API key is not configured."""
-    with patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings:
+    with patch("findingmodel_ai.search.ontology.settings") as mock_settings:
         # Mock that API key is not configured
         mock_settings.bioontology_api_key = None
 
@@ -500,10 +500,10 @@ async def test_match_ontology_concepts_integration() -> None:
 
     # Mock the categorization agent and query generation
     with (
-        patch("findingmodel_ai.tools.ontology_concept_match.create_categorization_agent") as mock_create,
-        patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel_ai.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
-        patch("findingmodel_ai.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
+        patch("findingmodel_ai.search.ontology.create_categorization_agent") as mock_create,
+        patch("findingmodel_ai.search.ontology.settings") as mock_settings,
+        patch("findingmodel_ai.search.ontology.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel_ai.search.ontology.generate_finding_query_terms") as mock_query_gen,
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
@@ -551,10 +551,10 @@ async def test_match_ontology_concepts_with_custom_ontologies() -> None:
 
     # Mock the categorization agent and query generation
     with (
-        patch("findingmodel_ai.tools.ontology_concept_match.create_categorization_agent") as mock_create,
-        patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel_ai.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
-        patch("findingmodel_ai.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
+        patch("findingmodel_ai.search.ontology.create_categorization_agent") as mock_create,
+        patch("findingmodel_ai.search.ontology.settings") as mock_settings,
+        patch("findingmodel_ai.search.ontology.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel_ai.search.ontology.generate_finding_query_terms") as mock_query_gen,
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
@@ -612,10 +612,10 @@ async def test_match_ontology_concepts_with_none_ontologies() -> None:
 
     # Mock the categorization agent and query generation
     with (
-        patch("findingmodel_ai.tools.ontology_concept_match.create_categorization_agent") as mock_create,
-        patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel_ai.tools.ontology_concept_match.BioOntologySearchClient", return_value=mock_client),
-        patch("findingmodel_ai.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
+        patch("findingmodel_ai.search.ontology.create_categorization_agent") as mock_create,
+        patch("findingmodel_ai.search.ontology.settings") as mock_settings,
+        patch("findingmodel_ai.search.ontology.BioOntologySearchClient", return_value=mock_client),
+        patch("findingmodel_ai.search.ontology.generate_finding_query_terms") as mock_query_gen,
     ):
         # Mock that API key is configured
         mock_settings.bioontology_api_key = "test-key"
@@ -660,8 +660,8 @@ async def test_match_ontology_concepts_with_none_ontologies() -> None:
 async def test_match_ontology_concepts_missing_api_key() -> None:
     """Test that match_ontology_concepts raises ValueError when BioOntology API key is not configured."""
     with (
-        patch("findingmodel_ai.tools.ontology_concept_match.settings") as mock_settings,
-        patch("findingmodel_ai.tools.ontology_concept_match.generate_finding_query_terms") as mock_query_gen,
+        patch("findingmodel_ai.search.ontology.settings") as mock_settings,
+        patch("findingmodel_ai.search.ontology.generate_finding_query_terms") as mock_query_gen,
     ):
         # Mock that API key is not configured
         mock_settings.bioontology_api_key = None

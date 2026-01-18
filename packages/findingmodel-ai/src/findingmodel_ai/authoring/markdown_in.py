@@ -6,9 +6,9 @@ from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase
 from pydantic_ai import Agent
 
+from findingmodel_ai._internal.common import get_markdown_text_from_path_or_text
+from findingmodel_ai._internal.prompts import load_prompt_template, render_agent_prompt
 from findingmodel_ai.config import ModelTier, settings
-from findingmodel_ai.tools.common import get_markdown_text_from_path_or_text
-from findingmodel_ai.tools.prompt_template import load_prompt_template, render_agent_prompt
 
 
 async def create_model_from_markdown(

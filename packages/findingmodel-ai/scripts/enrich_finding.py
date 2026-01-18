@@ -12,7 +12,7 @@ import argparse
 import asyncio
 
 from findingmodel import logger
-from findingmodel_ai.tools.finding_enrichment import enrich_finding
+from findingmodel_ai.enrichment.agentic import enrich_finding_agentic as enrich_finding
 
 # Enable loguru logger (disabled by default in __init__.py)
 logger.enable("findingmodel")

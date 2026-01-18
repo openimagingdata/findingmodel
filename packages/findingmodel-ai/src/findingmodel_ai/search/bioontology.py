@@ -1,4 +1,4 @@
-# src/findingmodel_ai/tools/ontology_search.py
+# src/findingmodel_ai/search/bioontology.py
 """
 Ontology search tools with Protocol-based architecture for multiple backends.
 

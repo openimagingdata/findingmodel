@@ -7,9 +7,9 @@ from findingmodel.finding_info import FindingInfo
 from pydantic_ai import Agent
 
 from findingmodel_ai import logger
+from findingmodel_ai._internal.common import get_async_tavily_client
+from findingmodel_ai._internal.prompts import load_prompt_template, render_agent_prompt
 from findingmodel_ai.config import ModelTier, settings
-from findingmodel_ai.tools.common import get_async_tavily_client
-from findingmodel_ai.tools.prompt_template import load_prompt_template, render_agent_prompt
 
 PROMPT_TEMPLATE_NAME = "get_finding_description"
 

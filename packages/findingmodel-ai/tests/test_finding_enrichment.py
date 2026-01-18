@@ -16,7 +16,7 @@ import pytest
 from findingmodel import IndexCode
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.protocols import OntologySearchResult
-from findingmodel_ai.tools.finding_enrichment import (
+from findingmodel_ai.enrichment.unified import (
     ETIOLOGIES,
     BodyRegion,
     EnrichmentClassification,
@@ -595,8 +595,8 @@ class TestSearchOntologyCodesForFinding:
         """Test that search_ontology_codes_for_finding separates SNOMED and RadLex codes."""
         from unittest.mock import AsyncMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import search_ontology_codes_for_finding
-        from findingmodel_ai.tools.ontology_concept_match import CategorizedOntologyConcepts
+        from findingmodel_ai.enrichment.unified import search_ontology_codes_for_finding
+        from findingmodel_ai.search.ontology import CategorizedOntologyConcepts
 
         # Create mock categorized results with mixed ontology systems
         mock_results = CategorizedOntologyConcepts(
@@ -622,7 +622,7 @@ class TestSearchOntologyCodesForFinding:
         )
 
         with patch(
-            "findingmodel_ai.tools.ontology_concept_match.match_ontology_concepts",
+            "findingmodel_ai.search.ontology.match_ontology_concepts",
             new=AsyncMock(return_value=mock_results),
         ):
             snomed_codes, radlex_codes = await search_ontology_codes_for_finding("test finding")
@@ -638,8 +638,8 @@ class TestSearchOntologyCodesForFinding:
         """Test search_ontology_codes_for_finding with empty results."""
         from unittest.mock import AsyncMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import search_ontology_codes_for_finding
-        from findingmodel_ai.tools.ontology_concept_match import CategorizedOntologyConcepts
+        from findingmodel_ai.enrichment.unified import search_ontology_codes_for_finding
+        from findingmodel_ai.search.ontology import CategorizedOntologyConcepts
 
         mock_results = CategorizedOntologyConcepts(
             exact_matches=[],
@@ -650,7 +650,7 @@ class TestSearchOntologyCodesForFinding:
         )
 
         with patch(
-            "findingmodel_ai.tools.ontology_concept_match.match_ontology_concepts",
+            "findingmodel_ai.search.ontology.match_ontology_concepts",
             new=AsyncMock(return_value=mock_results),
         ):
             snomed_codes, radlex_codes = await search_ontology_codes_for_finding("nonexistent finding")
@@ -663,8 +663,8 @@ class TestSearchOntologyCodesForFinding:
         """Test that exclude_anatomical=True is passed to match_ontology_concepts."""
         from unittest.mock import AsyncMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import search_ontology_codes_for_finding
-        from findingmodel_ai.tools.ontology_concept_match import CategorizedOntologyConcepts
+        from findingmodel_ai.enrichment.unified import search_ontology_codes_for_finding
+        from findingmodel_ai.search.ontology import CategorizedOntologyConcepts
 
         mock_match = AsyncMock(
             return_value=CategorizedOntologyConcepts(
@@ -676,7 +676,7 @@ class TestSearchOntologyCodesForFinding:
             )
         )
 
-        with patch("findingmodel_ai.tools.ontology_concept_match.match_ontology_concepts", new=mock_match):
+        with patch("findingmodel_ai.search.ontology.match_ontology_concepts", new=mock_match):
             await search_ontology_codes_for_finding("test finding", "test description")
 
             # Verify exclude_anatomical=True was passed
@@ -691,8 +691,8 @@ class TestSearchOntologyCodesForFinding:
         """Test that both exact_matches and should_include are collected."""
         from unittest.mock import AsyncMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import search_ontology_codes_for_finding
-        from findingmodel_ai.tools.ontology_concept_match import CategorizedOntologyConcepts
+        from findingmodel_ai.enrichment.unified import search_ontology_codes_for_finding
+        from findingmodel_ai.search.ontology import CategorizedOntologyConcepts
 
         mock_results = CategorizedOntologyConcepts(
             exact_matches=[
@@ -717,7 +717,7 @@ class TestSearchOntologyCodesForFinding:
         )
 
         with patch(
-            "findingmodel_ai.tools.ontology_concept_match.match_ontology_concepts",
+            "findingmodel_ai.search.ontology.match_ontology_concepts",
             new=AsyncMock(return_value=mock_results),
         ):
             snomed_codes, _ = await search_ontology_codes_for_finding("test finding")
@@ -730,12 +730,12 @@ class TestSearchOntologyCodesForFinding:
         """Test that exceptions are raised from search_ontology_codes_for_finding."""
         from unittest.mock import AsyncMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import search_ontology_codes_for_finding
+        from findingmodel_ai.enrichment.unified import search_ontology_codes_for_finding
 
         mock_match = AsyncMock(side_effect=Exception("Search failed"))
 
         with (
-            patch("findingmodel_ai.tools.ontology_concept_match.match_ontology_concepts", new=mock_match),
+            patch("findingmodel_ai.search.ontology.match_ontology_concepts", new=mock_match),
             pytest.raises(Exception, match="Search failed"),
         ):
             await search_ontology_codes_for_finding("test finding")
@@ -746,7 +746,7 @@ class TestCreateEnrichmentSystemPrompt:
 
     def test_system_prompt_includes_all_etiologies(self) -> None:
         """Test that system prompt includes all 22 etiologies."""
-        from findingmodel_ai.tools.finding_enrichment import ETIOLOGIES, _create_enrichment_system_prompt
+        from findingmodel_ai.enrichment.unified import ETIOLOGIES, _create_enrichment_system_prompt
 
         prompt = _create_enrichment_system_prompt()
 
@@ -756,7 +756,7 @@ class TestCreateEnrichmentSystemPrompt:
 
     def test_system_prompt_includes_modality_definitions(self) -> None:
         """Test that system prompt includes modality codes and explanations."""
-        from findingmodel_ai.tools.finding_enrichment import _create_enrichment_system_prompt
+        from findingmodel_ai.enrichment.unified import _create_enrichment_system_prompt
 
         prompt = _create_enrichment_system_prompt()
 
@@ -768,7 +768,7 @@ class TestCreateEnrichmentSystemPrompt:
 
     def test_system_prompt_includes_subspecialty_definitions(self) -> None:
         """Test that system prompt includes subspecialty codes and explanations."""
-        from findingmodel_ai.tools.finding_enrichment import _create_enrichment_system_prompt
+        from findingmodel_ai.enrichment.unified import _create_enrichment_system_prompt
 
         prompt = _create_enrichment_system_prompt()
 
@@ -780,7 +780,7 @@ class TestCreateEnrichmentSystemPrompt:
 
     def test_system_prompt_includes_role_description(self) -> None:
         """Test that system prompt describes the specialist role."""
-        from findingmodel_ai.tools.finding_enrichment import _create_enrichment_system_prompt
+        from findingmodel_ai.enrichment.unified import _create_enrichment_system_prompt
 
         prompt = _create_enrichment_system_prompt()
 
@@ -802,10 +802,10 @@ class TestCreateEnrichmentAgent:
         """Test that agent is created with correct model tier."""
         from unittest.mock import patch
 
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
         from pydantic_ai.models.test import TestModel
 
-        with patch("findingmodel_ai.tools.finding_enrichment.settings") as mock_settings:
+        with patch("findingmodel_ai.enrichment.unified.settings") as mock_settings:
             mock_settings.get_agent_model.return_value = TestModel()
 
             create_enrichment_agent(model_tier="base")
@@ -822,7 +822,7 @@ class TestCreateEnrichmentAgent:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
 
         # Mock get_model to avoid API key check
         with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
@@ -836,7 +836,7 @@ class TestCreateEnrichmentAgent:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
 
         # Mock get_model to avoid API key check
         with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
@@ -850,7 +850,7 @@ class TestCreateEnrichmentAgent:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
 
         # Mock get_model to avoid API key check
         with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
@@ -864,7 +864,7 @@ class TestCreateEnrichmentAgent:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
 
         # Mock get_model to avoid API key check
         with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
@@ -877,7 +877,7 @@ class TestCreateEnrichmentAgent:
 
     def test_agent_with_custom_model(self) -> None:
         """Test creating agent with custom model string."""
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
         from pydantic_ai.models.test import TestModel
 
         # Use TestModel to avoid needing API keys
@@ -903,7 +903,7 @@ class TestEnrichmentAgentBehavior:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
         from pydantic_ai.models.test import TestModel
 
         # Create controlled classification response
@@ -932,7 +932,7 @@ class TestEnrichmentAgentBehavior:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
         from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
@@ -961,7 +961,7 @@ class TestEnrichmentAgentBehavior:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
         from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
@@ -994,7 +994,7 @@ class TestEnrichmentAgentBehavior:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
         from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
@@ -1027,7 +1027,7 @@ class TestEnrichmentAgentBehavior:
         from unittest.mock import patch
 
         from findingmodel_ai.config import FindingModelAIConfig
-        from findingmodel_ai.tools.finding_enrichment import create_enrichment_agent
+        from findingmodel_ai.enrichment.unified import create_enrichment_agent
         from pydantic_ai.models.test import TestModel
 
         controlled_classification = EnrichmentClassification(
@@ -1120,7 +1120,7 @@ class TestEnrichFindingOrchestration:
         from unittest.mock import AsyncMock, MagicMock, patch
 
         from findingmodel.index import IndexEntry
-        from findingmodel_ai.tools.finding_enrichment import enrich_finding
+        from findingmodel_ai.enrichment.unified import enrich_finding
 
         # Create mock index entry (minimal required fields)
         mock_entry = IndexEntry(
@@ -1156,10 +1156,10 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.tools.finding_enrichment.DuckDBIndex", return_value=mock_index),
-            patch("findingmodel_ai.tools.finding_enrichment.search_ontology_codes_for_finding", mock_search_ontology),
-            patch("findingmodel_ai.tools.anatomic_location_search.find_anatomic_locations", mock_find_anatomic),
-            patch("findingmodel_ai.tools.finding_enrichment.create_enrichment_agent") as mock_create_agent,
+            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
+            patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
+            patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
         ):
             mock_agent = AsyncMock()
             mock_result = MagicMock()
@@ -1182,7 +1182,7 @@ class TestEnrichFindingOrchestration:
         """Test enrich_finding when finding is not in index."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import enrich_finding
+        from findingmodel_ai.enrichment.unified import enrich_finding
 
         # Mock DuckDBIndex to return None (not found)
         mock_index = AsyncMock()
@@ -1208,10 +1208,10 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.tools.finding_enrichment.DuckDBIndex", return_value=mock_index),
-            patch("findingmodel_ai.tools.finding_enrichment.search_ontology_codes_for_finding", mock_search_ontology),
-            patch("findingmodel_ai.tools.anatomic_location_search.find_anatomic_locations", mock_find_anatomic),
-            patch("findingmodel_ai.tools.finding_enrichment.create_enrichment_agent") as mock_create_agent,
+            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
+            patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
+            patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
         ):
             mock_agent = AsyncMock()
             mock_result = MagicMock()
@@ -1232,7 +1232,7 @@ class TestEnrichFindingOrchestration:
         """Test that enrich_finding assembles all result fields correctly."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import enrich_finding
+        from findingmodel_ai.enrichment.unified import enrich_finding
 
         # Mock DuckDBIndex
         mock_index = AsyncMock()
@@ -1257,10 +1257,10 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.tools.finding_enrichment.DuckDBIndex", return_value=mock_index),
-            patch("findingmodel_ai.tools.finding_enrichment.search_ontology_codes_for_finding", mock_search_ontology),
-            patch("findingmodel_ai.tools.anatomic_location_search.find_anatomic_locations", mock_find_anatomic),
-            patch("findingmodel_ai.tools.finding_enrichment.create_enrichment_agent") as mock_create_agent,
+            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
+            patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
+            patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
         ):
             mock_agent = AsyncMock()
             mock_result = MagicMock()
@@ -1288,7 +1288,7 @@ class TestEnrichFindingOrchestration:
         """Test that enrich_finding gracefully handles ontology search errors."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import enrich_finding
+        from findingmodel_ai.enrichment.unified import enrich_finding
 
         # Mock DuckDBIndex
         mock_index = AsyncMock()
@@ -1314,10 +1314,10 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.tools.finding_enrichment.DuckDBIndex", return_value=mock_index),
-            patch("findingmodel_ai.tools.finding_enrichment.search_ontology_codes_for_finding", mock_search_ontology),
-            patch("findingmodel_ai.tools.anatomic_location_search.find_anatomic_locations", mock_find_anatomic),
-            patch("findingmodel_ai.tools.finding_enrichment.create_enrichment_agent") as mock_create_agent,
+            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
+            patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
+            patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
         ):
             mock_agent = AsyncMock()
             mock_result = MagicMock()
@@ -1337,7 +1337,7 @@ class TestEnrichFindingOrchestration:
         """Test that enrich_finding gracefully handles anatomic location errors."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import enrich_finding
+        from findingmodel_ai.enrichment.unified import enrich_finding
 
         # Mock DuckDBIndex
         mock_index = AsyncMock()
@@ -1354,10 +1354,10 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.tools.finding_enrichment.DuckDBIndex", return_value=mock_index),
-            patch("findingmodel_ai.tools.finding_enrichment.search_ontology_codes_for_finding", mock_search_ontology),
-            patch("findingmodel_ai.tools.anatomic_location_search.find_anatomic_locations", mock_find_anatomic),
-            patch("findingmodel_ai.tools.finding_enrichment.create_enrichment_agent") as mock_create_agent,
+            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
+            patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
+            patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
         ):
             mock_agent = AsyncMock()
             mock_result = MagicMock()
@@ -1376,7 +1376,7 @@ class TestEnrichFindingOrchestration:
         """Test that model parameter is passed to create_enrichment_agent."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from findingmodel_ai.tools.finding_enrichment import enrich_finding
+        from findingmodel_ai.enrichment.unified import enrich_finding
 
         # Mock DuckDBIndex
         mock_index = AsyncMock()
@@ -1402,10 +1402,10 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.tools.finding_enrichment.DuckDBIndex", return_value=mock_index),
-            patch("findingmodel_ai.tools.finding_enrichment.search_ontology_codes_for_finding", mock_search_ontology),
-            patch("findingmodel_ai.tools.anatomic_location_search.find_anatomic_locations", mock_find_anatomic),
-            patch("findingmodel_ai.tools.finding_enrichment.create_enrichment_agent") as mock_create_agent,
+            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
+            patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
+            patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
         ):
             mock_agent = AsyncMock()
             mock_result = MagicMock()
@@ -1440,7 +1440,7 @@ class TestFindingEnrichmentIntegration:
         original = models.ALLOW_MODEL_REQUESTS
         models.ALLOW_MODEL_REQUESTS = True
         try:
-            from findingmodel_ai.tools.finding_enrichment import enrich_finding
+            from findingmodel_ai.enrichment.unified import enrich_finding
 
             result = await enrich_finding("pneumonia")
 
@@ -1482,7 +1482,7 @@ class TestFindingEnrichmentIntegration:
         original = models.ALLOW_MODEL_REQUESTS
         models.ALLOW_MODEL_REQUESTS = True
         try:
-            from findingmodel_ai.tools.finding_enrichment import enrich_finding
+            from findingmodel_ai.enrichment.unified import enrich_finding
 
             # Use a nonsensical finding name that won't be in any database
             result = await enrich_finding("xyzzy123nonexistent")
