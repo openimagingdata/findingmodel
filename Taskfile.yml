@@ -13,7 +13,13 @@ tasks:
   # =============================================================================
 
   test:oidm-common:
-    desc: "Test oidm-common package"
+    desc: "Test oidm-common package (no callouts)"
+    cmds:
+      - uv run pytest packages/oidm-common/tests -rs -m "not callout" {{.CLI_ARGS}}
+    silent: true
+
+  test:oidm-common-full:
+    desc: "Test oidm-common package (with callouts)"
     cmds:
       - uv run pytest packages/oidm-common/tests -rs {{.CLI_ARGS}}
     silent: true
@@ -75,7 +81,7 @@ tasks:
     desc: "Test all packages (with callouts)"
     cmds:
       - echo "Testing all packages (including callouts)..."
-      - task: test:oidm-common
+      - task: test:oidm-common-full
       - task: test:anatomic
       - task: test:findingmodel-full
       - task: test:findingmodel-ai-full

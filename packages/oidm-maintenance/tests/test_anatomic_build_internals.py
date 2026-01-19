@@ -26,15 +26,17 @@ models.ALLOW_MODEL_REQUESTS = False
 
 
 # Create a minimal settings class for tests
-class _TestSettings(BaseSettings):
+class TestSettings(BaseSettings):
     """Minimal settings for anatomic location tests."""
+
+    __test__ = False  # Prevent pytest from collecting this as a test class
 
     model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)
 
     openai_embedding_dimensions: int = 512
 
 
-test_settings = _TestSettings()
+test_settings = TestSettings()
 
 
 @pytest.fixture

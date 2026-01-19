@@ -11,6 +11,24 @@ import pytest
 from oidm_common.duckdb import setup_duckdb_connection
 from oidm_common.models.index_code import IndexCode
 from oidm_common.models.web_reference import WebReference
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class TestSettings(BaseSettings):
+    """Minimal settings for oidm-common tests that need API keys."""
+
+    __test__ = False  # Prevent pytest from collecting this as a test class
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    openai_api_key: SecretStr = SecretStr("")
+
+
+@pytest.fixture
+def test_settings() -> TestSettings:
+    """Provide test settings loaded from .env file."""
+    return TestSettings()
 
 
 @pytest.fixture

@@ -527,6 +527,7 @@ async def match_ontology_concepts(
     max_should_include: int = 10,
     max_marginal: int = 10,
     ontologies: list[str] | None = None,
+    model_tier: ModelTier = "base",
 ) -> CategorizedOntologyConcepts:
     """
     Match finding to relevant ontology concepts using BioOntology API.
@@ -545,6 +546,7 @@ async def match_ontology_concepts(
         max_should_include: Maximum should-include concepts
         max_marginal: Maximum marginal concepts to consider
         ontologies: Optional list of ontology acronyms to search (default: SNOMEDCT, RADLEX, LOINC)
+        model_tier: Model tier for categorization agent (query generation always uses "small")
 
     Returns:
         Categorized ontology concepts with rationale
@@ -569,7 +571,10 @@ async def match_ontology_concepts(
 
         # Stage 3: Categorize with automatic validation
         categorized = await categorize_with_validation(
-            finding_name=finding_name, search_results=search_results, query_terms=query_terms
+            finding_name=finding_name,
+            search_results=search_results,
+            query_terms=query_terms,
+            model_tier=model_tier,
         )
 
         # Stage 4: Transform to final output format

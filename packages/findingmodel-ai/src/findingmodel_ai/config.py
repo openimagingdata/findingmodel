@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 import httpx
 from findingmodel.config import ConfigurationError
+from oidm_common import strip_quotes, strip_quotes_secret
 from pydantic import BeforeValidator, Field, PrivateAttr, SecretStr
 from pydantic_ai.models import Model
 from pydantic_ai.models.openai import OpenAIResponsesModel
@@ -57,16 +58,6 @@ ModelSpec = Annotated[
         description="Model spec: 'provider:model' (e.g., 'openai:gpt-5-mini', 'google:gemini-3-flash-preview')",
     ),
 ]
-
-
-def strip_quotes(value: str) -> str:
-    return value.strip("\"'")
-
-
-def strip_quotes_secret(value: str | SecretStr) -> str:
-    if isinstance(value, SecretStr):
-        value = value.get_secret_value()
-    return strip_quotes(value)
 
 
 QuoteStrippedStr = Annotated[str, BeforeValidator(strip_quotes)]

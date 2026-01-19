@@ -7,15 +7,11 @@ Individual eval modules require NO additional Logfire code - instrumentation is 
 
 Configuration via environment:
 - LOGFIRE_TOKEN: Set to send to Logfire cloud (optional)
-- LOGFIRE_CONSOLE: Set to "true" for verbose console output
 
 See: https://ai.pydantic.dev/evals/#integration-with-logfire
 """
 
-import os
-
 import logfire
-from logfire import ConsoleOptions
 
 # Track instrumentation state to make ensure_instrumented() idempotent
 _instrumented = False
@@ -33,12 +29,7 @@ def ensure_instrumented() -> None:
         return
 
     # Configure Logfire once for entire evals package
-    # Uses environment variables: LOGFIRE_TOKEN, LOGFIRE_CONSOLE
-    console_enabled = os.getenv("LOGFIRE_CONSOLE", "").lower() in ("true", "1", "yes")
-    logfire.configure(
-        send_to_logfire="if-token-present",
-        console=ConsoleOptions(colors="auto", min_log_level="debug") if console_enabled else False,
-    )
+    logfire.configure(send_to_logfire="if-token-present", console=False)
 
     # Instrument Pydantic AI once for automatic agent/model/tool tracing
     logfire.instrument_pydantic_ai()

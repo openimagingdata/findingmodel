@@ -606,7 +606,6 @@ source = { editable = "packages/findingmodel" }
 dependencies = [
     { name = "click" },
     { name = "duckdb" },
-    { name = "httpx" },
     { name = "jinja2" },
     { name = "loguru" },
     { name = "mcp" },
@@ -620,7 +619,6 @@ dependencies = [
 requires-dist = [
     { name = "click", specifier = ">=8.1.8" },
     { name = "duckdb", specifier = ">=1.0" },
-    { name = "httpx", specifier = ">=0.27" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7" },
     { name = "mcp", specifier = ">=1.0.0" },
@@ -641,7 +639,6 @@ dependencies = [
     { name = "jinja2" },
     { name = "loguru" },
     { name = "oidm-common" },
-    { name = "openai" },
     { name = "pydantic", extra = ["email"] },
     { name = "pydantic-ai-slim", extra = ["anthropic", "google", "openai", "tavily"] },
     { name = "pydantic-settings" },
@@ -657,7 +654,6 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7" },
     { name = "oidm-common", editable = "packages/oidm-common" },
-    { name = "openai", specifier = ">=1.76" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.0" },
     { name = "pydantic-ai-slim", extras = ["openai", "tavily", "anthropic", "google"], specifier = ">=0.3.2" },
     { name = "pydantic-settings", specifier = ">=2.9" },
@@ -1663,12 +1659,16 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pooch" },
     { name = "pydantic" },
-    { name = "pydantic-settings" },
 ]
 
 [package.optional-dependencies]
 openai = [
     { name = "openai" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pydantic-settings" },
 ]
 
 [package.metadata]
@@ -1681,9 +1681,11 @@ requires-dist = [
     { name = "platformdirs", specifier = ">=4.0" },
     { name = "pooch", specifier = ">=1.8" },
     { name = "pydantic", specifier = ">=2.0" },
-    { name = "pydantic-settings", specifier = ">=2.9" },
 ]
 provides-extras = ["openai"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pydantic-settings", specifier = ">=2.9" }]
 
 [[package]]
 name = "oidm-maintenance"

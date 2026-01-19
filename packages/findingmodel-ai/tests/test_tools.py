@@ -655,9 +655,11 @@ async def test_find_similar_models_basic_wiring() -> None:
     models.ALLOW_MODEL_REQUESTS = True
 
     try:
-        # Call with simplest valid input
+        # Call with simplest valid input - use fast model for integration test
         result = await find_similar_models(
-            finding_name="pneumothorax", description="Presence of air in the pleural space"
+            finding_name="pneumothorax",
+            description="Presence of air in the pleural space",
+            analysis_model_tier="small",
         )
 
         # Assert only on structure, not behavior

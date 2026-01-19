@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 
+from oidm_common import strip_quotes, strip_quotes_secret
 from oidm_common.distribution import ensure_db_file as oidm_ensure_db_file
 from pydantic import BeforeValidator, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,16 +10,6 @@ from typing_extensions import Self
 
 class ConfigurationError(RuntimeError):
     pass
-
-
-def strip_quotes(value: str) -> str:
-    return value.strip("\"'")
-
-
-def strip_quotes_secret(value: str | SecretStr) -> str:
-    if isinstance(value, SecretStr):
-        value = value.get_secret_value()
-    return strip_quotes(value)
 
 
 QuoteStrippedStr = Annotated[str, BeforeValidator(strip_quotes)]

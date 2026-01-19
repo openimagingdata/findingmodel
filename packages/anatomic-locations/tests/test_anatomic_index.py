@@ -22,6 +22,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class TestSettings(BaseSettings):
     """Minimal settings for anatomic location tests."""
 
+    __test__ = False  # Prevent pytest from collecting this as a test class
+
     model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)
 
     openai_embedding_dimensions: int = 512

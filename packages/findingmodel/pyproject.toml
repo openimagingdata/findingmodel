@@ -25,7 +25,6 @@ dependencies = [
     "oidm-common[openai]",
     "click>=8.1.8",
     "duckdb>=1.0",
-    "httpx>=0.27",
     "jinja2>=3.1.6",
     "loguru>=0.7",
     "mcp>=1.0.0",

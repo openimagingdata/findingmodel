@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from oidm_common.embeddings.cache import EmbeddingCache
+
+if TYPE_CHECKING:
+    from .conftest import TestSettings
 
 
 class TestEmbeddingCacheContextManager:
@@ -328,3 +332,44 @@ class TestEmbeddingCacheClear:
             deleted_count = await cache.clear_cache()
 
             assert deleted_count == 0
+
+
+@pytest.mark.callout
+class TestEmbeddingGenerationIntegration:
+    """Integration tests for embedding generation with real OpenAI API calls."""
+
+    async def test_get_embedding_returns_vector(self, test_settings: "TestSettings") -> None:
+        """Test that get_embedding returns a valid embedding vector."""
+        from oidm_common.embeddings import get_embedding
+
+        api_key = test_settings.openai_api_key.get_secret_value()
+        if not api_key:
+            pytest.skip("OPENAI_API_KEY not configured")
+
+        result = await get_embedding(
+            "test medical term: pneumonia",
+            api_key=api_key,
+            model="text-embedding-3-small",
+            dimensions=512,
+        )
+
+        assert result is not None
+        assert len(result) == 512
+
+    async def test_get_embeddings_batch_returns_vectors(self, test_settings: "TestSettings") -> None:
+        """Test that get_embeddings_batch returns valid embedding vectors."""
+        from oidm_common.embeddings import get_embeddings_batch
+
+        api_key = test_settings.openai_api_key.get_secret_value()
+        if not api_key:
+            pytest.skip("OPENAI_API_KEY not configured")
+
+        results = await get_embeddings_batch(
+            ["pneumonia", "fracture", "tumor"],
+            api_key=api_key,
+            model="text-embedding-3-small",
+            dimensions=512,
+        )
+
+        assert len(results) == 3
+        assert all(r is not None and len(r) == 512 for r in results)

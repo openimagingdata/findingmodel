@@ -196,7 +196,9 @@ class FindingEnrichmentResult(BaseModel):
 
 
 async def search_ontology_codes_for_finding(
-    finding_name: str, description: str | None = None
+    finding_name: str,
+    description: str | None = None,
+    model_tier: ModelTier = "base",
 ) -> tuple[list[IndexCode], list[IndexCode]]:
     """Search for ontology codes (SNOMED CT and RadLex) that represent a finding.
 
@@ -206,6 +208,7 @@ async def search_ontology_codes_for_finding(
     Args:
         finding_name: Name of the imaging finding (e.g., "pneumonia", "liver lesion")
         description: Optional detailed description for context
+        model_tier: Model tier for categorization agent (query generation always uses "small")
 
     Returns:
         Tuple of (snomed_codes, radlex_codes) as IndexCode objects.
@@ -228,6 +231,7 @@ async def search_ontology_codes_for_finding(
             finding_name=finding_name,
             finding_description=description,
             exclude_anatomical=True,
+            model_tier=model_tier,
         )
 
         # Collect high-confidence results (exact + should_include)
@@ -844,7 +848,11 @@ async def enrich_finding_unified(  # noqa: C901
         raise RuntimeError(f"Enrichment classification failed: {e}") from e
 
 
-async def enrich_finding(identifier: str, model: str | None = None) -> FindingEnrichmentResult:  # noqa: C901
+async def enrich_finding(  # noqa: C901
+    identifier: str,
+    model: str | None = None,
+    model_tier: ModelTier = "base",
+) -> FindingEnrichmentResult:
     """Enrich a finding with comprehensive metadata.
 
     This is the main entry point for the enrichment workflow. It orchestrates:
@@ -860,6 +868,7 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
         identifier: Either an OIFM ID (e.g., "OIFM_AI_000001") or finding name (e.g., "pneumonia")
         model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5').
                If None, uses the configured default.
+        model_tier: Model tier for AI agents ("base" for production, "small" for fast tests).
 
     Returns:
         FindingEnrichmentResult with all enrichment data and metadata
@@ -913,7 +922,7 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
     async def search_ontology_with_fallback() -> tuple[list[IndexCode], list[IndexCode]]:
         """Search ontology codes with error handling."""
         try:
-            return await search_ontology_codes_for_finding(finding_name, finding_description)
+            return await search_ontology_codes_for_finding(finding_name, finding_description, model_tier=model_tier)
         except Exception as e:
             logger.warning(f"Ontology code search failed (continuing with empty results): {e}")
             return ([], [])
@@ -995,7 +1004,7 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
     # Step 4: Run enrichment agent for classification
     logger.debug("Step 4: Running enrichment agent")
     try:
-        agent = create_enrichment_agent(model_tier="base", model=model)
+        agent = create_enrichment_agent(model_tier=model_tier, model=model)
         prompt = f"Classify the imaging finding: {finding_name}"
         if finding_description:
             prompt += f"\nDescription: {finding_description}"
@@ -1027,8 +1036,7 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
     logger.debug("Step 5: Assembling final enrichment result")
 
     # Determine model used for metadata
-    model_tier_str = "base"  # We use base tier for enrichment agent
-    model_used = model if model else settings.get_effective_model_string("enrich_classify", "base")
+    model_used = model if model else settings.get_effective_model_string("enrich_classify", model_tier)
 
     enrichment_result = FindingEnrichmentResult(
         finding_name=finding_name,
@@ -1042,7 +1050,7 @@ async def enrich_finding(identifier: str, model: str | None = None) -> FindingEn
         anatomic_locations=anatomic_locations,
         enrichment_timestamp=datetime.now(timezone.utc),
         model_used=model_used,
-        model_tier=model_tier_str,
+        model_tier=model_tier,
     )
 
     logger.info(f"Enrichment complete for '{finding_name}' ({oifm_id or 'not in index'})")

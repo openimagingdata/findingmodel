@@ -679,11 +679,12 @@ class TestSearchOntologyCodesForFinding:
         with patch("findingmodel_ai.search.ontology.match_ontology_concepts", new=mock_match):
             await search_ontology_codes_for_finding("test finding", "test description")
 
-            # Verify exclude_anatomical=True was passed
+            # Verify exclude_anatomical=True was passed (model_tier defaults to "base")
             mock_match.assert_called_once_with(
                 finding_name="test finding",
                 finding_description="test description",
                 exclude_anatomical=True,
+                model_tier="base",
             )
 
     @pytest.mark.asyncio
@@ -1442,7 +1443,8 @@ class TestFindingEnrichmentIntegration:
         try:
             from findingmodel_ai.enrichment.unified import enrich_finding
 
-            result = await enrich_finding("pneumonia")
+            # Use "small" tier for faster integration tests
+            result = await enrich_finding("pneumonia", model_tier="small")
 
             # Validate result structure - finding_name may be canonical form from Index
             assert result.finding_name.lower() == "pneumonia"
@@ -1485,7 +1487,8 @@ class TestFindingEnrichmentIntegration:
             from findingmodel_ai.enrichment.unified import enrich_finding
 
             # Use a nonsensical finding name that won't be in any database
-            result = await enrich_finding("xyzzy123nonexistent")
+            # Use "small" tier for faster integration tests
+            result = await enrich_finding("xyzzy123nonexistent", model_tier="small")
 
             # Should still return valid structure even for unknown finding
             assert result.finding_name == "xyzzy123nonexistent"

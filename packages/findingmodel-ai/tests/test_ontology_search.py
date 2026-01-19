@@ -4,9 +4,9 @@ import inspect
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from findingmodel_ai.config import settings
 from findingmodel.protocols import OntologySearchResult
 from findingmodel_ai import config as ai_config
+from findingmodel_ai.config import settings
 from findingmodel_ai.search.bioontology import (
     BioOntologySearchClient,
     BioOntologySearchResult,
@@ -696,8 +696,8 @@ async def test_match_ontology_concepts_basic_wiring() -> None:
     models.ALLOW_MODEL_REQUESTS = True
 
     try:
-        # Call with simplest valid input (uses default_model_small from settings)
-        result = await match_ontology_concepts(finding_name="pneumonia")
+        # Call with simplest valid input - use fast model for integration test
+        result = await match_ontology_concepts(finding_name="pneumonia", model_tier="small")
 
         # Assert only on structure, not behavior
         assert result is not None

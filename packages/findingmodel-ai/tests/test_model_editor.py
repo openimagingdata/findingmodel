@@ -127,13 +127,13 @@ def test_export_model_for_editing_attributes_only(real_model: FindingModelFull) 
 async def test_edit_model_natural_language_callout_real_api(real_model: FindingModelFull) -> None:
     """Sanity check that real API integration works.
     Behavior validation is handled by evals; this just verifies we get a valid result.
-    Uses configured default_model (no override - test with production config).
     """
     # Temporarily enable model requests for this test only
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
-        agent = model_editor.create_edit_agent()
+        # Use fast model for integration test
+        agent = model_editor.create_edit_agent(model_tier="small")
 
         command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
         result = await model_editor.edit_model_natural_language(real_model, command, agent=agent)
