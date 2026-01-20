@@ -9,50 +9,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from anatomic_locations import AnatomicLocation, AnatomicLocationIndex, AnatomicRegion, Laterality
-from oidm_maintenance.anatomic.build import create_anatomic_database
 from pydantic_ai import models
 
 # Block all AI model requests - embeddings are pre-generated fixtures
 models.ALLOW_MODEL_REQUESTS = False
-
-# =============================================================================
-# Fixtures
-# =============================================================================
-
-
-@pytest.fixture
-async def built_test_db(
-    tmp_path: Path,
-    anatomic_sample_data: list[dict[str, object]],
-    anatomic_sample_embeddings: dict[str, list[float]],
-) -> Path:
-    """Create a real DuckDB database from sample data and embeddings.
-
-    This fixture builds a complete test database with:
-    - Real DuckDB tables and indexes
-    - Pre-generated embeddings (no API calls)
-    - Hierarchy navigation computed
-    - FTS and HNSW indexes
-
-    Returns:
-        Path to the built test database
-    """
-    db_path = tmp_path / "test_anatomic.duckdb"
-
-    # Convert dict of embeddings to ordered list matching records
-    ordered_embeddings = [anatomic_sample_embeddings[str(record["_id"])] for record in anatomic_sample_data]
-
-    # Mock the embeddings function to return pre-generated embeddings
-    mock_client = AsyncMock()
-
-    # Sample embeddings use 512 dimensions
-    with patch(
-        "oidm_maintenance.anatomic.build.generate_embeddings_batch",
-        new=AsyncMock(return_value=ordered_embeddings),
-    ):
-        await create_anatomic_database(db_path, anatomic_sample_data, mock_client, dimensions=512)
-
-    return db_path
 
 
 # =============================================================================
@@ -63,9 +23,9 @@ async def built_test_db(
 class TestAnatomicLocationIndexGetByID:
     """Tests for get() method - retrieving by ID."""
 
-    def test_get_by_id(self, built_test_db: Path) -> None:
+    def test_get_by_id(self, prebuilt_db_path: Path) -> None:
         """Returns correct record with all fields."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Get a known location (superior nasal turbinate)
             location = index.get("RID10049")
 
@@ -97,10 +57,10 @@ class TestAnatomicLocationIndexGetByID:
             assert location.partof_parent.id == "RID9199"
             assert location.partof_parent.display == "ethmoid bone"
 
-    def test_get_by_id_not_found(self, built_test_db: Path) -> None:
+    def test_get_by_id_not_found(self, prebuilt_db_path: Path) -> None:
         """Raises appropriate error when ID not found."""
         with (
-            AnatomicLocationIndex(built_test_db) as index,
+            AnatomicLocationIndex(prebuilt_db_path) as index,
             pytest.raises(KeyError, match="Anatomic location not found: RID99999"),
         ):
             index.get("RID99999")
@@ -114,9 +74,9 @@ class TestAnatomicLocationIndexGetByID:
 class TestAnatomicLocationIndexHierarchyQueries:
     """Tests for hierarchy navigation using materialized paths."""
 
-    def test_containment_path_ancestor_query(self, built_test_db: Path) -> None:
+    def test_containment_path_ancestor_query(self, prebuilt_db_path: Path) -> None:
         """LIKE query finds ancestors in containment hierarchy."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Get ancestors of nasal cavity (containedBy suprahyoid neck in sample data)
             ancestors = index.get_containment_ancestors("RID9532")
 
@@ -133,9 +93,9 @@ class TestAnatomicLocationIndexHierarchyQueries:
             # Nasal cavity is contained in suprahyoid neck (RID7540) in our sample data
             assert "RID7540" in ancestor_ids
 
-    def test_containment_path_descendant_query(self, built_test_db: Path) -> None:
+    def test_containment_path_descendant_query(self, prebuilt_db_path: Path) -> None:
         """LIKE query finds descendants in containment hierarchy."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Get descendants of nasal cavity (should include turbinates)
             descendants = index.get_containment_descendants("RID9532")
 
@@ -160,9 +120,9 @@ class TestAnatomicLocationIndexSearch:
     """Tests for search methods (FTS and vector)."""
 
     @pytest.mark.asyncio
-    async def test_fts_search_description(self, built_test_db: Path) -> None:
+    async def test_fts_search_description(self, prebuilt_db_path: Path) -> None:
         """Full-text search returns results matching description."""
-        async with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Search for "turbinate" - should find nasal turbinates
             results = await index.search("turbinate", limit=10)
 
@@ -179,7 +139,7 @@ class TestAnatomicLocationIndexSearch:
     @pytest.mark.asyncio
     async def test_vector_search(
         self,
-        built_test_db: Path,
+        prebuilt_db_path: Path,
         anatomic_query_embeddings: dict[str, list[float]],
     ) -> None:
         """Hybrid search with embeddings combines FTS and semantic results using RRF fusion.
@@ -187,7 +147,7 @@ class TestAnatomicLocationIndexSearch:
         Tests that when embeddings are available, search uses both FTS and HNSW
         indexes and fuses results.
         """
-        async with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Mock _get_embedding to return fixture embedding for "knee joint"
             with patch.object(
                 index,
@@ -208,7 +168,7 @@ class TestAnatomicLocationIndexSearch:
     @pytest.mark.asyncio
     async def test_hybrid_search(
         self,
-        built_test_db: Path,
+        prebuilt_db_path: Path,
         anatomic_query_embeddings: dict[str, list[float]],
     ) -> None:
         """Hybrid search combines FTS and semantic results using RRF fusion.
@@ -219,7 +179,7 @@ class TestAnatomicLocationIndexSearch:
         - RRF fusion combines both result sets
         - Results are deduplicated when same item appears in both
         """
-        async with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Mock _get_embedding to return fixture embedding for "heart cardiac"
             with patch.object(
                 index,
@@ -241,13 +201,13 @@ class TestAnatomicLocationIndexSearch:
                 assert any("heart" in desc or "cardiac" in desc for desc in descriptions)
 
     @pytest.mark.asyncio
-    async def test_search_falls_back_to_fts_only(self, built_test_db: Path) -> None:
+    async def test_search_falls_back_to_fts_only(self, prebuilt_db_path: Path) -> None:
         """When no embedding available, search falls back to FTS-only.
 
         Validates fallback behavior when semantic search is not available
         (e.g., no API key configured).
         """
-        async with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Mock _get_embedding to return None (no API key)
             with patch.object(index, "_get_embedding", new=AsyncMock(return_value=None)):
                 results = await index.search("nasal structures", limit=5)
@@ -270,9 +230,9 @@ class TestAnatomicLocationIndexSearch:
 class TestAnatomicLocationIndexCodeLookup:
     """Tests for find_by_code() method."""
 
-    def test_find_by_code(self, built_test_db: Path) -> None:
+    def test_find_by_code(self, prebuilt_db_path: Path) -> None:
         """Code lookup works for SNOMED and FMA codes."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Find by SNOMED code
             snomed_results = index.find_by_code("SNOMED", "65289004")
             assert len(snomed_results) >= 1
@@ -287,9 +247,9 @@ class TestAnatomicLocationIndexCodeLookup:
             assert all(r._index is not None for r in snomed_results)
             assert all(r._index is not None for r in fma_results)
 
-    def test_find_by_code_case_insensitive(self, built_test_db: Path) -> None:
+    def test_find_by_code_case_insensitive(self, prebuilt_db_path: Path) -> None:
         """Code system lookup is case-insensitive."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Try different cases
             upper = index.find_by_code("SNOMED", "65289004")
             lower = index.find_by_code("snomed", "65289004")
@@ -298,9 +258,9 @@ class TestAnatomicLocationIndexCodeLookup:
             # Should all return the same results
             assert len(upper) == len(lower) == len(mixed)
 
-    def test_find_by_code_not_found(self, built_test_db: Path) -> None:
+    def test_find_by_code_not_found(self, prebuilt_db_path: Path) -> None:
         """find_by_code returns empty list when code doesn't exist."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             results = index.find_by_code("SNOMED", "99999999")
             assert results == []
 
@@ -313,9 +273,9 @@ class TestAnatomicLocationIndexCodeLookup:
 class TestAnatomicLocationIndexLateralityLookup:
     """Tests for laterality variant navigation."""
 
-    def test_laterality_lookup(self, built_test_db: Path) -> None:
+    def test_laterality_lookup(self, prebuilt_db_path: Path) -> None:
         """Left/right/generic navigation works via bound locations."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Get generic turbinate
             generic = index.get("RID10049")
 
@@ -354,9 +314,9 @@ class TestAnatomicLocationIndexLateralityLookup:
 class TestAnatomicLocationIndexWeakRefBinding:
     """Tests for automatic index binding via weakref."""
 
-    def test_weakref_binding(self, built_test_db: Path) -> None:
+    def test_weakref_binding(self, prebuilt_db_path: Path) -> None:
         """Index binding works and allows navigation without explicit index."""
-        with AnatomicLocationIndex(built_test_db) as index:
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Get a location
             location = index.get("RID10049")
 
@@ -370,9 +330,9 @@ class TestAnatomicLocationIndexWeakRefBinding:
             assert len(ancestors) >= 1
             assert all(a._index is not None for a in ancestors)
 
-    def test_weakref_fails_after_close(self, built_test_db: Path) -> None:
+    def test_weakref_fails_after_close(self, prebuilt_db_path: Path) -> None:
         """Appropriate error after index closed."""
-        index = AnatomicLocationIndex(built_test_db)
+        index = AnatomicLocationIndex(prebuilt_db_path)
         index.open()
 
         # Get a location while index is open
@@ -387,9 +347,9 @@ class TestAnatomicLocationIndexWeakRefBinding:
             location.get_containment_ancestors()
 
     @pytest.mark.asyncio
-    async def test_all_returned_objects_bound(self, built_test_db: Path) -> None:
+    async def test_all_returned_objects_bound(self, prebuilt_db_path: Path) -> None:
         """All objects returned from index methods are bound."""
-        async with AnatomicLocationIndex(built_test_db) as index:
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Test single get
             single = index.get("RID10049")
             assert single._index is not None

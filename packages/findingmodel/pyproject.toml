@@ -22,7 +22,7 @@ keywords = [
 ]
 
 dependencies = [
-    "oidm-common[openai]",
+    "oidm-common",
     "click>=8.1.8",
     "duckdb>=1.0",
     "jinja2>=3.1.6",
@@ -32,6 +32,9 @@ dependencies = [
     "pydantic-settings>=2.9",
     "rich>=13.9.4",
 ]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0"]  # Enables hybrid search (FTS + semantic)
 
 [project.urls]
 Homepage = "https://github.com/openimagingdata/findingmodel"

@@ -50,3 +50,20 @@ def anatomic_records_by_id(anatomic_sample_data: list[dict[str, object]]) -> dic
 def temp_duckdb_path(tmp_path: Path) -> Path:
     """Temporary DuckDB file path for integration tests."""
     return tmp_path / "test_anatomic.duckdb"
+
+
+@pytest.fixture(scope="session")
+def prebuilt_db_path() -> Path:
+    """Path to pre-built test database (committed to repo).
+
+    This database is built using oidm-maintenance and committed to the repo.
+    To rebuild, run from workspace root:
+        uv run python packages/oidm-maintenance/scripts/build_anatomic_test_fixture.py
+    """
+    db_path = Path(__file__).parent / "data" / "anatomic_test.duckdb"
+    if not db_path.exists():
+        pytest.skip(
+            "Pre-built test database not found. "
+            "Run: uv run python packages/oidm-maintenance/scripts/build_anatomic_test_fixture.py"
+        )
+    return db_path

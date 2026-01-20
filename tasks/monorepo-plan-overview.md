@@ -30,7 +30,6 @@ findingmodel/                           # Keep existing repo name
 ├── packages/
 │   ├── oidm-common/                    # Shared infrastructure
 │   │   ├── pyproject.toml
-│   │   ├── CLAUDE.md                   # Package-specific additions
 │   │   ├── src/oidm_common/
 │   │   │   ├── __init__.py
 │   │   │   ├── duckdb/                 # Connection, bulk load, search, indexes
@@ -41,7 +40,6 @@ findingmodel/                           # Keep existing repo name
 │   │
 │   ├── anatomic-locations/             # Anatomic ontology package (READ-ONLY)
 │   │   ├── pyproject.toml
-│   │   ├── CLAUDE.md
 │   │   ├── src/anatomic_locations/
 │   │   │   ├── __init__.py
 │   │   │   ├── models/                 # AnatomicLocation, enums
@@ -52,7 +50,6 @@ findingmodel/                           # Keep existing repo name
 │   │
 │   ├── findingmodel/                   # Core package (models, index, MCP) - READ-ONLY
 │   │   ├── pyproject.toml
-│   │   ├── CLAUDE.md
 │   │   ├── src/findingmodel/
 │   │   │   ├── __init__.py
 │   │   │   ├── finding_model.py        # FindingModel
@@ -68,7 +65,6 @@ findingmodel/                           # Keep existing repo name
 │   │
 │   ├── findingmodel-ai/                # AI authoring tools
 │   │   ├── pyproject.toml
-│   │   ├── CLAUDE.md
 │   │   ├── src/findingmodel_ai/
 │   │   │   ├── __init__.py
 │   │   │   ├── tools/                  # AI agents and workflows
@@ -295,30 +291,21 @@ markers = [
 
 ## Claude Code Configuration
 
-Claude Code uses a hierarchical memory system. For monorepos, the recommended approach is a **hybrid** of root CLAUDE.md, `.claude/rules/` with path scoping, and optional per-package CLAUDE.md files.
+Claude Code uses a hierarchical system: root `CLAUDE.md` for project-wide instructions, and `.claude/rules/*.md` for path-scoped package rules.
 
-### Recommended Structure
+### Structure
 
 ```
 findingmodel/
 ├── CLAUDE.md                           # Root: workspace overview, shared standards
 ├── .claude/
 │   └── rules/
-│       ├── duckdb-patterns.md          # Shared DuckDB patterns (unconditional)
-│       ├── testing.md                  # paths: **/tests/**
+│       ├── index-duckdb.md             # Shared DuckDB patterns (unconditional)
 │       ├── oidm-common.md              # paths: packages/oidm-common/**
 │       ├── anatomic-locations.md       # paths: packages/anatomic-locations/**
-│       ├── findingmodel-core.md        # paths: packages/findingmodel/**
-│       └── findingmodel-ai.md          # paths: packages/findingmodel-ai/**
-├── packages/
-│   ├── oidm-common/
-│   │   └── CLAUDE.md                   # Optional: package-specific context
-│   ├── anatomic-locations/
-│   │   └── CLAUDE.md
-│   ├── findingmodel/
-│   │   └── CLAUDE.md
-│   └── findingmodel-ai/
-│       └── CLAUDE.md
+│       ├── findingmodel.md             # paths: packages/findingmodel/**
+│       ├── findingmodel-ai.md          # paths: packages/findingmodel-ai/**
+│       └── oidm-maintenance.md         # paths: packages/oidm-maintenance/**
 ```
 
 ## Taskfile Organization

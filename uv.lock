@@ -31,8 +31,10 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+openai = [
+    { name = "openai" },
+]
 test = [
-    { name = "oidm-maintenance" },
     { name = "openai" },
     { name = "pydantic-ai-slim" },
     { name = "pytest" },
@@ -46,7 +48,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=1.0" },
     { name = "loguru", specifier = ">=0.7" },
     { name = "oidm-common", editable = "packages/oidm-common" },
-    { name = "oidm-maintenance", marker = "extra == 'test'", editable = "packages/oidm-maintenance" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0" },
     { name = "openai", marker = "extra == 'test'", specifier = ">=1.0" },
     { name = "pydantic-ai-slim", marker = "extra == 'test'", specifier = ">=0.1" },
     { name = "pydantic-settings", specifier = ">=2.9" },
@@ -54,7 +56,7 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.24" },
     { name = "rich", specifier = ">=13.0" },
 ]
-provides-extras = ["test"]
+provides-extras = ["openai", "test"]
 
 [[package]]
 name = "annotated-types"
@@ -609,10 +611,15 @@ dependencies = [
     { name = "jinja2" },
     { name = "loguru" },
     { name = "mcp" },
-    { name = "oidm-common", extra = ["openai"] },
+    { name = "oidm-common" },
     { name = "pydantic", extra = ["email"] },
     { name = "pydantic-settings" },
     { name = "rich" },
+]
+
+[package.optional-dependencies]
+openai = [
+    { name = "openai" },
 ]
 
 [package.metadata]
@@ -622,17 +629,20 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7" },
     { name = "mcp", specifier = ">=1.0.0" },
-    { name = "oidm-common", extras = ["openai"], editable = "packages/oidm-common" },
+    { name = "oidm-common", editable = "packages/oidm-common" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.0" },
     { name = "pydantic-settings", specifier = ">=2.9" },
     { name = "rich", specifier = ">=13.9.4" },
 ]
+provides-extras = ["openai"]
 
 [[package]]
 name = "findingmodel-ai"
 version = "0.1.0"
 source = { editable = "packages/findingmodel-ai" }
 dependencies = [
+    { name = "anatomic-locations" },
     { name = "click" },
     { name = "findingmodel" },
     { name = "httpx" },
@@ -648,6 +658,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anatomic-locations", editable = "packages/anatomic-locations" },
     { name = "click", specifier = ">=8.0" },
     { name = "findingmodel", editable = "packages/findingmodel" },
     { name = "httpx", specifier = ">=0.27" },
