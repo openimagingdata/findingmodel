@@ -15,8 +15,8 @@
 2. **Project snapshot** (full detail lives in Serena `project_overview`).
 
    - Purpose: Python library for Open Imaging Finding Models with AI tooling.
-   - Stack: Python 3.11+, uv, Taskfile, Pydantic v2, multi-provider AI (OpenAI/Anthropic/Gemini/Ollama/Gateway via `DEFAULT_MODEL`; per-agent overrides via `AGENT_MODEL_OVERRIDES__<tag>`), DuckDB for index/search.
-   - Layout: `src/findingmodel/` (core models + tools), `test/` (pytest, fixtures), `notebooks/` (demos).
+   - Stack: Python 3.11+, uv, Taskfile, Pydantic v2, DuckDB for index/search. AI tooling in findingmodel-ai package.
+   - Layout: `packages/` (5 packages: findingmodel, findingmodel-ai, anatomic-locations, oidm-common, oidm-maintenance), `docs/`, `evals/`.
 
 3. **Coding standards** (reference Serena `code_style_conventions`).
 
@@ -27,7 +27,7 @@
 4. **Development workflow** (see Serena `suggested_commands`).
 
    - Tests: `task test` (local), `task test-full` (includes callouts). Unit tests use `TestModel`/`FunctionModel` with mocks; integration tests marked `@pytest.mark.callout` call real APIs.
-   - Quality: `task check` (format/lint/mypy), `uv run ruff format`, `uv run ruff check --fix`, `uv run mypy src` as fallbacks.
+   - Quality: `task check` (format/lint/mypy), `uv run ruff format`, `uv run ruff check --fix`, `uv run mypy packages/` as fallbacks.
    - CLI: `python -m findingmodel` lists subcommands for config, info generation, markdown conversions.
    - **Taskfile is canonical**: Prefer Task targets because they bake in required markers/flags (e.g., `-m "not callout"`). Use raw `uv run …` only when no task exists or when deliberately overriding defaults.
    - **uv-first + lockfile**: Use uv for install/test/build/publish; commit and honor `uv.lock` (`uv sync --frozen` in CI).
@@ -36,4 +36,4 @@
    - Treat this file as the quick-start card; defer to Serena memories for depth.
    - When new architecture, conventions, or commands appear, capture them via `write_memory` (update `instruction_files_plan_2025`).
    - Mirror updates in `CLAUDE.md` so all assistants stay aligned.
-   - When creating new repos (oidm-common, anatomic-locations), copy/adapt this quick card and CLAUDE.md, and seed Serena memories (project_overview, code_style_conventions, suggested_commands, ai_assistant_usage_2025, plus repo-specific ones like duckdb_development_patterns or anatomic_location_search_implementation).
+   - Path-scoped AI rules live in `.claude/rules/*.md`; update these when package-specific constraints change.

@@ -1,1 +1,0 @@
-2025-10-09 update: DuckDB directory ingestion now logs lifecycle events. update_from_directory emits info logs when refresh starts/completes and short-circuits when already in sync, with debug-level diff counts. _apply_batch_mutations logs deletion counts and per-statement batch sizes.
