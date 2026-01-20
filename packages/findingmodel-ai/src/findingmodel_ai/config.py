@@ -2,8 +2,7 @@ from typing import Annotated, Literal
 
 import httpx
 from findingmodel.config import ConfigurationError
-from oidm_common import strip_quotes, strip_quotes_secret
-from pydantic import BeforeValidator, Field, PrivateAttr, SecretStr
+from pydantic import Field, PrivateAttr, SecretStr
 from pydantic_ai.models import Model
 from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -60,18 +59,12 @@ ModelSpec = Annotated[
 ]
 
 
-QuoteStrippedStr = Annotated[str, BeforeValidator(strip_quotes)]
-
-
-QuoteStrippedSecretStr = Annotated[SecretStr, BeforeValidator(strip_quotes_secret)]
-
-
 class FindingModelAIConfig(BaseSettings):
     # API Keys
-    openai_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-    anthropic_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-    google_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
-    pydantic_ai_gateway_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    openai_api_key: SecretStr = Field(default=SecretStr(""))
+    anthropic_api_key: SecretStr = Field(default=SecretStr(""))
+    google_api_key: SecretStr = Field(default=SecretStr(""))
+    pydantic_ai_gateway_api_key: SecretStr = Field(default=SecretStr(""))
     pydantic_ai_gateway_base_url: str = Field(
         default="https://gateway.pydantic.dev/proxy/",
         description="Base URL for Pydantic AI Gateway (default: hosted gateway)",
@@ -91,14 +84,14 @@ class FindingModelAIConfig(BaseSettings):
     agent_model_overrides: dict[AgentTag, ModelSpec] = Field(default_factory=dict)
 
     # Tavily API
-    tavily_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    tavily_api_key: SecretStr = Field(default=SecretStr(""))
     tavily_search_depth: Literal["basic", "advanced"] = Field(
         default="advanced",
         description="Tavily search depth: 'basic' or 'advanced'",
     )
 
     # BioOntology API
-    bioontology_api_key: QuoteStrippedSecretStr | None = Field(default=None, description="BioOntology.org API key")
+    bioontology_api_key: SecretStr | None = Field(default=None, description="BioOntology.org API key")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
 

@@ -1,9 +1,7 @@
 from pathlib import Path
-from typing import Annotated
 
-from oidm_common import strip_quotes, strip_quotes_secret
 from oidm_common.distribution import ensure_db_file as oidm_ensure_db_file
-from pydantic import BeforeValidator, Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
@@ -12,15 +10,9 @@ class ConfigurationError(RuntimeError):
     pass
 
 
-QuoteStrippedStr = Annotated[str, BeforeValidator(strip_quotes)]
-
-
-QuoteStrippedSecretStr = Annotated[SecretStr, BeforeValidator(strip_quotes_secret)]
-
-
 class FindingModelConfig(BaseSettings):
     # API Keys (kept for embeddings)
-    openai_api_key: QuoteStrippedSecretStr = Field(default=SecretStr(""))
+    openai_api_key: SecretStr = Field(default=SecretStr(""))
 
     # DuckDB configuration
     duckdb_index_path: str | None = Field(
