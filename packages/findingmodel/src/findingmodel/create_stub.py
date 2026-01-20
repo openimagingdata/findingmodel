@@ -57,21 +57,3 @@ def create_model_stub_from_info(finding_info: FindingInfo, tags: list[str] | Non
     if tags:
         stub.tags = tags
     return stub
-
-
-# Deprecated alias for backward compatibility
-def create_finding_model_stub_from_finding_info(
-    finding_info: FindingInfo, tags: list[str] | None = None
-) -> FindingModelBase:
-    """
-    DEPRECATED: Use create_model_stub_from_info instead.
-    Create a finding model stub from a FindingInfo object.
-    """
-    import warnings
-
-    warnings.warn(
-        "create_finding_model_stub_from_finding_info is deprecated, use create_model_stub_from_info instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return create_model_stub_from_info(finding_info, tags)

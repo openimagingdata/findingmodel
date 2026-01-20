@@ -1,6 +1,5 @@
 """Finding description and detail generation tools."""
 
-import warnings
 from typing import Literal
 
 from findingmodel.finding_info import FindingInfo
@@ -195,57 +194,3 @@ async def add_details_to_info(
         detail=result.output,
         citations=unique_citations if unique_citations else None,
     )
-
-
-# Deprecated aliases for backward compatibility
-async def describe_finding_name(finding_name: str, model_name: str | None = None) -> FindingInfo:
-    """
-    DEPRECATED: Use create_info_from_name instead.
-    Get a description of a finding name using the AI API.
-    """
-    warnings.warn(
-        "describe_finding_name is deprecated, use create_info_from_name instead", DeprecationWarning, stacklevel=2
-    )
-    # Ignoring model_name parameter - use base tier
-    return await create_info_from_name(finding_name, "base")
-
-
-async def get_detail_on_finding(
-    finding: FindingInfo, search_depth: Literal["basic", "advanced"] = "advanced"
-) -> FindingInfo | None:
-    """
-    DEPRECATED: Use add_details_to_info instead.
-    Get a detailed description of a finding using the Tavily search API.
-    """
-    warnings.warn(
-        "get_detail_on_finding is deprecated, use add_details_to_info instead", DeprecationWarning, stacklevel=2
-    )
-    return await add_details_to_info(finding, search_depth)
-
-
-# Additional deprecated aliases for the intermediate names
-async def create_finding_info_from_name(finding_name: str, model_name: str | None = None) -> FindingInfo:
-    """
-    DEPRECATED: Use create_info_from_name instead.
-    Create a FindingInfo object from a finding name using the AI API.
-    """
-    warnings.warn(
-        "create_finding_info_from_name is deprecated, use create_info_from_name instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    # Ignoring model_name parameter - use base tier
-    return await create_info_from_name(finding_name, "base")
-
-
-async def add_details_to_finding_info(
-    finding: FindingInfo, search_depth: Literal["basic", "advanced"] = "advanced"
-) -> FindingInfo | None:
-    """
-    DEPRECATED: Use add_details_to_info instead.
-    Add detailed description and citations to a FindingInfo object using the Tavily search API.
-    """
-    warnings.warn(
-        "add_details_to_finding_info is deprecated, use add_details_to_info instead", DeprecationWarning, stacklevel=2
-    )
-    return await add_details_to_info(finding, search_depth)

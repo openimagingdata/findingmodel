@@ -47,28 +47,3 @@ async def create_model_from_markdown(
     if not isinstance(result.output, FindingModelBase):
         raise ValueError("Finding model not returned.")
     return result.output
-
-
-# Deprecated alias for backward compatibility
-async def create_finding_model_from_markdown(
-    finding_info: FindingInfo,
-    /,
-    markdown_path: str | Path | None = None,
-    markdown_text: str | None = None,
-    openai_model: str | None = None,
-) -> FindingModelBase:
-    """
-    DEPRECATED: Use create_model_from_markdown instead.
-    Create a finding model from a markdown file or text using the OpenAI API.
-    """
-    import warnings
-
-    warnings.warn(
-        "create_finding_model_from_markdown is deprecated, use create_model_from_markdown instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    # Map old model_name parameter to new model_tier - use "base" as default since that matches the old default
-    return await create_model_from_markdown(
-        finding_info, markdown_path=markdown_path, markdown_text=markdown_text, model_tier="base"
-    )

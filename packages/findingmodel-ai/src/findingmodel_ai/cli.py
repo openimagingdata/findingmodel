@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
-from findingmodel.tools import add_ids_to_finding_model, add_standard_codes_to_finding_model
+from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
 from rich.console import Console
 
 from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
@@ -84,12 +84,12 @@ def make_stub_model(
         stub: FindingModelBase | FindingModelFull = create_model_stub_from_info(described_finding, list(tags))
         if with_ids:
             if source and len(source) in [3, 4]:
-                stub = add_ids_to_finding_model(stub, source.upper())
+                stub = add_ids_to_model(stub, source.upper())
             else:
                 console.print("[red]Error: --source is required to generate IDs")
             if with_codes:
                 assert isinstance(stub, FindingModelFull)
-                add_standard_codes_to_finding_model(stub)
+                add_standard_codes_to_model(stub)
         if with_codes and not with_ids:
             console.print("[red]Error: --with-codes requires --with-ids to be set")
         if output:
@@ -132,7 +132,7 @@ def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, outpu
         if with_ids:
             if source and len(source) in [3, 4]:
                 assert isinstance(model, FindingModelBase)
-                model = add_ids_to_finding_model(model, source.upper())
+                model = add_ids_to_model(model, source.upper())
             else:
                 console.print("[red]Error: --source is required to generate IDs")
         if output:

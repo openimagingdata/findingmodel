@@ -1,7 +1,7 @@
 """Tests for create_stub module."""
 
 import pytest
-from findingmodel.create_stub import create_finding_model_stub_from_finding_info, create_model_stub_from_info
+from findingmodel.create_stub import create_model_stub_from_info
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase
 
@@ -18,18 +18,6 @@ def finding_info() -> FindingInfo:
 
 def test_create_stub(finding_info: FindingInfo) -> None:
     """Test creating a stub finding model from a FindingInfo object."""
-    stub = create_finding_model_stub_from_finding_info(finding_info)
-    assert isinstance(stub, FindingModelBase)
-    assert stub.name == finding_info.name.lower()
-    assert stub.description == finding_info.description
-    assert stub.synonyms == finding_info.synonyms
-    assert len(stub.attributes) == 2
-    assert stub.attributes[0].name == "presence"
-    assert stub.attributes[1].name == "change from prior"
-
-
-def test_create_model_stub_from_info(finding_info: FindingInfo) -> None:
-    """Test creating a stub finding model using the new function name."""
     stub = create_model_stub_from_info(finding_info)
     assert isinstance(stub, FindingModelBase)
     assert stub.name == finding_info.name.lower()
@@ -70,9 +58,3 @@ def test_create_stub_change_values(finding_info: FindingInfo) -> None:
     assert "resolved" in value_names
     assert "increased" in value_names
     assert "decreased" in value_names
-
-
-def test_deprecated_function_warns(finding_info: FindingInfo) -> None:
-    """Test that deprecated function emits a warning."""
-    with pytest.warns(DeprecationWarning, match="create_finding_model_stub_from_finding_info is deprecated"):
-        create_finding_model_stub_from_finding_info(finding_info)

@@ -1,6 +1,6 @@
 from loguru import logger as logger
 
-# Re-export from oidm_common for backward compatibility
+# Re-export common types for convenience
 from oidm_common.embeddings import EmbeddingCache as EmbeddingCache
 from oidm_common.models import IndexCode as IndexCode
 from oidm_common.models import WebReference as WebReference

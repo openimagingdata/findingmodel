@@ -37,22 +37,6 @@ def add_standard_codes_to_model(finding_model: FindingModelFull) -> None:
                 _add_index_codes(value, value.name.lower())
 
 
-# Deprecated alias for backward compatibility
-def add_standard_codes_to_finding_model(finding_model: FindingModelFull) -> None:
-    """
-    DEPRECATED: Use add_standard_codes_to_model instead.
-    Add standard codes to the finding model.
-    """
-    import warnings
-
-    warnings.warn(
-        "add_standard_codes_to_finding_model is deprecated, use add_standard_codes_to_model instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return add_standard_codes_to_model(finding_model)
-
-
 STANDARD_CODES = {
     "presence": [IndexCode(system="SNOMED", code="705057003", display="Presence (property) (qualifier value)")],
     "absent": [
