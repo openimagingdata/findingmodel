@@ -28,7 +28,7 @@ class AnatomicLocationSettings(BaseSettings):
     db_path: str | None = None
     remote_db_url: str | None = None
     remote_db_hash: str | None = None
-    manifest_url: str = "https://findingmodelsdata.t3.storage.dev/manifest.json"
+    manifest_url: str = "https://anatomiclocationsdata.t3.storage.dev/manifest.json"
 
     # Embedding configuration (for hybrid search)
     openai_api_key: SecretStr | None = Field(default=None)

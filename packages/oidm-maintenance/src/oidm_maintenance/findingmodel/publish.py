@@ -20,6 +20,7 @@ from oidm_maintenance.s3 import (
     save_manifest_to_s3,
     update_manifest_entry,
     upload_file_to_s3,
+    verify_bucket_access,
 )
 
 console = Console()
@@ -307,7 +308,17 @@ def publish_findingmodel_database(  # noqa: C901
     console.print(f"Database: {db_path}")
     console.print(f"Dry run: {dry_run}\n")
 
-    # Step 1: Run sanity check
+    # Step 1: Verify bucket access (validates credentials early)
+    console.print("[yellow]Verifying bucket access...[/yellow]")
+    try:
+        s3_client = create_s3_client(settings)
+        verify_bucket_access(s3_client, settings.s3_bucket)
+        console.print(f"  [green]✓[/green] Bucket access verified: {settings.s3_bucket}\n")
+    except Exception as e:
+        console.print(f"  [red]✗ Bucket access failed: {e}[/red]")
+        return False
+
+    # Step 2: Run sanity check
     console.print("[yellow]Running sanity check...[/yellow]")
     try:
         sanity_result = run_sanity_check(db_path)
@@ -340,7 +351,7 @@ def publish_findingmodel_database(  # noqa: C901
             console.print("[yellow]Publish cancelled.[/yellow]")
             return False
 
-    # Step 2: Compute file hash
+    # Step 3: Compute file hash
     console.print("\n[yellow]Computing file hash...[/yellow]")
     try:
         file_hash = compute_file_hash(db_path)
@@ -349,7 +360,7 @@ def publish_findingmodel_database(  # noqa: C901
         console.print(f"[red]Failed to compute hash: {e}[/red]")
         return False
 
-    # Step 3: Prompt for confirmation
+    # Step 4: Prompt for confirmation
     console.print()
     if not dry_run:
         confirm = console.input("[bold]Proceed with upload to S3? [yes/no]:[/bold] ").strip().lower()
@@ -359,13 +370,10 @@ def publish_findingmodel_database(  # noqa: C901
     else:
         console.print("[bold]DRY RUN - Skipping upload[/bold]")
 
-    # Step 4: Upload to S3
+    # Step 5: Upload to S3
     if not dry_run:
         console.print("\n[yellow]Uploading to S3...[/yellow]")
         try:
-            # Create S3 client
-            s3_client = create_s3_client(settings)
-
             # Construct S3 key
             s3_key = f"findingmodel/{version}/findingmodels.duckdb"
 
@@ -373,7 +381,7 @@ def publish_findingmodel_database(  # noqa: C901
             db_url = upload_file_to_s3(s3_client, settings.s3_bucket, s3_key, db_path)
             console.print(f"  [green]✓[/green] Uploaded database: {db_url}")
 
-            # Step 5: Update manifest
+            # Step 6: Update manifest
             console.print("\n[yellow]Updating manifest...[/yellow]")
 
             # Load current manifest

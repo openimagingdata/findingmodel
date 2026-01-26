@@ -1,3 +1,8 @@
 """OIDM Maintenance Tools - Database build and publish utilities."""
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version(__package__ or __name__)
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"

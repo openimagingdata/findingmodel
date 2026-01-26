@@ -1,32 +1,19 @@
 # oidm-common
 
-Shared infrastructure for OIDM packages. This is an internal package used by other packages in the workspace.
+Internal infrastructure package for the Open Imaging Data Model (OIDM) ecosystem.
 
-## Purpose
+## ⚠️ Not for Direct Use
 
-Provides common utilities shared across OIDM packages:
+This package provides shared infrastructure for OIDM packages. **Do not install this package directly.**
 
-- **Database Auto-Download**: Pooch-based download with checksum verification
-- **Embedding Client**: OpenAI embedding generation (optional `[openai]` extra)
-- **Database Utilities**: DuckDB connection helpers and async patterns
+Instead, use one of the user-facing packages:
+- [`findingmodel`](https://pypi.org/project/findingmodel/) - Finding model index and search
+- [`anatomic-locations`](https://pypi.org/project/anatomic-locations/) - Anatomic location ontology
+- [`findingmodel-ai`](https://pypi.org/project/findingmodel-ai/) - AI-powered finding model tools
 
-## Installation
+## Contents
 
-```bash
-# Basic installation
-pip install oidm-common
-
-# With OpenAI embedding support
-pip install oidm-common[openai]
-```
-
-## Usage
-
-This package is typically used as a dependency by other OIDM packages rather than directly. See:
-
-- [findingmodel](../findingmodel/README.md) - Core finding model library
-- [anatomic-locations](../anatomic-locations/README.md) - Anatomic location queries
-
-## Note
-
-This package has no AI/LLM dependencies. AI tooling lives in [findingmodel-ai](../findingmodel-ai/README.md).
+- DuckDB connection management and hybrid search
+- Embedding cache and providers
+- Distribution utilities (manifest, download, paths)
+- Shared data models (IndexCode, WebReference)

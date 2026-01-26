@@ -45,6 +45,28 @@ def create_s3_client(settings: MaintenanceSettings) -> S3Client:
     )
 
 
+def verify_bucket_access(client: S3Client, bucket: str) -> None:
+    """Verify that the client has access to the specified bucket.
+
+    Uses head_bucket to validate credentials and bucket existence without
+    listing or downloading any objects.
+
+    Args:
+        client: Configured boto3 S3 client
+        bucket: S3 bucket name to verify
+
+    Raises:
+        ClientError: If bucket doesn't exist or credentials are invalid
+            - 403: Invalid credentials or access denied
+            - 404: Bucket does not exist
+
+    Example:
+        client = create_s3_client(settings)
+        verify_bucket_access(client, "mybucket")  # Raises if invalid
+    """
+    client.head_bucket(Bucket=bucket)
+
+
 def upload_file_to_s3(client: S3Client, bucket: str, key: str, local_path: Path) -> str:
     """Upload a file to S3 and return its public URL.
 
@@ -106,7 +128,8 @@ def load_manifest_from_s3(client: S3Client, bucket: str, key: str) -> dict[str, 
 
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
-        if error_code == "NoSuchKey":
+        # Handle both "NoSuchKey" and "404" (from head_object in download_file)
+        if error_code in ("NoSuchKey", "404"):
             # Return empty manifest structure
             return {
                 "manifest_version": "1.0",
@@ -252,4 +275,5 @@ __all__ = [
     "save_manifest_to_s3",
     "update_manifest_entry",
     "upload_file_to_s3",
+    "verify_bucket_access",
 ]

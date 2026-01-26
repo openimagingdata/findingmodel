@@ -18,6 +18,7 @@ from oidm_maintenance.s3 import (
     save_manifest_to_s3,
     update_manifest_entry,
     upload_file_to_s3,
+    verify_bucket_access,
 )
 
 console = Console()
@@ -118,8 +119,18 @@ def publish_anatomic_database(
     if version is None:
         version = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # Step 1: Compute hash and gather stats
-    console.print("[bold]Step 1:[/bold] Analyzing database...")
+    # Step 1: Verify bucket access (validates credentials early)
+    console.print("[bold]Step 1:[/bold] Verifying bucket access...")
+    try:
+        client = create_s3_client(settings)
+        verify_bucket_access(client, settings.anatomic_s3_bucket)
+        console.print(f"[green]✓[/green] Bucket access verified: {settings.anatomic_s3_bucket}")
+    except Exception as e:
+        console.print(f"[red]✗ Bucket access failed: {e}[/red]")
+        return False
+
+    # Step 2: Compute hash and gather stats
+    console.print("\n[bold]Step 2:[/bold] Analyzing database...")
     file_hash = compute_file_hash(db_path)
     stats = get_anatomic_stats(db_path)
     display_anatomic_stats(stats)
@@ -128,33 +139,33 @@ def publish_anatomic_database(
     console.print(f"\nFile size: [cyan]{file_size:,}[/cyan] bytes")
     console.print(f"File hash: [cyan]{file_hash}[/cyan]")
     console.print(f"Version: [cyan]{version}[/cyan]")
+    console.print(f"Bucket: [cyan]{settings.anatomic_s3_bucket}[/cyan]")
+
+    if dry_run:
+        console.print("\n[yellow]Dry run - no changes would be made[/yellow]")
+        return True
 
     if not Confirm.ask("\nProceed with upload?"):
         console.print("[yellow]Upload cancelled by user[/yellow]")
         return False
 
-    if dry_run:
-        console.print("[yellow]Dry run - no changes made[/yellow]")
-        return True
-
-    # Step 2: Upload to S3
-    console.print("\n[bold]Step 2:[/bold] Uploading to S3...")
-    client = create_s3_client(settings)
+    # Step 3: Upload to S3
+    console.print("\n[bold]Step 3:[/bold] Uploading to S3...")
 
     # Upload database file
     db_key = f"anatomic_locations/{version}/anatomic_locations.duckdb"
-    db_url = upload_file_to_s3(client, settings.s3_bucket, db_key, db_path)
+    db_url = upload_file_to_s3(client, settings.anatomic_s3_bucket, db_key, db_path)
     console.print(f"Uploaded to: [cyan]{db_url}[/cyan]")
 
-    # Step 3: Update manifest
-    console.print("\n[bold]Step 3:[/bold] Updating manifest...")
+    # Step 4: Update manifest
+    console.print("\n[bold]Step 4:[/bold] Updating manifest...")
 
     # Load current manifest
-    manifest = load_manifest_from_s3(client, settings.s3_bucket, settings.manifest_key)
+    manifest = load_manifest_from_s3(client, settings.anatomic_s3_bucket, settings.manifest_key)
 
     # Backup old manifest
     if manifest.get("databases"):
-        backup_url = backup_manifest(client, settings.s3_bucket, manifest, settings.manifest_backup_prefix)
+        backup_url = backup_manifest(client, settings.anatomic_s3_bucket, manifest, settings.manifest_backup_prefix)
         console.print(f"Backed up old manifest to: [cyan]{backup_url}[/cyan]")
 
     # Create new database entry
@@ -171,7 +182,7 @@ def publish_anatomic_database(
     updated_manifest = update_manifest_entry(manifest, "anatomic_locations", db_entry)
 
     # Save new manifest
-    save_manifest_to_s3(client, settings.s3_bucket, settings.manifest_key, updated_manifest)
+    save_manifest_to_s3(client, settings.anatomic_s3_bucket, settings.manifest_key, updated_manifest)
     console.print(f"Updated manifest at: [cyan]{settings.manifest_key}[/cyan]")
 
     console.print("\n[bold green]✓ Publish complete![/bold green]")

@@ -18,7 +18,7 @@ class TestAnatomicLocationSettings:
         assert settings.db_path is None
         assert settings.remote_db_url is None
         assert settings.remote_db_hash is None
-        assert settings.manifest_url == "https://findingmodelsdata.t3.storage.dev/manifest.json"
+        assert settings.manifest_url == "https://anatomiclocationsdata.t3.storage.dev/manifest.json"
 
     def test_environment_variable_loading_with_anatomic_prefix(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that environment variables with ANATOMIC_ prefix are loaded correctly."""
@@ -105,7 +105,7 @@ class TestEnsureAnatomicDb:
                 remote_url=None,  # Default from settings
                 remote_hash=None,  # Default from settings
                 manifest_key="anatomic_locations",
-                manifest_url="https://findingmodelsdata.t3.storage.dev/manifest.json",  # Default from settings
+                manifest_url="https://anatomiclocationsdata.t3.storage.dev/manifest.json",  # Default from settings
                 app_name="anatomic-locations",
             )
 

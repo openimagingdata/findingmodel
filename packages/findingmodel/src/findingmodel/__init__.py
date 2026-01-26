@@ -1,3 +1,10 @@
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version(__package__ or __name__)
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"
+
 from loguru import logger as logger
 
 # Re-export common types for convenience
@@ -30,6 +37,7 @@ __all__ = [
     "Index",
     "IndexCode",
     "WebReference",
+    "__version__",
     "create_model_stub_from_info",
     "logger",
     "settings",

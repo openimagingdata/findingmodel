@@ -158,28 +158,36 @@ tasks:
       - uv run mypy
     silent: true
 
-  build:
-    desc: "Build the findingmodel library"
-    cmds:
-      - echo "Building library..."
-      - uv build --package findingmodel {{.CLI_ARGS}}
-    silent: true
+  # =============================================================================
+  # Build and publish tasks
+  # =============================================================================
 
-  quiet:
-    desc: "Run checks quietly"
+  build:packages:
+    desc: "Build all publishable packages"
     cmds:
-      - uv run ruff format --quiet packages/
-      - uv run ruff check --fix --quiet packages/
-      - uv run mypy --no-error-summary --no-pretty
-      - uv run pytest -q {{.CLI_ARGS}}
-    silent: true
+      - rm -rf dist/
+      - uv build --package oidm-common
+      - uv build --package findingmodel
+      - uv build --package anatomic-locations
+      - uv build --package findingmodel-ai
 
-  publish:
-    desc: "Publish the findingmodel library"
+  publish:testpypi:
+    desc: "Publish to TestPyPI for validation"
+    deps: [build:packages]
     cmds:
-      - echo "Publishing library..."
-      - uv publish {{.CLI_ARGS}}
-    silent: true
+      - uv publish --index testpypi dist/oidm_common-*.tar.gz dist/oidm_common-*.whl
+      - uv publish --index testpypi dist/findingmodel-[0-9]*.tar.gz dist/findingmodel-[0-9]*.whl
+      - uv publish --index testpypi dist/anatomic_locations-*.tar.gz dist/anatomic_locations-*.whl
+      - uv publish --index testpypi dist/findingmodel_ai-*.tar.gz dist/findingmodel_ai-*.whl
+
+  publish:pypi:
+    desc: "Publish packages to PyPI (in dependency order)"
+    deps: [build:packages]
+    cmds:
+      - uv publish dist/oidm_common-*.tar.gz dist/oidm_common-*.whl
+      - uv publish dist/findingmodel-[0-9]*.tar.gz dist/findingmodel-[0-9]*.whl
+      - uv publish dist/anatomic_locations-*.tar.gz dist/anatomic_locations-*.whl
+      - uv publish dist/findingmodel_ai-*.tar.gz dist/findingmodel_ai-*.whl
 
   release:
     desc: "Interactive release process"
