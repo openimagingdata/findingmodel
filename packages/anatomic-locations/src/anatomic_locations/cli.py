@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import click
 from rich.console import Console
 from rich.table import Table
 
-from anatomic_locations.index import AnatomicLocationIndex, get_database_stats
+from anatomic_locations.index import AnatomicLocationIndex, get_database_stats, run_sanity_check
 
 
 @click.group()
@@ -18,49 +19,95 @@ def main() -> None:
     pass
 
 
+def _resolve_db_path(db_path: Path | None, console: Console) -> Path:
+    """Resolve database path from argument or config."""
+    if db_path:
+        return db_path
+    try:
+        from anatomic_locations.config import ensure_anatomic_db
+
+        return ensure_anatomic_db()
+    except ImportError:
+        console.print("[bold red]Error: --db-path is required (config module not available for default path)")
+        raise click.Abort() from None
+
+
+def _display_stats_table(console: Console, stats_data: dict[str, Any]) -> None:
+    """Display the main statistics table."""
+    summary_table = Table(title="Database Summary", show_header=True, header_style="bold cyan")
+    summary_table.add_column("Metric", style="cyan")
+    summary_table.add_column("Value", style="green", justify="right")
+
+    summary_table.add_row("Total Records", str(stats_data["total_records"]))
+    summary_table.add_row("Records with Vectors", str(stats_data["records_with_vectors"]))
+    summary_table.add_row("Records with Hierarchy", str(stats_data["records_with_hierarchy"]))
+    summary_table.add_row("Records with Codes", str(stats_data["records_with_codes"]))
+    summary_table.add_row("Unique Regions", str(stats_data["unique_regions"]))
+    summary_table.add_row("Total Synonyms", str(stats_data["total_synonyms"]))
+    summary_table.add_row("Total Codes", str(stats_data["total_codes"]))
+    summary_table.add_row("File Size", f"{stats_data['file_size_mb']:.2f} MB")
+
+    console.print(summary_table)
+
+
+def _display_sanity_results(console: Console, check_result: dict[str, Any]) -> None:
+    """Display detailed validation results."""
+    check_table = Table(title="Validation Results", show_header=True, header_style="bold cyan")
+    check_table.add_column("Check", style="cyan")
+    check_table.add_column("Status", justify="center")
+    check_table.add_column("Value", style="white")
+    check_table.add_column("Expected", style="dim")
+
+    for check in check_result["checks"]:
+        status = "[green]✓ PASS[/green]" if check["passed"] else "[red]✗ FAIL[/red]"
+        check_table.add_row(check["name"], status, check["value"], check["expected"])
+
+    console.print(check_table)
+
+    if check_result["errors"]:
+        console.print("\n[bold red]Errors:")
+        for error in check_result["errors"]:
+            console.print(f"  [red]• {error}[/red]")
+
+    if check_result["success"]:
+        console.print("\n[bold green]✓ All validation checks passed![/bold green]")
+    else:
+        console.print("\n[bold red]✗ Some validation checks failed[/bold red]")
+
+
 @main.command("stats")
 @click.option("--db-path", type=click.Path(path_type=Path), help="Database path (default: config setting)")
-def stats(db_path: Path | None) -> None:
+@click.option("--detailed", is_flag=True, help="Show detailed validation checks")
+def stats(db_path: Path | None, detailed: bool) -> None:
     """Show anatomic location database statistics."""
     console = Console()
-
-    # Determine database path
-    database_path: Path
-    if db_path:
-        database_path = db_path
-    else:
-        try:
-            from anatomic_locations.config import ensure_anatomic_db
-
-            database_path = ensure_anatomic_db()
-        except ImportError:
-            console.print("[bold red]Error: --db-path is required (config module not available for default path)")
-            raise click.Abort() from None
+    database_path = _resolve_db_path(db_path, console)
 
     console.print("[bold green]Anatomic Location Database Statistics\n")
     console.print(f"[gray]Database: [yellow]{database_path.absolute()}\n")
 
     try:
         stats_data = get_database_stats(database_path)
-
-        # Create summary table
-        summary_table = Table(title="Database Summary", show_header=True, header_style="bold cyan")
-        summary_table.add_column("Metric", style="cyan")
-        summary_table.add_column("Value", style="green", justify="right")
-
-        summary_table.add_row("Total Records", str(stats_data["total_records"]))
-        summary_table.add_row("Records with Vectors", str(stats_data["records_with_vectors"]))
-        summary_table.add_row("Unique Regions", str(stats_data["unique_regions"]))
-        summary_table.add_row("File Size", f"{stats_data['file_size_mb']:.2f} MB")
-
-        console.print(summary_table)
+        _display_stats_table(console, stats_data)
 
         # Display laterality distribution
         console.print("\n[bold cyan]Laterality Distribution:")
-        laterality_dist = stats_data["laterality_distribution"]
-        for laterality, count in sorted(laterality_dist.items(), key=lambda x: x[1], reverse=True):
-            laterality_label = laterality if laterality else "NULL"
-            console.print(f"  {laterality_label}: {count}")
+        for laterality, count in sorted(
+            stats_data["laterality_distribution"].items(), key=lambda x: x[1], reverse=True
+        ):
+            console.print(f"  {laterality or 'NULL'}: {count}")
+
+        # Display code system breakdown
+        if stats_data.get("code_systems"):
+            console.print("\n[bold cyan]Code Systems:")
+            for system, count in stats_data["code_systems"].items():
+                console.print(f"  {system}: {count}")
+
+        # Run detailed validation if requested
+        if detailed:
+            console.print("\n[bold yellow]Running Detailed Validation...\n")
+            check_result = run_sanity_check(database_path)
+            _display_sanity_results(console, check_result)
 
     except Exception as e:
         console.print(f"[bold red]Error reading database: {e}")
@@ -115,7 +162,7 @@ def query_ancestors(location_id: str, db_path: Path | None) -> None:
 
             # Create table for ancestors
             table = Table(title="Containment Ancestors (nearest to root)", show_header=True, header_style="bold cyan")
-            table.add_column("Level", style="gray", justify="right", width=6)
+            table.add_column("Level", style="dim", justify="right", width=6)
             table.add_column("ID", style="yellow", width=20)
             table.add_column("Name", style="white")
             table.add_column("Region", style="cyan", width=15)
@@ -178,7 +225,7 @@ def query_descendants(location_id: str, db_path: Path | None) -> None:
 
             # Create table for descendants
             table = Table(title="Containment Descendants", show_header=True, header_style="bold cyan")
-            table.add_column("Depth", style="gray", justify="right", width=6)
+            table.add_column("Depth", style="dim", justify="right", width=6)
             table.add_column("ID", style="yellow", width=20)
             table.add_column("Name", style="white")
             table.add_column("Region", style="cyan", width=15)

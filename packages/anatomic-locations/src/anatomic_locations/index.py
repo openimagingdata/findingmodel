@@ -855,6 +855,26 @@ def get_database_stats(db_path: Path) -> dict[str, Any]:
         result = conn.execute("SELECT COUNT(*) FROM anatomic_codes").fetchone()
         code_count = result[0] if result else 0
 
+        # Get hierarchy coverage
+        result = conn.execute(
+            "SELECT COUNT(*) FROM anatomic_locations WHERE containment_path IS NOT NULL AND containment_path != ''"
+        ).fetchone()
+        records_with_hierarchy = result[0] if result else 0
+
+        # Get code system breakdown
+        code_systems = conn.execute("""
+            SELECT system, COUNT(*) as count
+            FROM anatomic_codes
+            GROUP BY system
+            ORDER BY count DESC
+        """).fetchall()
+
+        # Get records with at least one code
+        result = conn.execute("""
+            SELECT COUNT(DISTINCT location_id) FROM anatomic_codes
+        """).fetchone()
+        records_with_codes = result[0] if result else 0
+
         return {
             "total_records": total_records,
             "records_with_vectors": vector_count,
@@ -862,6 +882,9 @@ def get_database_stats(db_path: Path) -> dict[str, Any]:
             "laterality_distribution": dict(laterality_dist),
             "total_synonyms": synonym_count,
             "total_codes": code_count,
+            "records_with_hierarchy": records_with_hierarchy,
+            "records_with_codes": records_with_codes,
+            "code_systems": dict(code_systems),
             "file_size_mb": db_path.stat().st_size / (1024 * 1024),
         }
 
@@ -869,4 +892,152 @@ def get_database_stats(db_path: Path) -> dict[str, Any]:
         conn.close()
 
 
-__all__ = ["AnatomicLocationIndex"]
+def _check_coverage(
+    name: str, actual: int, total: int, threshold: float, expected_str: str
+) -> tuple[dict[str, Any], str | None]:
+    """Helper to create a coverage check result."""
+    pct = (actual / total * 100) if total > 0 else 0
+    passed = pct >= threshold
+    check = {
+        "name": name,
+        "passed": passed,
+        "value": f"{actual}/{total} ({pct:.1f}%)",
+        "expected": expected_str,
+    }
+    error = None if passed else f"{name}: {pct:.1f}% (expected {expected_str})"
+    return check, error
+
+
+def _validate_sample_records(db_path: Path, sample_count: int) -> tuple[dict[str, Any], list[str]]:
+    """Validate sample records can be retrieved and parsed."""
+    sample_errors: list[str] = []
+    sample_successes = 0
+
+    conn = setup_duckdb_connection(db_path, read_only=True)
+    try:
+        sample_ids = conn.execute(
+            "SELECT id FROM anatomic_locations ORDER BY RANDOM() LIMIT ?", [sample_count]
+        ).fetchall()
+
+        index = AnatomicLocationIndex(db_path)
+        index.open()
+        try:
+            for (location_id,) in sample_ids:
+                try:
+                    location = index.get(location_id)
+                    if not location.description:
+                        sample_errors.append(f"{location_id}: missing description")
+                    elif not location.region:
+                        sample_errors.append(f"{location_id}: missing region")
+                    else:
+                        sample_successes += 1
+                except KeyError:
+                    sample_errors.append(f"{location_id}: not found")
+                except Exception as e:
+                    sample_errors.append(f"{location_id}: {e}")
+        finally:
+            index.close()
+    finally:
+        conn.close()
+
+    sample_ok = sample_successes == len(sample_ids) and len(sample_errors) == 0
+    check = {
+        "name": "Sample Record Validation",
+        "passed": sample_ok,
+        "value": f"{sample_successes}/{len(sample_ids)} records parsed successfully",
+        "expected": "100%",
+    }
+    return check, sample_errors
+
+
+def run_sanity_check(db_path: Path, sample_count: int = 5) -> dict[str, Any]:
+    """Run sanity checks on an anatomic location database.
+
+    Validates that:
+    1. Records can be retrieved and parsed into Pydantic models
+    2. Laterality counts are consistent (left == right)
+    3. Vector coverage is complete
+    4. Hierarchy paths are populated
+
+    Args:
+        db_path: Path to the database file
+        sample_count: Number of sample records to validate (default: 5)
+
+    Returns:
+        Dictionary with sanity check results including:
+        - success: bool - overall pass/fail
+        - checks: list of individual check results
+        - errors: list of error messages
+    """
+    if not db_path.exists():
+        raise FileNotFoundError(f"Database not found at {db_path}")
+
+    stats = get_database_stats(db_path)
+    checks: list[dict[str, Any]] = []
+    errors: list[str] = []
+
+    # Check 1: Vector coverage (should be 100%)
+    check, error = _check_coverage(
+        "Vector Coverage", stats["records_with_vectors"], stats["total_records"], 100, "100%"
+    )
+    checks.append(check)
+    if error:
+        errors.append(error)
+
+    # Check 2: Laterality consistency (left count should equal right count)
+    lat_dist = stats["laterality_distribution"]
+    left_count = lat_dist.get("left", 0)
+    right_count = lat_dist.get("right", 0)
+    laterality_ok = left_count == right_count
+    checks.append({
+        "name": "Laterality Consistency",
+        "passed": laterality_ok,
+        "value": f"left={left_count}, right={right_count}",
+        "expected": "left == right",
+    })
+    if not laterality_ok:
+        errors.append(f"Laterality mismatch: left={left_count}, right={right_count}")
+
+    # Check 3: Hierarchy coverage (≥90%)
+    check, error = _check_coverage(
+        "Hierarchy Coverage", stats["records_with_hierarchy"], stats["total_records"], 90, "≥90%"
+    )
+    checks.append(check)
+    if error:
+        errors.append(error)
+
+    # Check 4: Reference coverage by ontology
+    total = stats["total_records"]
+    system_coverage = stats.get("code_systems", {})
+
+    # Report coverage for key ontologies (informational, no threshold)
+    for system in ["SNOMED", "FMA", "ACR"]:
+        count = system_coverage.get(system, 0)
+        pct = (count / total * 100) if total > 0 else 0
+        checks.append({
+            "name": f"  └ {system}",
+            "passed": True,  # Informational only
+            "value": f"{count}/{total} ({pct:.1f}%)",
+            "expected": "—",
+        })
+
+    # Overall reference coverage check (at least 50% should have some code)
+    check, error = _check_coverage("Reference Coverage", stats["records_with_codes"], total, 50, "≥50%")
+    checks.append(check)
+    if error:
+        errors.append(error)
+
+    # Check 5: Sample record validation
+    check, sample_errors = _validate_sample_records(db_path, sample_count)
+    checks.append(check)
+    errors.extend(sample_errors)
+
+    return {
+        "success": all(c["passed"] for c in checks),
+        "checks": checks,
+        "stats": stats,
+        "errors": errors,
+    }
+
+
+__all__ = ["AnatomicLocationIndex", "get_database_stats", "run_sanity_check"]
