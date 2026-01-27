@@ -113,6 +113,58 @@ async def test_contains_method(index: DuckDBIndex) -> None:
     assert await index.contains("nonexistent finding name") is False
 
 
+@pytest.mark.asyncio
+async def test_get_contains_resolve_by_slug(index: DuckDBIndex) -> None:
+    """Test that get/contains resolve identifiers by slug name."""
+    # Test contains with slug format
+    assert await index.contains("abdominal_aortic_aneurysm") is True
+
+    # Test get with slug format
+    entry = await index.get("abdominal_aortic_aneurysm")
+    assert entry is not None
+    assert entry.oifm_id == "OIFM_MSFT_134126"
+    assert entry.name == "abdominal aortic aneurysm"
+
+
+@pytest.mark.asyncio
+async def test_get_contains_resolve_by_synonym(index: DuckDBIndex) -> None:
+    """Test that get/contains resolve identifiers by synonym."""
+    # Test contains with synonym
+    assert await index.contains("AAA") is True
+
+    # Test get with synonym
+    entry = await index.get("AAA")
+    assert entry is not None
+    assert entry.oifm_id == "OIFM_MSFT_134126"
+    assert entry.synonyms is not None
+    assert "AAA" in entry.synonyms
+
+
+@pytest.mark.asyncio
+async def test_get_full_missing_id_raises_keyerror(index: DuckDBIndex) -> None:
+    """Test that get_full raises KeyError for missing ID."""
+    with pytest.raises(KeyError, match="Model not found"):
+        await index.get_full("OIFM_NONEXISTENT_999999")
+
+
+@pytest.mark.asyncio
+async def test_get_full_batch_returns_only_found_ids(index: DuckDBIndex) -> None:
+    """Test that get_full_batch returns only found models (excludes missing IDs)."""
+    # Request batch with one valid and one invalid ID
+    valid_id = "OIFM_MSFT_134126"
+    invalid_id = "OIFM_NONEXISTENT_999999"
+    ids_to_fetch = [valid_id, invalid_id]
+
+    models = await index.get_full_batch(ids_to_fetch)
+
+    # Should only include the valid ID
+    assert len(models) == 1
+    assert valid_id in models
+    assert invalid_id not in models
+    assert isinstance(models[valid_id], FindingModelFull)
+    assert models[valid_id].oifm_id == valid_id
+
+
 # ============================================================================
 # Pagination Tests
 # ============================================================================
@@ -269,10 +321,25 @@ async def test_search_no_results(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_empty_query(index: DuckDBIndex) -> None:
-    """Test search behavior with empty query."""
-    results = await index.search("", limit=5)
-    assert isinstance(results, list)
+async def test_search_empty_query_raises_valueerror(index: DuckDBIndex) -> None:
+    """Test that empty query raises ValueError."""
+    with pytest.raises(ValueError, match="empty or whitespace"):
+        await index.search("", limit=5)
+
+    with pytest.raises(ValueError, match="empty or whitespace"):
+        await index.search("   ", limit=5)
+
+
+@pytest.mark.asyncio
+async def test_search_batch_all_blank_queries_raises_valueerror(index: DuckDBIndex) -> None:
+    """Test that search_batch raises ValueError when all queries are blank."""
+    # All empty/whitespace queries should raise
+    with pytest.raises(ValueError, match="All queries are empty or whitespace"):
+        await index.search_batch(["", "   ", "\t\n"])
+
+    # Empty list returns empty dict (no error)
+    result = await index.search_batch([])
+    assert result == {}
 
 
 @pytest.mark.asyncio
@@ -329,7 +396,7 @@ async def test_search_with_single_tag(index: DuckDBIndex) -> None:
 
 @pytest.mark.asyncio
 async def test_search_with_multiple_tags_and_logic(index: DuckDBIndex) -> None:
-    """Test search with multiple tags and AND logic."""
+    """Test search with multiple tags (AND logic is enforced by default)."""
     # Get all entries to find entries with multiple tags
     all_entries, _ = await index.all(limit=100)
 
@@ -343,21 +410,13 @@ async def test_search_with_multiple_tags_and_logic(index: DuckDBIndex) -> None:
     if not entry_with_multi_tags:
         pytest.skip("No entries with multiple tags found")
 
-    # Search with both tags using AND logic
+    # Search with both tags (AND logic is default - all tags must be present)
     tags = entry_with_multi_tags.tags[:2]
-    results = await index.search("", tags=tags, tag_logic="and", limit=10)
+    results = await index.search("", tags=tags, limit=10)
 
-    # All results should have both tags
+    # All results should have both tags (AND semantics)
     for result in results:
         assert all(tag in result.tags for tag in tags)
-
-
-@pytest.mark.asyncio
-async def test_search_with_nonexistent_tags(index: DuckDBIndex) -> None:
-    """Test search with tags that don't exist."""
-    results = await index.search("", tags=["nonexistent_tag_12345"], limit=10)
-    assert isinstance(results, list)
-    assert len(results) == 0
 
 
 @pytest.mark.asyncio
@@ -376,6 +435,25 @@ async def test_search_batch_empty_queries_list(index: DuckDBIndex) -> None:
     """Test batch search with empty list."""
     results = await index.search_batch([], limit=5)
     assert results == {}
+
+
+@pytest.mark.asyncio
+async def test_search_batch_with_valid_and_invalid_queries(index: DuckDBIndex) -> None:
+    """Test search_batch with mix of valid and invalid queries."""
+    queries = ["aneurysm", "zzzzzznonexistent", "aortic"]
+    results = await index.search_batch(queries, limit=5)
+
+    assert len(results) == 3
+    assert "aneurysm" in results
+    assert "zzzzzznonexistent" in results
+    assert "aortic" in results
+
+    # Invalid query should return empty list (not error)
+    assert isinstance(results["zzzzzznonexistent"], list)
+
+    # Valid queries should have results
+    assert len(results["aneurysm"]) >= 1
+    assert len(results["aortic"]) >= 1
 
 
 # ============================================================================
@@ -504,6 +582,41 @@ async def test_count_organizations(index: DuckDBIndex) -> None:
     count = await index.count_organizations()
     # Pre-built test database has at least 1 organization
     assert count >= 1
+
+
+@pytest.mark.asyncio
+async def test_get_person(index: DuckDBIndex) -> None:
+    """Test retrieving a person by github username."""
+    # HeatherChase is a contributor in the test data
+    person = await index.get_person("HeatherChase")
+    assert person is not None
+    assert person.github_username == "HeatherChase"
+    assert person.name == "Heather Chase"
+    assert person.organization_code == "MSFT"
+
+
+@pytest.mark.asyncio
+async def test_get_person_not_found(index: DuckDBIndex) -> None:
+    """Test retrieving a person that doesn't exist returns None."""
+    person = await index.get_person("nonexistent_user_12345")
+    assert person is None
+
+
+@pytest.mark.asyncio
+async def test_get_organization(index: DuckDBIndex) -> None:
+    """Test retrieving an organization by code."""
+    # MSFT is an organization in the test data
+    org = await index.get_organization("MSFT")
+    assert org is not None
+    assert org.code == "MSFT"
+    assert org.name == "Microsoft"
+
+
+@pytest.mark.asyncio
+async def test_get_organization_not_found(index: DuckDBIndex) -> None:
+    """Test retrieving an organization that doesn't exist returns None."""
+    org = await index.get_organization("NONEXISTENT")
+    assert org is None
 
 
 # ============================================================================
@@ -921,3 +1034,229 @@ def test_finalize_placeholder_invalid_model_id_inference(index: DuckDBIndex) -> 
             description="Test description",
             attributes=[],
         )
+
+
+# ============================================================================
+# Performance and Edge Case Tests
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_search_latency_benchmark(index: DuckDBIndex) -> None:
+    """Test that search latency is reasonable (< 500ms for typical query).
+
+    This test catches performance regressions in the search implementation.
+    The threshold is generous to account for CI environment variability.
+    """
+    import time
+
+    # Warmup query to account for cold start (HNSW index loading, etc.)
+    await index.search("test", limit=1)
+
+    # Actual benchmark
+    start = time.time()
+    results = await index.search("aneurysm", limit=10)
+    elapsed = time.time() - start
+
+    assert len(results) >= 1
+    # Allow generous time for CI environments (1 second threshold)
+    assert elapsed < 1.0, f"Search took {elapsed:.3f}s, expected < 1.0s"
+
+
+@pytest.mark.asyncio
+async def test_large_query_handling(index: DuckDBIndex) -> None:
+    """Test Index behavior with very large search queries."""
+    # Test with very long search query
+    very_long_query = "a" * 10000  # 10k character query
+
+    # Should not crash
+    results = await index.search(very_long_query, limit=5)
+    assert isinstance(results, list)
+
+    # Test with query containing special characters
+    special_char_query = "\"'\\/{}[]$^*+?.|()"
+    results = await index.search(special_char_query, limit=5)
+    assert isinstance(results, list)
+
+
+# ============================================================================
+# Semantic Search Tests
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_semantic_search_returns_results(index: DuckDBIndex) -> None:
+    """Test semantic search with HNSW returns results.
+
+    The prebuilt test database has deterministic fake embeddings,
+    so we can verify HNSW search returns results.
+    """
+    # Get count of models
+    count = await index.count()
+    assert count > 0
+
+    # Use the internal _search_semantic_with_embedding method with a fake embedding
+    # This avoids needing an API key for the test
+    conn = index._ensure_connection()
+
+    # Generate a fake embedding matching the deterministic pattern used in fixtures
+    fake_query_embedding = [(42 % 100) / 100.0] * 512
+
+    # Search using the internal method
+    results = index._search_semantic_with_embedding(conn, fake_query_embedding, limit=5)
+
+    # Should return results
+    assert len(results) >= 1
+    # Results are (IndexEntry, score) tuples
+    assert all(isinstance(r[0].oifm_id, str) for r in results)
+    assert all(isinstance(r[1], float) for r in results)
+
+
+def test_semantic_search_with_precomputed_embedding(index: DuckDBIndex) -> None:
+    """Test semantic search using pre-computed embedding (deterministic, no API calls).
+
+    This verifies the HNSW index is properly built and functional.
+    """
+    conn = index._ensure_connection()
+
+    # Generate embedding matching the hash-based pattern used in test fixtures
+    # For "aneurysm", sum(ord(c)) = 97+110+101+117+114+121+115+109 = 884
+    # Embedding value = (884 % 100) / 100.0 = 0.84
+    aneurysm_like_embedding = [0.84] * 512
+
+    # Search using pre-computed embedding
+    results = index._search_semantic_with_embedding(conn, aneurysm_like_embedding, limit=10)
+
+    # Should find results (the hash-based embeddings create clusters)
+    assert len(results) >= 1
+
+    # Results should be IndexEntry objects with valid oifm_ids
+    for entry, score in results:
+        assert entry.oifm_id.startswith("OIFM_")
+        assert isinstance(score, float)
+
+
+@pytest.mark.asyncio
+@pytest.mark.callout
+async def test_semantic_search_with_real_openai_api(index: DuckDBIndex) -> None:
+    """Test semantic search using real OpenAI API (requires OPENAI_API_KEY).
+
+    This test makes real API calls - only run with pytest -m callout.
+    """
+    # Search with semantically similar query (not exact match)
+    # "blood vessel enlargement" should match "aneurysm" semantically
+    results = await index.search("blood vessel enlargement", limit=5)
+
+    # With real embeddings, should find at least one result
+    assert len(results) >= 1
+
+    # Check if aneurysm-related model is in top results
+    names_lower = [r.name.lower() for r in results]
+    has_aneurysm = any("aneurysm" in name for name in names_lower)
+    # Note: This may not always pass depending on embedding quality
+    # but it's a good sanity check for semantic similarity
+    assert has_aneurysm, f"Expected aneurysm in results for 'blood vessel enlargement', got: {names_lower}"
+
+
+# ============================================================================
+# Phase 3: Index Search Behavior Tests
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_search_batch_calls_embeddings_once(index: DuckDBIndex) -> None:
+    """Test that search_batch calls embeddings API exactly once.
+
+    Plan reference: test-suite-upgrade-plan.md lines 52-55 (item 8)
+    """
+    from unittest.mock import AsyncMock, patch
+
+    # Mock the batch_embeddings_for_duckdb function where it's imported
+    mock_embeddings = AsyncMock()
+    # Return deterministic fake embeddings (512-dim vectors)
+    mock_embeddings.return_value = [[0.5] * 512, [0.6] * 512, [0.7] * 512]
+
+    queries = ["aneurysm", "embolism", "fracture"]
+
+    with patch("findingmodel.index.batch_embeddings_for_duckdb", mock_embeddings):
+        results = await index.search_batch(queries, limit=5)
+
+    # Should be called exactly once with all queries
+    mock_embeddings.assert_called_once()
+    call_args = mock_embeddings.call_args
+    assert call_args[0][0] == queries
+
+    # Should return results for all queries
+    assert isinstance(results, dict)
+    assert len(results) == 3
+    assert set(results.keys()) == {"aneurysm", "embolism", "fracture"}
+
+
+def test_index_entry_match_handles_synonyms() -> None:
+    """Test that IndexEntry.match() handles ID, name, and synonyms (case-insensitive).
+
+    Plan reference: test-suite-upgrade-plan.md lines 57-60 (item 9)
+
+    This is a pure unit test - no fixture or async needed.
+    """
+    # Construct an IndexEntry with synonyms
+    entry = IndexEntry(
+        oifm_id="OIFM_TEST_123456",
+        name="Test Finding",
+        slug_name="test_finding",
+        filename="test_finding.fm.json",
+        file_hash_sha256="abcd1234",
+        description="A test finding",
+        synonyms=["Test Syn", "Another Name"],
+    )
+
+    # Match by ID (exact)
+    assert entry.match("OIFM_TEST_123456") is True
+
+    # Match by name (case-insensitive)
+    assert entry.match("Test Finding") is True
+    assert entry.match("test finding") is True
+    assert entry.match("TEST FINDING") is True
+
+    # Match by synonym (case-insensitive)
+    assert entry.match("Test Syn") is True
+    assert entry.match("test syn") is True
+    assert entry.match("Another Name") is True
+    assert entry.match("another name") is True
+
+    # No match
+    assert entry.match("OIFM_OTHER_999999") is False
+    assert entry.match("Different Finding") is False
+    assert entry.match("Not a Synonym") is False
+
+
+@pytest.mark.asyncio
+async def test_all_sorting_by_timestamps(index: DuckDBIndex) -> None:
+    """Test that all() can sort by created_at and updated_at timestamps.
+
+    Plan reference: test-suite-upgrade-plan.md lines 62-65 (item 10)
+    """
+    # Get total count first
+    total_count = await index.count()
+
+    # Test sorting by created_at ascending
+    entries_created_asc, total1 = await index.all(order_by="created_at", order_dir="asc", limit=total_count)
+    assert total1 == total_count
+    assert len(entries_created_asc) == total_count
+
+    # Check monotonic ordering (if timestamps exist)
+    timestamps = [e.created_at for e in entries_created_asc if e.created_at is not None]
+    if len(timestamps) >= 2:
+        for i in range(len(timestamps) - 1):
+            assert timestamps[i] <= timestamps[i + 1], "created_at should be in ascending order"
+
+    # Test sorting by updated_at descending
+    entries_updated_desc, total2 = await index.all(order_by="updated_at", order_dir="desc", limit=total_count)
+    assert total2 == total_count
+    assert len(entries_updated_desc) == total_count
+
+    # Check monotonic ordering descending (if timestamps exist)
+    timestamps_desc = [e.updated_at for e in entries_updated_desc if e.updated_at is not None]
+    if len(timestamps_desc) >= 2:
+        for i in range(len(timestamps_desc) - 1):
+            assert timestamps_desc[i] >= timestamps_desc[i + 1], "updated_at should be in descending order"

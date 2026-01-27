@@ -58,6 +58,7 @@ filterwarnings = [
     # Ignore pydantic-ai OpenAIModel deprecation warning
     "ignore:`OpenAIModel` was renamed to `OpenAIChatModel`:DeprecationWarning",
 ]
+tmp_path_retention_policy = "failed"
 
 [tool.mypy]
 python_version = "3.11"

@@ -207,6 +207,78 @@ class TestFindingModelBuildCommand:
         assert nested_output.exists()
         assert nested_output.parent.exists()
 
+    def test_cli_build_no_embeddings_produces_zero_vectors(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+        findingmodel_source_dir: Path,
+    ) -> None:
+        """CLI build with --no-embeddings produces zero vectors in database."""
+        import duckdb
+
+        output = tmp_path / "test_no_embeddings.duckdb"
+
+        # Run CLI build with --no-embeddings flag
+        result = runner.invoke(
+            main,
+            [
+                "findingmodel",
+                "build",
+                "--source",
+                str(findingmodel_source_dir),
+                "--output",
+                str(output),
+                "--no-embeddings",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert output.exists()
+
+        # Open database and verify embeddings are all zero
+        conn = duckdb.connect(str(output), read_only=True)
+        try:
+            # Query all embeddings
+            embeddings_result = conn.execute("SELECT embedding FROM finding_models").fetchall()
+            assert len(embeddings_result) > 0, "No models found in database"
+
+            # Verify all embeddings are zero vectors
+            for (embedding,) in embeddings_result:
+                assert all(val == 0.0 for val in embedding), f"Expected all zeros but got {embedding[:5]}..."
+        finally:
+            conn.close()
+
+    def test_cli_build_error_on_invalid_source(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """CLI build fails with clear error when source is a file instead of directory."""
+        # Create a file instead of a directory
+        invalid_source = tmp_path / "not_a_directory.txt"
+        invalid_source.write_text("This is a file, not a directory")
+        output = tmp_path / "test.duckdb"
+
+        result = runner.invoke(
+            main,
+            [
+                "findingmodel",
+                "build",
+                "--source",
+                str(invalid_source),
+                "--output",
+                str(output),
+            ],
+        )
+
+        # CLI should exit with non-zero code
+        assert result.exit_code != 0
+
+        # Error should be raised as ValueError indicating directory problem
+        assert result.exception is not None
+        assert isinstance(result.exception, ValueError)
+        assert "is not a valid directory" in str(result.exception)
+
 
 # =============================================================================
 # FindingModel Publish Command Tests

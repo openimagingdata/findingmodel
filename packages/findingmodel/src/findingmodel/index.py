@@ -440,10 +440,16 @@ class DuckDBIndex:
         returning exact matches immediately if found.
 
         Args:
-            query: Search query string
+            query: Search query string (must not be empty or whitespace-only)
             limit: Maximum number of results to return
             tags: Optional list of tags - models must have ALL specified tags
+
+        Raises:
+            ValueError: If query is empty or contains only whitespace
         """
+        if not query or not query.strip():
+            raise ValueError("Search query must not be empty or whitespace-only")
+
         conn = self._ensure_connection()
 
         # Exact matches take priority - return immediately if found
@@ -478,45 +484,54 @@ class DuckDBIndex:
 
         return results
 
-    async def search_batch(self, queries: list[str], *, limit: int = 10) -> dict[str, list[IndexEntry]]:
+    async def search_batch(  # noqa: C901
+        self, queries: list[str], *, limit: int = 10
+    ) -> dict[str, list[IndexEntry]]:
         """Search multiple queries efficiently with single embedding call and RRF fusion.
 
         Embeds ALL queries in a single OpenAI API call for efficiency,
         then performs hybrid search with RRF fusion for each query.
+        Empty or whitespace-only queries are skipped.
 
         Args:
             queries: List of search query strings
             limit: Maximum number of results per query
 
         Returns:
-            Dictionary mapping each query string to its list of results
+            Dictionary mapping each non-blank query string to its list of results
+
+        Raises:
+            ValueError: If all queries are empty or whitespace-only
         """
         if not queries:
             return {}
 
+        # Filter out blank queries
+        valid_queries = [q for q in queries if q and q.strip()]
+        if not valid_queries:
+            raise ValueError("All queries are empty or whitespace-only")
+
         conn = self._ensure_connection()
 
-        # Generate embeddings for all queries in a single batch API call
-        embeddings = await batch_embeddings_for_duckdb(queries)
+        # Generate embeddings for all valid queries in a single batch API call
+        embeddings = await batch_embeddings_for_duckdb(valid_queries)
 
         results: dict[str, list[IndexEntry]] = {}
         query: str
-        for query, embedding in zip(queries, embeddings, strict=True):
+        for query, embedding in zip(valid_queries, embeddings, strict=True):
             # Check for exact match first
-            exact_matches = await asyncify(self._search_exact)(conn, query, tags=None)
+            exact_matches = self._search_exact(conn, query, tags=None)
             if exact_matches:
                 results[query] = exact_matches[:limit]
                 continue
 
             # Perform FTS search
-            fts_matches = await asyncify(self._search_fts)(conn, query, limit=limit, tags=None)
+            fts_matches = self._search_fts(conn, query, limit=limit, tags=None)
 
             # Perform semantic search using pre-generated embedding
             semantic_matches: list[tuple[IndexEntry, float]] = []
             if embedding is not None:
-                semantic_matches = await asyncify(self._search_semantic_with_embedding)(
-                    conn, embedding, limit=limit, tags=None
-                )
+                semantic_matches = self._search_semantic_with_embedding(conn, embedding, limit=limit, tags=None)
 
             # If no vector results, just return FTS results
             if not semantic_matches:

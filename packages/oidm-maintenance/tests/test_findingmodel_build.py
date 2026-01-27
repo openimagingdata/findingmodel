@@ -589,3 +589,464 @@ class TestErrorHandling:
             assert result_path == nested_path
             assert nested_path.exists()
             assert nested_path.parent.exists()
+
+
+# =============================================================================
+# Duplicate Validation Tests
+# =============================================================================
+
+
+class TestDuplicateValidation:
+    """Tests for duplicate ID detection during build.
+
+    These tests verify that the database properly rejects duplicate
+    OIFM IDs and attribute IDs via PRIMARY KEY constraints.
+    """
+
+    async def test_build_rejects_duplicate_oifm_id(self, tmp_path: Path) -> None:
+        """Build fails when source contains duplicate OIFM IDs."""
+        source_dir = tmp_path / "duplicates"
+        source_dir.mkdir()
+
+        # Create two models with the same OIFM ID
+        model1 = {
+            "oifm_id": "OIFM_TEST_000001",
+            "name": "Model One",
+            "description": "First model",
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000001",
+                    "name": "attr1",
+                    "description": "Attribute 1",
+                    "type": "numeric",
+                }
+            ],
+        }
+        model2 = {
+            "oifm_id": "OIFM_TEST_000001",  # Duplicate OIFM ID!
+            "name": "Model Two",
+            "description": "Second model with same ID",
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000002",
+                    "name": "attr2",
+                    "description": "Attribute 2",
+                    "type": "numeric",
+                }
+            ],
+        }
+
+        (source_dir / "model1.fm.json").write_text(json.dumps(model1))
+        (source_dir / "model2.fm.json").write_text(json.dumps(model2))
+
+        db_path = tmp_path / "test.duckdb"
+
+        # Build should fail due to PRIMARY KEY constraint violation
+        with pytest.raises(duckdb.ConstraintException, match="Duplicate key"):
+            await build_findingmodel_database(source_dir, db_path, generate_embeddings=False)
+
+    async def test_build_rejects_duplicate_attribute_id(self, tmp_path: Path) -> None:
+        """Build fails when source contains duplicate attribute IDs across models."""
+        source_dir = tmp_path / "duplicates"
+        source_dir.mkdir()
+
+        # Create two models with attributes having the same ID
+        model1 = {
+            "oifm_id": "OIFM_TEST_000001",
+            "name": "Model One",
+            "description": "First model",
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000001",  # This ID will be duplicated
+                    "name": "shared_attr",
+                    "description": "Attribute with shared ID",
+                    "type": "numeric",
+                }
+            ],
+        }
+        model2 = {
+            "oifm_id": "OIFM_TEST_000002",  # Different OIFM ID
+            "name": "Model Two",
+            "description": "Second model",
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000001",  # Duplicate attribute ID!
+                    "name": "another_attr",
+                    "description": "Different attribute, same ID",
+                    "type": "numeric",
+                }
+            ],
+        }
+
+        (source_dir / "model1.fm.json").write_text(json.dumps(model1))
+        (source_dir / "model2.fm.json").write_text(json.dumps(model2))
+
+        db_path = tmp_path / "test.duckdb"
+
+        # Build should fail due to PRIMARY KEY constraint violation on attributes table
+        with pytest.raises(duckdb.ConstraintException, match="Duplicate key"):
+            await build_findingmodel_database(source_dir, db_path, generate_embeddings=False)
+
+    async def test_embeddings_error_missing_api_key(self, tmp_path: Path) -> None:
+        """Build fails with clear error when OpenAI API key not configured."""
+        source_dir = tmp_path / "models"
+        source_dir.mkdir()
+
+        # Create a valid model
+        model = {
+            "oifm_id": "OIFM_TEST_000001",
+            "name": "Test Model",
+            "description": "Test model for embeddings error",
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000001",
+                    "name": "test_attr",
+                    "description": "Test attribute",
+                    "type": "numeric",
+                }
+            ],
+        }
+        (source_dir / "model.fm.json").write_text(json.dumps(model))
+
+        db_path = tmp_path / "test.duckdb"
+
+        # Mock settings to return None for openai_api_key
+        from oidm_maintenance.config import MaintenanceSettings
+
+        mock_settings = MaintenanceSettings(openai_api_key=None)
+
+        # Patch get_settings to return our mock
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=mock_settings),
+            pytest.raises(RuntimeError, match="OPENAI_API_KEY not configured"),
+        ):
+            await build_findingmodel_database(source_dir, db_path, generate_embeddings=True)
+
+    async def test_embeddings_error_none_embeddings(self, tmp_path: Path, source_data_dir: Path) -> None:
+        """Build fails when embedding generation returns None values.
+
+        This tests the internal validation in _generate_embeddings_async that
+        checks for None embeddings from the underlying embedding provider.
+        """
+        db_path = tmp_path / "test.duckdb"
+
+        # Mock settings to have valid API key (so we get past the API key check)
+        from oidm_maintenance.config import MaintenanceSettings
+        from pydantic import SecretStr
+
+        mock_settings = MaintenanceSettings(openai_api_key=SecretStr("fake-key-for-test"))
+
+        # Mock the underlying generate_embeddings_batch to return None values
+        # This simulates the OpenAI API returning None for a failed embedding
+        def mock_batch_embeddings_with_none(
+            texts: list[str], client: object, model: str, dimensions: int
+        ) -> list[list[float] | None]:
+            """Return None embeddings to simulate API failure."""
+            return [None] * len(texts)
+
+        # Patch both settings and the embedding batch function
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=mock_settings),
+            patch(
+                "oidm_maintenance.findingmodel.build.generate_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=mock_batch_embeddings_with_none,
+            ),
+            pytest.raises(RuntimeError, match="Failed to generate embedding for model at index 0"),
+        ):
+            await build_findingmodel_database(source_data_dir, db_path, generate_embeddings=True)
+
+
+# =============================================================================
+# Data Correctness Tests (Phase 4)
+# =============================================================================
+
+
+class TestDataCorrectness:
+    """Tests for data correctness and integrity in built database.
+
+    These tests verify that the build process correctly transforms and stores
+    data according to schema requirements and business logic.
+    """
+
+    async def test_duplicate_name_slug_rejection(self, tmp_path: Path) -> None:
+        """Build fails when source contains duplicate names (same slug).
+
+        Two models with different filenames but same name should be rejected
+        due to UNIQUE constraint on name or slug_name in finding_models table.
+        """
+        source_dir = tmp_path / "duplicate_names"
+        source_dir.mkdir()
+
+        # Create two models with same name but different OIFM IDs
+        # Use minimal valid model with numeric attribute to avoid validation errors
+        model1 = {
+            "oifm_id": "OIFM_TEST_000001",
+            "name": "Test Finding",  # Same name
+            "description": "First version",
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000001",
+                    "name": "size",
+                    "description": "Test attribute",
+                    "type": "numeric",
+                }
+            ],
+        }
+        model2 = {
+            "oifm_id": "OIFM_TEST_000002",
+            "name": "Test Finding",  # Same name - will create same slug
+            "description": "Second version",
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000002",
+                    "name": "diameter",
+                    "description": "Different attribute",
+                    "type": "numeric",
+                }
+            ],
+        }
+
+        (source_dir / "test_finding_1.fm.json").write_text(json.dumps(model1))
+        (source_dir / "test_finding_2.fm.json").write_text(json.dumps(model2))
+
+        db_path = tmp_path / "test.duckdb"
+
+        # Build should fail due to UNIQUE constraint on name or slug_name
+        with pytest.raises(duckdb.ConstraintException, match=r"Duplicate key|UNIQUE constraint"):
+            await build_findingmodel_database(source_dir, db_path, generate_embeddings=False)
+
+    async def test_slug_name_equals_normalize_name(self, built_test_db: Path, source_data_dir: Path) -> None:
+        """Verify slug_name equals normalize_name(name) for all models.
+
+        The slug_name column should always be the normalized version of the name,
+        computed using the normalize_name() function.
+        """
+        from findingmodel.common import normalize_name
+
+        conn = duckdb.connect(str(built_test_db), read_only=True)
+        try:
+            # Get all models
+            results = conn.execute("SELECT name, slug_name FROM finding_models").fetchall()
+
+            # Verify slug matches normalized name
+            for name, slug_name in results:
+                expected_slug = normalize_name(name)
+                assert slug_name == expected_slug, (
+                    f"slug_name mismatch for '{name}': expected '{expected_slug}', got '{slug_name}'"
+                )
+        finally:
+            conn.close()
+
+    async def test_file_hash_sha256_correctness(self, built_test_db: Path, source_data_dir: Path) -> None:
+        """Verify file_hash_sha256 matches actual file hash.
+
+        The stored hash should match the SHA256 hash of the source .fm.json file.
+        """
+        import hashlib
+
+        conn = duckdb.connect(str(built_test_db), read_only=True)
+        try:
+            # Get all models with their file hashes
+            results = conn.execute("SELECT filename, file_hash_sha256 FROM finding_models").fetchall()
+
+            # Verify each hash
+            for filename, stored_hash in results:
+                file_path = source_data_dir / filename
+                assert file_path.exists(), f"Source file not found: {file_path}"
+
+                # Compute actual hash
+                actual_hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
+
+                assert stored_hash == actual_hash, (
+                    f"Hash mismatch for {filename}: expected {actual_hash}, got {stored_hash}"
+                )
+        finally:
+            conn.close()
+
+    async def test_search_text_contains_expected_components(self, built_test_db: Path) -> None:
+        """Verify search_text includes name, description, synonyms, tags, and attributes.
+
+        The search_text field should be a concatenation of all searchable text
+        from the model: name, description, synonyms, tags, and attribute names.
+        """
+        conn = duckdb.connect(str(built_test_db), read_only=True)
+        try:
+            # Get abdominal aortic aneurysm - known to have synonyms and attributes
+            result = conn.execute(
+                """
+                SELECT fm.name, fm.description, fm.search_text, fm.oifm_id
+                FROM finding_models fm
+                WHERE fm.oifm_id = 'OIFM_MSFT_134126'
+                """
+            ).fetchone()
+
+            assert result is not None, "Test model OIFM_MSFT_134126 not found"
+            name, description, search_text, oifm_id = result
+
+            # Verify search_text contains core components
+            assert name in search_text, f"search_text missing name: {name}"
+            if description:
+                assert description in search_text, "search_text missing description"
+
+            # Check for known synonym (AAA)
+            synonyms = conn.execute("SELECT synonym FROM synonyms WHERE oifm_id = ?", (oifm_id,)).fetchall()
+            for (synonym,) in synonyms:
+                assert synonym in search_text, f"search_text missing synonym: {synonym}"
+
+            # Check for tags if present
+            tags = conn.execute("SELECT tag FROM tags WHERE oifm_id = ?", (oifm_id,)).fetchall()
+            for (tag,) in tags:
+                assert tag in search_text, f"search_text missing tag: {tag}"
+
+            # Check for attribute names
+            attributes = conn.execute("SELECT attribute_name FROM attributes WHERE oifm_id = ?", (oifm_id,)).fetchall()
+            for (attr_name,) in attributes:
+                assert attr_name in search_text, f"search_text missing attribute: {attr_name}"
+
+        finally:
+            conn.close()
+
+    async def test_tags_synonyms_deduplication(self, tmp_path: Path) -> None:
+        """Verify duplicate tags and synonyms are deduplicated.
+
+        When a model has duplicate tags or synonyms in the source JSON,
+        the build process should deduplicate them, storing only unique values.
+        """
+        source_dir = tmp_path / "duplicates"
+        source_dir.mkdir()
+
+        # Create model with duplicate tags and synonyms
+        model = {
+            "oifm_id": "OIFM_TEST_000003",
+            "name": "Test Deduplication",
+            "description": "Model with duplicates",
+            "synonyms": ["SYN1", "SYN2", "SYN1", "SYN3", "SYN2"],  # Duplicates: SYN1, SYN2
+            "tags": ["tag1", "tag2", "tag1", "tag3"],  # Duplicate: tag1
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000003",
+                    "name": "presence",
+                    "description": "Test attribute",
+                    "type": "numeric",
+                }
+            ],
+        }
+
+        (source_dir / "test_dedup.fm.json").write_text(json.dumps(model))
+
+        db_path = tmp_path / "test.duckdb"
+
+        # Build should succeed (deduplication happens before insert)
+        await build_findingmodel_database(source_dir, db_path, generate_embeddings=False)
+
+        # Verify only unique values stored
+        conn = duckdb.connect(str(db_path), read_only=True)
+        try:
+            # Count synonyms
+            synonym_count = conn.execute("SELECT COUNT(*) FROM synonyms WHERE oifm_id = 'OIFM_TEST_000003'").fetchone()
+            assert synonym_count is not None
+            assert synonym_count[0] == 3, f"Expected 3 unique synonyms, got {synonym_count[0]}"
+
+            # Verify unique synonyms
+            synonyms = conn.execute(
+                "SELECT synonym FROM synonyms WHERE oifm_id = 'OIFM_TEST_000003' ORDER BY synonym"
+            ).fetchall()
+            assert synonyms == [("SYN1",), ("SYN2",), ("SYN3",)]
+
+            # Count tags
+            tag_count = conn.execute("SELECT COUNT(*) FROM tags WHERE oifm_id = 'OIFM_TEST_000003'").fetchone()
+            assert tag_count is not None
+            assert tag_count[0] == 3, f"Expected 3 unique tags, got {tag_count[0]}"
+
+            # Verify unique tags
+            tags = conn.execute("SELECT tag FROM tags WHERE oifm_id = 'OIFM_TEST_000003' ORDER BY tag").fetchall()
+            assert tags == [("tag1",), ("tag2",), ("tag3",)]
+        finally:
+            conn.close()
+
+    async def test_contributor_ordering_and_role(self, tmp_path: Path) -> None:
+        """Verify contributor display_order and role are correct.
+
+        Contributors should be stored with:
+        - display_order matching their position in the contributors list
+        - role set to 'contributor' (default)
+        - Separate handling for Person vs Organization contributors
+        """
+        source_dir = tmp_path / "contributors"
+        source_dir.mkdir()
+
+        # Create model with mixed Person and Organization contributors
+        model = {
+            "oifm_id": "OIFM_TEST_000004",
+            "name": "Test Contributors",
+            "description": "Model with contributors",
+            "contributors": [
+                {  # Order 0 - Person
+                    "github_username": "person1",
+                    "name": "First Person",
+                    "email": "person1@example.com",
+                    "organization_code": "MSFT",  # Must be 3-4 uppercase letters
+                },
+                {  # Order 1 - Organization
+                    "name": "Test Organization",
+                    "code": "MSFT",  # Must be 3-4 uppercase letters
+                    "url": "https://example.com",
+                },
+                {  # Order 2 - Person (no organization)
+                    "github_username": "person2",
+                    "name": "Second Person",
+                    "email": "person2@example.com",
+                    "organization_code": "TEST",  # organization_code is required
+                },
+            ],
+            "attributes": [
+                {
+                    "oifma_id": "OIFMA_TEST_000004",
+                    "name": "presence",
+                    "description": "Test attribute",
+                    "type": "numeric",
+                }
+            ],
+        }
+
+        (source_dir / "test_contrib.fm.json").write_text(json.dumps(model))
+
+        db_path = tmp_path / "test.duckdb"
+
+        await build_findingmodel_database(source_dir, db_path, generate_embeddings=False)
+
+        # Verify contributor data
+        conn = duckdb.connect(str(db_path), read_only=True)
+        try:
+            # Check people contributors
+            people_results = conn.execute(
+                """
+                SELECT person_id, role, display_order
+                FROM model_people
+                WHERE oifm_id = 'OIFM_TEST_000004'
+                ORDER BY display_order
+                """
+            ).fetchall()
+
+            assert len(people_results) == 2, f"Expected 2 person contributors, got {len(people_results)}"
+
+            # Verify order and role
+            assert people_results[0] == ("person1", "contributor", 0)
+            assert people_results[1] == ("person2", "contributor", 2)
+
+            # Check organization contributors
+            org_results = conn.execute(
+                """
+                SELECT organization_id, role, display_order
+                FROM model_organizations
+                WHERE oifm_id = 'OIFM_TEST_000004'
+                ORDER BY display_order
+                """
+            ).fetchall()
+
+            assert len(org_results) == 1, f"Expected 1 organization contributor, got {len(org_results)}"
+            assert org_results[0] == ("MSFT", "contributor", 1)
+
+        finally:
+            conn.close()
