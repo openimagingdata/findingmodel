@@ -171,14 +171,10 @@ tasks:
       - uv build --package anatomic-locations
       - uv build --package findingmodel-ai
 
-  publish:testpypi:
-    desc: "Publish to TestPyPI for validation"
-    deps: [build:packages]
+  verify:install:
+    desc: "Build and verify packages install correctly in isolation"
     cmds:
-      - uv publish --index testpypi dist/oidm_common-*.tar.gz dist/oidm_common-*.whl
-      - uv publish --index testpypi dist/findingmodel-[0-9]*.tar.gz dist/findingmodel-[0-9]*.whl
-      - uv publish --index testpypi dist/anatomic_locations-*.tar.gz dist/anatomic_locations-*.whl
-      - uv publish --index testpypi dist/findingmodel_ai-*.tar.gz dist/findingmodel_ai-*.whl
+      - uv run scripts/verify-install.py
 
   publish:pypi:
     desc: "Publish packages to PyPI (in dependency order)"

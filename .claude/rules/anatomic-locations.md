@@ -17,9 +17,9 @@ Anatomic location ontology navigation: hierarchy traversal, laterality variants,
 - Hybrid search (FTS + vector) with configurable weights
 - Laterality variant generation (left, right, bilateral)
 
-## CLI
-- `anatomic search <query>` – Search for anatomic locations
-- `anatomic hierarchy <id>` – Show hierarchy for a location
+## CLI (`anatomic-locations`)
+- `anatomic-locations search <query>` – Search for anatomic locations
+- `anatomic-locations hierarchy <id>` – Show hierarchy for a location
 
 ## Serena References
 - `anatomic_location_search_implementation` – search implementation details

@@ -1,0 +1,28 @@
+[mcp_servers.serena]
+command = "uvx"
+args = [
+  "--python",
+  "3.11",
+  "--from",
+  "git+https://github.com/oraios/serena",
+  "serena",
+  "start-mcp-server",
+  "--context",
+  "codex",
+
+  # Option A (recommended for global Codex config): choose project at runtime
+  "--project-from-cwd"
+
+  # Option B (locks Serena to one repo, like your Claude Code config):
+  # "--project",
+  # "/home/local/PARTNERS/tka2/repos/findingmodel"
+]
+
+[mcp_servers.Ref]
+url = "https://api.ref.tools/mcp"
+
+# Prefer env-sourced headers so you don't commit secrets to disk:
+env_http_headers = { "x-ref-api-key" = "REF_API_KEY" }
+
+# If you *must* hardcode (not recommended), it would be:
+# http_headers = { "x-ref-api-key" = "ref-bc..." }

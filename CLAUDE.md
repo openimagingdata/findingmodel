@@ -19,9 +19,9 @@ Claude Code must follow these instructions when working in this repository.
 - Core stack: uv, Taskfile, Pydantic v2, DuckDB for index/search.
 - Layout: `packages/` with 5 packages, `docs/`, `evals/`, `Taskfile.yml`.
 - Packages:
-  - `findingmodel` – core models, Index API, MCP server, `fm-tool` CLI
-  - `findingmodel-ai` – AI-powered tools, `fm-ai` CLI
-  - `anatomic-locations` – anatomic location queries, `anatomic` CLI
+  - `findingmodel` – core models, Index API, MCP server, `findingmodel` CLI
+  - `findingmodel-ai` – AI-powered tools, `findingmodel-ai` CLI
+  - `anatomic-locations` – anatomic location queries, `anatomic-locations` CLI
   - `oidm-common` – shared infrastructure (DuckDB, embeddings)
   - `oidm-maintenance` – database build/publish (maintainers only)
 

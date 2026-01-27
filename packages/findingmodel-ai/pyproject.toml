@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [project.scripts]
-fm-ai = "findingmodel_ai.cli:cli"
+findingmodel-ai = "findingmodel_ai.cli:cli"
 
 [project.urls]
 Homepage = "https://github.com/openimagingdata/findingmodel"

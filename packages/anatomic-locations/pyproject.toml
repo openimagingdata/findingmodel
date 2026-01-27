@@ -24,7 +24,7 @@ test = [
 ]
 
 [project.scripts]
-anatomic = "anatomic_locations.cli:main"
+anatomic-locations = "anatomic_locations.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.9,<0.10"]

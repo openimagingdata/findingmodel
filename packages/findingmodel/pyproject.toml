@@ -41,7 +41,7 @@ Homepage = "https://github.com/openimagingdata/findingmodel"
 Issues = "https://github.com/openimagingdata/findingmodel/issues"
 
 [project.scripts]
-fm-tool = "findingmodel.cli:cli"
+findingmodel = "findingmodel.cli:cli"
 findingmodel-mcp = "findingmodel.mcp_server:main"
 
 [tool.uv.sources]

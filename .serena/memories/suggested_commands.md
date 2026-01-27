@@ -22,22 +22,27 @@
 
 ## CLI Commands
 
-### findingmodel (fm-tool)
+### findingmodel
 ```bash
-uv run fm-tool --help                    # Show all commands
-uv run fm-tool config                    # Show current configuration
-uv run fm-tool index stats               # Show index statistics
-uv run fm-tool make-info "finding"       # Generate finding info
-uv run fm-tool make-stub-model "finding" # Create basic model
-uv run fm-tool markdown-to-fm input.md   # Convert markdown to model
-uv run fm-tool fm-to-markdown model.json # Convert model to markdown
+uv run findingmodel --help                    # Show all commands
+uv run findingmodel config                    # Show current configuration
+uv run findingmodel index stats               # Show index statistics
+uv run findingmodel fm-to-markdown model.json # Convert model to markdown
 ```
 
-### anatomic-locations (anatomic)
+### findingmodel-ai
 ```bash
-uv run anatomic --help                   # Show all commands
-uv run anatomic query "nasal"            # Query anatomic locations
-uv run anatomic stats                    # Show database statistics
+uv run findingmodel-ai --help                    # Show all commands
+uv run findingmodel-ai make-info "finding"       # Generate finding info
+uv run findingmodel-ai make-stub-model "finding" # Create basic model
+uv run findingmodel-ai markdown-to-fm input.md   # Convert markdown to model
+```
+
+### anatomic-locations
+```bash
+uv run anatomic-locations --help                   # Show all commands
+uv run anatomic-locations search "nasal"           # Search anatomic locations
+uv run anatomic-locations stats                    # Show database statistics
 ```
 
 ### oidm-maintenance (oidm-maintain) - Maintainers Only

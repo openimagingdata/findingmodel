@@ -109,15 +109,15 @@ findingmodel/                           # Workspace root
 
 ```bash
 # User commands
-fm-tool search "query"              # Search finding models
-fm-tool index stats                 # Show index statistics
-anatomic query "nasal"              # Query anatomic locations
-anatomic stats                      # Show anatomic DB stats
+findingmodel search "query"              # Search finding models
+findingmodel index stats                 # Show index statistics
+anatomic-locations query "nasal"         # Query anatomic locations
+anatomic-locations stats                 # Show anatomic DB stats
 
 # AI commands (findingmodel-ai)
-fm-ai make-info "pneumothorax"      # Generate FindingInfo from name
-fm-ai make-stub-model "finding"     # Generate stub model
-fm-ai markdown-to-fm file.md        # Convert markdown to model
+findingmodel-ai make-info "pneumothorax"      # Generate FindingInfo from name
+findingmodel-ai make-stub-model "finding"     # Generate stub model
+findingmodel-ai markdown-to-fm file.md        # Convert markdown to model
 
 # Maintainer commands (oidm-maintenance)
 oidm-maintain findingmodel build    # Build findingmodel database

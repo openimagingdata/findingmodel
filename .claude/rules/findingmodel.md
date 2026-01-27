@@ -5,7 +5,7 @@ paths: "packages/findingmodel/**"
 # findingmodel Package Rules
 
 ## Purpose
-Core models (FindingModelBase, FindingModelFull, FindingInfo), Index API, MCP server, and fm-tool CLI.
+Core models (FindingModelBase, FindingModelFull, FindingInfo), Index API, MCP server, and `findingmodel` CLI.
 
 ## Constraints
 - **No AI dependencies**: Core package has no pydantic-ai. AI tools live in findingmodel-ai.

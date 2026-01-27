@@ -24,17 +24,17 @@ The anatomic location database is automatically downloaded on first use. To use 
 ANATOMIC_DB_PATH=/mnt/data/anatomic_locations.duckdb
 ```
 
-## CLI
+## CLI (`anatomic-locations`)
 
 ```bash
 # Search for anatomic locations
-anatomic search "posterior cruciate ligament"
+anatomic-locations search "posterior cruciate ligament"
 
 # Show hierarchy for a location
-anatomic hierarchy RID2905
+anatomic-locations hierarchy RID2905
 
 # List children of a location
-anatomic children RID56
+anatomic-locations children RID56
 ```
 
 ## Python API

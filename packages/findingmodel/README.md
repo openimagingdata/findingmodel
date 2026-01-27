@@ -29,17 +29,17 @@ DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
 
 The finding model database is automatically downloaded on first use.
 
-## CLI (`fm-tool`)
+## CLI (`findingmodel`)
 
 ```bash
 # View configuration
-fm-tool config
+findingmodel config
 
 # Show index statistics
-fm-tool index stats
+findingmodel index stats
 
 # Convert finding model to Markdown
-fm-tool fm-to-markdown model.json
+findingmodel fm-to-markdown model.json
 ```
 
 ## Models

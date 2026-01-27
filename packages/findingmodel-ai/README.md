@@ -37,17 +37,17 @@ DEFAULT_MODEL=anthropic:claude-sonnet-4-5
 
 See [Configuration Guide](../../docs/configuration.md) for model tiers and per-agent overrides.
 
-## CLI (`fm-ai`)
+## CLI (`findingmodel-ai`)
 
 ```bash
 # Generate finding info from a name
-fm-ai make-info "pneumothorax"
+findingmodel-ai make-info "pneumothorax"
 
 # Create a basic model template
-fm-ai make-stub-model "pneumothorax"
+findingmodel-ai make-stub-model "pneumothorax"
 
 # Convert Markdown to finding model
-fm-ai markdown-to-fm outline.md
+findingmodel-ai markdown-to-fm outline.md
 ```
 
 ## Tools

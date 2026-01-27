@@ -6,9 +6,9 @@ A Python workspace for managing Open Imaging Finding Models - structured data mo
 
 | Package | Description | Install |
 |---------|-------------|---------|
-| **[findingmodel](packages/findingmodel/README.md)** | Core models, Index API, MCP server, `fm-tool` CLI | `pip install findingmodel` |
-| **[findingmodel-ai](packages/findingmodel-ai/README.md)** | AI-powered tools, `fm-ai` CLI | `pip install findingmodel-ai` |
-| **[anatomic-locations](packages/anatomic-locations/README.md)** | Anatomic location queries, `anatomic` CLI | `pip install anatomic-locations` |
+| **[findingmodel](packages/findingmodel/README.md)** | Core models, Index API, MCP server, `findingmodel` CLI | `pip install findingmodel` |
+| **[findingmodel-ai](packages/findingmodel-ai/README.md)** | AI-powered tools, `findingmodel-ai` CLI | `pip install findingmodel-ai` |
+| **[anatomic-locations](packages/anatomic-locations/README.md)** | Anatomic location queries, `anatomic-locations` CLI | `pip install anatomic-locations` |
 
 Internal packages (not published):
 - **[oidm-common](packages/oidm-common/README.md)** - Shared infrastructure
@@ -69,15 +69,15 @@ asyncio.run(main())
 
 ```bash
 # Core tools
-fm-tool config              # View configuration
-fm-tool index stats         # Index statistics
+findingmodel config              # View configuration
+findingmodel index stats         # Index statistics
 
 # AI tools
-fm-ai make-info "pneumothorax"     # Generate finding info
-fm-ai make-stub-model "finding"    # Create model template
+findingmodel-ai make-info "pneumothorax"     # Generate finding info
+findingmodel-ai make-stub-model "finding"    # Create model template
 
 # Anatomic locations
-anatomic search "knee joint"       # Search locations
+anatomic-locations search "knee joint"       # Search locations
 ```
 
 ## Configuration
