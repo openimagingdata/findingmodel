@@ -27,6 +27,11 @@ All planning documents deleted as work is complete. Git history preserves detail
 
 ## Other Completed Tasks
 
+### pydantic-ai-model-string-migration.md
+**Completed:** 2025-11-27
+
+Migration to Pydantic AI unified `provider:model` string configuration. Updated config, tools, tests, and docs; removed legacy provider split.
+
 ### evaluation_system_phase_0_complete.md
 **Completed:** 2025-10-24
 
