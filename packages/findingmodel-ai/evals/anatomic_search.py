@@ -5,10 +5,8 @@ Run via `task evals:anatomic_search`.
 
 DATABASE SETUP REQUIREMENTS:
 This eval suite requires a populated DuckDB anatomic locations database.
-To set up the database:
-1. Ensure anatomic location data exists at configured URL or local path
-2. Run: python -m findingmodel anatomic build
-3. Verify database populated: python -m findingmodel anatomic stats
+The database auto-downloads on first use from the manifest URL.
+To verify: anatomic-locations stats
 
 The suite uses real AI agents and DuckDB vector/hybrid search to find anatomic locations,
 making it an integration test rather than a unit test.
