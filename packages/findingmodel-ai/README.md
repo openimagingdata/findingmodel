@@ -56,7 +56,7 @@ findingmodel-ai markdown-to-fm outline.md
 
 ```python
 import asyncio
-from findingmodel_ai.tools import create_info_from_name, add_details_to_info
+from findingmodel_ai.authoring import create_info_from_name, add_details_to_info
 
 async def main():
     # Generate basic info from a finding name
@@ -77,7 +77,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from findingmodel_ai.tools import create_model_from_markdown, create_info_from_name
+from findingmodel_ai.authoring import create_model_from_markdown, create_info_from_name
 
 async def main():
     info = await create_info_from_name("pneumothorax")
@@ -100,7 +100,7 @@ asyncio.run(main())
 ```python
 import asyncio
 from findingmodel import FindingModelFull
-from findingmodel_ai.tools import edit_model_natural_language, edit_model_markdown
+from findingmodel_ai.authoring import edit_model_natural_language, edit_model_markdown
 
 async def main():
     # Load existing model
@@ -125,7 +125,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from findingmodel_ai.tools import find_anatomic_locations
+from findingmodel_ai.search import find_anatomic_locations
 
 async def main():
     result = await find_anatomic_locations(
@@ -146,7 +146,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from findingmodel_ai.tools import match_ontology_concepts
+from findingmodel_ai.search import match_ontology_concepts
 
 async def main():
     result = await match_ontology_concepts(
@@ -165,7 +165,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from findingmodel_ai.tools import find_similar_models
+from findingmodel_ai.search import find_similar_models
 
 async def main():
     analysis = await find_similar_models(

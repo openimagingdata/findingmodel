@@ -55,7 +55,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from findingmodel_ai.tools import create_info_from_name
+from findingmodel_ai.authoring import create_info_from_name
 
 async def main():
     info = await create_info_from_name("pneumothorax")
