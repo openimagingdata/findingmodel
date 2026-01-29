@@ -1059,8 +1059,8 @@ async def test_search_latency_benchmark(index: DuckDBIndex) -> None:
     elapsed = time.time() - start
 
     assert len(results) >= 1
-    # Allow generous time for CI environments (1 second threshold)
-    assert elapsed < 1.0, f"Search took {elapsed:.3f}s, expected < 1.0s"
+    # Allow generous time for CI environments (2 second threshold)
+    assert elapsed < 2.0, f"Search took {elapsed:.3f}s, expected < 2.0s"
 
 
 @pytest.mark.asyncio

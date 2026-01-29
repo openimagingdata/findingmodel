@@ -36,7 +36,7 @@ def test_create_s3_client_with_credentials() -> None:
 
 def test_create_s3_client_without_credentials() -> None:
     """Test that S3 client creation raises ValueError without credentials."""
-    settings = MaintenanceSettings()
+    settings = MaintenanceSettings(_env_file=None)
 
     with pytest.raises(ValueError, match="AWS credentials required"):
         create_s3_client(settings)

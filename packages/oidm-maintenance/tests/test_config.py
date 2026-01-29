@@ -21,11 +21,11 @@ def test_get_settings_singleton() -> None:
     assert s1 is s2
 
 
-def test_settings_env_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that env vars with OIDM_MAINTAIN_ prefix are loaded."""
-    monkeypatch.setenv("OIDM_MAINTAIN_S3_BUCKET", "test-bucket")
-    monkeypatch.setenv("OIDM_MAINTAIN_OPENAI_EMBEDDING_DIMENSIONS", "1024")
+def test_settings_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that env vars override default settings values."""
+    monkeypatch.setenv("S3_BUCKET", "test-bucket")
+    monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSIONS", "1024")
 
-    settings = MaintenanceSettings()
+    settings = MaintenanceSettings(_env_file=None)
     assert settings.s3_bucket == "test-bucket"
     assert settings.openai_embedding_dimensions == 1024
