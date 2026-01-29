@@ -146,9 +146,8 @@ class DuckDBIndex:
             Dict mapping OIFM ID to FindingModelFull object. Only includes models that were found.
 
         Example:
-            >>> index = DuckDBIndex()
-            >>> await index.setup()
-            >>> models = await index.get_full_batch(["OIFM_RADLEX_000001", "OIFM_CUSTOM_000042"])
+            >>> async with DuckDBIndex() as index:
+            ...     models = await index.get_full_batch(["OIFM_RADLEX_000001", "OIFM_CUSTOM_000042"])
             >>> # Returns {oifm_id: FindingModelFull, ...}
         """
         if not oifm_ids:
@@ -754,9 +753,8 @@ class DuckDBIndex:
             )
 
             # Generate and add IDs
-            index = Index()
-            await index.setup()
-            full_model = index.add_ids_to_model(base_model, "GMTS")
+            async with Index() as index:
+                full_model = index.add_ids_to_model(base_model, "GMTS")
             print(full_model.oifm_id)  # "OIFM_GMTS_472951"
         """
         finding_model_dict = finding_model.model_dump()
@@ -806,9 +804,8 @@ class DuckDBIndex:
                 ]
             )
 
-            index = Index()
-            await index.setup()
-            updated = index.finalize_placeholder_attribute_ids(model)
+            async with Index() as index:
+                updated = index.finalize_placeholder_attribute_ids(model)
             # First attribute gets real ID, second unchanged
         """
         # Resolve source (explicit or infer from model ID)
