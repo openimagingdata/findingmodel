@@ -11,7 +11,7 @@ FindingModel uses DuckDB for two databases:
 | `finding_models.duckdb` | Finding model index | FTS + semantic search, model metadata |
 | `anatomic_locations.duckdb` | Anatomic location ontology | Hierarchy navigation, laterality, semantic search |
 
-Both use the same patterns: remote distribution via manifest, local caching, and shared utilities in `tools/duckdb_utils.py`.
+Both use the same patterns: remote distribution via manifest, local caching, and shared utilities in `oidm_common.duckdb`.
 
 ---
 
@@ -27,13 +27,15 @@ Both use the same patterns: remote distribution via manifest, local caching, and
 ### Key Functions
 
 ```python
-from findingmodel.config import ensure_index_db, ensure_anatomic_db, ensure_db_file
+from findingmodel.config import ensure_index_db
+from anatomic_locations.config import ensure_anatomic_db
 
 # Get database path (downloads if needed)
 index_path = ensure_index_db()
 anatomic_path = ensure_anatomic_db()
 
-# Low-level: explicit control
+# Low-level: explicit control (from oidm_common.distribution)
+from oidm_common.distribution import ensure_db_file
 db_path = ensure_db_file(
     file_path=None,           # None = managed download, or explicit path
     remote_url=None,          # Override manifest URL
@@ -66,7 +68,7 @@ REMOTE_INDEX_DB_HASH=sha256:abc123...
    }
    ```
 
-2. Add settings in `config.py`:
+2. Add settings in the package's `config.py`:
    ```python
    duckdb_new_path: str | None = None
    remote_new_db_url: str | None = None
@@ -91,7 +93,7 @@ REMOTE_INDEX_DB_HASH=sha256:abc123...
 ### Standard Setup
 
 ```python
-from findingmodel.tools.duckdb_utils import setup_duckdb_connection
+from oidm_common.duckdb import setup_duckdb_connection
 
 # Read-only (queries)
 conn = setup_duckdb_connection(db_path, read_only=True)
@@ -201,7 +203,7 @@ def bulk_load_table(
 
 ### Reference Implementation
 
-See `src/findingmodel/anatomic_migration.py:_bulk_load_table()`
+See `oidm_maintenance/anatomic/build.py` in the oidm-maintenance package.
 
 ---
 
@@ -234,7 +236,7 @@ Configured via `settings.openai_embedding_dimensions` (default: 512). Both datab
 Combine full-text (BM25) and semantic (vector) search:
 
 ```python
-from findingmodel.tools.duckdb_utils import normalize_scores, weighted_fusion
+from oidm_common.duckdb import normalize_scores, weighted_fusion
 
 # 1. Full-text search
 fts_results = conn.execute("""
@@ -263,7 +265,7 @@ combined = weighted_fusion(
 BM25 scores are unbounded. Normalize before fusion:
 
 ```python
-from findingmodel.tools.duckdb_utils import normalize_scores
+from oidm_common.duckdb import normalize_scores
 
 normalized = normalize_scores([12.5, 8.3, 5.1])  # -> [1.0, 0.43, 0.0]
 ```
@@ -324,14 +326,17 @@ conn.execute("PRAGMA create_fts_index('table', 'id', 'name', 'description')")
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/findingmodel/config.py` | Settings, ensure_*_db() functions |
-| `src/findingmodel/tools/duckdb_utils.py` | Connection, embeddings, fusion utilities |
-| `src/findingmodel/index.py` | Finding model index implementation |
-| `src/findingmodel/anatomic_index.py` | Anatomic location index |
-| `src/findingmodel/anatomic_migration.py` | Database build with bulk loading |
-| `docs/manifest_schema.md` | Manifest.json specification |
+| File | Package | Purpose |
+|------|---------|---------|
+| `oidm_common/duckdb/` | oidm-common | Connection, search, fusion utilities |
+| `oidm_common/distribution/` | oidm-common | Manifest-based auto-download |
+| `oidm_common/embeddings/` | oidm-common | Embedding client and helpers |
+| `findingmodel/config.py` | findingmodel | Settings, ensure_index_db() |
+| `findingmodel/index.py` | findingmodel | Finding model index (read-only) |
+| `anatomic_locations/config.py` | anatomic-locations | Settings, ensure_anatomic_db() |
+| `anatomic_locations/index.py` | anatomic-locations | Anatomic location index (read-only) |
+| `oidm_maintenance/` | oidm-maintenance | Database build and publish workflows |
+| `docs/manifest_schema.md` | — | Manifest.json specification |
 
 ---
 

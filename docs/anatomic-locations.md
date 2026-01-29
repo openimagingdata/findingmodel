@@ -7,7 +7,7 @@ Query and navigate anatomic locations with hierarchy traversal, laterality varia
 The database auto-downloads on first use. No setup required.
 
 ```python
-from findingmodel import AnatomicLocationIndex
+from anatomic_locations import AnatomicLocationIndex
 
 with AnatomicLocationIndex() as index:
     location = index.get("RID2772")  # Kidney
@@ -21,37 +21,32 @@ with AnatomicLocationIndex() as index:
 
 ```bash
 # Show ancestors (hierarchy to root)
-python -m findingmodel anatomic query ancestors RID2772
+anatomic-locations query ancestors RID2772
 
 # Show descendants
-python -m findingmodel anatomic query descendants RID39569
+anatomic-locations query descendants RID39569
 
 # Show laterality variants (left/right/generic)
-python -m findingmodel anatomic query laterality RID2772
+anatomic-locations query laterality RID2772
 
 # Find by external code (SNOMED, FMA, RadLex)
-python -m findingmodel anatomic query code snomed 64033007
+anatomic-locations query code snomed 64033007
 ```
 
-### Database Management
+### Database Statistics
 
 ```bash
-# View statistics
-python -m findingmodel anatomic stats
-
-# Rebuild database (requires OPENAI_API_KEY for embeddings)
-python -m findingmodel anatomic build --force
-
-# Validate source data without building
-python -m findingmodel anatomic validate --source /path/to/data.json
+anatomic-locations stats
 ```
+
+> **Note**: Database build and publish commands are in the `oidm-maintain` CLI (see [Database Management](database-management.md)).
 
 ## Python API
 
 ### Basic Queries
 
 ```python
-from findingmodel import AnatomicLocationIndex
+from anatomic_locations import AnatomicLocationIndex
 
 with AnatomicLocationIndex() as index:
     # Get by ID
@@ -98,7 +93,7 @@ with AnatomicLocationIndex() as index:
 ```python
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from findingmodel import AnatomicLocationIndex
+from anatomic_locations import AnatomicLocationIndex
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -147,7 +142,7 @@ Override the default database path:
 
 ```bash
 # In .env
-DUCKDB_ANATOMIC_PATH=/path/to/custom.duckdb
+ANATOMIC_DUCKDB_PATH=/path/to/custom.duckdb
 ```
 
 Or specify directly:
