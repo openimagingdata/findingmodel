@@ -1,0 +1,233 @@
+{
+  "finding_models": [
+    {
+      "oifm_id": "OIFM_TEST_000001",
+      "name": "Pulmonary Nodule",
+      "description": "A rounded opacity, well or poorly defined, measuring up to 3 cm in diameter.",
+      "synonyms": ["lung nodule", "solitary pulmonary nodule"],
+      "tags": ["chest", "lung"],
+      "anatomic_locations": [
+        {
+          "system": "SNOMEDCT",
+          "code": "39607008",
+          "display": "Lung structure"
+        },
+        {
+          "system": "RADLEX",
+          "code": "RID1301",
+          "display": "lung"
+        }
+      ],
+      "attributes": [
+        {
+          "oifma_id": "OIFMA_TEST_000001",
+          "name": "Size",
+          "type": "numeric",
+          "description": "Maximum diameter in millimeters",
+          "unit": "mm"
+        }
+      ],
+      "index_codes": [
+        {
+          "system": "SNOMEDCT",
+          "code": "27925004",
+          "display": "Solitary pulmonary nodule"
+        },
+        {
+          "system": "RADLEX",
+          "code": "RID34289",
+          "display": "pulmonary nodule"
+        }
+      ]
+    },
+    {
+      "oifm_id": "OIFM_TEST_000002",
+      "name": "Pneumonia",
+      "description": "Consolidation of lung parenchyma due to infectious or inflammatory process.",
+      "synonyms": ["lung infection", "pulmonary infection"],
+      "tags": ["chest", "infection"],
+      "attributes": [
+        {
+          "oifma_id": "OIFMA_TEST_000002",
+          "name": "Location",
+          "type": "choice",
+          "description": "Anatomic location of consolidation",
+          "values": [
+            {"name": "RUL", "description": "Right upper lobe"},
+            {"name": "RML", "description": "Right middle lobe"},
+            {"name": "RLL", "description": "Right lower lobe"},
+            {"name": "LUL", "description": "Left upper lobe"},
+            {"name": "LLL", "description": "Left lower lobe"}
+          ]
+        }
+      ],
+      "index_codes": [
+        {
+          "system": "SNOMEDCT",
+          "code": "233604007",
+          "display": "Pneumonia"
+        }
+      ]
+    }
+  ],
+  "index_codes": {
+    "snomed_findings": [
+      {
+        "system": "SNOMEDCT",
+        "code": "27925004",
+        "display": "Solitary pulmonary nodule"
+      },
+      {
+        "system": "SNOMEDCT",
+        "code": "233604007",
+        "display": "Pneumonia"
+      },
+      {
+        "system": "SNOMEDCT",
+        "code": "409622000",
+        "display": "Liver lesion"
+      }
+    ],
+    "radlex_findings": [
+      {
+        "system": "RADLEX",
+        "code": "RID34289",
+        "display": "pulmonary nodule"
+      },
+      {
+        "system": "RADLEX",
+        "code": "RID5176",
+        "display": "pneumonia"
+      },
+      {
+        "system": "RADLEX",
+        "code": "RID28473",
+        "display": "liver lesion"
+      }
+    ],
+    "snomed_anatomic": [
+      {
+        "system": "SNOMEDCT",
+        "code": "39607008",
+        "display": "Lung structure"
+      },
+      {
+        "system": "SNOMEDCT",
+        "code": "10200004",
+        "display": "Liver structure"
+      }
+    ],
+    "radlex_anatomic": [
+      {
+        "system": "RADLEX",
+        "code": "RID1301",
+        "display": "lung"
+      },
+      {
+        "system": "RADLEX",
+        "code": "RID58",
+        "display": "liver"
+      }
+    ]
+  },
+  "ontology_search_results": [
+    {
+      "concept_id": "RID1301",
+      "concept_text": "lung",
+      "score": 0.95,
+      "table_name": "radlex"
+    },
+    {
+      "concept_id": "39607008",
+      "concept_text": "Lung structure",
+      "score": 0.93,
+      "table_name": "snomed"
+    },
+    {
+      "concept_id": "RID58",
+      "concept_text": "liver",
+      "score": 0.92,
+      "table_name": "radlex"
+    },
+    {
+      "concept_id": "10200004",
+      "concept_text": "Liver structure",
+      "score": 0.90,
+      "table_name": "snomed"
+    }
+  ],
+  "enrichment_results": [
+    {
+      "finding_name": "Pulmonary Nodule",
+      "oifm_id": "OIFM_TEST_000001",
+      "snomed_codes": [
+        {
+          "system": "SNOMEDCT",
+          "code": "27925004",
+          "display": "Solitary pulmonary nodule"
+        }
+      ],
+      "radlex_codes": [
+        {
+          "system": "RADLEX",
+          "code": "RID34289",
+          "display": "pulmonary nodule"
+        }
+      ],
+      "body_regions": ["Chest"],
+      "etiologies": ["neoplastic:benign", "neoplastic:malignant", "inflammatory:infectious"],
+      "modalities": ["CT", "XR", "PET"],
+      "subspecialties": ["CH", "OI"],
+      "anatomic_locations": [
+        {
+          "concept_id": "RID1301",
+          "concept_text": "lung",
+          "score": 0.95,
+          "table_name": "radlex"
+        },
+        {
+          "concept_id": "39607008",
+          "concept_text": "Lung structure",
+          "score": 0.93,
+          "table_name": "snomed"
+        }
+      ],
+      "enrichment_timestamp": "2025-01-15T10:30:00Z",
+      "model_provider": "openai",
+      "model_tier": "main"
+    },
+    {
+      "finding_name": "Liver Lesion",
+      "oifm_id": null,
+      "snomed_codes": [
+        {
+          "system": "SNOMEDCT",
+          "code": "409622000",
+          "display": "Liver lesion"
+        }
+      ],
+      "radlex_codes": [
+        {
+          "system": "RADLEX",
+          "code": "RID28473",
+          "display": "liver lesion"
+        }
+      ],
+      "body_regions": ["Abdomen"],
+      "etiologies": ["neoplastic:potential", "inflammatory", "vascular:ischemic"],
+      "modalities": ["CT", "MR", "US"],
+      "subspecialties": ["AB", "OI"],
+      "anatomic_locations": [
+        {
+          "concept_id": "RID58",
+          "concept_text": "liver",
+          "score": 0.92,
+          "table_name": "radlex"
+        }
+      ],
+      "enrichment_timestamp": "2025-01-15T11:00:00Z",
+      "model_provider": "anthropic",
+      "model_tier": "full"
+    }
+  ]
+}

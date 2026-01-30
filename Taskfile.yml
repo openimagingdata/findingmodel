@@ -3,131 +3,177 @@
 version: "3"
 
 tasks:
-  default: 
+  default:
     cmds:
       - task -l
     silent: true
 
-  test:
-    desc: "Test the findingmodel library"
+  # =============================================================================
+  # Per-package test tasks
+  # =============================================================================
+
+  test:oidm-common:
+    desc: "Test oidm-common package (no callouts)"
     cmds:
-      - echo "Testing library without callout test..."
-      - uv run pytest -rs -m "not callout" {{.CLI_ARGS}}
+      - uv run pytest packages/oidm-common/tests -rs -m "not callout" {{.CLI_ARGS}}
     silent: true
 
-  test-full:
-    desc: "Test the findingmodel library"
+  test:oidm-common-full:
+    desc: "Test oidm-common package (with callouts)"
+    cmds:
+      - uv run pytest packages/oidm-common/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  test:anatomic:
+    desc: "Test anatomic-locations package"
+    cmds:
+      - uv run pytest packages/anatomic-locations/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel:
+    desc: "Test findingmodel package (no callouts)"
+    cmds:
+      - uv run pytest packages/findingmodel/tests -rs -m "not callout" {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel-full:
+    desc: "Test findingmodel package (with callouts)"
+    cmds:
+      - uv run pytest packages/findingmodel/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel-ai:
+    desc: "Test findingmodel-ai package (no callouts)"
+    cmds:
+      - uv run pytest packages/findingmodel-ai/tests -rs -m "not callout" {{.CLI_ARGS}}
+    silent: true
+
+  test:findingmodel-ai-full:
+    desc: "Test findingmodel-ai package (with callouts)"
     env:
       PYDANTIC_ALLOW_MODEL_REQUESTS: "1"
     cmds:
-      - echo "Testing library (including call-outs)..."
-      - uv run pytest -rs {{.CLI_ARGS}}
+      - uv run pytest packages/findingmodel-ai/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  test:maintenance:
+    desc: "Test oidm-maintenance package"
+    cmds:
+      - uv run pytest packages/oidm-maintenance/tests -rs {{.CLI_ARGS}}
+    silent: true
+
+  # =============================================================================
+  # Aggregate test tasks
+  # =============================================================================
+
+  test:
+    desc: "Test all packages (no callouts)"
+    cmds:
+      - echo "Testing all packages (excluding callouts)..."
+      - task: test:oidm-common
+      - task: test:anatomic
+      - task: test:findingmodel
+      - task: test:findingmodel-ai
+      - task: test:maintenance
+    silent: true
+
+  test-full:
+    desc: "Test all packages (with callouts)"
+    cmds:
+      - echo "Testing all packages (including callouts)..."
+      - task: test:oidm-common-full
+      - task: test:anatomic
+      - task: test:findingmodel-full
+      - task: test:findingmodel-ai-full
+      - task: test:maintenance
     silent: true
 
   evals:
     desc: "Run all agent evaluation suites"
     cmds:
       - echo "Running all agent evaluations..."
-      - uv run python -m evals.model_editor
-      - uv run python -m evals.similar_models
-      - uv run python -m evals.ontology_match
-      - uv run python -m evals.anatomic_search
-      - uv run python -m evals.markdown_in
-      - uv run python -m evals.finding_description
-      # Future: add other agent evals here
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.model_editor
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.similar_models
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.ontology_match
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.anatomic_search
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.markdown_in
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.finding_description
     silent: true
 
   evals:model_editor:
     desc: "Run model_editor evaluation suite"
     cmds:
       - echo "Running model_editor evaluations..."
-      - uv run python -m evals.model_editor
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.model_editor
     silent: true
 
   evals:similar_models:
     desc: "Run similar_models evaluation suite"
     cmds:
       - echo "Running similar_models evaluations..."
-      - uv run python -m evals.similar_models
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.similar_models
     silent: true
 
   evals:ontology_match:
     desc: "Run ontology_match evaluation suite"
     cmds:
       - echo "Running ontology_match evaluations..."
-      - uv run python -m evals.ontology_match
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.ontology_match
     silent: true
 
   evals:anatomic_search:
     desc: "Run anatomic_search evaluation suite"
     cmds:
       - echo "Running anatomic_search evaluations..."
-      - uv run python -m evals.anatomic_search
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.anatomic_search
     silent: true
 
   evals:markdown_in:
     desc: "Run markdown_in evaluation suite"
     cmds:
       - echo "Running markdown_in evaluations..."
-      - uv run python -m evals.markdown_in
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.markdown_in
     silent: true
 
   evals:finding_description:
     desc: "Run finding_description evaluation suite"
     cmds:
       - echo "Running finding_description evaluations..."
-      - uv run python -m evals.finding_description
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.finding_description
     silent: true
 
   check:
-    desc: "Check the findingmodel library"
+    desc: "Check all packages (format, lint, type-check)"
     cmds:
-      - echo "Checking library..."
-      - uv run ruff format
-      - uv run ruff check --fix
-      - uv run mypy src
+      - echo "Checking all packages..."
+      - uv run ruff format packages/
+      - uv run ruff check --fix packages/
+      - uv run mypy
     silent: true
 
-  build:
-    desc: "Build the findingmodel library"
-    cmds:
-      - echo "Building library..."
-      - uv build {{.CLI_ARGS}}
-    silent: true
+  # =============================================================================
+  # Build and publish tasks
+  # =============================================================================
 
-  quiet:
-    desc: "Run checks quietly"
+  build:packages:
+    desc: "Build all publishable packages"
     cmds:
-      - uv run ruff format --quiet
-      - uv run ruff check --fix --quiet
-      - uv run mypy src --no-error-summary --no-pretty
-      - uv run pytest -q {{.CLI_ARGS}}
-    silent: true
-  
-  publish:
-    desc: "Publish the findingmodel library"
-    cmds:
-      - echo "Publishing library..."
-      - uv publish {{.CLI_ARGS}}
-    silent: true
+      - rm -rf dist/
+      - uv build --package oidm-common
+      - uv build --package findingmodel
+      - uv build --package anatomic-locations
+      - uv build --package findingmodel-ai
 
-  release:
-    desc: "Interactive release process"
+  verify:install:
+    desc: "Build and verify packages install correctly in isolation"
     cmds:
-      - uv run python scripts/release.py {{.CLI_ARGS}}
+      - uv run scripts/verify-install.py
 
-  release:check:
-    desc: "Validate release readiness"
+  publish:pypi:
+    desc: "Publish packages to PyPI (in dependency order)"
+    deps: [build:packages]
     cmds:
-      - uv run python scripts/release.py --check-only {{.CLI_ARGS}}
-
-  release:dry:
-    desc: "Dry run of release process"
-    cmds:
-      - uv run python scripts/release.py --dry-run {{.CLI_ARGS}}
-
-  release:version:
-    desc: "Release specific version (use: task release:version -- --version X.Y.Z)"
-    cmds:
-      - uv run python scripts/release.py {{.CLI_ARGS}}
-  
+      - uv publish dist/oidm_common-*.tar.gz dist/oidm_common-*.whl
+      - uv publish dist/findingmodel-[0-9]*.tar.gz dist/findingmodel-[0-9]*.whl
+      - uv publish dist/anatomic_locations-*.tar.gz dist/anatomic_locations-*.whl
+      - uv publish dist/findingmodel_ai-*.tar.gz dist/findingmodel_ai-*.whl

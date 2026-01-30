@@ -1,5 +1,0 @@
-## Model Editing Guardrails (September 26, 2025)
-- Markdown editing now has a preflight check in `edit_model_markdown()` that rejects any attempt to remove existing attribute headers or bullets before invoking the agent. This keeps the model unchanged and returns a rejection message.
-- Interactive demo (`scripts/edit_finding_model.py`) finalizes placeholder IDs by calling `assign_real_attribute_ids()` before writing to disk. New command-only and markdown-only demos reuse the same safety pipeline.
-- Both natural-language and markdown editing flows must keep existing OIFM IDs and set `PLACEHOLDER_ATTRIBUTE_ID` on all new attributes; `assign_real_attribute_ids()` is the sanctioned way to mint permanent IDs and renumber value codes before persistence.
-- After modifying editing code, run `uv run pytest test/test_model_editor.py` (full) or `-m "not callout"` for offline validation to ensure `_basic_edit_validation` still passes.

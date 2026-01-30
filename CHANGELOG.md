@@ -6,6 +6,83 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### findingmodel
+
+#### Added
+
+- `__version__` via importlib.metadata
+
+#### Changed
+
+- **BREAKING: Unified Model Configuration** - Migrated from separate provider/model env vars to Pydantic AI's `provider:model` string format:
+  - New env vars: `DEFAULT_MODEL`, `DEFAULT_MODEL_FULL`, `DEFAULT_MODEL_SMALL` (e.g., `openai:gpt-5-mini`, `anthropic:claude-sonnet-4-5`)
+  - Removed: `MODEL_PROVIDER`, `OPENAI_DEFAULT_MODEL`, `ANTHROPIC_DEFAULT_MODEL` and variants
+  - Model selection moved from `get_model()` function to `settings.get_model(tier)` method
+
+#### Fixed
+
+- Database auto-update from manifest: Index now checks manifest.json on instantiation and downloads updated databases when hash differs, with graceful fallback.
+
+#### Removed
+
+- `ModelProvider` enum and `model_provider` configuration field
+- `get_model()` and `get_openai_model()` functions from `tools.common`
+- `provider` parameter from tool functions (now inferred from model string)
+- `check_ready_for_openai()` and `check_ready_for_anthropic()` methods
+
+### anatomic-locations
+
+#### Added
+
+- `__version__` via importlib.metadata
+- Separate storage bucket (anatomiclocationdata.t3.storage.dev)
+
+### findingmodel-ai
+
+#### Added
+
+- `__version__` via importlib.metadata
+- **Pydantic AI Gateway Support** - Use hosted gateway for unified API access:
+  - Configure via `PYDANTIC_AI_GATEWAY_API_KEY` and `gateway/openai:*` or `gateway/anthropic:*` model strings
+  - Customizable base URL via `PYDANTIC_AI_GATEWAY_BASE_URL`
+- **Google Gemini Provider Support** - Use Google's Gemini models via `google:gemini-3-flash-preview` (GLA API) or `gateway/google:*` (Vertex AI via Gateway)
+- **Ollama Provider Support** - Run local models with `ollama:model-name`; includes fail-fast validation that checks model availability before use
+- **Finding Enrichment Pipeline** - New `enrich_finding()` function for comprehensive finding enrichment:
+  - Parallel search for SNOMED/RadLex ontology codes and anatomic locations
+  - AI agent classifies body regions, etiologies, modalities, and subspecialties
+- **Multi-Provider Configuration Guide** - New `docs/configuration.md` documenting all five providers, model tiers, database setup, and troubleshooting
+- **Per-Agent Model Overrides** - Configure different models for specific AI agents:
+  - Override via environment variables: `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
+  - 14 agent tags covering enrichment, search, editing, and import workflows
+  - See `docs/configuration.md` for tag reference and examples
+
+#### Changed
+
+- OpenAI now uses Responses API (`OpenAIResponsesModel`) instead of Chat Completions
+- Small tier OpenAI models use minimal reasoning effort for faster responses
+
+### oidm-common
+
+#### Changed
+
+- `__version__` now uses importlib.metadata (was hardcoded)
+
+### oidm-maintenance
+
+#### Added
+
+- **Automated Database Publishing** - New `index publish` CLI command for publishing DuckDB databases to remote storage:
+  - Build-and-publish mode (`--defs-dir`) or publish-only mode (`--database`)
+  - S3/Tigris storage integration with date-based filenames (`findingmodels_YYYYMMDD.duckdb`)
+  - See `docs/database-management.md` for maintainer guide
+
+#### Changed
+
+- `__version__` now uses importlib.metadata (was hardcoded)
+- Separate anatomic bucket configuration for publishing
+
 ## [0.6.0] - 2025-11-09
 
 ### Added

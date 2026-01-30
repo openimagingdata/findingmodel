@@ -1,0 +1,55 @@
+[project]
+name = "findingmodel-ai"
+version = "0.2.0"
+description = "AI-powered tools for Open Imaging Finding Models"
+authors = [
+    { name = "Tarik Alkasab", email = "tarik@alkasab.org" },
+    { name = "Vijay Dawal", email = "vijaydawal@microsoft.com" },
+]
+requires-python = ">=3.11"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+keywords = [
+    "finding model",
+    "medical imaging",
+    "AI",
+    "artificial intelligence",
+    "Pydantic AI",
+    "radiology",
+    "LLM",
+]
+
+dependencies = [
+    "oidm-common",
+    "findingmodel",
+    "anatomic-locations",
+    "pydantic[email]>=2.0",
+    "pydantic-settings>=2.9",
+    "pydantic-ai-slim[openai,tavily,anthropic,google]>=0.3.2",
+    "tavily-python>=0.6.0",
+    "httpx>=0.27",
+    "loguru>=0.7",
+    "jinja2>=3.1.6",
+    "click>=8.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+findingmodel-ai = "findingmodel_ai.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/openimagingdata/findingmodel"
+Issues = "https://github.com/openimagingdata/findingmodel/issues"
+
+[tool.uv.sources]
+oidm-common = { workspace = true }
+findingmodel = { workspace = true }
+anatomic-locations = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.9,<0.10"]
+build-backend = "uv_build"

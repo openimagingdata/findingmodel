@@ -3,34 +3,29 @@
 ## Overview
 Successfully implemented a two-agent Pydantic AI tool for finding anatomic locations for medical imaging findings. This tool searches across multiple ontology databases (anatomic_locations, radlex, snomedct) using DuckDB hybrid search.
 
-## CLI Commands (2025-10-13)
+## CLI Commands
 
-The anatomic location database is now managed through CLI commands:
-
+### User CLI (`anatomic-locations`)
 ```bash
-# Build database from default URL
-python -m findingmodel anatomic build
+# Search anatomic locations
+anatomic-locations search "posterior cruciate ligament"
 
-# Build from custom source with force overwrite  
-python -m findingmodel anatomic build --source /path/to/data.json --force
-
-# Validate data without building database
-python -m findingmodel anatomic validate --source https://example.com/data.json
+# Show hierarchy for a location
+anatomic-locations hierarchy RID2905
 
 # Show database statistics
-python -m findingmodel anatomic stats
+anatomic-locations stats
 ```
 
-**Commands**:
-- `anatomic build`: Download/load data, generate embeddings, create searchable DuckDB database
-- `anatomic validate`: Validate data without building (checks required fields)
-- `anatomic stats`: Display statistics (records, vectors, regions, file size)
+### Maintainer CLI (`oidm-maintain`)
+Database build/publish lives in `oidm-maintenance` package:
+```bash
+# Build database from source data
+oidm-maintain anatomic build --source /path/to/data.json --output anatomic.duckdb
 
-**Implementation**:
-- Migration logic in `src/findingmodel/anatomic_migration.py` (extracted from notebooks)
-- CLI commands in `src/findingmodel/cli.py`
-- Uses common utilities from `duckdb_utils` module
-- Default source: `https://raw.githubusercontent.com/openimagingdata/CDEStaging/main/doc/anatomic_locations/anatomic_locations.json`
+# Publish to S3
+oidm-maintain anatomic publish --db-path anatomic.duckdb
+```
 
 ## Architecture Decisions
 

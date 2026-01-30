@@ -46,5 +46,15 @@
         "github.copilot-chat/gemini-2.5-pro"
       ]
     }
-  }
+  },
+
+  // markdownlint (DavidAnson.vscode-markdownlint)
+  // Use a rules-only config (low noise).
+  "markdownlint.configFile": ".markdownlint.jsonc",
+  "markdownlint.ignore": [
+    ".serena/memories/**/*.md",
+    "tasks/done/**/*.md",
+    "**/node_modules/**",
+    "**/.venv/**"
+  ]
 }

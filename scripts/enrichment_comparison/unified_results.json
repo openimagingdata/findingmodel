@@ -1,0 +1,274 @@
+{
+  "metadata": {
+    "timestamp": "2025-11-27T15:24:40.511452",
+    "total_time": 119.8,
+    "avg_time": 24.0,
+    "successful_tests": 5,
+    "failed_tests": 0,
+    "body_region_accuracy": 100.0
+  },
+  "results": [
+    {
+      "finding": "pulmonary segmental consolidation",
+      "time": 24.7,
+      "ontology_codes": [
+        {
+          "system": "SNOMEDCT",
+          "code": "95436008",
+          "display": "Lung consolidation"
+        },
+        {
+          "system": "RADLEX",
+          "code": "RID43255",
+          "display": "consolidation"
+        },
+        {
+          "system": "SNOMEDCT",
+          "code": "9656002",
+          "display": "Consolidation"
+        },
+        {
+          "system": "SNOMEDCT",
+          "code": "846749001",
+          "display": "Consolidation of lung present"
+        },
+        {
+          "system": "SNOMEDCT",
+          "code": "707496003",
+          "display": "Inflammation and consolidation"
+        }
+      ],
+      "anatomic_location": {
+        "id": "RID1301",
+        "text": "lung"
+      },
+      "body_regions": [
+        "Chest"
+      ],
+      "etiologies": [
+        "inflammatory:infectious",
+        "inflammatory",
+        "neoplastic:malignant",
+        "vascular:ischemic"
+      ],
+      "modalities": [
+        "CT",
+        "XR"
+      ],
+      "subspecialties": [
+        "CH",
+        "ER",
+        "PD"
+      ],
+      "reasoning": "Pulmonary segmental consolidation refers to consolidation (replacement of air in alveoli with fluid, cells, or tissue) confined to a bronchopulmonary segment. \n\nONTOLOGY CODES: 'Lung consolidation' (SNOMEDCT 95436008) is the exact match for pulmonary consolidation. RadLex 'consolidation' (RID43255) is also an exact match. General 'Consolidation' (SNOMEDCT 9656002), 'Consolidation of lung present', and 'Inflammation and consolidation' are closely related and included as should_include. 'Semi-consolidation' and 'Pulmonary diseases or conditions' are marginal as they are related but not specific. Excluded chemotherapy consolidation (different meaning - treatment regimen), segmental pulmonary artery (anatomic structure), and 'Or' codes (irrelevant).\n\nANATOMIC LOCATION: 'lung' (RID1301) is the single highest-level container. While the finding is specifically segmental, it can occur in any segment of either lung, so 'lung' is the appropriate container rather than specific lobes (which are children of lung in the hierarchy).\n\nBODY REGIONS: Chest only - lungs are exclusively thoracic structures.\n\nETIOLOGIES: Segmental consolidation pattern suggests: (1) inflammatory:infectious - most common cause, particularly lobar/segmental pneumonia; (2) inflammatory - non-infectious inflammation; (3) neoplastic:malignant - bronchogenic carcinoma can cause post-obstructive consolidation; (4) vascular:ischemic - pulmonary infarction can present as segmental consolidation.\n\nMODALITIES: CT is the gold standard for characterizing consolidation and identifying segmental distribution. XR (chest radiograph) is first-line for detecting consolidation.\n\nSUBSPECIALTIES: Chest radiology (CH) is primary for all lung parenchymal findings. Emergency radiology (ER) sees acute pneumonia and pulmonary embolism with infarction. Pediatric radiology (PD) commonly encounters pneumonia in children.",
+      "body_region_comparison": {
+        "match": true,
+        "predicted": [
+          "Chest"
+        ],
+        "ground_truth": [
+          "Chest"
+        ],
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "finding": "calcification in a tendon",
+      "time": 22.7,
+      "ontology_codes": [
+        {
+          "system": "RADLEX",
+          "code": "RID5196",
+          "display": "calcification"
+        },
+        {
+          "system": "SNOMEDCT",
+          "code": "60963005",
+          "display": "Dystrophic calcification"
+        },
+        {
+          "system": "RADLEX",
+          "code": "RID34246",
+          "display": "dystrophic calcification"
+        }
+      ],
+      "anatomic_location": {
+        "id": "RID39569",
+        "text": "whole body"
+      },
+      "body_regions": [
+        "Arm",
+        "Leg"
+      ],
+      "etiologies": [
+        "degenerative",
+        "metabolic",
+        "post-traumatic"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "US",
+        "MR"
+      ],
+      "subspecialties": [
+        "MK"
+      ],
+      "reasoning": "Calcification in a tendon represents calcium deposition within tendinous structures, most commonly due to chronic tendinopathy (degenerative), metabolic calcium disorders, or post-traumatic changes. \n\nONTOLOGY CODES: The exact match is 'calcification' (RID5196) which directly describes the finding. 'Dystrophic calcification' codes are included as should_include/marginal since they represent the most common pathophysiologic mechanism for tendon calcification but are slightly broader than the specific finding of 'calcification in a tendon'. Procedure codes (tendon decompression, operations) and pure anatomical structures (tendon of hand/foot) were excluded per guidelines.\n\nANATOMIC LOCATION: Selected 'whole body' (RID39569) as the single highest-level container because tendon calcification can occur in tendons throughout the body - shoulder (supraspinatus, subscapularis), elbow (common extensor), wrist, hip, knee, ankle (Achilles). The search results show many specific tendons but no single tendon or regional structure encompasses all possible locations.\n\nBODY REGIONS: Selected Arm and Leg rather than 'ALL' because tendons are predominantly located in the extremities. This is NOT a truly systemic condition like atherosclerosis - it's a finding that can occur in multiple tendons but those tendons are in specific body regions (extremities), not head, neck, chest, breast, or abdomen.\n\nMODALITIES: XR and CT best demonstrate calcification; US is excellent for evaluating tendon structure and detecting calcific deposits; MR provides soft tissue detail and can show calcification as signal void.\n\nSUBSPECIALTIES: MSK radiology is the primary subspecialty for tendon pathology and calcific tendinopathy evaluation and characterization.",
+      "body_region_comparison": {
+        "match": true,
+        "predicted": [
+          "Arm",
+          "Leg"
+        ],
+        "ground_truth": [
+          "Arm",
+          "Leg"
+        ],
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "finding": "abnormal intracranial enhancement",
+      "time": 23.8,
+      "ontology_codes": [
+        {
+          "system": "RADLEX",
+          "code": "RID6058",
+          "display": "enhancement pattern"
+        },
+        {
+          "system": "RADLEX",
+          "code": "RID39563",
+          "display": "homogeneous enhancement"
+        },
+        {
+          "system": "RADLEX",
+          "code": "RID34309",
+          "display": "stippled enhancement"
+        },
+        {
+          "system": "RADLEX",
+          "code": "RID34310",
+          "display": "clumped enhancement"
+        }
+      ],
+      "anatomic_location": {
+        "id": "RID6434",
+        "text": "brain"
+      },
+      "body_regions": [
+        "Head"
+      ],
+      "etiologies": [
+        "neoplastic:malignant",
+        "neoplastic:benign",
+        "neoplastic:metastatic",
+        "inflammatory:infectious",
+        "inflammatory",
+        "vascular:ischemic",
+        "iatrogenic:post-operative"
+      ],
+      "modalities": [
+        "MR",
+        "CT"
+      ],
+      "subspecialties": [
+        "NR",
+        "OI",
+        "ER"
+      ],
+      "reasoning": "Abnormal intracranial enhancement refers to focal or diffuse increased contrast uptake within intracranial structures, indicating blood-brain barrier disruption or abnormal vascularity. \n\nONTOLOGY CODES: No exact match exists in the search results for 'abnormal intracranial enhancement' specifically. The SNOMED results (socialization enhancement, security enhancement, etc.) are completely unrelated nursing/social concepts and must be excluded. The RadLex enhancement-related terms (enhancement pattern, homogeneous enhancement, stippled enhancement, clumped enhancement) are closely related as they describe types/patterns of enhancement and are included as should_include. Enhancement phase and increasing enhancement are more marginal as they relate to timing rather than the finding itself.\n\nANATOMIC LOCATION: Selected 'brain' (RID6434) as the single highest-level container. While 'intracranial head' (RID6383_RID9080) appears in results, 'brain' is the most appropriate container for intracranial enhancement as this finding primarily affects brain parenchyma, meninges, and associated intracranial structures. The brain encompasses all relevant intracranial structures where abnormal enhancement occurs.\n\nBODY REGIONS: Head only - intracranial structures are exclusively within the head.\n\nETIOLOGIES: Per the description, common causes include neoplasm (malignant primary tumors, benign tumors like meningiomas, and metastases), infection/abscess (infectious inflammation), general inflammation (autoimmune conditions like MS), subacute infarction (ischemic), and post-operative changes (iatrogenic). These represent the upstream causes that produce abnormal enhancement.\n\nMODALITIES: MR is the primary modality for evaluating intracranial enhancement due to superior soft tissue contrast and sensitivity to blood-brain barrier disruption. CT with contrast is also used, particularly in emergency settings or when MR is contraindicated.\n\nSUBSPECIALTIES: Neuroradiology (NR) is the primary subspecialty for all intracranial findings. Oncologic imaging (OI) is relevant given neoplasm as a major cause. Emergency radiology (ER) is included for acute presentations such as infection, acute infarction, or tumor-related emergencies.",
+      "body_region_comparison": {
+        "match": true,
+        "predicted": [
+          "Head"
+        ],
+        "ground_truth": [
+          "Head"
+        ],
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "finding": "thoracic spine degenerative change",
+      "time": 21.9,
+      "ontology_codes": [
+        {
+          "system": "SNOMEDCT",
+          "code": "202816005",
+          "display": "Thoracic spine ankylosis"
+        }
+      ],
+      "anatomic_location": {
+        "id": "RID34572",
+        "text": "thoracic vertebral column"
+      },
+      "body_regions": [
+        "Chest",
+        "Abdomen"
+      ],
+      "etiologies": [
+        "degenerative"
+      ],
+      "modalities": [
+        "XR",
+        "CT",
+        "MR"
+      ],
+      "subspecialties": [
+        "MK",
+        "NR"
+      ],
+      "reasoning": "Thoracic spine degenerative change represents age-related wear and tear of the thoracic vertebral column including disc degeneration, facet arthropathy, osteophyte formation, and spondylosis. \n\nONTOLOGY CODES: The raw search results do not contain an exact match for 'degenerative change' or 'spondylosis' of the thoracic spine. The LOINC codes are anatomic location descriptors, not pathologic findings. 'Thoracic spine ankylosis' (SNOMEDCT 202816005) is included as should_include because ankylosis can be a severe end-stage manifestation of degenerative disease. Paget's disease and inflammatory conditions are only marginally related as they affect the thoracic spine but through different mechanisms.\n\nANATOMIC LOCATION: 'Thoracic vertebral column' (RID34572) is the single highest-level container that encompasses all thoracic vertebrae (T1-T12), intervertebral discs, and facet joints where degenerative changes occur. Individual vertebral levels (RID29198-RID29209) would be too specific as degenerative changes typically affect multiple levels.\n\nBODY REGIONS: The thoracic spine spans both Chest and Abdomen regions - upper thoracic vertebrae are at chest level while lower thoracic vertebrae extend into the abdominal region. NOT 'ALL' because this is specific to the thoracic spine, not systemic.\n\nETIOLOGIES: Degenerative is the primary and essentially sole etiology - this represents wear and tear, aging changes to the spine including disc desiccation, osteophyte formation, and facet arthropathy.\n\nMODALITIES: XR is first-line for spinal degenerative changes showing osteophytes and disc space narrowing. CT provides excellent bone detail for osteophytes and facet changes. MR is superior for disc, ligament, and cord evaluation.\n\nSUBSPECIALTIES: MSK radiology is primary for degenerative spine disease and bone/joint pathology. Neuroradiology is included because thoracic spine pathology can affect the spinal cord and nerve roots, and spine imaging is a core neuroradiology domain.",
+      "body_region_comparison": {
+        "match": true,
+        "predicted": [
+          "Chest",
+          "Abdomen"
+        ],
+        "ground_truth": [
+          "Chest",
+          "Abdomen"
+        ],
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "finding": "enotosis",
+      "time": 21.7,
+      "ontology_codes": [],
+      "anatomic_location": {
+        "id": "RID39569",
+        "text": "whole body"
+      },
+      "body_regions": [
+        "ALL"
+      ],
+      "etiologies": [
+        "normal-variant"
+      ],
+      "modalities": [
+        "CT",
+        "XR"
+      ],
+      "subspecialties": [
+        "MK"
+      ],
+      "reasoning": "The finding \"enotosis\" appears to be a misspelling of \"enostosis\" (also known as bone island). Enostosis is a benign focal area of compact (cortite) bone within the medullary cavity of a bone - it is a NORMAL VARIANT, not a neoplasm or pathologic process. \n\nONTOLOGY CODES: The raw search results provided do not contain any relevant matches for enostosis/bone island. The results are dominated by unrelated concepts (OR as in \"operating room\", various anatomical structures, lab codes). No exact matches, should_include, or even marginal codes can be selected from these irrelevant results. The correct codes would be SNOMEDCT 782164008 \"Enostosis\" and RADLEX RID4003 \"enostosis\" but these were not in the search results.\n\nANATOMIC LOCATION: Enostosis can occur in any bone throughout the skeleton - pelvis, femur, spine, ribs, etc. Since it can occur anywhere there is bone, the single highest-level container is \"whole body\" (RID39569).\n\nBODY REGIONS: \"ALL\" is appropriate because bone islands can be found in any bone throughout the body - this is a truly systemic possibility for any skeletal location.\n\nETIOLOGIES: \"normal-variant\" - enostosis is a benign developmental focus of compact bone, representing a normal anatomic variant. It is NOT neoplastic despite being a \"lesion.\"\n\nMODALITIES: CT is the best modality to characterize enostosis (shows the characteristic \"brush border\" margins and lack of aggressive features). XR often detects them incidentally as dense sclerotic foci.\n\nSUBSPECIALTIES: MK (Musculoskeletal) is the primary subspecialty for bone lesion characterization and would be consulted to distinguish enostosis from other sclerotic bone lesions.",
+      "body_region_comparison": {
+        "match": true,
+        "predicted": [
+          "ALL"
+        ],
+        "ground_truth": "ALL",
+        "missing": [],
+        "extra": []
+      }
+    }
+  ]
+}

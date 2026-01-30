@@ -82,20 +82,5 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
-
-# Logging
-**/*.log
-
-# Project-specific stuff
-notebooks/test_model.fm.json
-notebooks/data/anatomic_locations.json
-.serena/cache
-mcp.json
-.mcp.json
-
-# Development DuckDB databases (too large to commit)
-data/*.duckdb
-data/*.duckdb.wal
-
-# Temporary/scratch files
-tmp/
+anatomic_locations.json
+test.log

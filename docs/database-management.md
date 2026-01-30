@@ -1,12 +1,14 @@
 # Database Management Guide
 
-This guide is for maintainers who need to build, update, or manage the DuckDB database files used by the `findingmodel` package.
+This guide is for maintainers who need to build, update, or manage the DuckDB database files used by the findingmodel and anatomic-locations packages.
 
 ## Overview
 
-The package uses **DuckDB** as the default backend for indexing finding models and anatomic locations. DuckDB provides high-performance vector search (HNSW indexing) and full-text search capabilities in a single-file database.
+The packages use **DuckDB** as the default backend for indexing finding models and anatomic locations. DuckDB provides high-performance vector search (HNSW indexing) and full-text search capabilities in a single-file database.
 
 For most users, databases **auto-download on first use** - no manual setup required. This guide is for maintainers who need to create or update database files.
+
+> **Package note**: Build and publish operations live in the `oidm-maintenance` package (`oidm-maintain` CLI). The user-facing `findingmodel` and `anatomic-locations` packages only provide read-only database access.
 
 ## Database Architecture
 
@@ -33,7 +35,7 @@ The anatomic locations database stores:
 - Text indexes for keyword search
 - Data from anatomic_locations, RadLex, and SNOMED CT
 
-**Default location**: Same as finding models (platform-native)
+**Default location**: Platform-native data directory via `platformdirs`
 
 **Default filename**: `anatomic_locations.duckdb`
 
@@ -58,50 +60,51 @@ Both URL and SHA256 hash must be provided. The package uses [Pooch](https://www.
 
 ## CLI Commands
 
+All build and publish commands use the `oidm-maintain` CLI from the `oidm-maintenance` package.
+
 ### Finding Models Index Management
 
 #### Build a New Index
 
 ```bash
 # Build from a directory of .fm.json files
-python -m findingmodel index build /path/to/defs/
+oidm-maintain findingmodel build /path/to/defs/
 
 # Build with custom output path
-python -m findingmodel index build /path/to/defs/ --index /custom/path/index.duckdb
+oidm-maintain findingmodel build /path/to/defs/ --index /custom/path/index.duckdb
 ```
 
 Creates a new DuckDB index by scanning a directory tree for `*.fm.json` files.
 
-#### Update an Existing Index
+#### Publish to Remote Storage
 
 ```bash
-# Update default index from directory
-python -m findingmodel index update /path/to/defs/
+# Build from definitions and publish to S3
+oidm-maintain findingmodel publish --defs-dir /path/to/defs/
 
-# Update custom index
-python -m findingmodel index update /path/to/defs/ --index /custom/path/index.duckdb
+# Publish an existing database file
+oidm-maintain findingmodel publish --database /path/to/existing.duckdb
 ```
 
-Synchronizes the index with the directory:
-- Adds new finding models
-- Updates modified models
-- Removes models whose files no longer exist
+Automates database publishing workflow:
+1. Builds database from definitions (if using `--defs-dir`) or uses existing database
+2. Runs sanity checks: record count, sample OIFM IDs, model JSON validation
+3. Computes SHA256 hash and file size
+4. Uploads database to S3/Tigris storage with date-based filename
+5. Updates and publishes `manifest.json` with new version info
+6. Creates automatic manifest backup in `manifests/archive/`
 
-#### View Index Statistics
+**Requirements**: AWS credentials in `.env` file (Tigris S3-compatible storage):
+```bash
+OIDM_MAINTAIN_AWS_ACCESS_KEY_ID=your_access_key
+OIDM_MAINTAIN_AWS_SECRET_ACCESS_KEY=your_secret_key
+```
+
+#### View Index Statistics (user CLI)
 
 ```bash
-# Stats for default index
-python -m findingmodel index stats
-
-# Stats for custom index
-python -m findingmodel index stats --index /custom/path/index.duckdb
+findingmodel index stats
 ```
-
-Displays:
-- Total finding models
-- Number of people and organizations
-- Database file size
-- Index status (HNSW vector index, FTS text index)
 
 ### Anatomic Location Database Management
 
@@ -109,19 +112,13 @@ Displays:
 
 ```bash
 # Build from default URL (configured in package)
-python -m findingmodel anatomic build
+oidm-maintain anatomic build
 
 # Build from local file
-python -m findingmodel anatomic build --source /path/to/anatomic_locations.json
-
-# Build from custom URL
-python -m findingmodel anatomic build --source https://example.com/data.json
-
-# Build with custom output path
-python -m findingmodel anatomic build --output /custom/path/anatomic.duckdb
+oidm-maintain anatomic build --source /path/to/anatomic_locations.json
 
 # Force overwrite existing database
-python -m findingmodel anatomic build --force
+oidm-maintain anatomic build --force
 ```
 
 **What it does**:
@@ -130,98 +127,16 @@ python -m findingmodel anatomic build --force
 3. Creates DuckDB database with vector and text indexes
 4. Stores in platform-native directory
 
-#### Validate Anatomic Data
+#### Publish Anatomic Database
 
 ```bash
-# Validate without building database
-python -m findingmodel anatomic validate --source /path/to/data.json
+oidm-maintain anatomic publish
 ```
 
-Checks that the data file has required fields without creating a database.
-
-#### View Anatomic Database Statistics
+#### View Anatomic Database Statistics (user CLI)
 
 ```bash
-# Stats for default database
-python -m findingmodel anatomic stats
-
-# Stats for custom database
-python -m findingmodel anatomic stats --db-path /custom/path/anatomic.duckdb
-```
-
-Displays:
-- Total anatomic location records
-- Number of vectors (embeddings)
-- Region distribution
-- Database file size
-
-## Python API for Database Management
-
-### Adding/Updating Finding Models
-
-```python
-import asyncio
-from findingmodel import Index, FindingModelFull
-
-async def update_index():
-    # Open index in write mode (read_only=False is default)
-    async with Index() as index:
-        # Ensure schema is set up
-        await index.setup()
-
-        # Update from a directory
-        added, updated, removed = await index.update_from_directory("path/to/defs")
-        print(f"Sync: {added} added, {updated} updated, {removed} removed")
-
-        # Add or update a single file
-        model = FindingModelFull.model_validate_json(open("model.fm.json").read())
-        await index.add_or_update_entry_from_file("model.fm.json", model)
-
-asyncio.run(update_index())
-```
-
-### Working with Contributors
-
-```python
-async def add_contributors():
-    async with Index() as index:
-        from findingmodel.contributor import Person, Organization
-
-        # Add a person
-        person = Person(
-            github_username="johndoe",
-            name="John Doe",
-            email="john@example.com"
-        )
-        await index.add_person(person)
-
-        # Add an organization
-        org = Organization(
-            code="ACME",
-            name="ACME Corporation",
-            url="https://acme.com"
-        )
-        await index.add_organization(org)
-```
-
-### Batch Operations
-
-```python
-async def batch_updates():
-    async with Index() as index:
-        # Add/update multiple models efficiently
-        models_dict = {
-            "file1.fm.json": model1,
-            "file2.fm.json": model2,
-            "file3.fm.json": model3,
-        }
-        results = await index.batch_add_or_update(models_dict)
-
-        # Search with tag filtering
-        results = await index.search_batch(
-            ["pneumonia", "pneumothorax"],
-            tags=["chest"]
-        )
+anatomic-locations stats
 ```
 
 ## Base Contributors
@@ -243,7 +158,7 @@ Fresh databases automatically include base contributors:
 - hoodcm (C. Michael Hood, MD - MGB)
 - radngandhi (Namita Gandhi, MD - RSNA)
 
-These are loaded from package data files (`src/findingmodel/data/base_*.jsonl`) during database setup.
+These are loaded from package data files during database setup.
 
 > **Historical Note**: Prior to v0.5.0, a MongoDB-based Index implementation was available. This was replaced with DuckDB in v0.5.0. Users needing MongoDB should use findingmodel v0.4.x.
 
@@ -254,7 +169,7 @@ These are loaded from package data files (`src/findingmodel/data/base_*.jsonl`) 
 If you see "Database not found" errors:
 1. Check if remote URLs are configured in `.env`
 2. Verify the database path exists
-3. Run `index build` or `anatomic build` to create the database
+3. Run `oidm-maintain findingmodel build` or `oidm-maintain anatomic build` to create the database
 
 ### Hash Mismatch on Download
 
@@ -267,27 +182,18 @@ If Pooch reports a hash mismatch:
 
 To regenerate embeddings for anatomic locations:
 ```bash
-python -m findingmodel anatomic build --source /path/to/data.json --force
+oidm-maintain anatomic build --source /path/to/data.json --force
 ```
 
 The `--force` flag overwrites the existing database.
 
 ## File Locations Reference
 
-### Default Paths
-
-Use `python -m findingmodel config` to see current configuration including file paths.
-
 ### Custom Paths
 
 Override defaults via environment variables:
 ```bash
-# Override filenames (still uses platform-native directory)
-DUCKDB_INDEX_PATH=my_custom_index.duckdb
-DUCKDB_ANATOMIC_PATH=my_custom_anatomic.duckdb
-```
-
-Or specify custom paths in CLI:
-```bash
-python -m findingmodel index stats --index /completely/custom/path.duckdb
+# Override database paths (still uses platform-native directory)
+FINDINGMODEL_DUCKDB_INDEX_PATH=my_custom_index.duckdb
+ANATOMIC_DUCKDB_PATH=my_custom_anatomic.duckdb
 ```

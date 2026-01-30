@@ -1,0 +1,52 @@
+"""Tests for configuration validation."""
+
+import pytest
+from _pytest.monkeypatch import MonkeyPatch
+from pydantic import ValidationError
+
+
+def test_remote_index_url_without_hash_raises_error(monkeypatch: MonkeyPatch) -> None:
+    """Test that providing only URL without hash for index DB raises validation error."""
+    monkeypatch.setenv("REMOTE_INDEX_DB_URL", "https://example.com/index.duckdb")
+    # No hash set
+
+    from findingmodel.config import FindingModelConfig
+
+    with pytest.raises(ValidationError, match="Must provide both REMOTE_INDEX_DB_URL and REMOTE_INDEX_DB_HASH"):
+        FindingModelConfig()
+
+
+def test_remote_index_hash_without_url_raises_error(monkeypatch: MonkeyPatch) -> None:
+    """Test that providing only hash without URL for index DB raises validation error."""
+    monkeypatch.setenv("REMOTE_INDEX_DB_HASH", "sha256:def456")
+    # No URL set
+
+    from findingmodel.config import FindingModelConfig
+
+    with pytest.raises(ValidationError, match="Must provide both REMOTE_INDEX_DB_URL and REMOTE_INDEX_DB_HASH"):
+        FindingModelConfig()
+
+
+def test_remote_config_with_both_url_and_hash_succeeds(monkeypatch: MonkeyPatch) -> None:
+    """Test that providing both URL and hash succeeds."""
+    monkeypatch.setenv("REMOTE_INDEX_DB_URL", "https://example.com/index.duckdb")
+    monkeypatch.setenv("REMOTE_INDEX_DB_HASH", "sha256:def456")
+
+    from findingmodel.config import FindingModelConfig
+
+    config = FindingModelConfig()
+    assert config.remote_index_db_url == "https://example.com/index.duckdb"
+    assert config.remote_index_db_hash == "sha256:def456"
+
+
+def test_remote_config_with_neither_succeeds(monkeypatch: MonkeyPatch) -> None:
+    """Test that providing neither URL nor hash succeeds (uses manifest)."""
+    # Ensure no remote config is set
+    monkeypatch.delenv("REMOTE_INDEX_DB_URL", raising=False)
+    monkeypatch.delenv("REMOTE_INDEX_DB_HASH", raising=False)
+
+    from findingmodel.config import FindingModelConfig
+
+    config = FindingModelConfig()
+    assert config.remote_index_db_url is None
+    assert config.remote_index_db_hash is None
