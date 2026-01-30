@@ -1,6 +1,6 @@
 # Plan: Monorepo Restructure with uv Workspaces
 
-**Status:** In Progress (Phase 4.7 Complete, Phases 5-6 Pending)
+**Status:** ✅ COMPLETE (All phases done; Phase 4.9 cleanup tracked as post-merge issues)
 **Supersedes:** [oidm-common-package-plan.md](oidm-common-package-plan.md), [anatomic-locations-package-plan.md](anatomic-locations-package-plan.md)
 
 ## Rationale
@@ -67,17 +67,18 @@ findingmodel/                           # Keep existing repo name
 │   │   ├── pyproject.toml
 │   │   ├── src/findingmodel_ai/
 │   │   │   ├── __init__.py
-│   │   │   ├── tools/                  # AI agents and workflows
-│   │   │   │   ├── model_editor.py
-│   │   │   │   ├── similar_finding_models.py
-│   │   │   │   ├── ontology_concept_match.py
-│   │   │   │   ├── ontology_search.py
-│   │   │   │   ├── anatomic_location_search.py
-│   │   │   │   ├── create_stub.py
-│   │   │   │   ├── finding_description.py
-│   │   │   │   ├── markdown_in.py
-│   │   │   │   └── common.py           # get_model, tavily client
-│   │   │   └── cli.py                  # AI-specific CLI commands
+│   │   │   ├── authoring/              # Model creation and editing
+│   │   │   │   ├── description.py      # create_info_from_name, add_details_to_info
+│   │   │   │   ├── editor.py           # edit_model_natural_language, edit_model_markdown
+│   │   │   │   └── markdown_in.py      # create_model_from_markdown
+│   │   │   ├── search/                 # Search and matching
+│   │   │   │   ├── anatomic.py         # find_anatomic_locations
+│   │   │   │   ├── ontology.py         # match_ontology_concepts
+│   │   │   │   └── similar.py          # find_similar_models
+│   │   │   ├── enrichment/             # Finding enrichment workflows
+│   │   │   ├── _internal/              # Shared internals
+│   │   │   ├── config.py               # AI settings, model tiers
+│   │   │   └── cli.py                  # findingmodel-ai CLI
 │   │   ├── tests/
 │   │   └── evals/                      # Agent evaluation suites
 │   │
@@ -153,7 +154,8 @@ pip install findingmodel-ai   # Full: adds AI authoring tools
 | [4.6](monorepo_plan_phases/phase-4.6-duckdb-search-consolidation.md) | DuckDB Search Consolidation | ✅ COMPLETE | Proper async patterns with asyncer, hybrid search in anatomic-locations |
 | [4.7](monorepo_plan_phases/phase-4.7-ai-separation-cleanup.md) | AI Separation Cleanup | ✅ COMPLETE | Tests moved to findingmodel-ai, config trimmed |
 | [5](monorepo_plan_phases/phase-5-cleanup.md) | Clean up findingmodel | ✅ COMPLETE | AI tools removed, non-AI utils retained |
-| [6](monorepo_plan_phases/phase-6-documentation.md) | Documentation and AI Setup | ⏳ PENDING | CLAUDE.md, rules, Serena |
+| [4.9](monorepo_plan_phases/phase-4.9-refactor-cleanup.md) | Refactor Cleanup | 📋 DEFERRED | Tracked as post-merge issues |
+| [6](monorepo_plan_phases/phase-6-documentation.md) | Documentation and AI Setup | ✅ COMPLETE | CLAUDE.md, rules, Serena |
 
 **Supporting documents:**
 - [Configuration Details](monorepo_plan_phases/configuration-details.md) - pyproject.toml configs, env vars, migration notes
@@ -221,21 +223,21 @@ Users who only search don't need the OpenAI package or API key. Users who build 
 - **Models**: AnatomicLocation with laterality, hierarchy (materialized path)
 - **Index**: AnatomicLocationIndex with hybrid search (FTS + vector)
 - **Migration**: Database builder from source ontologies
-- **CLI**: `anatomic search`, `anatomic show`, `anatomic build`
+- **CLI**: `anatomic-locations stats`, `anatomic-locations query ancestors/descendants/laterality/code`
 
 ### findingmodel: Core Library
 
 - **Models**: FindingModel, FindingInfo, AbstractFindingModel, Contributor
-- **Index**: FindingModelIndex with search, validation
+- **Index**: DuckDBIndex with search (read-only)
 - **MCP Server**: IDE integration for index queries (no AI)
-- **CLI**: `fm-tool search`, `fm-tool show`, `fm-tool validate`
+- **CLI**: `findingmodel` (search, stats, validate)
 
 ### findingmodel-ai: AI Authoring Tools
 
-- **Tools**: 8 tool modules with 14 AI agents across 5 providers
+- **Modules**: `authoring/` (description, editor, markdown_in), `search/` (anatomic, ontology, similar), `enrichment/`
 - **Model management**: Three-tier system (base/small/full) + per-agent overrides
 - **Evals**: Agent evaluation suites
-- **CLI**: `findingmodel-ai enrich`, `findingmodel-ai edit`, etc.
+- **CLI**: `findingmodel-ai` (make-info, make-stub-model, markdown-to-fm)
 
 ## Configuration
 
@@ -264,18 +266,26 @@ packages/
 
 ### Running Tests
 
+Tests must be run per-package (a single `pytest packages/*/tests` invocation fails due to conftest collisions across packages).
+
 ```bash
-# Workspace-wide (respects per-package pytest.ini_options)
-uv run pytest packages/*/tests -m "not callout"
+# All packages (via Taskfile, recommended)
+task test                    # Unit tests only (no API calls)
+task test-full               # Including integration tests
 
 # Per-package
-uv run --package oidm-common pytest
-uv run --package anatomic-locations pytest
-uv run --package findingmodel pytest
-uv run --package findingmodel-ai pytest
+task test:oidm-common
+task test:anatomic
+task test:findingmodel
+task test:findingmodel-ai
+task test:maintenance
+
+# Or directly with uv
+uv run pytest packages/oidm-common/tests -rs -m "not callout"
 
 # Evals (separate from tests)
-uv run --package findingmodel-ai python -m evals.model_editor
+task evals
+task evals:model_editor      # Individual eval suite
 ```
 
 ### Test Markers
@@ -310,94 +320,86 @@ findingmodel/
 
 ## Taskfile Organization
 
+The actual `Taskfile.yml` runs tests per-package to avoid conftest collisions:
+
 ```yaml
 version: "3"
 
 tasks:
-  # Workspace-wide
+  # Aggregate (runs per-package sequentially)
   test:
-    desc: "Run all tests"
+    desc: "Test all packages (no callouts)"
     cmds:
-      - uv run pytest packages/*/tests -m "not callout"
-
-  test-full:
-    desc: "Run all tests including callouts"
-    cmds:
-      - uv run pytest packages/*/tests
-
-  check:
-    desc: "Format, lint, type-check"
-    cmds:
-      - uv run ruff format packages/
-      - uv run ruff check --fix packages/
-      - uv run mypy packages/
+      - task: test:oidm-common
+      - task: test:anatomic
+      - task: test:findingmodel
+      - task: test:findingmodel-ai
+      - task: test:maintenance
 
   # Per-package
   test:oidm-common:
-    desc: "Test oidm-common"
-    cmds:
-      - uv run --package oidm-common pytest
-
+    cmds: [uv run pytest packages/oidm-common/tests -rs -m "not callout"]
   test:anatomic:
-    desc: "Test anatomic-locations"
-    cmds:
-      - uv run --package anatomic-locations pytest
-
+    cmds: [uv run pytest packages/anatomic-locations/tests -rs]
   test:findingmodel:
-    desc: "Test findingmodel core"
-    cmds:
-      - uv run --package findingmodel pytest
-
+    cmds: [uv run pytest packages/findingmodel/tests -rs -m "not callout"]
   test:findingmodel-ai:
-    desc: "Test findingmodel-ai"
+    cmds: [uv run pytest packages/findingmodel-ai/tests -rs -m "not callout"]
+  test:maintenance:
+    cmds: [uv run pytest packages/oidm-maintenance/tests -rs]
+
+  check:
     cmds:
-      - uv run --package findingmodel-ai pytest
+      - uv run ruff format packages/
+      - uv run ruff check --fix packages/
+      - uv run mypy
 
   evals:
-    desc: "Run AI agent evaluations"
     cmds:
-      - uv run --package findingmodel-ai python -m evals.model_editor
-      - uv run --package findingmodel-ai python -m evals.similar_models
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.model_editor
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.similar_models
       # ... etc
 
-  # Build/publish
-  build:all:
-    desc: "Build all packages"
+  build:packages:
     cmds:
+      - rm -rf dist/
       - uv build --package oidm-common
-      - uv build --package anatomic-locations
       - uv build --package findingmodel
+      - uv build --package anatomic-locations
       - uv build --package findingmodel-ai
+
+  publish:pypi:
+    deps: [build:packages]
+    cmds:
+      - uv publish dist/oidm_common-*.tar.gz dist/oidm_common-*.whl
+      - uv publish dist/findingmodel-[0-9]*.tar.gz dist/findingmodel-[0-9]*.whl
+      - uv publish dist/anatomic_locations-*.tar.gz dist/anatomic_locations-*.whl
+      - uv publish dist/findingmodel_ai-*.tar.gz dist/findingmodel_ai-*.whl
 ```
 
 ## Publishing Workflow
 
 Packages must be published in dependency order:
 
-1. **oidm-common** (no internal deps)
-2. **anatomic-locations** (depends on oidm-common)
-3. **findingmodel** (depends on oidm-common)
-4. **findingmodel-ai** (depends on findingmodel, anatomic-locations)
+1. **oidm-common** 0.2.0 (no internal deps)
+2. **findingmodel** 1.0.0 + **anatomic-locations** 0.2.0 (both depend on oidm-common; can publish in parallel)
+3. **findingmodel-ai** 0.2.0 (depends on findingmodel + anatomic-locations)
+
+`oidm-maintenance` is internal-only and not published to PyPI.
 
 ```bash
-# Example release
-task build:all
-uv publish dist/oidm_common-0.1.0-*.whl
-uv publish dist/anatomic_locations-0.1.0-*.whl
-uv publish dist/findingmodel-0.4.2-*.whl
-uv publish dist/findingmodel_ai-0.4.2-*.whl
+task build:packages    # Build all (strips workspace references)
+task publish:pypi      # Publish in dependency order
 ```
 
-## Open Questions
+See `tasks/pre-merge-release-punchlist.md` for the detailed release plan.
 
-1. **Notebooks location:** Root or packages/findingmodel/notebooks/?
-   - Leaning toward root (demos may use multiple packages)
+## Resolved Questions
 
-2. **Version coordination:** Same version for all packages or independent?
-   - Leaning toward independent (they're at different maturity levels)
-
-3. **GitHub Actions:** Single workflow or per-package?
-   - Start with single, add change detection later if needed
+1. **Notebooks location:** Root (`notebooks/`) — demos may use multiple packages.
+2. **Version coordination:** Independent versions — packages are at different maturity levels (`findingmodel` at 1.0.0, others at 0.2.0).
+3. **GitHub Actions:** Not yet configured. Start with single workflow.
+4. **OIDM_MAINTAIN_ env prefix:** Dropped as YAGNI — `MaintenanceSettings` uses unprefixed env vars with `.env` file loading.
 
 ## Risks and Mitigations
 
@@ -411,13 +413,14 @@ uv publish dist/findingmodel_ai-0.4.2-*.whl
 
 ## Success Criteria
 
-- [ ] All four packages can be built individually
-- [ ] All tests pass per-package and workspace-wide
-- [ ] `pip install findingmodel` works from built wheel (no AI deps)
-- [ ] `pip install findingmodel-ai` works from built wheel (includes AI deps)
-- [ ] `pip install anatomic-locations` works from built wheel
-- [ ] `pip install oidm-common` works from built wheel
-- [ ] MCP server works with just `findingmodel` installed
-- [ ] Evals run with `findingmodel-ai` installed
-- [ ] Claude Code loads appropriate CLAUDE.md per directory
-- [ ] Serena memories reflect workspace structure
+- [x] All five packages can be built individually (`task build:packages`)
+- [x] All tests pass per-package (594 passing)
+- [x] `pip install findingmodel` works from built wheel (no AI deps)
+- [x] `pip install findingmodel-ai` works from built wheel (includes AI deps)
+- [x] `pip install anatomic-locations` works from built wheel
+- [x] `pip install oidm-common` works from built wheel
+- [x] MCP server works with just `findingmodel` installed
+- [x] Evals run with `findingmodel-ai` installed
+- [x] Claude Code loads appropriate CLAUDE.md per directory
+- [x] Serena memories reflect workspace structure
+- [x] `task verify:install` passes (isolated install verification)
