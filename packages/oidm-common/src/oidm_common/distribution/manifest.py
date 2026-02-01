@@ -8,11 +8,14 @@ import httpx
 logger = logging.getLogger(__name__)
 
 # Module-level cache for manifest (cleared on process restart)
-_manifest_cache: dict[str, Any] | None = None
+_manifest_cache: dict[str, dict[str, Any]] = {}
 
 
 def fetch_manifest(manifest_url: str) -> dict[str, Any]:
     """Fetch and parse the remote manifest JSON with session caching.
+
+    Manifests are cached per-URL so that multiple packages with different
+    manifest endpoints can coexist in the same process without interference.
 
     Args:
         manifest_url: URL to manifest JSON file
@@ -29,12 +32,10 @@ def fetch_manifest(manifest_url: str) -> dict[str, Any]:
         db_info = manifest["databases"]["finding_models"]
         # {"version": "2025-01-24", "url": "...", "hash": "sha256:..."}
     """
-    global _manifest_cache
-
-    # Return cached manifest if available
-    if _manifest_cache is not None:
-        logger.debug("Using cached manifest")
-        return _manifest_cache
+    # Return cached manifest if available for this URL
+    if manifest_url in _manifest_cache:
+        logger.debug(f"Using cached manifest for {manifest_url}")
+        return _manifest_cache[manifest_url]
 
     if not manifest_url:
         raise ValueError("Manifest URL not provided")
@@ -44,7 +45,7 @@ def fetch_manifest(manifest_url: str) -> dict[str, Any]:
     response.raise_for_status()
 
     manifest_data: dict[str, Any] = response.json()
-    _manifest_cache = manifest_data
+    _manifest_cache[manifest_url] = manifest_data
     logger.debug(f"Manifest cached with keys: {list(manifest_data.keys())}")
     return manifest_data
 
@@ -52,4 +53,4 @@ def fetch_manifest(manifest_url: str) -> dict[str, Any]:
 def clear_manifest_cache() -> None:
     """Clear the manifest cache (for testing)."""
     global _manifest_cache
-    _manifest_cache = None
+    _manifest_cache = {}

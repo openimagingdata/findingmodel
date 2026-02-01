@@ -6,82 +6,122 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## oidm-common 0.2.1 - 2026-02-01
 
-### findingmodel
+### Fixed
 
-#### Added
+- Manifest cache now keys by URL instead of using a single global cache, fixing wrong manifest returned when multiple packages (e.g., `findingmodel` + `anatomic-locations`) are used in the same process
+
+## findingmodel 1.0.0 - 2026-02-01
+
+**BREAKING RELEASE** — Monorepo restructuring. The `findingmodel` package is now a focused core library for finding model definitions and the read-only Index API. AI tools, anatomic locations, and shared infrastructure have been extracted into separate packages.
+
+### Migration from 0.6.x
+
+- `pip install findingmodel` now installs only core models and the read-only Index — AI tools require `pip install findingmodel-ai`
+- `from findingmodel.tools import create_info_from_name` → `from findingmodel_ai.authoring import create_info_from_name`
+- `from findingmodel.tools import find_similar_models` → `from findingmodel_ai.search import find_similar_models`
+- `from findingmodel.tools import find_anatomic_locations` → `from findingmodel_ai.search import find_anatomic_locations`
+- `from findingmodel.tools import match_ontology_concepts` → `from findingmodel_ai.search import match_ontology_concepts`
+- `from findingmodel.tools import enrich_finding` → `from findingmodel_ai.enrichment import enrich_finding`
+- `from findingmodel import AnatomicLocationIndex` → `from anatomic_locations import AnatomicLocationIndex`
+- CLI commands `findingmodel index build/update/publish` and `findingmodel anatomic *` are removed — use `oidm-maintain` (internal maintainer tool)
+- `Index` is now read-only: `setup()`, `build()`, and write methods are removed
+
+### Added
 
 - `__version__` via importlib.metadata
+- New dependency on `oidm-common` for shared DuckDB infrastructure and database distribution
+- Database auto-update from manifest: Index now checks manifest.json on instantiation and downloads updated databases when hash differs, with graceful fallback
 
-#### Changed
+### Changed
 
-- **BREAKING: Unified Model Configuration** - Migrated from separate provider/model env vars to Pydantic AI's `provider:model` string format:
-  - New env vars: `DEFAULT_MODEL`, `DEFAULT_MODEL_FULL`, `DEFAULT_MODEL_SMALL` (e.g., `openai:gpt-5-mini`, `anthropic:claude-sonnet-4-5`)
-  - Removed: `MODEL_PROVIDER`, `OPENAI_DEFAULT_MODEL`, `ANTHROPIC_DEFAULT_MODEL` and variants
-  - Model selection moved from `get_model()` function to `settings.get_model(tier)` method
+- **Monorepo restructuring** — single package split into 5 packages under `packages/`:
+  - `findingmodel` — core models, read-only Index API, MCP server, `findingmodel` CLI
+  - `findingmodel-ai` — AI-powered authoring, search, and enrichment tools
+  - `anatomic-locations` — anatomic location queries and hierarchy navigation
+  - `oidm-common` — shared infrastructure (DuckDB, embeddings, distribution)
+  - `oidm-maintenance` — database build/publish (internal, not on PyPI)
+- **Unified Model Configuration** — migrated from separate provider/model env vars to Pydantic AI's `provider:model` string format
+- Model selection moved from `get_model()` function to `settings.get_model(tier)` method
+- `Index` is now read-only — all write operations moved to `oidm-maintenance`
 
-#### Fixed
+### Removed
 
-- Database auto-update from manifest: Index now checks manifest.json on instantiation and downloads updated databases when hash differs, with graceful fallback.
-
-#### Removed
-
+- **All AI tool functions** — moved to `findingmodel-ai` package (`create_info_from_name`, `add_details_to_info`, `create_model_from_markdown`, `create_model_stub_from_info`, `find_similar_models`, `match_ontology_concepts`, `find_anatomic_locations`, `edit_model_natural_language`, `edit_model_markdown`, `enrich_finding`)
+- **`findingmodel.tools` module** — AI tools now in `findingmodel_ai.authoring`, `.search`, `.enrichment`
+- **Anatomic location support** — moved to `anatomic-locations` package
+- **Index write operations** — `setup()`, `build()`, and write methods moved to `oidm-maintenance`
+- **CLI build/publish commands** — `findingmodel index build/update/publish` and `findingmodel anatomic *` moved to `oidm-maintain`
 - `ModelProvider` enum and `model_provider` configuration field
 - `get_model()` and `get_openai_model()` functions from `tools.common`
 - `provider` parameter from tool functions (now inferred from model string)
 - `check_ready_for_openai()` and `check_ready_for_anthropic()` methods
+- MongoDB Index backend and `MongoDBIndex` class — DuckDB is the only implementation
 
-### anatomic-locations
+## findingmodel-ai 0.2.0 - 2026-02-01
 
-#### Added
+First release. AI-powered tools for finding model authoring, search, and enrichment, extracted from `findingmodel` 0.6.x.
 
-- `__version__` via importlib.metadata
-- Separate storage bucket (anatomiclocationdata.t3.storage.dev)
-
-### findingmodel-ai
-
-#### Added
+### Added
 
 - `__version__` via importlib.metadata
-- **Pydantic AI Gateway Support** - Use hosted gateway for unified API access:
-  - Configure via `PYDANTIC_AI_GATEWAY_API_KEY` and `gateway/openai:*` or `gateway/anthropic:*` model strings
-  - Customizable base URL via `PYDANTIC_AI_GATEWAY_BASE_URL`
-- **Google Gemini Provider Support** - Use Google's Gemini models via `google:gemini-3-flash-preview` (GLA API) or `gateway/google:*` (Vertex AI via Gateway)
-- **Ollama Provider Support** - Run local models with `ollama:model-name`; includes fail-fast validation that checks model availability before use
-- **Finding Enrichment Pipeline** - New `enrich_finding()` function for comprehensive finding enrichment:
+- **Authoring tools** — `create_info_from_name`, `add_details_to_info`, `create_model_from_markdown`, `create_model_stub_from_info`, `add_ids_to_model`, `add_standard_codes_to_model`
+- **Search tools** — `find_similar_models`, `match_ontology_concepts`, `find_anatomic_locations`
+- **Editing tools** — `edit_model_natural_language`, `edit_model_markdown`
+- **Finding Enrichment Pipeline** — `enrich_finding()` for comprehensive finding enrichment:
   - Parallel search for SNOMED/RadLex ontology codes and anatomic locations
   - AI agent classifies body regions, etiologies, modalities, and subspecialties
-- **Multi-Provider Configuration Guide** - New `docs/configuration.md` documenting all five providers, model tiers, database setup, and troubleshooting
-- **Per-Agent Model Overrides** - Configure different models for specific AI agents:
-  - Override via environment variables: `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
-  - 14 agent tags covering enrichment, search, editing, and import workflows
-  - See `docs/configuration.md` for tag reference and examples
+- **Multi-provider support** — OpenAI, Anthropic, Google Gemini, Ollama, and Pydantic AI Gateway
+- **Pydantic AI Gateway Support** — configure via `PYDANTIC_AI_GATEWAY_API_KEY` and `gateway/openai:*` or `gateway/anthropic:*` model strings
+- **Google Gemini Provider Support** — `google:gemini-3-flash-preview` (GLA API) or `gateway/google:*` (Vertex AI via Gateway)
+- **Ollama Provider Support** — `ollama:model-name` with fail-fast validation
+- **Per-Agent Model Overrides** — `AGENT_MODEL_OVERRIDES__<tag>=provider:model` for 14 agent tags
+- **Multi-Provider Configuration Guide** — `docs/configuration.md`
+- `findingmodel-ai` CLI entry point
 
-#### Changed
+### Changed
 
 - OpenAI now uses Responses API (`OpenAIResponsesModel`) instead of Chat Completions
 - Small tier OpenAI models use minimal reasoning effort for faster responses
 
-### oidm-common
+## anatomic-locations 0.2.0 - 2026-02-01
 
-#### Changed
+First release. Anatomic location ontology navigation, extracted from `findingmodel` 0.4.x–0.6.x.
 
-- `__version__` now uses importlib.metadata (was hardcoded)
+### Added
 
-### oidm-maintenance
+- `__version__` via importlib.metadata
+- `AnatomicLocationIndex` — async DuckDB-backed index with hybrid search (FTS + vector)
+- Hierarchy traversal (ancestors, descendants), laterality variant generation
+- Separate storage bucket (`anatomiclocationdata.t3.storage.dev`) with independent manifest
+- `anatomic-locations` CLI with `stats`, `query ancestors`, `query descendants`, `query laterality`, `query code` subcommands
 
-#### Added
+## oidm-common 0.2.0 - 2026-02-01
 
-- **Automated Database Publishing** - New `index publish` CLI command for publishing DuckDB databases to remote storage:
+First release. Shared infrastructure extracted from `findingmodel` internals.
+
+### Added
+
+- DuckDB connection setup with automatic extension loading
+- Manifest-based database distribution via Pooch with SHA256 verification
+- OpenAI embedding client (optional dependency via `[openai]` extra)
+- Hybrid search utilities (FTS + HNSW vector fusion, RRF, weighted fusion)
+- Embedding cache with DuckDB storage
+- `__version__` via importlib.metadata
+
+## oidm-maintenance 0.2.0 - 2026-02-01
+
+First release. Internal maintainer tools for database build and publish (not published to PyPI).
+
+### Added
+
+- **Automated Database Publishing** — `index publish` CLI command:
   - Build-and-publish mode (`--defs-dir`) or publish-only mode (`--database`)
   - S3/Tigris storage integration with date-based filenames (`findingmodels_YYYYMMDD.duckdb`)
   - See `docs/database-management.md` for maintainer guide
-
-#### Changed
-
-- `__version__` now uses importlib.metadata (was hardcoded)
 - Separate anatomic bucket configuration for publishing
+- `__version__` via importlib.metadata
 
 ## [0.6.0] - 2025-11-09
 
