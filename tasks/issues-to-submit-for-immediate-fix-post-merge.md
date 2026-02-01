@@ -93,3 +93,11 @@ This subsumes the related issue in `tasks/pending-fixes.md` ("Anatomic Location 
 1. Wire `EmbeddingCache` into `oidm-maintenance` build commands so previously computed embeddings are reused
 2. Use hash-based detection to identify changed entries and only regenerate embeddings for new/modified data
 3. Apply to both finding model index builds and anatomic location builds
+
+---
+
+## Issue 9: Update dependency tree
+
+**Priority: High** — stale dependencies accumulate security and compatibility risk
+
+The project's dependency tree needs a thorough update. Run `uv lock --upgrade`, review the changes, fix any breakage, and verify with `task test` and `task check`. Pay particular attention to major version bumps in core dependencies (pydantic, duckdb, httpx, pydantic-ai, etc.).

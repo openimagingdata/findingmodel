@@ -4,6 +4,16 @@ This document lists documentation updates needed to align with the current codeb
 
 ## High Priority (Behavioral Mismatches)
 
+- README import path examples
+  - `README.md` and `packages/findingmodel-ai/README.md` show imports from `findingmodel_ai.tools` (e.g.,
+    `from findingmodel_ai.tools import create_info_from_name`). This module no longer exists after the
+    monorepo reorganization.
+  - Actual locations:
+    - `findingmodel_ai.authoring`: `create_info_from_name`, `add_details_to_info`, `create_model_from_markdown`
+    - `findingmodel_ai.search`: `find_anatomic_locations`, `match_ontology_concepts`, `find_similar_models`
+    - `findingmodel_ai.enrichment`: `enrich_finding`, `enrich_all_findings`
+  - Update all README examples and code snippets to use the new module paths.
+
 - Root CLI docs
   - `README.md` references `findingmodel search` and `anatomic-locations search` commands; the CLIs currently expose:
     - `findingmodel`: `config`, `fm-to-markdown`, `index stats`
