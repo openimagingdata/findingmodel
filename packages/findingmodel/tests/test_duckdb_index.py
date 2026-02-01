@@ -16,7 +16,7 @@ import pytest_asyncio
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-from findingmodel.finding_model import FindingModelBase, FindingModelFull
+from findingmodel.finding_model import AttributeType, FindingModelBase, FindingModelFull
 from findingmodel.index import DuckDBIndex, IndexEntry
 
 # ============================================================================
@@ -773,6 +773,11 @@ def test_add_ids_to_model_complete_new_model(index: DuckDBIndex, base_model: Fin
     # All attributes should have IDs
     for attr in full_model.attributes:
         assert attr.oifma_id.startswith("OIFMA_TEST_")
+        # Choice attributes should have value codes assigned
+        if attr.type == AttributeType.CHOICE:
+            for i, value in enumerate(attr.values):
+                assert value.value_code is not None
+                assert value.value_code == f"{attr.oifma_id}.{i}"
 
 
 def test_add_ids_to_model_existing_oifm_id(index: DuckDBIndex, full_model: FindingModelFull) -> None:
@@ -852,6 +857,28 @@ def test_add_ids_to_model_invalid_source_contains_digits(index: DuckDBIndex, bas
     """Test that invalid source raises error."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.add_ids_to_model(base_model, source="TE5T")
+
+
+def test_add_ids_to_model_concurrent_id_generation(prebuilt_db_path: Path, base_model: FindingModelBase) -> None:
+    """Test ID generation under concurrent access."""
+    import concurrent.futures
+
+    def generate_ids(source_suffix: int) -> FindingModelFull:
+        # Use valid 3-character source codes
+        sources = ["TST", "TES", "TEX"]
+        index = DuckDBIndex(prebuilt_db_path)
+        index._ensure_connection()
+        return index.add_ids_to_model(base_model, source=sources[source_suffix])
+
+    # Run multiple ID generation operations concurrently
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(generate_ids, i) for i in range(3)]
+        results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+    # All should succeed and have unique IDs
+    assert len(results) == 3
+    oifm_ids = [r.oifm_id for r in results]
+    assert len(set(oifm_ids)) == 3  # All should be unique
 
 
 def test_finalize_placeholder_single_placeholder(index: DuckDBIndex) -> None:

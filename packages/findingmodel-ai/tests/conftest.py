@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from findingmodel import logger
+from findingmodel import Index, logger
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import (
     ChoiceAttribute,
@@ -117,3 +117,18 @@ def finding_info() -> FindingInfo:
         description="A test finding for testing.",
         synonyms=["test", "finding"],
     )
+
+
+@pytest.fixture
+def index_with_test_db() -> Index:
+    """Provide a Index with prebuilt test database (no network calls)."""
+    # Use the prebuilt test database from findingmodel package
+    db_path = Path(__file__).parent.parent.parent / "findingmodel" / "tests" / "data" / "test_index.duckdb"
+    if not db_path.exists():
+        pytest.skip(
+            "Pre-built test database not found. Run: uv run python packages/oidm-maintenance/scripts/build_test_fixtures.py"
+        )
+
+    index = Index(db_path)
+    index._ensure_connection()
+    return index

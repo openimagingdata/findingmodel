@@ -146,7 +146,7 @@ async def test_edit_model_natural_language_callout_real_api(real_model: FindingM
         models.ALLOW_MODEL_REQUESTS = original
 
 
-def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull) -> None:
+def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull, index_with_test_db: Index) -> None:
     """Test that assign_real_attribute_ids infers source from model's OIFM ID."""
     base_data = real_model.model_dump()
     base_data["attributes"].append({
@@ -158,8 +158,7 @@ def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull) -
     })
     with_placeholder = FindingModelFull.model_validate(base_data)
 
-    index = Index()
-    updated = model_editor.assign_real_attribute_ids(with_placeholder, index=index)
+    updated = model_editor.assign_real_attribute_ids(with_placeholder, index=index_with_test_db)
 
     attr = next(a for a in updated.attributes if a.name == "severity")
     assert getattr(attr, "type", None) == "choice"
@@ -172,6 +171,7 @@ def test_assign_real_attribute_ids_infers_source(real_model: FindingModelFull) -
 
 def test_assign_real_attribute_ids_uses_explicit_source(
     real_model: FindingModelFull,
+    index_with_test_db: Index,
 ) -> None:
     """Test that assign_real_attribute_ids uses explicitly provided source code."""
     base_data = real_model.model_dump()
@@ -184,8 +184,7 @@ def test_assign_real_attribute_ids_uses_explicit_source(
     })
     with_placeholder = FindingModelFull.model_validate(base_data)
 
-    index = Index()
-    updated = model_editor.assign_real_attribute_ids(with_placeholder, source="ABC", index=index)
+    updated = model_editor.assign_real_attribute_ids(with_placeholder, source="ABC", index=index_with_test_db)
 
     attr = next(a for a in updated.attributes if a.name == "pattern")
     assert getattr(attr, "type", None) == "choice"
@@ -197,8 +196,8 @@ def test_assign_real_attribute_ids_uses_explicit_source(
 
 def test_assign_real_attribute_ids_no_placeholders_returns_same_object(
     real_model: FindingModelFull,
+    index_with_test_db: Index,
 ) -> None:
     """Test that when no placeholders exist, the original model is returned unchanged."""
-    index = Index()
-    result = model_editor.assign_real_attribute_ids(real_model, index=index)
+    result = model_editor.assign_real_attribute_ids(real_model, index=index_with_test_db)
     assert result is real_model

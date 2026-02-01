@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import findingmodel.tools
 import pytest
 from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
-from findingmodel.finding_model import AttributeType, ChoiceAttributeIded
+from findingmodel.finding_model import ChoiceAttributeIded
 from findingmodel_ai.authoring import description as finding_description
 from findingmodel_ai.config import settings as ai_settings
 from pydantic_ai import models
@@ -30,24 +30,6 @@ def test_create_stub(finding_info: FindingInfo) -> None:
     assert len(stub.attributes) == 2
     assert stub.attributes[0].name == "presence"
     assert stub.attributes[1].name == "change from prior"
-
-
-def test_add_ids_to_model(base_model: FindingModelBase) -> None:
-    """Test adding IDs to a finding model."""
-    updated_model = findingmodel.tools.add_ids_to_model(base_model, source="TEST")
-    assert isinstance(updated_model, FindingModelFull)
-    assert updated_model.oifm_id is not None
-    assert updated_model.oifm_id.startswith("OIFM_")
-    assert "TEST" in updated_model.oifm_id
-    assert len(updated_model.attributes) == len(base_model.attributes)
-    for attr in updated_model.attributes:
-        assert attr.oifma_id is not None
-        assert attr.oifma_id.startswith("OIFMA_")
-        assert "TEST" in attr.oifma_id
-        if attr.type == AttributeType.CHOICE:
-            for i, value in enumerate(attr.values):
-                assert value.value_code is not None
-                assert value.value_code == f"{attr.oifma_id}.{i}"
 
 
 def test_render_agent_prompt() -> None:
@@ -614,26 +596,6 @@ async def test_find_similar_models_basic_wiring() -> None:
         # NO behavioral assertions - those belong in evals
     finally:
         models.ALLOW_MODEL_REQUESTS = original
-
-
-def test_concurrent_id_generation(base_model: FindingModelBase) -> None:
-    """Test ID generation under concurrent access."""
-    import concurrent.futures
-
-    def generate_ids(source_suffix: int) -> FindingModelFull:
-        # Use valid 3-character source codes
-        sources = ["TST", "TES", "TEX"]
-        return findingmodel.tools.add_ids_to_model(base_model, source=sources[source_suffix])
-
-    # Run multiple ID generation operations concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        futures = [executor.submit(generate_ids, i) for i in range(3)]
-        results = [f.result() for f in concurrent.futures.as_completed(futures)]
-
-    # All should succeed and have unique IDs
-    assert len(results) == 3
-    oifm_ids = [r.oifm_id for r in results]
-    assert len(set(oifm_ids)) == 3  # All should be unique
 
 
 def test_get_async_tavily_client_with_key(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -23,13 +23,9 @@ README and docs reference `search`, `hierarchy`, `children` subcommands for the 
 
 ---
 
-## Issue 2: `findingmodel-ai` unit test can trigger network download
+## ~~Issue 2: `findingmodel-ai` unit test can trigger network download~~ ✓ RESOLVED
 
-**Priority: High** — violates test isolation, will break clean CI
-
-`packages/findingmodel-ai/tests/test_tools.py:37` calls `findingmodel.tools.add_ids_to_model()` which instantiates `Index()` without a db path. This triggers `ensure_index_db()` which can fetch a remote manifest and download the database.
-
-**Fix:** Mock `Index()` or inject a local test db path so `test_add_ids_to_model` never hits the network. Confirm the test is excluded from `task test` (no-callout) runs.
+Resolved: tests that created bare `Index()` (triggering network downloads) were removed from `findingmodel-ai` and relocated to `findingmodel` with local test database fixtures. Three `test_model_editor.py` tests updated to use `index_with_test_db` fixture. No bare `Index()` calls remain in `findingmodel-ai/tests/`.
 
 ---
 
