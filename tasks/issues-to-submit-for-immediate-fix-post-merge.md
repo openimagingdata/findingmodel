@@ -8,18 +8,9 @@ These items should be tracked as issues and addressed promptly after merge. None
 
 ---
 
-## Issue 1: Implement missing anatomic-locations CLI commands
+## ~~Issue 1: Implement missing anatomic-locations CLI commands~~ ✓ RESOLVED
 
-**Priority: Highest** — documented features don't exist
-
-README and docs reference `search`, `hierarchy`, `children` subcommands for the `anatomic-locations` CLI. The actual CLI only exposes:
-- `stats`
-- `query ancestors`
-- `query descendants`
-- `query laterality`
-- `query code`
-
-**Fix:** Implement the missing commands to match documented behavior, or update documentation to match the actual CLI if the scope has changed.
+Resolved: CLI flattened — all `query` subcommands hoisted to top-level. `hierarchy` and `children` commands added. Documentation deduplicated between README (quick overview) and `docs/anatomic-locations.md` (full reference). `.claude/rules/anatomic-locations.md` updated.
 
 ---
 

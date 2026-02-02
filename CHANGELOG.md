@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [anatomic-locations Unreleased presumed 0.2.1]
+
+### Changed
+
+- Flattened CLI: all commands are now top-level (`ancestors`, `descendants`, `laterality`, `code`) instead of under `query` subgroup
+- Added `hierarchy` command: shows ancestors and descendants in a visual tree
+- Added `children` command: lists direct children in a table
+
 ## [findingmodel - Unreleased]
 
 ### Testing

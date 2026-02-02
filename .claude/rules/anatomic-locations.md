@@ -18,8 +18,27 @@ Anatomic location ontology navigation: hierarchy traversal, laterality variants,
 - Laterality variant generation (left, right, bilateral)
 
 ## CLI (`anatomic-locations`)
-- `anatomic-locations search <query>` – Search for anatomic locations
-- `anatomic-locations hierarchy <id>` – Show hierarchy for a location
+
+Top-level commands (accept location ID like `RID56` or name/synonym):
+- `anatomic-locations search <query>` – Hybrid FTS + semantic search
+- `anatomic-locations hierarchy <id|name>` – Show ancestors, location, and descendants tree
+- `anatomic-locations children <id|name>` – List direct children
+- `anatomic-locations ancestors <id|name>` – Show containment ancestors
+- `anatomic-locations descendants <id|name>` – Show containment descendants
+- `anatomic-locations laterality <id|name>` – Show laterality variants
+- `anatomic-locations code <system> <code>` – Find by external code (SNOMED, FMA)
+- `anatomic-locations stats` – Database statistics
+
+## Python API
+
+Key methods:
+- `index.search(query, limit=10)` – async hybrid search
+- `index.get(location_id)` – sync get by ID
+- `index.get_children_of(parent_id)` – sync get direct children
+- `index.find_by_code(system, code)` – sync lookup by external code
+- `location.get_containment_ancestors()` – get ancestors
+- `location.get_containment_descendants()` – get descendants
+- `location.get_laterality_variants()` – get laterality variants (dict)
 
 ## Serena References
 - `anatomic_location_search_implementation` – search implementation details

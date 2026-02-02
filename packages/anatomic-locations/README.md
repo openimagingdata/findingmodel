@@ -11,63 +11,51 @@ pip install anatomic-locations
 ## Features
 
 - **Hybrid Search**: Combined full-text and semantic vector search
-- **Hierarchy Navigation**: Traverse parent/child relationships
+- **Hierarchy Navigation**: Traverse parent/child relationships with tree visualization
 - **Laterality Variants**: Generate left, right, bilateral variants
 - **Auto-Download**: Database downloads automatically on first use
+- **Flexible Lookup**: Use location IDs (RID*) or names/synonyms
+
+## Quick Start
+
+The database auto-downloads on first use. No setup required.
+
+```python
+from anatomic_locations import AnatomicLocationIndex
+
+with AnatomicLocationIndex() as index:
+    location = index.get("RID2772")  # Kidney
+    print(location.description)       # "kidney"
+    print(location.region.value)      # "Abdomen"
+```
 
 ## Configuration
 
-The anatomic location database is automatically downloaded on first use. To use a custom path:
+Override the default database path via environment variable or constructor:
 
 ```bash
-# Optional: Custom database path
-ANATOMIC_DB_PATH=/mnt/data/anatomic_locations.duckdb
+# Environment variable
+export ANATOMIC_DB_PATH=/path/to/custom.duckdb
 ```
-
-## CLI (`anatomic-locations`)
-
-```bash
-# Search for anatomic locations
-anatomic-locations search "posterior cruciate ligament"
-
-# Show hierarchy for a location
-anatomic-locations hierarchy RID2905
-
-# List children of a location
-anatomic-locations children RID56
-```
-
-## Python API
 
 ```python
-import asyncio
-from anatomic_locations import AnatomicLocationIndex
-
-async def main():
-    async with AnatomicLocationIndex() as index:
-        # Hybrid search (FTS + semantic)
-        results = await index.search("knee joint", limit=10)
-        for result in results:
-            print(f"- {result.name} ({result.id})")
-
-        # Get location by ID
-        location = await index.get("RID2905")
-        if location:
-            print(f"Name: {location.name}")
-            print(f"Parents: {location.parents}")
-
-        # Get children
-        children = await index.get_children("RID56")
-        for child in children:
-            print(f"  - {child.name}")
-
-        # Generate laterality variants
-        variants = await index.get_laterality_variants("RID2905")
-        for variant in variants:
-            print(f"  {variant.laterality}: {variant.name}")
-
-asyncio.run(main())
+# Or specify directly
+index = AnatomicLocationIndex(db_path="/path/to/custom.duckdb")
 ```
+
+## CLI
+
+The `anatomic-locations` CLI provides search, hierarchy navigation, and lookup commands. Use location IDs (e.g., `RID2772`) or names (e.g., "stomach"):
+
+```bash
+# Semantic search
+anatomic-locations search "posterior cruciate ligament"
+
+# Show full hierarchy tree
+anatomic-locations hierarchy stomach
+```
+
+See the [full CLI reference](../../docs/anatomic-locations.md#cli-commands) for all commands.
 
 ## Related Packages
 
@@ -76,4 +64,4 @@ asyncio.run(main())
 
 ## Documentation
 
-- [Anatomic Locations Guide](../../docs/anatomic-locations.md)
+- [Anatomic Locations Guide](../../docs/anatomic-locations.md) - Full CLI reference, Python API, and configuration

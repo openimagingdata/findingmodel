@@ -12,53 +12,186 @@ from anatomic_locations import AnatomicLocationIndex
 with AnatomicLocationIndex() as index:
     location = index.get("RID2772")  # Kidney
     print(location.description)       # "kidney"
-    print(location.region)            # AnatomicRegion.ABDOMEN
+    print(location.region.value)      # "Abdomen"
 ```
 
 ## CLI Commands
 
-### Query by ID
+The `anatomic-locations` CLI accepts either a location ID (e.g., `RID56`) or a location name/synonym (e.g., "stomach").
+
+**Note:** The database auto-downloads on first CLI use.
+
+### search
+
+Semantic search using hybrid full-text + vector search:
 
 ```bash
-# Show ancestors (hierarchy to root)
-anatomic-locations query ancestors RID2772
+$ anatomic-locations search "posterior cruciate ligament"
 
-# Show descendants
-anatomic-locations query descendants RID39569
+               Search Results for "posterior cruciate ligament"
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ ID           ┃ Name                        ┃ Region          ┃ Laterality   ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ RID2784      │ posterior cruciate ligament │ Lower Extremity │ generic      │
+└──────────────┴─────────────────────────────┴─────────────────┴──────────────┘
 
-# Show laterality variants (left/right/generic)
-anatomic-locations query laterality RID2772
-
-# Find by external code (SNOMED, FMA, RadLex)
-anatomic-locations query code snomed 64033007
+Total results: 1
 ```
 
-### Database Statistics
+### hierarchy
+
+Show full hierarchy tree with ancestors above and descendants below the specified location:
 
 ```bash
-anatomic-locations stats
+$ anatomic-locations hierarchy stomach
+
+Hierarchy Tree:
+
+whole body - RID39569
+    └── abdomen - RID56
+        └── peritoneal cavity - RID397
+            └── ▶ stomach - RID114 ◀
+                ├── gastric fundus - RID116
+                └── pylorus - RID122
 ```
 
-> **Note**: Database build and publish commands are in the `oidm-maintain` CLI (see [Database Management](database-management.md)).
+### children
+
+List direct children in a table:
+
+```bash
+$ anatomic-locations children stomach
+
+Location: stomach (RID114)
+Region: Abdomen, Type: structure
+
+                             Direct Children
+┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ ID                   ┃ Name           ┃ Region          ┃ Laterality   ┃
+┡━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ RID116               │ gastric fundus │ Abdomen         │ nonlateral   │
+│ RID122               │ pylorus        │ Abdomen         │ nonlateral   │
+└──────────────────────┴────────────────┴─────────────────┴──────────────┘
+
+Total children: 2
+```
+
+### ancestors
+
+Show containment ancestors in a table:
+
+```bash
+$ anatomic-locations ancestors "stomach"
+
+Location: stomach (RID114)
+Region: Abdomen, Type: structure
+
+            Containment Ancestors (nearest to root)
+┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃  Level ┃ ID                   ┃ Name            ┃ Region           ┃
+┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│      1 │ RID397               │ peritoneal      │ Abdomen          │
+│        │                      │ cavity          │                  │
+│      2 │ RID56                │ abdomen         │ Body             │
+│      3 │ RID39569             │ whole body      │ Body             │
+└────────┴──────────────────────┴─────────────────┴──────────────────┘
+```
+
+### descendants
+
+Show containment descendants in a table:
+
+```bash
+$ anatomic-locations descendants "abdominal cavity"
+```
+
+### laterality
+
+Show laterality variants for a location:
+
+```bash
+$ anatomic-locations laterality "axillary lymph node"
+
+Location: axillary lymph node (RID1517)
+Laterality: generic, Region: Thorax
+
+                        Laterality Variants
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Laterality   ┃ ID                   ┃ Name                      ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ left         │ RID1517_RID5824      │ left axillary lymph node  │
+│ right        │ RID1517_RID5825      │ right axillary lymph node │
+└──────────────┴──────────────────────┴───────────────────────────┘
+```
+
+### code
+
+Find location by external code (SNOMED, FMA, RadLex):
+
+```bash
+$ anatomic-locations code SNOMED 64033007
+```
+
+### stats
+
+Show database statistics:
+
+```bash
+$ anatomic-locations stats
+
+Anatomic Location Database Statistics
+
+Database: /home/user/.local/share/anatomic-locations/anatomic_locations.duckdb
+
+          Database Summary
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
+┃ Metric                 ┃    Value ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩
+│ Total Records          │    4,847 │
+│ Records with Vectors   │    4,847 │
+│ Records with Hierarchy │    4,847 │
+│ Records with Codes     │    4,847 │
+│ Unique Regions         │       10 │
+│ Total Synonyms         │    2,934 │
+│ Total Codes            │    8,456 │
+│ File Size              │  12.34 MB│
+└────────────────────────┴──────────┘
+```
 
 ## Python API
 
 ### Basic Queries
 
 ```python
+import asyncio
 from anatomic_locations import AnatomicLocationIndex
 
+# Sync operations
 with AnatomicLocationIndex() as index:
-    # Get by ID
+    # Get by ID (sync)
     location = index.get("RID2772")
+    print(f"Name: {location.description}")
+    print(f"Region: {location.region.value if location.region else 'N/A'}")
 
-    # Semantic search
-    results = index.search("left kidney", limit=5)
-    for loc, score in results:
-        print(f"{loc.description}: {score:.3f}")
+    # Find by external code (sync)
+    locations = index.find_by_code("SNOMED", "64033007")
+    for loc in locations:
+        print(f"Found: {loc.description}")
 
-    # Find by external code
-    locations = index.find_by_code("snomed", "64033007")
+    # Get direct children (sync)
+    children = index.get_children_of("RID56")
+    for child in children:
+        print(f"  Child: {child.description}")
+
+# Async operations
+async def search_locations():
+    async with AnatomicLocationIndex() as index:
+        # Hybrid search (FTS + semantic) - async
+        results = await index.search("knee joint", limit=10)
+        for result in results:
+            print(f"- {result.description} ({result.id})")
+
+asyncio.run(search_locations())
 ```
 
 ### Hierarchy Navigation
@@ -67,25 +200,33 @@ with AnatomicLocationIndex() as index:
 with AnatomicLocationIndex() as index:
     kidney = index.get("RID2772")
 
-    # Navigate up (to root)
+    # Navigate up (ancestors return from immediate parent to root)
     for ancestor in kidney.get_containment_ancestors():
-        print(f"  {ancestor.description}")
+        print(f"  Ancestor: {ancestor.description}")
 
-    # Navigate down
+    # Navigate down (all descendants)
     for descendant in kidney.get_containment_descendants():
-        print(f"  {'  ' * descendant.containment_depth}{descendant.description}")
+        print(f"  Descendant: {descendant.description}")
 ```
 
 ### Laterality Variants
 
 ```python
+from anatomic_locations import Laterality
+
 with AnatomicLocationIndex() as index:
-    kidney = index.get("RID2772")  # Generic "kidney"
+    # Get generic location (e.g., "axillary lymph node")
+    lymph_node = index.get("RID1517")
 
-    variants = kidney.get_laterality_variants()
-    # {Laterality.LEFT: <left kidney>, Laterality.RIGHT: <right kidney>}
+    # Get variants (returns dict: Laterality -> AnatomicLocation)
+    variants = lymph_node.get_laterality_variants()
 
-    left_kidney = variants.get(Laterality.LEFT)
+    # Access specific variant
+    left_variant = variants.get(Laterality.LEFT)
+    right_variant = variants.get(Laterality.RIGHT)
+
+    for laterality, variant in variants.items():
+        print(f"{laterality.value}: {variant.description} ({variant.id})")
 ```
 
 ### FastAPI Integration
@@ -138,15 +279,28 @@ for code in location.codes:
 
 ## Configuration
 
-Override the default database path:
+### Environment Variable
+
+Set the database path via environment variable:
 
 ```bash
-# In .env
-ANATOMIC_DUCKDB_PATH=/path/to/custom.duckdb
+export ANATOMIC_DB_PATH=/path/to/custom.duckdb
 ```
 
-Or specify directly:
+### Constructor Parameter
+
+Override path directly in code:
 
 ```python
-index = AnatomicLocationIndex(db_path="/path/to/custom.duckdb")
+# Sync context manager
+with AnatomicLocationIndex(db_path="/path/to/custom.duckdb") as index:
+    location = index.get("RID2772")
+
+# Or async
+async with AnatomicLocationIndex(db_path="/path/to/custom.duckdb") as index:
+    results = await index.search("kidney", limit=5)
 ```
+
+### Auto-Download Behavior
+
+On first use, if no database exists at the configured path, the package automatically downloads the latest version from the remote manifest. This requires internet access on first run but works offline thereafter.
