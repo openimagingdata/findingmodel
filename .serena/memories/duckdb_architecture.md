@@ -51,7 +51,7 @@ Consolidated reference for DuckDB patterns in the findingmodel project.
 - L2→Cosine conversion: `cosine_sim = 1 - (l2_distance / 2)`
 
 ### Embedding Format
-- `get_embedding_for_duckdb()` for float32 conversion
+- `get_embedding()` / `get_embeddings_batch()` from oidm-common (with transparent caching)
 - Store as DOUBLE[] array columns
 - text-embedding-3-small (512 dimensions)
 

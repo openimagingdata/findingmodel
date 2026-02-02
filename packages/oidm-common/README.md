@@ -17,3 +17,9 @@ Instead, use one of the user-facing packages:
 - Embedding cache and providers
 - Distribution utilities (manifest, download, paths)
 - Shared data models (IndexCode, WebReference)
+
+## Embedding cache
+
+High-level helpers (`get_embedding`, `get_embeddings_batch`) use a DuckDB-backed cache by default at
+`~/.cache/findingmodel/embeddings.duckdb`. Pass `cache=None` to disable caching, or pass an
+`EmbeddingCache` instance to override the path.

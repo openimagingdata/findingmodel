@@ -8,15 +8,85 @@ client management internally. Downstream packages should use `get_embedding` and
 from __future__ import annotations
 
 from array import array
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from loguru import logger
+
+from oidm_common.embeddings.cache import EmbeddingCache
 
 if TYPE_CHECKING:
     from openai import AsyncOpenAI
 
+_UNSET = object()
+_default_cache: EmbeddingCache | None = None
+
 # Module-level client cache for connection reuse
 _client_cache: dict[str, "AsyncOpenAI"] = {}
+
+
+def _get_default_cache() -> EmbeddingCache:
+    global _default_cache
+    if _default_cache is None:
+        _default_cache = EmbeddingCache()
+    return _default_cache
+
+
+def _resolve_cache(cache: EmbeddingCache | object | None) -> EmbeddingCache | None:
+    if cache is _UNSET:
+        return _get_default_cache()
+    return cast(EmbeddingCache | None, cache)
+
+
+async def _get_cached_embeddings(
+    texts: list[str],
+    cache: EmbeddingCache | None,
+    model: str,
+    dimensions: int,
+) -> tuple[list[list[float] | None] | None, list[int], list[str]]:
+    if cache is None:
+        return None, list(range(len(texts))), list(texts)
+
+    await cache.setup()
+    cached_embeddings = await cache.get_embeddings_batch(texts, model, dimensions)
+    missing_indices = [index for index, embedding in enumerate(cached_embeddings) if embedding is None]
+    missing_texts = [texts[index] for index in missing_indices]
+    return cached_embeddings, missing_indices, missing_texts
+
+
+def _merge_embeddings(
+    cached_embeddings: list[list[float] | None] | None,
+    missing_indices: list[int],
+    generated_embeddings: list[list[float] | None],
+    total_count: int,
+) -> list[list[float] | None]:
+    if cached_embeddings is None:
+        results: list[list[float] | None] = [None] * total_count
+    else:
+        results = cached_embeddings
+    for index, embedding in zip(missing_indices, generated_embeddings, strict=True):
+        results[index] = embedding
+    return results
+
+
+async def _store_embeddings_if_available(
+    cache: EmbeddingCache | None,
+    texts: list[str],
+    model: str,
+    dimensions: int,
+    generated_embeddings: list[list[float] | None],
+) -> None:
+    if cache is None:
+        return
+
+    texts_to_store: list[str] = []
+    embeddings_to_store: list[list[float]] = []
+    for text, embedding in zip(texts, generated_embeddings, strict=True):
+        if embedding is not None:
+            texts_to_store.append(text)
+            embeddings_to_store.append(embedding)
+
+    if embeddings_to_store:
+        await cache.store_embeddings_batch(texts_to_store, model, dimensions, embeddings_to_store)
 
 
 def _to_float32(embedding: list[float]) -> list[float]:
@@ -59,6 +129,7 @@ async def get_embedding(
     api_key: str,
     model: str = "text-embedding-3-small",
     dimensions: int = 512,
+    cache: EmbeddingCache | object | None = _UNSET,
 ) -> list[float] | None:
     """Generate a single embedding vector for text.
 
@@ -71,15 +142,27 @@ async def get_embedding(
         api_key: OpenAI API key
         model: Embedding model name (default: "text-embedding-3-small")
         dimensions: Vector dimensions (default: 512)
+        cache: EmbeddingCache instance, None to disable, or default singleton when omitted
 
     Returns:
         Float32 embedding vector, or None if unavailable
     """
+    resolved_cache = _resolve_cache(cache)
+    if resolved_cache is not None:
+        await resolved_cache.setup()
+        cached_embedding = await resolved_cache.get_embedding(text, model, dimensions)
+        if cached_embedding is not None:
+            return cached_embedding
+
     client = _get_or_create_client(api_key)
     if client is None:
         return None
 
-    return await generate_embedding(text, client, model, dimensions)
+    embedding = await generate_embedding(text, client, model, dimensions)
+    if resolved_cache is not None and embedding is not None:
+        await resolved_cache.store_embedding(text, model, dimensions, embedding)
+
+    return embedding
 
 
 async def get_embeddings_batch(
@@ -88,6 +171,7 @@ async def get_embeddings_batch(
     api_key: str,
     model: str = "text-embedding-3-small",
     dimensions: int = 512,
+    cache: EmbeddingCache | object | None = _UNSET,
 ) -> list[list[float] | None]:
     """Generate embeddings for multiple texts in a single API call.
 
@@ -100,6 +184,7 @@ async def get_embeddings_batch(
         api_key: OpenAI API key
         model: Embedding model name (default: "text-embedding-3-small")
         dimensions: Vector dimensions (default: 512)
+        cache: EmbeddingCache instance, None to disable, or default singleton when omitted
 
     Returns:
         List of float32 embedding vectors (None for each if unavailable)
@@ -107,11 +192,24 @@ async def get_embeddings_batch(
     if not texts:
         return []
 
+    resolved_cache = _resolve_cache(cache)
+    cached_embeddings, missing_indices, missing_texts = await _get_cached_embeddings(
+        texts, resolved_cache, model, dimensions
+    )
+
+    if not missing_texts:
+        return cached_embeddings or []
+
     client = _get_or_create_client(api_key)
     if client is None:
+        if cached_embeddings is not None:
+            return cached_embeddings
         return [None] * len(texts)
 
-    return await generate_embeddings_batch(texts, client, model, dimensions)
+    generated_embeddings = await generate_embeddings_batch(missing_texts, client, model, dimensions)
+    results = _merge_embeddings(cached_embeddings, missing_indices, generated_embeddings, len(texts))
+    await _store_embeddings_if_available(resolved_cache, missing_texts, model, dimensions, generated_embeddings)
+    return results
 
 
 # Low-level functions that require a client (for advanced use cases)

@@ -206,7 +206,20 @@ class AnatomicLocationIndex:
         fts_rows = await asyncify(self._search_fts)(conn, query, limit * 2, region, sided_filter)
 
         # Semantic search - embedding API already async, then wrap sync helper
-        embedding = await self._get_embedding(query)
+        from anatomic_locations.config import get_settings as get_anatomic_settings
+
+        anatomic_settings = get_anatomic_settings()
+        api_key = anatomic_settings.openai_api_key.get_secret_value() if anatomic_settings.openai_api_key else ""
+        embedding = (
+            await get_embedding(
+                query,
+                api_key=api_key,
+                model=anatomic_settings.openai_embedding_model,
+                dimensions=anatomic_settings.openai_embedding_dimensions,
+            )
+            if api_key
+            else None
+        )
         semantic_rows = []
         if embedding is not None:
             semantic_rows = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
@@ -578,29 +591,6 @@ class AnatomicLocationIndex:
             ORDER BY distance ASC LIMIT ?
         """
         return conn.execute(sql, params).fetchall()
-
-    async def _get_embedding(self, text: str) -> list[float] | None:
-        """Get embedding for query text (async - calls OpenAI API).
-
-        Args:
-            text: Text to embed
-
-        Returns:
-            Embedding vector or None if API key not available
-        """
-        from anatomic_locations.config import get_settings
-
-        settings = get_settings()
-        api_key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
-        if not api_key:
-            return None
-
-        return await get_embedding(
-            text,
-            api_key=api_key,
-            model=settings.openai_embedding_model,
-            dimensions=settings.openai_embedding_dimensions,
-        )
 
     def _apply_rrf_fusion(
         self,

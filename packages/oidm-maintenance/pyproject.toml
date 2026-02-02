@@ -1,11 +1,11 @@
 [project]
 name = "oidm-maintenance"
-version = "0.2.0"
+version = "0.2.1"
 description = "Maintenance tools for OIDM packages (database build and publish)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "oidm-common",
+    "oidm-common>=0.2.2",
     "anatomic-locations",
     "findingmodel",
     "boto3>=1.40",

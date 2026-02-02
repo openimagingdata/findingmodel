@@ -1,4 +1,4 @@
-"""Tests for DuckDB utility functions in duckdb_utils.py."""
+"""Tests for DuckDB utility functions."""
 
 from __future__ import annotations
 

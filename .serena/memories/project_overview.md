@@ -97,6 +97,7 @@ findingmodel/                           # Workspace root
 3. **Explicit dependencies**: Each package declares all dependencies it directly imports
 4. **Single lockfile**: uv.lock ensures consistent versions across all packages
 5. **AI separation**: findingmodel-ai contains all AI/LLM dependencies, core findingmodel has none
+6. **Embedding cache**: `oidm_common.embeddings.get_embedding`/`get_embeddings_batch` use a transparent DuckDB-backed cache at `~/.cache/findingmodel/embeddings.duckdb`; pass `cache=None` to disable or provide a custom cache instance.
 
 ## Tech Stack
 - **Language**: Python 3.11+
@@ -111,7 +112,7 @@ findingmodel/                           # Workspace root
 # User commands
 findingmodel search "query"              # Search finding models
 findingmodel index stats                 # Show index statistics
-anatomic-locations query "nasal"         # Query anatomic locations
+anatomic-locations search "nasal"         # Search anatomic locations
 anatomic-locations stats                 # Show anatomic DB stats
 
 # AI commands (findingmodel-ai)

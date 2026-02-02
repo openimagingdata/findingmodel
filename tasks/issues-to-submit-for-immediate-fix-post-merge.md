@@ -25,7 +25,7 @@ Resolved: tests that created bare `Index()` (triggering network downloads) were 
 **Priority: Medium** — code quality debt documented in `tasks/monorepo_plan_phases/phase-4.9-refactor-cleanup.md`
 
 Tracked items:
-1. **Embedding helper duplication** — `_internal/common.py` has embedding logic that overlaps with `oidm_common`
+1. ~~**Embedding helper duplication** — `_internal/common.py` has embedding logic that overlaps with `oidm_common`~~ ✓ RESOLVED (consolidated in embedding infrastructure task)
 2. **`strip_quotes` duplication** — utility exists in multiple packages
 3. **`evals/__init__.py` LOGFIRE_CONSOLE** — can be simplified
 4. **`finding_description.py` OPENAI_API_KEY workaround** — needs documentation or proper fix
@@ -61,25 +61,15 @@ Running `pytest packages/*/tests` in a single invocation fails with `ImportPathM
 
 ---
 
-## Issue 7: Stop exporting `DuckDBIndex` from `findingmodel`
+## ~~Issue 7: Stop exporting `DuckDBIndex` from `findingmodel`~~ ✓ RESOLVED
 
-**Priority: Medium** — leaks implementation detail in public API
-
-`findingmodel/__init__.py` exports both `Index` and `DuckDBIndex`. The public API should only expose `Index`; `DuckDBIndex` is an implementation detail. Remove the `DuckDBIndex` export and the `__all__` entry. Deprecate first if backward compatibility is a concern.
+Resolved: Removed `DuckDBIndex` from `findingmodel/__init__.py` exports and `__all__`. Public API exposes only `Index`. Internal code imports directly from `findingmodel.index` and is unaffected.
 
 ---
 
-## Issue 8: Database builds don't use the embedding cache
+## ~~Issue 8: Database builds don't use the embedding cache~~ ✓ RESOLVED
 
-**Priority: Medium** — wasteful and slow rebuilds
-
-Both the finding model and anatomic location database build pipelines regenerate all embeddings from scratch on every rebuild, making expensive OpenAI API calls for unchanged data. `oidm-common` has an `EmbeddingCache` facility, but it is not wired into the build pipelines.
-
-This subsumes the related issue in `tasks/pending-fixes.md` ("Anatomic Location DuckDB Rebuild - Preserve Embeddings"). The fix should cover both build pipelines:
-
-1. Wire `EmbeddingCache` into `oidm-maintenance` build commands so previously computed embeddings are reused
-2. Use hash-based detection to identify changed entries and only regenerate embeddings for new/modified data
-3. Apply to both finding model index builds and anatomic location builds
+Resolved: `get_embedding()` and `get_embeddings_batch()` in oidm-common now have transparent always-on caching. Both findingmodel and anatomic build pipelines use these functions directly, so embeddings are automatically cached and reused across rebuilds.
 
 ---
 

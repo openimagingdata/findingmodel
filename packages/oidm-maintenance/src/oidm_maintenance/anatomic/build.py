@@ -9,20 +9,17 @@ from __future__ import annotations
 import json
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import duckdb
 import httpx
 from loguru import logger
 from oidm_common.duckdb import create_fts_index, create_hnsw_index, setup_duckdb_connection
-from oidm_common.embeddings import generate_embeddings_batch
+from oidm_common.embeddings import get_embeddings_batch
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 from oidm_maintenance.config import get_settings
-
-if TYPE_CHECKING:
-    from openai import AsyncOpenAI
 
 console = Console()
 
@@ -878,8 +875,6 @@ def get_database_stats(db_path: Path) -> dict[str, Any]:
 async def create_anatomic_database(
     db_path: Path,
     records: list[dict[str, Any]],
-    client: AsyncOpenAI,
-    batch_size: int = 50,
     dimensions: int = 1536,
 ) -> tuple[int, int]:
     """Create anatomic location database from in-memory records.
@@ -890,13 +885,12 @@ async def create_anatomic_database(
     Args:
         db_path: Path to the database file to create
         records: List of anatomic location records
-        client: OpenAI client for generating embeddings (AsyncOpenAI)
-        batch_size: Number of records to embed per batch
         dimensions: Embedding vector dimensions
 
     Returns:
         Tuple of (successful_count, failed_count)
     """
+    settings = get_settings()
     conn = setup_duckdb_connection(db_path, read_only=False)
 
     try:
@@ -922,13 +916,15 @@ async def create_anatomic_database(
             return 0, failed
 
         # Generate embeddings
-        embeddings: list[list[float] | None] = []
-        for i in range(0, len(searchable_texts), batch_size):
-            batch = searchable_texts[i : i + batch_size]
-            batch_embeddings = await generate_embeddings_batch(
-                batch, client, model="text-embedding-3-small", dimensions=dimensions
-            )
-            embeddings.extend(batch_embeddings)
+        if not settings.openai_api_key:
+            raise ValueError("OpenAI API key required for embedding generation (OIDM_MAINTAIN_OPENAI_API_KEY)")
+
+        embeddings = await get_embeddings_batch(
+            searchable_texts,
+            api_key=settings.openai_api_key.get_secret_value(),
+            model=settings.openai_embedding_model,
+            dimensions=dimensions,
+        )
 
         # Merge embeddings
         for location_row, embedding in zip(location_rows, embeddings, strict=True):
@@ -961,12 +957,13 @@ async def build_anatomic_database(
         source_json: Path to source JSON with anatomic location data (or URL)
         output_path: Path for output DuckDB file
         generate_embeddings: Whether to generate OpenAI embeddings
-        batch_size: Number of records to embed per batch (for rate limiting)
+        batch_size: Deprecated; embeddings are generated in a single batch
 
     Returns:
         Path to the created database file
     """
     settings = get_settings()
+    _ = batch_size
 
     # Determine dimensions from settings
     dimensions = settings.openai_embedding_dimensions
@@ -1032,28 +1029,18 @@ async def build_anatomic_database(
                 if not settings.openai_api_key:
                     raise ValueError("OpenAI API key required for embedding generation (OIDM_MAINTAIN_OPENAI_API_KEY)")
 
-                # Import OpenAI lazily for build
-                from openai import AsyncOpenAI
-
-                client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
-
                 embed_task = progress.add_task(
                     f"Generating embeddings ({len(searchable_texts)} records)...",
                     total=len(searchable_texts),
                 )
 
-                embeddings: list[list[float] | None] = []
-                for i in range(0, len(searchable_texts), batch_size):
-                    batch = searchable_texts[i : i + batch_size]
-                    logger.info(f"Generating embeddings for batch {i // batch_size + 1} ({len(batch)} records)...")
-                    batch_embeddings = await generate_embeddings_batch(
-                        batch,
-                        client,
-                        model=settings.openai_embedding_model,
-                        dimensions=dimensions,
-                    )
-                    embeddings.extend(batch_embeddings)
-                    progress.update(embed_task, completed=i + len(batch))
+                embeddings = await get_embeddings_batch(
+                    searchable_texts,
+                    api_key=settings.openai_api_key.get_secret_value(),
+                    model=settings.openai_embedding_model,
+                    dimensions=dimensions,
+                )
+                progress.update(embed_task, completed=len(searchable_texts))
 
                 progress.remove_task(embed_task)
 

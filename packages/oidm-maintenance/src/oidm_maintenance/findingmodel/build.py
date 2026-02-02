@@ -15,8 +15,7 @@ from findingmodel.common import normalize_name
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelFull
 from oidm_common.duckdb import create_fts_index, create_hnsw_index, setup_duckdb_connection
-from oidm_common.embeddings import generate_embeddings_batch
-from openai import AsyncOpenAI
+from oidm_common.embeddings import get_embeddings_batch
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -176,6 +175,8 @@ async def build_findingmodel_database(
         output_path.unlink()
         console.print(f"[yellow]Removed existing database: {output_path}[/yellow]")
 
+    settings = get_settings()
+
     # Create connection
     conn = setup_duckdb_connection(output_path, read_only=False)
 
@@ -198,9 +199,22 @@ async def build_findingmodel_database(
             # Generate embeddings if requested
             if generate_embeddings:
                 task = progress.add_task("Generating embeddings...", total=None)
-                embeddings = await _generate_embeddings_async([
-                    _build_embedding_text(model) for model, _, _, _, _ in models_data
-                ])
+                if not settings.openai_api_key:
+                    raise RuntimeError("OPENAI_API_KEY not configured in environment")
+
+                embedding_texts = [_build_embedding_text(model) for model, _, _, _, _ in models_data]
+                raw_embeddings = await get_embeddings_batch(
+                    list(embedding_texts),
+                    api_key=settings.openai_api_key.get_secret_value(),
+                    model=settings.openai_embedding_model,
+                    dimensions=settings.openai_embedding_dimensions,
+                )
+
+                embeddings: list[list[float]] = []
+                for i, embedding in enumerate(raw_embeddings):
+                    if embedding is None:
+                        raise RuntimeError(f"Failed to generate embedding for model at index {i}")
+                    embeddings.append(embedding)
                 progress.update(task, completed=1)
             else:
                 # Create dummy embeddings (all zeros)
@@ -274,43 +288,6 @@ def _load_models(
         models_data.append((model, file_path, file_hash, search_text, json_text))
 
     return models_data
-
-
-async def _generate_embeddings_async(embedding_texts: Sequence[str]) -> list[list[float]]:
-    """Generate embeddings using OpenAI API (async).
-
-    Args:
-        embedding_texts: List of texts to embed
-
-    Returns:
-        List of embedding vectors
-
-    Raises:
-        RuntimeError: If embedding generation fails or API key not configured
-    """
-    settings = get_settings()
-
-    if not settings.openai_api_key:
-        raise RuntimeError("OPENAI_API_KEY not configured in environment")
-
-    client = AsyncOpenAI(api_key=settings.openai_api_key.get_secret_value())
-
-    # Use oidm-common batch embedding function
-    raw_embeddings = await generate_embeddings_batch(
-        texts=list(embedding_texts),
-        client=client,
-        model=settings.openai_embedding_model,
-        dimensions=settings.openai_embedding_dimensions,
-    )
-
-    # Check for failures
-    embeddings: list[list[float]] = []
-    for i, embedding in enumerate(raw_embeddings):
-        if embedding is None:
-            raise RuntimeError(f"Failed to generate embedding for model at index {i}")
-        embeddings.append(embedding)
-
-    return embeddings
 
 
 def _create_tables(conn: duckdb.DuckDBPyConnection) -> None:

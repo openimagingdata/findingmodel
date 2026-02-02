@@ -25,11 +25,9 @@ from .finding_model import FindingModelBase as FindingModelBase
 from .finding_model import FindingModelFull as FindingModelFull
 from .finding_model import NumericAttribute as NumericAttribute
 from .finding_model import NumericAttributeIded as NumericAttributeIded
-from .index import DuckDBIndex as DuckDBIndex
-from .index import DuckDBIndex as Index  # DuckDB is now the default Index
+from .index import DuckDBIndex as Index
 
 __all__ = [
-    "DuckDBIndex",
     "EmbeddingCache",
     "FindingInfo",
     "FindingModelBase",

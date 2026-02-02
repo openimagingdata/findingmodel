@@ -5,7 +5,7 @@ description = "Anatomic location ontology navigation"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "oidm-common>=0.2.1",
+    "oidm-common>=0.2.2",
     "asyncer>=0.0.2",
     "click>=8.0",
     "duckdb>=1.0",

@@ -10,12 +10,13 @@ All tests use mocked embeddings to avoid API calls.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 from oidm_maintenance.cli import main
+from oidm_maintenance.config import MaintenanceSettings
+from pydantic import SecretStr
 from pydantic_ai import models
 
 # Block all AI model requests - embeddings are mocked
@@ -27,7 +28,14 @@ models.ALLOW_MODEL_REQUESTS = False
 # =============================================================================
 
 
-def _fake_embeddings_deterministic(texts: list[str]) -> list[list[float]]:
+def _fake_embeddings_deterministic(
+    texts: list[str],
+    *,
+    api_key: str | None = None,
+    model: str | None = None,
+    dimensions: int = 512,
+    cache: object | None = None,
+) -> list[list[float]]:
     """Generate deterministic fake embeddings based on text hash.
 
     Args:
@@ -36,7 +44,12 @@ def _fake_embeddings_deterministic(texts: list[str]) -> list[list[float]]:
     Returns:
         List of deterministic embedding vectors based on text hash
     """
-    return [[(sum(ord(c) for c in text) % 100) / 100.0] * 512 for text in texts]
+    _ = (api_key, model, cache)
+    return [[(sum(ord(c) for c in text) % 100) / 100.0] * dimensions for text in texts]
+
+
+def _fake_settings_with_openai_key() -> MaintenanceSettings:
+    return MaintenanceSettings(openai_api_key=SecretStr("fake-key"))
 
 
 @pytest.fixture
@@ -74,10 +87,13 @@ class TestFindingModelBuildCommand:
         """Build command creates database with mocked embeddings."""
         output = tmp_path / "test.duckdb"
 
-        with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-            new_callable=AsyncMock,
-            side_effect=_fake_embeddings_deterministic,
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=_fake_settings_with_openai_key()),
+            patch(
+                "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=_fake_embeddings_deterministic,
+            ),
         ):
             result = runner.invoke(
                 main,
@@ -157,10 +173,13 @@ class TestFindingModelBuildCommand:
         """Build command works with short option flags -s and -o."""
         output = tmp_path / "test.duckdb"
 
-        with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-            new_callable=AsyncMock,
-            side_effect=_fake_embeddings_deterministic,
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=_fake_settings_with_openai_key()),
+            patch(
+                "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=_fake_embeddings_deterministic,
+            ),
         ):
             result = runner.invoke(
                 main,
@@ -186,10 +205,13 @@ class TestFindingModelBuildCommand:
         """Build command creates parent directories if they don't exist."""
         nested_output = tmp_path / "nested" / "path" / "test.duckdb"
 
-        with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-            new_callable=AsyncMock,
-            side_effect=_fake_embeddings_deterministic,
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=_fake_settings_with_openai_key()),
+            patch(
+                "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=_fake_embeddings_deterministic,
+            ),
         ):
             result = runner.invoke(
                 main,
@@ -299,7 +321,7 @@ class TestFindingModelPublishCommand:
         db_path = tmp_path / "test.duckdb"
 
         with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
+            "oidm_maintenance.findingmodel.build.get_embeddings_batch",
             new_callable=AsyncMock,
             side_effect=_fake_embeddings_deterministic,
         ):
@@ -350,7 +372,7 @@ class TestFindingModelPublishCommand:
         db_path = tmp_path / "test.duckdb"
 
         with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
+            "oidm_maintenance.findingmodel.build.get_embeddings_batch",
             new_callable=AsyncMock,
             side_effect=_fake_embeddings_deterministic,
         ):
@@ -423,7 +445,7 @@ class TestFindingModelPublishCommand:
         db_path = tmp_path / "test.duckdb"
 
         with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
+            "oidm_maintenance.findingmodel.build.get_embeddings_batch",
             new_callable=AsyncMock,
             side_effect=_fake_embeddings_deterministic,
         ):
@@ -487,12 +509,24 @@ class TestAnatomicBuildCommand:
         mock_settings.openai_embedding_dimensions = 512
 
         # Generate fake embeddings for the expected number of records
-        def fake_batch_embeddings(texts: list[str], client: Any, model: str, dimensions: int) -> list[list[float]]:
-            return _fake_embeddings_deterministic(texts)
+        def fake_batch_embeddings(
+            texts: list[str],
+            *,
+            api_key: str,
+            model: str,
+            dimensions: int,
+            cache: object | None = None,
+        ) -> list[list[float]]:
+            _ = (api_key, model, cache)
+            return _fake_embeddings_deterministic(texts, dimensions=dimensions)
 
         with (
             patch("oidm_maintenance.anatomic.build.get_settings", return_value=mock_settings),
-            patch("oidm_maintenance.anatomic.build.generate_embeddings_batch", side_effect=fake_batch_embeddings),
+            patch(
+                "oidm_maintenance.anatomic.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=fake_batch_embeddings,
+            ),
         ):
             result = runner.invoke(
                 main,
@@ -584,12 +618,24 @@ class TestAnatomicBuildCommand:
         mock_settings.openai_embedding_model = "text-embedding-3-small"
         mock_settings.openai_embedding_dimensions = 512
 
-        def fake_batch_embeddings(texts: list[str], client: Any, model: str, dimensions: int) -> list[list[float]]:
-            return _fake_embeddings_deterministic(texts)
+        def fake_batch_embeddings(
+            texts: list[str],
+            *,
+            api_key: str,
+            model: str,
+            dimensions: int,
+            cache: object | None = None,
+        ) -> list[list[float]]:
+            _ = (api_key, model, cache)
+            return _fake_embeddings_deterministic(texts, dimensions=dimensions)
 
         with (
             patch("oidm_maintenance.anatomic.build.get_settings", return_value=mock_settings),
-            patch("oidm_maintenance.anatomic.build.generate_embeddings_batch", side_effect=fake_batch_embeddings),
+            patch(
+                "oidm_maintenance.anatomic.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=fake_batch_embeddings,
+            ),
         ):
             result = runner.invoke(
                 main,

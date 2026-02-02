@@ -5,7 +5,7 @@ No OpenAI API calls are made - embeddings are pre-generated fixtures.
 """
 
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from anatomic_locations import AnatomicLocation, AnatomicLocationIndex, AnatomicRegion, Laterality
@@ -124,7 +124,13 @@ class TestAnatomicLocationIndexSearch:
         """Full-text search returns results matching description."""
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Search for "turbinate" - should find nasal turbinates
-            results = await index.search("turbinate", limit=10)
+            mock_settings = MagicMock()
+            mock_settings.openai_api_key = None
+            mock_settings.openai_embedding_model = "text-embedding-3-small"
+            mock_settings.openai_embedding_dimensions = 512
+
+            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
+                results = await index.search("turbinate", limit=10)
 
             # Should find at least one result
             assert len(results) >= 1
@@ -148,11 +154,18 @@ class TestAnatomicLocationIndexSearch:
         indexes and fuses results.
         """
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
-            # Mock _get_embedding to return fixture embedding for "knee joint"
-            with patch.object(
-                index,
-                "_get_embedding",
-                new=AsyncMock(return_value=anatomic_query_embeddings["knee joint"]),
+            mock_settings = MagicMock()
+            mock_settings.openai_api_key = MagicMock()
+            mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
+            mock_settings.openai_embedding_model = "text-embedding-3-small"
+            mock_settings.openai_embedding_dimensions = 512
+
+            with (
+                patch("anatomic_locations.config.get_settings", return_value=mock_settings),
+                patch(
+                    "anatomic_locations.index.get_embedding",
+                    new=AsyncMock(return_value=anatomic_query_embeddings["knee joint"]),
+                ),
             ):
                 results = await index.search("knee joint", limit=5)
 
@@ -180,11 +193,18 @@ class TestAnatomicLocationIndexSearch:
         - Results are deduplicated when same item appears in both
         """
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
-            # Mock _get_embedding to return fixture embedding for "heart cardiac"
-            with patch.object(
-                index,
-                "_get_embedding",
-                new=AsyncMock(return_value=anatomic_query_embeddings["heart cardiac"]),
+            mock_settings = MagicMock()
+            mock_settings.openai_api_key = MagicMock()
+            mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
+            mock_settings.openai_embedding_model = "text-embedding-3-small"
+            mock_settings.openai_embedding_dimensions = 512
+
+            with (
+                patch("anatomic_locations.config.get_settings", return_value=mock_settings),
+                patch(
+                    "anatomic_locations.index.get_embedding",
+                    new=AsyncMock(return_value=anatomic_query_embeddings["heart cardiac"]),
+                ),
             ):
                 results = await index.search("heart cardiac", limit=10)
 
@@ -208,8 +228,12 @@ class TestAnatomicLocationIndexSearch:
         (e.g., no API key configured).
         """
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
-            # Mock _get_embedding to return None (no API key)
-            with patch.object(index, "_get_embedding", new=AsyncMock(return_value=None)):
+            mock_settings = MagicMock()
+            mock_settings.openai_api_key = None
+            mock_settings.openai_embedding_model = "text-embedding-3-small"
+            mock_settings.openai_embedding_dimensions = 512
+
+            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
                 results = await index.search("nasal structures", limit=5)
 
                 # Should still return FTS results

@@ -14,7 +14,11 @@ MANIFEST_URL_B = "https://anatomiclocationsdata.t3.storage.dev/manifest.json"
 MANIFEST_A: dict[str, Any] = {
     "databases": {
         "finding_models": {"version": "2025-01-24", "url": "https://a.example.com/fm.duckdb", "hash": "sha256:aaa"},
-        "anatomic_locations": {"version": "2024-06-01", "url": "https://a.example.com/al.duckdb", "hash": "sha256:stale"},
+        "anatomic_locations": {
+            "version": "2024-06-01",
+            "url": "https://a.example.com/al.duckdb",
+            "hash": "sha256:stale",
+        },
     }
 }
 

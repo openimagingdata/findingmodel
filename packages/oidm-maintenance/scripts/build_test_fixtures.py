@@ -15,7 +15,9 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
+from oidm_maintenance.config import MaintenanceSettings
 from oidm_maintenance.findingmodel.build import build_findingmodel_database
+from pydantic import SecretStr
 from rich.console import Console
 
 console = Console()
@@ -50,19 +52,31 @@ async def _fake_embedding_deterministic(
     return [(hash_val % 100) / 100.0] * target_dims
 
 
-async def _fake_generate_embeddings_async(embedding_texts: list[str]) -> list[list[float]]:
-    """Generate deterministic fake embeddings matching _generate_embeddings_async signature.
+async def _fake_get_embeddings_batch(
+    texts: list[str],
+    *,
+    api_key: str,
+    model: str | None = None,
+    dimensions: int = 512,
+    cache: object | None = None,
+) -> list[list[float]]:
+    """Generate deterministic fake embeddings matching get_embeddings_batch signature.
 
-    This function replaces the real _generate_embeddings_async in the build module
+    This function replaces the real get_embeddings_batch in the build module
     to avoid requiring API keys during test fixture generation.
 
     Args:
-        embedding_texts: List of texts to embed
+        texts: List of texts to embed
+        api_key: Ignored (for API compatibility)
+        model: Ignored (for API compatibility)
+        dimensions: Target embedding dimensions (default 512)
+        cache: Ignored (for API compatibility)
 
     Returns:
         List of deterministic embedding vectors
     """
-    return [await _fake_embedding_deterministic(text, dimensions=512) for text in embedding_texts]
+    _ = (api_key, model, cache)
+    return [await _fake_embedding_deterministic(text, dimensions=dimensions) for text in texts]
 
 
 async def build_test_findingmodel_database() -> None:
@@ -90,12 +104,18 @@ async def build_test_findingmodel_database() -> None:
         console.print(f"[bold red]Error: Source directory not found: {source_dir}[/bold red]")
         raise FileNotFoundError(f"Source directory not found: {source_dir}")
 
-    # Patch the internal embedding generation function
+    # Patch the embedding generation function
     # This bypasses the API key check and generates deterministic embeddings
-    with patch(
-        "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-        new_callable=AsyncMock,
-        side_effect=_fake_generate_embeddings_async,
+    with (
+        patch(
+            "oidm_maintenance.findingmodel.build.get_settings",
+            return_value=MaintenanceSettings(openai_api_key=SecretStr("fake-key")),
+        ),
+        patch(
+            "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+            new_callable=AsyncMock,
+            side_effect=_fake_get_embeddings_batch,
+        ),
     ):
         # Build database with mocked embeddings
         db_path = await build_findingmodel_database(

@@ -1198,14 +1198,14 @@ async def test_search_batch_calls_embeddings_once(index: DuckDBIndex) -> None:
     """
     from unittest.mock import AsyncMock, patch
 
-    # Mock the batch_embeddings_for_duckdb function where it's imported
+    # Mock the get_embeddings_batch function where it's imported
     mock_embeddings = AsyncMock()
     # Return deterministic fake embeddings (512-dim vectors)
     mock_embeddings.return_value = [[0.5] * 512, [0.6] * 512, [0.7] * 512]
 
     queries = ["aneurysm", "embolism", "fracture"]
 
-    with patch("findingmodel.index.batch_embeddings_for_duckdb", mock_embeddings):
+    with patch("findingmodel.index.get_embeddings_batch", mock_embeddings):
         results = await index.search_batch(queries, limit=5)
 
     # Should be called exactly once with all queries

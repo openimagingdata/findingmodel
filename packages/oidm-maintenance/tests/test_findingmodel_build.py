@@ -16,7 +16,9 @@ from unittest.mock import AsyncMock, patch
 import duckdb
 import pytest
 from findingmodel.index import DuckDBIndex
+from oidm_maintenance.config import MaintenanceSettings
 from oidm_maintenance.findingmodel.build import build_findingmodel_database
+from pydantic import SecretStr
 from pydantic_ai import models
 
 # Block all AI model requests - embeddings are mocked
@@ -28,7 +30,14 @@ models.ALLOW_MODEL_REQUESTS = False
 # =============================================================================
 
 
-def _fake_embeddings_deterministic(texts: list[str]) -> list[list[float]]:
+def _fake_embeddings_deterministic(
+    texts: list[str],
+    *,
+    api_key: str | None = None,
+    model: str | None = None,
+    dimensions: int = 512,
+    cache: object | None = None,
+) -> list[list[float]]:
     """Generate deterministic fake embeddings based on text hash.
 
     This matches the pattern used in build_test_fixtures.py to ensure
@@ -40,7 +49,12 @@ def _fake_embeddings_deterministic(texts: list[str]) -> list[list[float]]:
     Returns:
         List of deterministic embedding vectors based on text hash
     """
-    return [[(sum(ord(c) for c in text) % 100) / 100.0] * 512 for text in texts]
+    _ = (api_key, model, cache)
+    return [[(sum(ord(c) for c in text) % 100) / 100.0] * dimensions for text in texts]
+
+
+def _fake_settings_with_openai_key() -> MaintenanceSettings:
+    return MaintenanceSettings(openai_api_key=SecretStr("fake-key"))
 
 
 @pytest.fixture
@@ -58,10 +72,13 @@ async def built_test_db(tmp_path: Path) -> Path:
     db_path = tmp_path / "test.duckdb"
 
     # Mock the internal embedding generation function
-    with patch(
-        "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-        new_callable=AsyncMock,
-        side_effect=_fake_embeddings_deterministic,
+    with (
+        patch("oidm_maintenance.findingmodel.build.get_settings", return_value=_fake_settings_with_openai_key()),
+        patch(
+            "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+            new_callable=AsyncMock,
+            side_effect=_fake_embeddings_deterministic,
+        ),
     ):
         await build_findingmodel_database(source_dir, db_path, generate_embeddings=True)
 
@@ -135,10 +152,13 @@ class TestBuildOperations:
         db_path = tmp_path / "test.duckdb"
 
         # Mock embeddings
-        with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-            new_callable=AsyncMock,
-            side_effect=_fake_embeddings_deterministic,
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=_fake_settings_with_openai_key()),
+            patch(
+                "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=_fake_embeddings_deterministic,
+            ),
         ):
             # First build
             await build_findingmodel_database(source_data_dir, db_path, generate_embeddings=True)
@@ -491,10 +511,13 @@ class TestEmbeddingGeneration:
         """Build with generate_embeddings=True uses mocked embeddings."""
         db_path = tmp_path / "test.duckdb"
 
-        with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-            new_callable=AsyncMock,
-            side_effect=_fake_embeddings_deterministic,
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=_fake_settings_with_openai_key()),
+            patch(
+                "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=_fake_embeddings_deterministic,
+            ),
         ):
             result_path = await build_findingmodel_database(source_data_dir, db_path, generate_embeddings=True)
 
@@ -579,10 +602,13 @@ class TestErrorHandling:
         """Build creates parent directory if it doesn't exist."""
         nested_path = tmp_path / "nested" / "deep" / "path" / "test.duckdb"
 
-        with patch(
-            "oidm_maintenance.findingmodel.build._generate_embeddings_async",
-            new_callable=AsyncMock,
-            side_effect=_fake_embeddings_deterministic,
+        with (
+            patch("oidm_maintenance.findingmodel.build.get_settings", return_value=_fake_settings_with_openai_key()),
+            patch(
+                "oidm_maintenance.findingmodel.build.get_embeddings_batch",
+                new_callable=AsyncMock,
+                side_effect=_fake_embeddings_deterministic,
+            ),
         ):
             result_path = await build_findingmodel_database(source_data_dir, nested_path, generate_embeddings=True)
 
@@ -725,8 +751,8 @@ class TestDuplicateValidation:
     async def test_embeddings_error_none_embeddings(self, tmp_path: Path, source_data_dir: Path) -> None:
         """Build fails when embedding generation returns None values.
 
-        This tests the internal validation in _generate_embeddings_async that
-        checks for None embeddings from the underlying embedding provider.
+        This tests the internal validation that checks for None embeddings
+        from the underlying embedding provider.
         """
         db_path = tmp_path / "test.duckdb"
 
@@ -736,19 +762,25 @@ class TestDuplicateValidation:
 
         mock_settings = MaintenanceSettings(openai_api_key=SecretStr("fake-key-for-test"))
 
-        # Mock the underlying generate_embeddings_batch to return None values
+        # Mock the underlying get_embeddings_batch to return None values
         # This simulates the OpenAI API returning None for a failed embedding
         def mock_batch_embeddings_with_none(
-            texts: list[str], client: object, model: str, dimensions: int
+            texts: list[str],
+            *,
+            api_key: str | None = None,
+            model: str | None = None,
+            dimensions: int = 512,
+            cache: object | None = None,
         ) -> list[list[float] | None]:
             """Return None embeddings to simulate API failure."""
+            _ = (api_key, model, dimensions, cache)
             return [None] * len(texts)
 
         # Patch both settings and the embedding batch function
         with (
             patch("oidm_maintenance.findingmodel.build.get_settings", return_value=mock_settings),
             patch(
-                "oidm_maintenance.findingmodel.build.generate_embeddings_batch",
+                "oidm_maintenance.findingmodel.build.get_embeddings_batch",
                 new_callable=AsyncMock,
                 side_effect=mock_batch_embeddings_with_none,
             ),

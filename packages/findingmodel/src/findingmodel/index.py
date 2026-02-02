@@ -16,6 +16,7 @@ from oidm_common.duckdb import (
     rrf_fusion,
     setup_duckdb_connection,
 )
+from oidm_common.embeddings import get_embedding, get_embeddings_batch
 from pydantic import BaseModel, Field
 
 from findingmodel import logger
@@ -23,7 +24,6 @@ from findingmodel.common import normalize_name
 from findingmodel.config import settings
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
-from findingmodel.tools.duckdb_utils import batch_embeddings_for_duckdb, get_embedding_for_duckdb
 
 PLACEHOLDER_ATTRIBUTE_ID: str = "OIFMA_XXXX_000000"
 
@@ -513,7 +513,13 @@ class DuckDBIndex:
         conn = self._ensure_connection()
 
         # Generate embeddings for all valid queries in a single batch API call
-        embeddings = await batch_embeddings_for_duckdb(valid_queries)
+        api_key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+        embeddings = await get_embeddings_batch(
+            valid_queries,
+            api_key=api_key,
+            model=settings.openai_embedding_model,
+            dimensions=settings.openai_embedding_dimensions,
+        )
 
         results: dict[str, list[IndexEntry]] = {}
         query: str
@@ -1141,7 +1147,13 @@ class DuckDBIndex:
         if not trimmed_query:
             return []
 
-        embedding = await get_embedding_for_duckdb(trimmed_query)
+        api_key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+        embedding = await get_embedding(
+            trimmed_query,
+            api_key=api_key,
+            model=settings.openai_embedding_model,
+            dimensions=settings.openai_embedding_dimensions,
+        )
         if embedding is None:
             return []
 

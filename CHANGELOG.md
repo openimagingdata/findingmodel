@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [oidm-common Unreleased presumed 0.2.2]
+
+### Added
+
+- Transparent embedding cache: `get_embedding()` and `get_embeddings_batch()` now automatically cache results to disk, avoiding redundant OpenAI API calls across queries and database rebuilds
+
+## [findingmodel Unreleased presumed 1.0.1]
+
+### Changed
+
+- Embedding calls now go through oidm-common directly (removed internal wrappers)
+- Removed `DuckDBIndex` from public API; use `Index` instead
+
+### Testing
+
+- Relocated ID generation tests from findingmodel-ai to findingmodel with local test database fixtures
+
 ## [anatomic-locations Unreleased presumed 0.2.1]
 
 ### Changed
@@ -13,12 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flattened CLI: all commands are now top-level (`ancestors`, `descendants`, `laterality`, `code`) instead of under `query` subgroup
 - Added `hierarchy` command: shows ancestors and descendants in a visual tree
 - Added `children` command: lists direct children in a table
+- Embedding calls now go through oidm-common directly (removed internal wrapper)
 
-## [findingmodel - Unreleased]
+## [oidm-maintenance Unreleased presumed 0.2.1]
 
-### Testing
+### Changed
 
-- Relocated ID generation tests from findingmodel-ai to findingmodel with local test database fixtures
+- Database builds now use oidm-common's cached embedding functions, reusing previously computed embeddings instead of regenerating from scratch
 
 ## [findingmodel-ai - Unreleased]
 

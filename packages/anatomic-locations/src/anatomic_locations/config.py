@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from loguru import logger
 from oidm_common.distribution import ensure_db_file
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -65,11 +64,6 @@ def ensure_anatomic_db() -> Path:
         DistributionError: If explicit file doesn't exist or download fails
     """
     s = get_settings()
-    logger.debug(
-        f"Ensuring anatomic database (path={s.db_path}, "
-        f"remote_url={'set' if s.remote_db_url else 'unset'}, "
-        f"manifest_url={s.manifest_url})"
-    )
     return ensure_db_file(
         file_path=s.db_path,
         remote_url=s.remote_db_url,
