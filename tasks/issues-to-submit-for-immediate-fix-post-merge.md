@@ -26,38 +26,27 @@ Resolved: tests that created bare `Index()` (triggering network downloads) were 
 
 Tracked items:
 1. ~~**Embedding helper duplication** — `_internal/common.py` has embedding logic that overlaps with `oidm_common`~~ ✓ RESOLVED (consolidated in embedding infrastructure task)
-2. **`strip_quotes` duplication** — utility exists in multiple packages
-3. **`evals/__init__.py` LOGFIRE_CONSOLE** — can be simplified
-4. **`finding_description.py` OPENAI_API_KEY workaround** — needs documentation or proper fix
+2. ~~**`strip_quotes` duplication** — utility exists in multiple packages~~ ✓ RESOLVED (no longer present in codebase after refactor)
+3. ~~**`evals/__init__.py` LOGFIRE_CONSOLE** — can be simplified~~ ✓ RESOLVED (evals/__init__.py no longer contains LOGFIRE_CONSOLE code)
+4. ~~**`finding_description.py` OPENAI_API_KEY workaround**~~ ✓ RESOLVED — replaced env var workaround with proper Model instance using `settings.get_model("small")` which embeds the API key directly in the Model object
 
 ---
 
-## Issue 4: Remove unused duplicate test data file
+## ~~Issue 4: Remove unused duplicate test data file~~ ✓ RESOLVED
 
-**Priority: Low** — cleanup
-
-`packages/findingmodel/tests/data/test_enrichment_samples.json` is identical to `packages/findingmodel-ai/tests/data/test_enrichment_samples.json` and is not referenced by any test in the `findingmodel` package (verified via grep).
-
-**Fix:** Delete `packages/findingmodel/tests/data/test_enrichment_samples.json`.
+Resolved: Deleted `packages/findingmodel/tests/data/test_enrichment_samples.json`. The canonical copy remains in `findingmodel-ai/tests/data/`.
 
 ---
 
-## Issue 5: Cross-package conftest collision
+## ~~Issue 5: Cross-package conftest collision~~ ✓ RESOLVED
 
-**Priority: Low** — workaround exists, but should be documented
-
-Running `pytest packages/*/tests` in a single invocation fails with `ImportPathMismatchError` because multiple `tests/conftest.py` files exist. The Taskfile correctly runs each package separately, but:
-
-1. The plan doc's example test command (`tasks/monorepo-plan-overview.md`) should be updated to show per-package invocation
-2. Consider adding a top-level `conftest.py` comment or a note in CONTRIBUTING docs explaining why single-invocation doesn't work
+Resolved: `tasks/done/monorepo-plan-overview.md` already documents that single-invocation doesn't work (line 269) and shows per-package examples. Taskfile is canonical.
 
 ---
 
-## Issue 6: Plan phase status alignment
+## ~~Issue 6: Plan phase status alignment~~ ✓ RESOLVED
 
-**Priority: Low** — internal documentation consistency
-
-`tasks/monorepo-plan-overview.md` shows Phase 6 as pending, but the Phase 6 file marks it as complete and the repo includes `.claude/rules/*` and updated `CLAUDE.md`. Align the plan status to avoid confusion.
+Resolved: Plan overview moved to `tasks/done/` and phase references cleaned up.
 
 ---
 

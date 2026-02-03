@@ -50,7 +50,6 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 """
 
 import asyncio
-import os
 import re
 import time
 
@@ -62,12 +61,6 @@ from pydantic import BaseModel, Field
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext, LLMJudge
 from pydantic_evals.reporting import EvaluationReport
-
-# WORKAROUND: LLMJudge has a bug - it doesn't accept api_key parameter
-# and only reads from OPENAI_API_KEY environment variable.
-# For eval files using LLMJudge, we set the environment variable from settings.
-if settings.openai_api_key and not os.getenv("OPENAI_API_KEY"):
-    os.environ["OPENAI_API_KEY"] = settings.openai_api_key.get_secret_value()
 
 
 class FindingDescriptionInput(BaseModel):
@@ -993,7 +986,7 @@ Be strict but fair. Medical professionals will use these descriptions.""",
         include_expected_output=True,
         score={"evaluation_name": "quality", "include_reason": True},
         assertion=False,
-        model=settings.default_model_small,  # Use string model name from settings
+        model=settings.get_model("small"),  # Model instance with embedded API key
     ),
     PerformanceEvaluator(time_limit=45.0),  # Accommodate Tavily cases which take longest
 ]
