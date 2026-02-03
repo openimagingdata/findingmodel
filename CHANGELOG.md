@@ -6,13 +6,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [oidm-common Unreleased presumed 0.2.2]
+## oidm-common 0.2.2 - 2026-02-03
 
 ### Added
 
 - Transparent embedding cache: `get_embedding()` and `get_embeddings_batch()` now automatically cache results to disk, avoiding redundant OpenAI API calls across queries and database rebuilds
 
-## [findingmodel Unreleased presumed 1.0.1]
+### Dependencies
+
+- Updated all dependencies via `uv lock --upgrade` (openai 1.x→2.x, duckdb 1.4.1→1.4.4, and 100+ others)
+
+## findingmodel 1.0.1 - 2026-02-03
 
 ### Changed
 
@@ -23,7 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Relocated ID generation tests from findingmodel-ai to findingmodel with local test database fixtures
 
-## [anatomic-locations Unreleased presumed 0.2.1]
+### Dependencies
+
+- Updated all dependencies via `uv lock --upgrade` (duckdb 1.4.1→1.4.4, mcp 1.18→1.26, pydantic 2.12.0→2.12.5, and others)
+
+## anatomic-locations 0.2.1 - 2026-02-03
 
 ### Changed
 
@@ -32,17 +40,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `children` command: lists direct children in a table
 - Embedding calls now go through oidm-common directly (removed internal wrapper)
 
-## [oidm-maintenance Unreleased presumed 0.2.1]
+### Dependencies
+
+- Updated all dependencies via `uv lock --upgrade` (duckdb 1.4.1→1.4.4, and others)
+
+## oidm-maintenance 0.2.1 - 2026-02-03
 
 ### Changed
 
 - Database builds now use oidm-common's cached embedding functions, reusing previously computed embeddings instead of regenerating from scratch
 
-## [findingmodel-ai - Unreleased]
+### Dependencies
+
+- Updated all dependencies via `uv lock --upgrade` (duckdb 1.4.1→1.4.4, boto3/botocore updates, and others)
+
+## findingmodel-ai 0.2.1 - 2026-02-03
 
 ### Testing
 
 - Eliminated unintended network calls in unit tests by removing bare `Index()` usage and using `index_with_test_db` fixture
+
+### Dependencies
+
+- Updated all dependencies via `uv lock --upgrade` (openai 1.x→2.x, pydantic-ai-slim 1.0→1.52, anthropic 0.72→0.77, and others)
 
 ## oidm-common 0.2.1 - 2026-02-01
 

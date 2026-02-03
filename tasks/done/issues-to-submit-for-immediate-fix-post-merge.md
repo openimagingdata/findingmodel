@@ -20,11 +20,10 @@ Resolved: tests that created bare `Index()` (triggering network downloads) were 
 
 ---
 
-## Issue 3: Phase 4.9 refactor cleanup items
+## ~~Issue 3: Phase 4.9 refactor cleanup items~~ ✓ RESOLVED
 
-**Priority: Medium** — code quality debt documented in `tasks/monorepo_plan_phases/phase-4.9-refactor-cleanup.md`
+All tracked items resolved:
 
-Tracked items:
 1. ~~**Embedding helper duplication** — `_internal/common.py` has embedding logic that overlaps with `oidm_common`~~ ✓ RESOLVED (consolidated in embedding infrastructure task)
 2. ~~**`strip_quotes` duplication** — utility exists in multiple packages~~ ✓ RESOLVED (no longer present in codebase after refactor)
 3. ~~**`evals/__init__.py` LOGFIRE_CONSOLE** — can be simplified~~ ✓ RESOLVED (evals/__init__.py no longer contains LOGFIRE_CONSOLE code)
@@ -62,8 +61,6 @@ Resolved: `get_embedding()` and `get_embeddings_batch()` in oidm-common now have
 
 ---
 
-## Issue 9: Update dependency tree
+## ~~Issue 9: Update dependency tree~~ ✓ RESOLVED
 
-**Priority: High** — stale dependencies accumulate security and compatibility risk
-
-The project's dependency tree needs a thorough update. Run `uv lock --upgrade`, review the changes, fix any breakage, and verify with `task test` and `task check`. Pay particular attention to major version bumps in core dependencies (pydantic, duckdb, httpx, pydantic-ai, etc.).
+Resolved: Ran `uv lock --upgrade` and `uv sync --all-packages`. Updated 104 packages including major version bumps (openai 1.x→2.x, pytest 8→9). Added RUF067 ignore for new ruff 0.14 lint rule about `__init__.py` contents. All tests pass (602 passed, 2 skipped).
