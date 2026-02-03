@@ -1,7 +1,7 @@
 ---
 name: python-test-evaluator
 description: Evaluates pytest-based tests for quality and coverage
-tools: Read, Grep, Glob, mcp__serena__read_memory, mcp__serena__find_symbol, mcp__serena__get_symbols_overview, mcp__serena__search_for_pattern, mcp__filesystem__read_text_file
+tools: Read, Grep, Glob, Bash, mcp__serena__read_memory, mcp__serena__find_symbol, mcp__serena__get_symbols_overview, mcp__serena__search_for_pattern, mcp__filesystem__read_text_file, mcp__filesystem__read_multiple_files
 model: sonnet
 ---
 
