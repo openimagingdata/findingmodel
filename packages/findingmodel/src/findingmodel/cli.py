@@ -7,7 +7,7 @@ from rich.table import Table
 
 from .config import settings
 from .finding_model import FindingModelBase, FindingModelFull
-from .index import DuckDBIndex
+from .index import Index
 
 
 @click.group()
@@ -51,13 +51,7 @@ def fm_to_markdown(finding_model_path: Path, output: Path | None) -> None:
         console.print(Markdown(markdown))
 
 
-@cli.group()
-def index() -> None:
-    """Index management commands."""
-    pass
-
-
-@index.command()
+@cli.command()
 @click.option("--index", type=click.Path(path_type=Path), help="Database path (default: config setting)")
 def stats(index: Path | None) -> None:
     """Show index statistics."""
@@ -77,7 +71,7 @@ def stats(index: Path | None) -> None:
         console.print(f"[bold green]Index Statistics for [yellow]{db_path}\n")
 
         try:
-            async with DuckDBIndex(db_path=db_path) as idx:
+            async with Index(db_path=db_path) as idx:
                 # Get counts
                 model_count = await idx.count()
                 people_count = await idx.count_people()
@@ -127,6 +121,54 @@ def stats(index: Path | None) -> None:
             raise
 
     asyncio.run(_do_stats(index))
+
+
+@cli.command()
+@click.argument("query")
+@click.option("--limit", type=int, default=10, show_default=True, help="Maximum number of results")
+@click.option("--tag", "tags", multiple=True, help="Filter results by tag (repeatable)")
+@click.option("--index", type=click.Path(path_type=Path), help="Database path (default: config setting)")
+def search(query: str, limit: int, tags: tuple[str, ...], index: Path | None) -> None:
+    """Search for finding models using hybrid FTS + semantic search."""
+    console = Console()
+
+    async def _do_search() -> None:
+        from findingmodel.config import ensure_index_db
+
+        db_path = index or ensure_index_db()
+
+        if not db_path.exists():
+            console.print(f"[bold red]Error: Database not found: {db_path}[/bold red]")
+            console.print("[yellow]Hint: Use 'oidm-maintain findingmodel build' to create a database.[/yellow]")
+            raise SystemExit(1)
+
+        async with Index(db_path=db_path) as idx:
+            tag_list = list(tags) if tags else None
+            results = await idx.search(query, limit=limit, tags=tag_list)
+
+            if not results:
+                console.print(f"[yellow]No results found for: {query}")
+                return
+
+            table = Table(title=f'Search Results for "{query}"', show_header=True, header_style="bold cyan")
+            table.add_column("ID", style="yellow", width=18)
+            table.add_column("Name", style="white")
+            table.add_column("Description", style="white")
+            table.add_column("Tags", style="cyan")
+
+            for entry in results:
+                description = entry.description or ""
+                tags_text = ", ".join(entry.tags or [])
+                table.add_row(entry.oifm_id, entry.name, description, tags_text)
+
+            console.print(table)
+            console.print(f"\n[gray]Total results: {len(results)}")
+
+    try:
+        asyncio.run(_do_search())
+    except Exception as e:
+        console.print(f"[bold red]Error searching: {e}")
+        raise
 
 
 if __name__ == "__main__":

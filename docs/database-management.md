@@ -103,7 +103,7 @@ OIDM_MAINTAIN_AWS_SECRET_ACCESS_KEY=your_secret_key
 #### View Index Statistics (user CLI)
 
 ```bash
-findingmodel index stats
+findingmodel stats
 ```
 
 ### Anatomic Location Database Management

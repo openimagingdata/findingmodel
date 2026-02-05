@@ -35,8 +35,12 @@ The finding model database is automatically downloaded on first use.
 # View configuration
 findingmodel config
 
+
 # Show index statistics
-findingmodel index stats
+findingmodel stats
+
+# Search for finding models
+findingmodel search "lung nodule"
 
 # Convert finding model to Markdown
 findingmodel fm-to-markdown model.json
