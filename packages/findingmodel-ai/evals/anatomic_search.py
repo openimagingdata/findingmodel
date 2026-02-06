@@ -805,6 +805,90 @@ def create_performance_cases() -> list[AnatomicSearchCase]:
     return cases
 
 
+def create_multiword_qualifier_cases() -> list[AnatomicSearchCase]:
+    """Create cases for multi-word queries where a qualifier constrains a common noun.
+
+    These cases test Issue #38: queries like "cardiac chamber" should return heart
+    chambers (ventricles/atria), not eye chambers. The qualifier "cardiac" should
+    constrain the noun "chamber" to the cardiac domain.
+
+    Root cause: FTS BM25 uses OR semantics, so "cardiac chamber" matches anything
+    with "cardiac" OR "chamber". Since "cardiac" doesn't appear in any anatomic
+    location descriptions (only in definitions), BM25 only matches on "chamber"
+    and returns eye chambers ("anterior chamber of globe", etc.).
+    """
+    cases = []
+
+    # Case 28: "cardiac chamber" — should find heart chambers, not eye chambers
+    # Heart chambers are ventricles (RID1392, RID1389) and atria (RID1390, RID1387)
+    # Eye chambers are "anterior/posterior chamber of globe" (RID9675, RID9678)
+    cases.append(
+        AnatomicSearchCase(
+            name="multiword_cardiac_chamber",
+            finding_name="cardiac chamber",
+            description="A chamber of the heart",
+            expected_primary_ids=["RID1392", "RID1389", "RID1390", "RID1387"],  # LV, RV, LA, RA
+            unexpected_location_ids=["RID9675", "RID9678"],  # eye chambers
+            expected_region="Thorax",
+            min_alternates=1,
+            semantic_keywords=["ventricle", "atrium", "heart"],
+            hierarchy_parent_id="RID1385",  # heart
+            max_query_time=25.0,
+        )
+    )
+
+    # Case 29: "cardiac muscle" — should find heart/papillary muscle, not limb muscles
+    # Papillary muscle (RID1400) is explicitly a cardiac muscle
+    # Heart itself (RID1385) is the cardiac muscle organ
+    cases.append(
+        AnatomicSearchCase(
+            name="multiword_cardiac_muscle",
+            finding_name="cardiac muscle",
+            description="Muscle of the heart",
+            expected_primary_ids=["RID1385", "RID1400"],  # heart, papillary muscle
+            unexpected_location_ids=["RID1936", "RID1941", "RID1940"],  # deltoid, supraspinatus, subscapularis
+            expected_region="Thorax",
+            min_alternates=1,
+            semantic_keywords=["heart", "cardiac", "papillary"],
+            hierarchy_parent_id="RID1385",  # heart
+            max_query_time=25.0,
+        )
+    )
+
+    # Case 30: "hepatic vein" — should find liver veins, not random veins
+    # Hepatic vein (RID1179) is the direct match
+    cases.append(
+        AnatomicSearchCase(
+            name="multiword_hepatic_vein",
+            finding_name="hepatic vein",
+            description="Vein draining the liver",
+            expected_primary_ids=["RID1179"],  # hepatic vein
+            expected_region="Abdomen",
+            min_alternates=1,
+            semantic_keywords=["hepatic", "vein", "liver"],
+            max_query_time=25.0,
+        )
+    )
+
+    # Case 31: "renal cortex" — should find kidney cortex, not cerebral cortex
+    # Cortex of kidney (RID211) is the generic match
+    # Also lateralized: cortex of right kidney (RID31789), cortex of left kidney (RID31790)
+    cases.append(
+        AnatomicSearchCase(
+            name="multiword_renal_cortex",
+            finding_name="renal cortex",
+            description="Outer region of the kidney",
+            expected_primary_ids=["RID211", "RID31789", "RID31790"],  # kidney cortex variants
+            expected_region="Abdomen",
+            min_alternates=1,
+            semantic_keywords=["cortex", "kidney", "renal"],
+            max_query_time=25.0,
+        )
+    )
+
+    return cases
+
+
 # =============================================================================
 # Task Execution Function
 # =============================================================================
@@ -916,6 +1000,7 @@ all_cases = (
     + create_rejection_non_anatomic()
     + create_edge_cases()
     + create_performance_cases()
+    + create_multiword_qualifier_cases()
 )
 
 evaluators = [

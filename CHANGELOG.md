@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `findingmodel index stats` subcommand; stats is now top-level
 
+## anatomic-locations 0.2.2 - Unreleased
+
+### Fixed
+
+- Made sure `OPENAI_API_KEY` is used for embedding-based search, both from environment and `.env` file.
+
 ## oidm-common 0.2.2 - 2026-02-03
 
 ### Added

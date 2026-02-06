@@ -682,7 +682,7 @@ wheels = [
 
 [[package]]
 name = "findingmodel"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "packages/findingmodel" }
 dependencies = [
     { name = "click" },
@@ -718,7 +718,7 @@ provides-extras = ["openai"]
 
 [[package]]
 name = "findingmodel-ai"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "packages/findingmodel-ai" }
 dependencies = [
     { name = "anatomic-locations" },

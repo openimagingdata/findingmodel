@@ -12,13 +12,16 @@ class TestAnatomicLocationSettings:
     """Tests for AnatomicLocationSettings class."""
 
     def test_default_values(self) -> None:
-        """Test that settings have correct default values."""
-        settings = AnatomicLocationSettings()
+        """Test that settings have correct default values (without .env file influence)."""
+        settings = AnatomicLocationSettings(_env_file=None)
 
         assert settings.db_path is None
         assert settings.remote_db_url is None
         assert settings.remote_db_hash is None
         assert settings.manifest_url == "https://anatomiclocationsdata.t3.storage.dev/manifest.json"
+        assert settings.openai_api_key is None
+        assert settings.openai_embedding_model == "text-embedding-3-small"
+        assert settings.openai_embedding_dimensions == 512
 
     def test_environment_variable_loading_with_anatomic_prefix(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that environment variables with ANATOMIC_ prefix are loaded correctly."""
@@ -49,6 +52,108 @@ class TestAnatomicLocationSettings:
         assert settings.db_path is None
         assert settings.remote_db_url is None
         assert settings.remote_db_hash is None
+
+    # --- OpenAI API key fallback tests (AliasChoices) ---
+
+    def test_openai_api_key_from_standard_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that OPENAI_API_KEY is picked up when ANATOMIC_OPENAI_API_KEY is not set.
+
+        This is the critical fallback that enables semantic search for users who only
+        have the standard OPENAI_API_KEY in their environment.
+        """
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-standard-key")
+
+        settings = AnatomicLocationSettings()
+
+        assert settings.openai_api_key is not None
+        assert settings.openai_api_key.get_secret_value() == "sk-standard-key"
+
+    def test_anatomic_api_key_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that ANATOMIC_OPENAI_API_KEY takes priority over OPENAI_API_KEY."""
+        monkeypatch.setenv("ANATOMIC_OPENAI_API_KEY", "sk-anatomic-key")
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-standard-key")
+
+        settings = AnatomicLocationSettings()
+
+        assert settings.openai_api_key is not None
+        assert settings.openai_api_key.get_secret_value() == "sk-anatomic-key"
+
+    def test_openai_api_key_none_when_unset(self) -> None:
+        """Test that openai_api_key is None when neither env var is set."""
+        settings = AnatomicLocationSettings(_env_file=None)
+
+        assert settings.openai_api_key is None
+
+    def test_embedding_model_from_standard_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that OPENAI_EMBEDDING_MODEL is picked up as fallback."""
+        monkeypatch.setenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
+
+        settings = AnatomicLocationSettings()
+
+        assert settings.openai_embedding_model == "text-embedding-3-large"
+
+    def test_anatomic_embedding_model_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that ANATOMIC_OPENAI_EMBEDDING_MODEL takes priority over OPENAI_EMBEDDING_MODEL."""
+        monkeypatch.setenv("ANATOMIC_OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
+        monkeypatch.setenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
+
+        settings = AnatomicLocationSettings()
+
+        assert settings.openai_embedding_model == "text-embedding-ada-002"
+
+    def test_embedding_model_default(self) -> None:
+        """Test default embedding model when no env var is set."""
+        settings = AnatomicLocationSettings(_env_file=None)
+
+        assert settings.openai_embedding_model == "text-embedding-3-small"
+
+    def test_embedding_dimensions_from_standard_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that OPENAI_EMBEDDING_DIMENSIONS is picked up as fallback."""
+        monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSIONS", "1536")
+
+        settings = AnatomicLocationSettings()
+
+        assert settings.openai_embedding_dimensions == 1536
+
+    def test_anatomic_embedding_dimensions_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS takes priority."""
+        monkeypatch.setenv("ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS", "256")
+        monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSIONS", "1536")
+
+        settings = AnatomicLocationSettings()
+
+        assert settings.openai_embedding_dimensions == 256
+
+    def test_embedding_dimensions_default(self) -> None:
+        """Test default embedding dimensions when no env var is set."""
+        settings = AnatomicLocationSettings(_env_file=None)
+
+        assert settings.openai_embedding_dimensions == 512
+
+    def test_reads_dotenv_file(self, tmp_path: Path) -> None:
+        """Test that settings reads from a .env file.
+
+        This ensures users with OPENAI_API_KEY in .env get semantic search
+        without needing to export the variable in their shell.
+        """
+        env_file = tmp_path / ".env"
+        env_file.write_text("OPENAI_API_KEY=sk-from-dotenv\n")
+
+        settings = AnatomicLocationSettings(_env_file=str(env_file))
+
+        assert settings.openai_api_key is not None
+        assert settings.openai_api_key.get_secret_value() == "sk-from-dotenv"
+
+    def test_env_var_overrides_dotenv_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that environment variables take priority over .env file values."""
+        env_file = tmp_path / ".env"
+        env_file.write_text("OPENAI_API_KEY=sk-from-dotenv\n")
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-from-env")
+
+        settings = AnatomicLocationSettings(_env_file=str(env_file))
+
+        assert settings.openai_api_key is not None
+        assert settings.openai_api_key.get_secret_value() == "sk-from-env"
 
 
 class TestGetSettings:
