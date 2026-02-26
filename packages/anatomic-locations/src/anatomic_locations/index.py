@@ -53,6 +53,10 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         index.close()
     """
 
+    # Quality thresholds to filter irrelevant search results
+    SEMANTIC_MIN_SIMILARITY: float = 0.75  # Minimum cosine similarity (1 - distance)
+    FTS_MIN_SCORE: float = 0.5  # Minimum BM25 score for FTS-only results
+
     def __init__(self, db_path: Path | None = None) -> None:
         from anatomic_locations.config import ensure_anatomic_db
 
@@ -161,8 +165,8 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         """
         conn = self._ensure_connection()
 
-        # Check for exact matches first - wrap typed sync helper
-        exact_rows = await asyncify(self._find_exact_match)(conn, query, region, sided_filter)
+        # Check for exact matches first (including synonyms) - wrap typed sync helper
+        exact_rows = await asyncify(self._find_exact_match)(conn, query, region, sided_filter, include_synonyms=True)
         if exact_rows:
             return [self._row_to_location(r) for r in exact_rows[:limit]]
 
@@ -188,9 +192,10 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         if embedding is not None:
             semantic_rows = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
 
-        # If no semantic results, return FTS only
+        # If no semantic results, return FTS only (with quality threshold)
         if not semantic_rows:
-            return [self._row_to_location(r) for r in fts_rows[:limit]]
+            filtered_fts = [r for r in fts_rows if float(r[-1]) >= self.FTS_MIN_SCORE]
+            return [self._row_to_location(r) for r in filtered_fts[:limit]]
 
         # Apply RRF fusion - CPU-bound, fast, stays sync (no I/O)
         fused = self._apply_rrf_fusion(fts_rows, semantic_rows, limit)
@@ -252,8 +257,10 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
 
         results: dict[str, list[AnatomicLocation]] = {}
         for query, embedding in zip(valid_queries, embeddings, strict=True):
-            # Exact match
-            exact_rows = await asyncify(self._find_exact_match)(conn, query, region, sided_filter)
+            # Exact match (including synonyms)
+            exact_rows = await asyncify(self._find_exact_match)(
+                conn, query, region, sided_filter, include_synonyms=True
+            )
             if exact_rows:
                 results[query] = [self._row_to_location(r) for r in exact_rows[:limit]]
                 continue
@@ -267,7 +274,8 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
                 semantic_rows = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
 
             if not semantic_rows:
-                results[query] = [self._row_to_location(r) for r in fts_rows[:limit]]
+                filtered_fts = [r for r in fts_rows if float(r[-1]) >= self.FTS_MIN_SCORE]
+                results[query] = [self._row_to_location(r) for r in filtered_fts[:limit]]
                 continue
 
             fused = self._apply_rrf_fusion(fts_rows, semantic_rows, limit)
@@ -507,14 +515,17 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         query: str,
         region: str | None,
         sided_filter: list[str] | None,
+        *,
+        include_synonyms: bool = False,
     ) -> list[tuple[Any, ...]]:
-        """Find exact matches on description (sync, typed).
+        """Find exact matches on description, optionally also on synonyms (sync, typed).
 
         Args:
             conn: DuckDB connection
             query: Text to match exactly (case-insensitive)
             region: Optional region filter
             sided_filter: Optional list of allowed laterality values
+            include_synonyms: If True, also check the anatomic_synonyms table
 
         Returns:
             List of matching rows from anatomic_locations table
@@ -537,7 +548,31 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         where_clause = " AND ".join(where_conditions)
 
         sql = f"SELECT * FROM anatomic_locations WHERE {where_clause}"
-        return conn.execute(sql, params).fetchall()
+        results = conn.execute(sql, params).fetchall()
+
+        # If no description match and synonyms requested, check synonyms table
+        if not results and include_synonyms:
+            synonym_conditions = ["LOWER(s.synonym) = ?"]
+            synonym_params: list[Any] = [query_lower]
+
+            if region is not None:
+                synonym_conditions.append("a.region = ?")
+                synonym_params.append(region)
+
+            if sided_filter is not None:
+                placeholders = ",".join(["?" for _ in sided_filter])
+                synonym_conditions.append(f"a.laterality IN ({placeholders})")
+                synonym_params.extend(sided_filter)
+
+            synonym_where = " AND ".join(synonym_conditions)
+            synonym_sql = f"""
+                SELECT a.* FROM anatomic_locations a
+                JOIN anatomic_synonyms s ON a.id = s.location_id
+                WHERE {synonym_where}
+            """
+            results = conn.execute(synonym_sql, synonym_params).fetchall()
+
+        return results
 
     def _search_fts(
         self,
@@ -577,7 +612,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         params.append(limit)
 
         sql = f"""
-            SELECT *, fts_main_anatomic_locations.match_bm25(id, ?, fields := 'description') as score
+            SELECT *, fts_main_anatomic_locations.match_bm25(id, ?) as score
             FROM anatomic_locations
             WHERE {where_clause}
             ORDER BY score DESC LIMIT ?
@@ -594,6 +629,8 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
     ) -> list[tuple[Any, ...]]:
         """Semantic search with cosine distance (sync, typed).
 
+        Results are filtered by SEMANTIC_MIN_SIMILARITY to exclude irrelevant matches.
+
         Args:
             conn: DuckDB connection
             embedding: Query embedding vector
@@ -604,6 +641,8 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         Returns:
             List of (id, description, ..., distance) tuples sorted by distance ascending
         """
+        max_distance = 1.0 - self.SEMANTIC_MIN_SIMILARITY
+
         where_conditions = ["vector IS NOT NULL"]
         params: list[Any] = [embedding]
 
@@ -633,7 +672,10 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             WHERE {where_clause}
             ORDER BY distance ASC LIMIT ?
         """
-        return conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
+
+        # Filter out results below minimum similarity threshold
+        return [r for r in rows if float(r[-1]) <= max_distance]
 
     def _apply_rrf_fusion(
         self,
