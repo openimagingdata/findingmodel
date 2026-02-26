@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from oidm_common.distribution import ensure_db_file
-from pydantic import Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,12 +17,14 @@ class AnatomicLocationSettings(BaseSettings):
     - ANATOMIC_REMOTE_DB_URL: URL to download database from
     - ANATOMIC_REMOTE_DB_HASH: Expected hash for database file (format: "sha256:...")
     - ANATOMIC_MANIFEST_URL: URL to JSON manifest for database versions
-    - ANATOMIC_OPENAI_API_KEY: OpenAI API key for embeddings (optional, enables semantic search)
-    - ANATOMIC_OPENAI_EMBEDDING_MODEL: OpenAI embedding model (default: text-embedding-3-small)
-    - ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS: Embedding dimensions (default: 512)
+
+    Embedding configuration uses AliasChoices to fall back to standard env vars:
+    - ANATOMIC_OPENAI_API_KEY or OPENAI_API_KEY: OpenAI API key for embeddings (enables semantic search)
+    - ANATOMIC_OPENAI_EMBEDDING_MODEL or OPENAI_EMBEDDING_MODEL: model (default: text-embedding-3-small)
+    - ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS or OPENAI_EMBEDDING_DIMENSIONS: dimensions (default: 512)
     """
 
-    model_config = SettingsConfigDict(env_prefix="ANATOMIC_")
+    model_config = SettingsConfigDict(env_prefix="ANATOMIC_", env_file=".env", extra="ignore")
 
     db_path: str | None = None
     remote_db_url: str | None = None
@@ -30,9 +32,19 @@ class AnatomicLocationSettings(BaseSettings):
     manifest_url: str = "https://anatomiclocationsdata.t3.storage.dev/manifest.json"
 
     # Embedding configuration (for hybrid search)
-    openai_api_key: SecretStr | None = Field(default=None)
-    openai_embedding_model: str = Field(default="text-embedding-3-small")
-    openai_embedding_dimensions: int = Field(default=512)
+    # AliasChoices: try package-specific env var first, fall back to standard name
+    openai_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("ANATOMIC_OPENAI_API_KEY", "OPENAI_API_KEY"),
+    )
+    openai_embedding_model: str = Field(
+        default="text-embedding-3-small",
+        validation_alias=AliasChoices("ANATOMIC_OPENAI_EMBEDDING_MODEL", "OPENAI_EMBEDDING_MODEL"),
+    )
+    openai_embedding_dimensions: int = Field(
+        default=512,
+        validation_alias=AliasChoices("ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS", "OPENAI_EMBEDDING_DIMENSIONS"),
+    )
 
 
 # Singleton instance

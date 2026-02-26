@@ -48,12 +48,12 @@ db_path = ensure_db_file(
 
 ```bash
 # .env - Override defaults
-DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb      # Skip download, use this file
-DUCKDB_ANATOMIC_PATH=/mnt/data/anatomic_locations.duckdb
+FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb      # Skip download, use this file
+ANATOMIC_DB_PATH=/mnt/data/anatomic_locations.duckdb
 
 # Or specify explicit remote (overrides manifest)
-REMOTE_INDEX_DB_URL=https://example.com/db.duckdb
-REMOTE_INDEX_DB_HASH=sha256:abc123...
+FINDINGMODEL_REMOTE_DB_URL=https://example.com/db.duckdb
+FINDINGMODEL_REMOTE_DB_HASH=sha256:abc123...
 ```
 
 ### Adding a New Database

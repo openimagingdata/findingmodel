@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, patch
 
 import duckdb
 import pytest
-from findingmodel.index import DuckDBIndex
+from findingmodel.index import FindingModelIndex
 from oidm_maintenance.config import MaintenanceSettings
 from oidm_maintenance.findingmodel.build import build_findingmodel_database
 from pydantic import SecretStr
@@ -431,12 +431,12 @@ class TestDataIntegrity:
 
 
 class TestBuiltDatabaseRetrieval:
-    """Tests for retrieving data from built database via DuckDBIndex."""
+    """Tests for retrieving data from built database via FindingModelIndex."""
 
     async def test_built_db_allows_retrieval_by_id(self, built_test_db: Path) -> None:
         """Can retrieve models by ID from built database."""
-        # Use DuckDBIndex to read
-        index = DuckDBIndex(built_test_db)
+        # Use FindingModelIndex to read
+        index = FindingModelIndex(built_test_db)
 
         # Get a known model ID from test data
         conn = duckdb.connect(str(built_test_db), read_only=True)
@@ -489,7 +489,7 @@ class TestBuiltDatabaseRetrieval:
         expected_count = len(source_files)
 
         # Count via index
-        index = DuckDBIndex(built_test_db)
+        index = FindingModelIndex(built_test_db)
         actual_count = await index.count()
 
         assert actual_count == expected_count

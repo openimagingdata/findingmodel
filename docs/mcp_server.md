@@ -169,10 +169,10 @@ The database is downloaded from a trusted remote source and cached locally at:
 
 ### Custom Database Location (Optional)
 
-If you need to use a custom database file (e.g., for development or offline use), set the `DUCKDB_INDEX_PATH` environment variable:
+If you need to use a custom database file (e.g., for development or offline use), set the `FINDINGMODEL_DB_PATH` environment variable:
 
 ```bash
-export DUCKDB_INDEX_PATH=/path/to/your/custom/database.duckdb
+export FINDINGMODEL_DB_PATH=/path/to/your/custom/database.duckdb
 ```
 
 When using a custom path without additional configuration, the file will be used directly without verification or download attempts.

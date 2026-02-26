@@ -1,6 +1,6 @@
 [project]
 name = "anatomic-locations"
-version = "0.2.1"
+version = "0.2.2"
 description = "Anatomic location ontology navigation"
 readme = "README.md"
 requires-python = ">=3.11"

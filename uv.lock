@@ -18,7 +18,7 @@ members = [
 
 [[package]]
 name = "anatomic-locations"
-version = "0.2.1"
+version = "0.2.2"
 source = { editable = "packages/anatomic-locations" }
 dependencies = [
     { name = "asyncer" },
@@ -682,7 +682,7 @@ wheels = [
 
 [[package]]
 name = "findingmodel"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "packages/findingmodel" }
 dependencies = [
     { name = "click" },
@@ -718,7 +718,7 @@ provides-extras = ["openai"]
 
 [[package]]
 name = "findingmodel-ai"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "packages/findingmodel-ai" }
 dependencies = [
     { name = "anatomic-locations" },
@@ -1830,7 +1830,7 @@ wheels = [
 
 [[package]]
 name = "oidm-common"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "packages/oidm-common" }
 dependencies = [
     { name = "asyncer" },

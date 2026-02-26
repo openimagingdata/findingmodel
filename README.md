@@ -70,7 +70,8 @@ asyncio.run(main())
 ```bash
 # Core tools
 findingmodel config              # View configuration
-findingmodel index stats         # Index statistics
+findingmodel stats               # Index statistics
+findingmodel search "pneumothorax"  # Search finding models
 
 # AI tools
 findingmodel-ai make-info "pneumothorax"     # Generate finding info

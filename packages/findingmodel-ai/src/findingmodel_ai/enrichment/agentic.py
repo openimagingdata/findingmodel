@@ -10,7 +10,7 @@ This approach is simpler and lets the model orchestrate the workflow.
 from datetime import datetime, timezone
 
 from findingmodel.finding_model import FindingModelFull
-from findingmodel.index import DuckDBIndex
+from findingmodel.index import FindingModelIndex
 from findingmodel.protocols import OntologySearchResult
 from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field
@@ -237,7 +237,7 @@ async def enrich_finding_agentic(identifier: str, model: str | None = None) -> F
     existing_model: FindingModelFull | None = None
 
     try:
-        index = DuckDBIndex()
+        index = FindingModelIndex()
         async with index:
             entry = await index.get(identifier)
             if entry is not None:

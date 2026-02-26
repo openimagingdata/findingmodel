@@ -15,37 +15,37 @@ tasks:
   test:oidm-common:
     desc: "Test oidm-common package (no callouts)"
     cmds:
-      - uv run pytest packages/oidm-common/tests -rs -m "not callout" {{.CLI_ARGS}}
+      - uv run --package oidm-common pytest packages/oidm-common/tests -rs -m "not callout" {{.CLI_ARGS}}
     silent: true
 
   test:oidm-common-full:
     desc: "Test oidm-common package (with callouts)"
     cmds:
-      - uv run pytest packages/oidm-common/tests -rs {{.CLI_ARGS}}
+      - uv run --package oidm-common pytest packages/oidm-common/tests -rs {{.CLI_ARGS}}
     silent: true
 
   test:anatomic:
     desc: "Test anatomic-locations package"
     cmds:
-      - uv run pytest packages/anatomic-locations/tests -rs {{.CLI_ARGS}}
+      - uv run --package anatomic-locations pytest packages/anatomic-locations/tests -rs {{.CLI_ARGS}}
     silent: true
 
   test:findingmodel:
     desc: "Test findingmodel package (no callouts)"
     cmds:
-      - uv run pytest packages/findingmodel/tests -rs -m "not callout" {{.CLI_ARGS}}
+      - uv run --package findingmodel pytest packages/findingmodel/tests -rs -m "not callout" {{.CLI_ARGS}}
     silent: true
 
   test:findingmodel-full:
     desc: "Test findingmodel package (with callouts)"
     cmds:
-      - uv run pytest packages/findingmodel/tests -rs {{.CLI_ARGS}}
+      - uv run --package findingmodel pytest packages/findingmodel/tests -rs {{.CLI_ARGS}}
     silent: true
 
   test:findingmodel-ai:
     desc: "Test findingmodel-ai package (no callouts)"
     cmds:
-      - uv run pytest packages/findingmodel-ai/tests -rs -m "not callout" {{.CLI_ARGS}}
+      - uv run --package findingmodel-ai pytest packages/findingmodel-ai/tests -rs -m "not callout" {{.CLI_ARGS}}
     silent: true
 
   test:findingmodel-ai-full:
@@ -53,13 +53,13 @@ tasks:
     env:
       PYDANTIC_ALLOW_MODEL_REQUESTS: "1"
     cmds:
-      - uv run pytest packages/findingmodel-ai/tests -rs {{.CLI_ARGS}}
+      - uv run --package findingmodel-ai pytest packages/findingmodel-ai/tests -rs {{.CLI_ARGS}}
     silent: true
 
   test:maintenance:
     desc: "Test oidm-maintenance package"
     cmds:
-      - uv run pytest packages/oidm-maintenance/tests -rs {{.CLI_ARGS}}
+      - uv run --package oidm-maintenance pytest packages/oidm-maintenance/tests -rs {{.CLI_ARGS}}
     silent: true
 
   # =============================================================================

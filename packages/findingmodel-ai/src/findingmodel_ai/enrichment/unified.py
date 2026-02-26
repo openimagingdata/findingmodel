@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from findingmodel.finding_model import FindingModelFull
-from findingmodel.index import DuckDBIndex
+from findingmodel.index import FindingModelIndex
 from findingmodel.protocols import OntologySearchResult
 from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field, field_validator
@@ -773,7 +773,7 @@ async def enrich_finding_unified(  # noqa: C901
     existing_model_str = ""
     index_lookup_start = perf_counter()
     try:
-        fm_index = DuckDBIndex()
+        fm_index = FindingModelIndex()
         async with fm_index:
             entry = await fm_index.get(finding_name)
             if entry is not None:
@@ -890,7 +890,7 @@ async def enrich_finding(  # noqa: C901
     # Step 1: Lookup finding in index
     logger.debug("Step 1: Looking up finding in index")
     try:
-        index = DuckDBIndex()
+        index = FindingModelIndex()
         async with index:
             # Use public API - get() handles OIFM ID resolution internally
             # Tries in order: OIFM ID match, name match, slug match, synonym match

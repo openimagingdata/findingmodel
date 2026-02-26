@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from oidm_common.distribution import DistributionError, ensure_db_file
 from oidm_common.distribution.manifest import clear_manifest_cache, fetch_manifest
 
 MANIFEST_URL_A = "https://findingmodelsdata.t3.storage.dev/manifest.json"
@@ -119,3 +120,87 @@ class TestFetchManifestCaching:
         # anatomic-locations manifest must have the correct entry, not the stale one
         assert al_manifest["databases"]["anatomic_locations"]["hash"] == "sha256:bbb"
         assert al_manifest["databases"]["anatomic_locations"]["version"] == "2025-01-20"
+
+
+class TestEnsureDbFileValidation:
+    """Tests for ensure_db_file URL/hash pair validation."""
+
+    @patch("oidm_common.distribution.paths._resolve_target_path")
+    def test_raises_error_when_url_without_hash(self, mock_resolve: MagicMock) -> None:
+        """Test that providing URL without hash raises DistributionError."""
+        mock_resolve.return_value = MagicMock()
+
+        with pytest.raises(DistributionError, match="Must provide both remote_url and remote_hash"):
+            ensure_db_file(
+                file_path=None,
+                remote_url="https://example.com/db.duckdb",
+                remote_hash=None,
+                manifest_key="finding_models",
+                manifest_url="https://example.com/manifest.json",
+            )
+
+    @patch("oidm_common.distribution.paths._resolve_target_path")
+    def test_raises_error_when_hash_without_url(self, mock_resolve: MagicMock) -> None:
+        """Test that providing hash without URL raises DistributionError."""
+        mock_resolve.return_value = MagicMock()
+
+        with pytest.raises(DistributionError, match="Must provide both remote_url and remote_hash"):
+            ensure_db_file(
+                file_path=None,
+                remote_url=None,
+                remote_hash="sha256:abc123",
+                manifest_key="finding_models",
+                manifest_url="https://example.com/manifest.json",
+            )
+
+    @patch("oidm_common.distribution.paths._resolve_target_path")
+    @patch("oidm_common.distribution.manifest.fetch_manifest")
+    @patch("oidm_common.distribution.download.download_file")
+    def test_succeeds_when_both_url_and_hash_provided(
+        self, mock_download: MagicMock, mock_fetch: MagicMock, mock_resolve: MagicMock
+    ) -> None:
+        """Test that providing both URL and hash succeeds."""
+        target_path = MagicMock()
+        mock_resolve.return_value = target_path
+        mock_download.return_value = target_path
+
+        result = ensure_db_file(
+            file_path=None,
+            remote_url="https://example.com/db.duckdb",
+            remote_hash="sha256:abc123",
+            manifest_key="finding_models",
+            manifest_url="https://example.com/manifest.json",
+        )
+
+        assert result == target_path
+        mock_download.assert_called_once_with(target_path, "https://example.com/db.duckdb", "sha256:abc123")
+
+    @patch("oidm_common.distribution.paths._resolve_target_path")
+    @patch("oidm_common.distribution.manifest.fetch_manifest")
+    def test_succeeds_when_neither_url_nor_hash_provided(self, mock_fetch: MagicMock, mock_resolve: MagicMock) -> None:
+        """Test that providing neither URL nor hash succeeds (uses manifest)."""
+        target_path = MagicMock()
+        target_path.exists.return_value = True
+        mock_resolve.return_value = target_path
+        mock_fetch.return_value = {
+            "databases": {
+                "finding_models": {
+                    "url": "https://example.com/db.duckdb",
+                    "hash": "sha256:abc123",
+                    "version": "2025-01-01",
+                }
+            }
+        }
+
+        with patch("oidm_common.distribution.download.download_file") as mock_download:
+            mock_download.return_value = target_path
+
+            result = ensure_db_file(
+                file_path=None,
+                remote_url=None,
+                remote_hash=None,
+                manifest_key="finding_models",
+                manifest_url="https://example.com/manifest.json",
+            )
+
+            assert result == target_path

@@ -17,6 +17,7 @@ findingmodel/                           # Workspace root
 │   ├── oidm-common/                    # Shared infrastructure
 │   │   └── src/oidm_common/
 │   │       ├── duckdb/                 # Connection, search, indexes
+│   │       │   └── base.py             # ReadOnlyDuckDBIndex base class
 │   │       ├── embeddings/             # Cache, OpenAI provider
 │   │       ├── distribution/           # Manifest, download, paths
 │   │       └── models/                 # IndexCode, WebReference
@@ -24,7 +25,7 @@ findingmodel/                           # Workspace root
 │   ├── anatomic-locations/             # Anatomic ontology (READ-ONLY)
 │   │   └── src/anatomic_locations/
 │   │       ├── models/                 # AnatomicLocation, enums
-│   │       ├── index.py                # AnatomicLocationIndex
+│   │       ├── index.py                # AnatomicLocationIndex (inherits ReadOnlyDuckDBIndex)
 │   │       ├── config.py               # Settings
 │   │       └── cli.py                  # query, stats
 │   │
@@ -32,7 +33,7 @@ findingmodel/                           # Workspace root
 │   │   └── src/findingmodel/
 │   │       ├── tools/                  # Non-AI utilities
 │   │       ├── finding_model.py        # FindingModel classes
-│   │       ├── index.py                # DuckDBIndex (search only)
+│   │       ├── index.py                # FindingModelIndex (inherits ReadOnlyDuckDBIndex); exported as Index
 │   │       ├── cli.py                  # fm-tool
 │   │       └── mcp_server.py           # MCP for IDE access
 │   │
@@ -61,7 +62,7 @@ findingmodel/                           # Workspace root
 │           ├── findingmodel/           # FindingModel DB build
 │           ├── s3.py                   # S3 upload, manifest
 │           └── cli.py                  # oidm-maintain
-│
+
 ├── docs/                               # Documentation
 ├── tasks/                              # Planning documents
 └── notebooks/                          # Demos
@@ -98,6 +99,13 @@ findingmodel/                           # Workspace root
 4. **Single lockfile**: uv.lock ensures consistent versions across all packages
 5. **AI separation**: findingmodel-ai contains all AI/LLM dependencies, core findingmodel has none
 6. **Embedding cache**: `oidm_common.embeddings.get_embedding`/`get_embeddings_batch` use a transparent DuckDB-backed cache at `~/.cache/findingmodel/embeddings.duckdb`; pass `cache=None` to disable or provide a custom cache instance.
+7. **ReadOnlyDuckDBIndex**: Shared base class in `oidm_common.duckdb.base` provides connection lifecycle, auto-open, and context managers for all read-only DuckDB indexes.
+
+## Class Names
+
+- `FindingModelIndex` — canonical name in `findingmodel.index`; exported as `Index` from `findingmodel` (backward-compatible alias)
+- `AnatomicLocationIndex` — in `anatomic_locations.index`
+- Both inherit `ReadOnlyDuckDBIndex` from `oidm_common.duckdb.base`
 
 ## Tech Stack
 - **Language**: Python 3.11+

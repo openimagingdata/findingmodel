@@ -5,23 +5,17 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from types import TracebackType
 from typing import Any, Literal
 
 import duckdb
 from asyncer import asyncify
-from oidm_common.duckdb import (
-    l2_to_cosine_similarity,
-    normalize_scores,
-    rrf_fusion,
-    setup_duckdb_connection,
-)
+from oidm_common.duckdb import ReadOnlyDuckDBIndex, l2_to_cosine_similarity, normalize_scores, rrf_fusion
 from oidm_common.embeddings import get_embedding, get_embeddings_batch
 from pydantic import BaseModel, Field
 
 from findingmodel import logger
 from findingmodel.common import normalize_name
-from findingmodel.config import settings
+from findingmodel.config import get_settings
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
 
@@ -62,38 +56,15 @@ class IndexEntry(BaseModel):
         return bool(self.synonyms and any(s.casefold() == identifier.casefold() for s in self.synonyms))
 
 
-class DuckDBIndex:
+class FindingModelIndex(ReadOnlyDuckDBIndex):
     """DuckDB-based index with read-only connections."""
 
     def __init__(self, db_path: str | Path | None = None) -> None:
-        if db_path:
-            self.db_path = Path(db_path).expanduser()  # Honor explicit path
-        else:
-            # Use package data directory with optional download
-            from findingmodel.config import ensure_index_db
+        from findingmodel.config import ensure_index_db
 
-            self.db_path = ensure_index_db()
-        self.conn: duckdb.DuckDBPyConnection | None = None
+        super().__init__(db_path, ensure_db=ensure_index_db)
         self._oifm_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
         self._oifma_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
-
-    async def __aenter__(self) -> DuckDBIndex:
-        """Enter async context manager, ensuring a connection is available."""
-
-        self._ensure_connection()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Close the database connection when leaving the context."""
-
-        if self.conn is not None:
-            self.conn.close()
-            self.conn = None
 
     async def contains(self, identifier: str) -> bool:
         """Return True if an ID, name, or synonym exists in the index."""
@@ -124,7 +95,7 @@ class DuckDBIndex:
             KeyError: If model not found
 
         Example:
-            >>> async with DuckDBIndex() as index:
+            >>> async with FindingModelIndex() as index:
             ...     model = await index.get_full("OIFM_RADLEX_000001")
             ...     # Returns complete FindingModelFull with all attributes
         """
@@ -146,7 +117,7 @@ class DuckDBIndex:
             Dict mapping OIFM ID to FindingModelFull object. Only includes models that were found.
 
         Example:
-            >>> async with DuckDBIndex() as index:
+            >>> async with FindingModelIndex() as index:
             ...     models = await index.get_full_batch(["OIFM_RADLEX_000001", "OIFM_CUSTOM_000042"])
             >>> # Returns {oifm_id: FindingModelFull, ...}
         """
@@ -513,12 +484,13 @@ class DuckDBIndex:
         conn = self._ensure_connection()
 
         # Generate embeddings for all valid queries in a single batch API call
-        api_key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+        cfg = get_settings()
+        api_key = cfg.openai_api_key.get_secret_value() if cfg.openai_api_key else ""
         embeddings = await get_embeddings_batch(
             valid_queries,
             api_key=api_key,
-            model=settings.openai_embedding_model,
-            dimensions=settings.openai_embedding_dimensions,
+            model=cfg.openai_embedding_model,
+            dimensions=cfg.openai_embedding_dimensions,
         )
 
         results: dict[str, list[IndexEntry]] = {}
@@ -631,7 +603,7 @@ class DuckDBIndex:
             RuntimeError: If unable to generate unique ID after max_attempts
 
         Example:
-            >>> async with DuckDBIndex() as index:
+            >>> async with FindingModelIndex() as index:
             ...     oifm_id = index.generate_model_id("GMTS")
             ...     # Returns "OIFM_GMTS_123456"
         """
@@ -690,7 +662,7 @@ class DuckDBIndex:
             This method only generates the base attribute ID.
 
         Example:
-            >>> async with DuckDBIndex() as index:
+            >>> async with FindingModelIndex() as index:
             ...     # Infer source from model
             ...     oifma_id = index.generate_attribute_id(model_oifm_id="OIFM_GMTS_123456")
             ...     # Returns "OIFMA_GMTS_234567"
@@ -858,11 +830,6 @@ class DuckDBIndex:
             return finding_model
 
         return FindingModelFull.model_validate(model_dict)
-
-    def _ensure_connection(self) -> duckdb.DuckDBPyConnection:
-        if self.conn is None:
-            self.conn = setup_duckdb_connection(self.db_path, read_only=True)
-        return self.conn
 
     # Typed sync helpers for asyncify - preserve type information
     # These wrap DuckDB operations for proper async execution
@@ -1147,12 +1114,13 @@ class DuckDBIndex:
         if not trimmed_query:
             return []
 
-        api_key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+        cfg = get_settings()
+        api_key = cfg.openai_api_key.get_secret_value() if cfg.openai_api_key else ""
         embedding = await get_embedding(
             trimmed_query,
             api_key=api_key,
-            model=settings.openai_embedding_model,
-            dimensions=settings.openai_embedding_dimensions,
+            model=cfg.openai_embedding_model,
+            dimensions=cfg.openai_embedding_dimensions,
         )
         if embedding is None:
             return []
@@ -1183,7 +1151,7 @@ class DuckDBIndex:
         if limit <= 0:
             return []
 
-        dimensions = settings.openai_embedding_dimensions
+        dimensions = get_settings().openai_embedding_dimensions
         rows = conn.execute(
             f"""
             SELECT oifm_id, array_distance(embedding, CAST(? AS FLOAT[{dimensions}])) AS l2_distance
@@ -1216,11 +1184,11 @@ class DuckDBIndex:
 
 
 # Alias for backward compatibility
-Index = DuckDBIndex
+Index = FindingModelIndex
 
 __all__ = [
     "AttributeInfo",
-    "DuckDBIndex",
+    "FindingModelIndex",
     "Index",
     "IndexEntry",
 ]

@@ -9,10 +9,13 @@ The database auto-downloads on first use. No setup required.
 ```python
 from anatomic_locations import AnatomicLocationIndex
 
-with AnatomicLocationIndex() as index:
-    location = index.get("RID2772")  # Kidney
-    print(location.description)       # "kidney"
-    print(location.region.value)      # "Abdomen"
+# No explicit open() needed — connection opens automatically
+index = AnatomicLocationIndex()
+location = index.get("RID2772")   # by ID
+location = index.get("kidney")    # by description (case-insensitive)
+location = index.get("renal")     # by synonym (case-insensitive)
+print(location.description)       # "kidney"
+print(location.region.value)      # "Abdomen"
 ```
 
 ## CLI Commands
@@ -166,22 +169,29 @@ Database: /home/user/.local/share/anatomic-locations/anatomic_locations.duckdb
 import asyncio
 from anatomic_locations import AnatomicLocationIndex
 
-# Sync operations
+# Auto-open: connection opens on first use, no context manager required
+index = AnatomicLocationIndex()
+
+# get() accepts ID, description, or synonym (case-insensitive)
+location = index.get("RID2772")        # by RID
+location = index.get("kidney")         # by description
+location = index.get("renal")          # by synonym
+print(f"Name: {location.description}")
+print(f"Region: {location.region.value if location.region else 'N/A'}")
+
+# Find by external code
+locations = index.find_by_code("SNOMED", "64033007")
+for loc in locations:
+    print(f"Found: {loc.description}")
+
+# Get direct children
+children = index.get_children_of("RID56")
+for child in children:
+    print(f"  Child: {child.description}")
+
+# Sync context manager (ensures cleanup)
 with AnatomicLocationIndex() as index:
-    # Get by ID (sync)
     location = index.get("RID2772")
-    print(f"Name: {location.description}")
-    print(f"Region: {location.region.value if location.region else 'N/A'}")
-
-    # Find by external code (sync)
-    locations = index.find_by_code("SNOMED", "64033007")
-    for loc in locations:
-        print(f"Found: {loc.description}")
-
-    # Get direct children (sync)
-    children = index.get_children_of("RID56")
-    for child in children:
-        print(f"  Child: {child.description}")
 
 # Async operations
 async def search_locations():
@@ -190,6 +200,14 @@ async def search_locations():
         results = await index.search("knee joint", limit=10)
         for result in results:
             print(f"- {result.description} ({result.id})")
+
+        # Batch search — one embedding API call for all queries
+        results_by_query = await index.search_batch(
+            ["knee joint", "liver", "axillary lymph node"],
+            limit=5,
+        )
+        for query, hits in results_by_query.items():
+            print(f"{query}: {[h.description for h in hits]}")
 
 asyncio.run(search_locations())
 ```
@@ -244,10 +262,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-@app.get("/location/{location_id}")
-def get_location(location_id: str):
+@app.get("/location/{identifier}")
+def get_location(identifier: str):
+    # identifier may be a RID, description, or synonym
     index = app.state.anatomic_index
-    return index.get(location_id)
+    return index.get(identifier)
 ```
 
 ## Key Concepts
@@ -300,6 +319,20 @@ with AnatomicLocationIndex(db_path="/path/to/custom.duckdb") as index:
 async with AnatomicLocationIndex(db_path="/path/to/custom.duckdb") as index:
     results = await index.search("kidney", limit=5)
 ```
+
+### Semantic Search (OpenAI Embeddings)
+
+Semantic search uses OpenAI embeddings to find results beyond exact keyword matches (e.g., "cardiac chamber" → "ventricle"). It is enabled automatically when an OpenAI API key is available:
+
+```bash
+# Either standard key (recommended — shared with other packages)
+OPENAI_API_KEY=sk-...
+
+# Or package-specific override
+ANATOMIC_OPENAI_API_KEY=sk-...
+```
+
+Without an OpenAI key, search falls back to keyword-only (FTS), which works well for exact terms but may miss conceptual matches for multi-word queries.
 
 ### Auto-Download Behavior
 

@@ -104,6 +104,14 @@ def ensure_db_file(
     # Case 2: Managed download - let Pooch handle download/caching/updates
     target = _resolve_target_path(None, manifest_key, app_name)
 
+    # Validate URL/hash pair: must provide both or neither
+    if (remote_url is not None) != (remote_hash is not None):
+        raise DistributionError(
+            "Must provide both remote_url and remote_hash, or neither. "
+            f"Got url={'set' if remote_url else 'unset'}, "
+            f"hash={'set' if remote_hash else 'unset'}"
+        )
+
     # Get URL and hash (from explicit config or manifest)
     if remote_url is not None and remote_hash is not None:
         url, hash_value = remote_url, remote_hash

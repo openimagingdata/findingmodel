@@ -154,9 +154,9 @@ The library uses a three-tier model selection system to balance cost and capabil
 ### Programmatic Access
 
 ```python
-from findingmodel.config import settings
+from findingmodel_ai.config import settings
 
-# Get model for a specific tier
+# Get model for a specific tier (requires findingmodel-ai package)
 model = settings.get_model("base")   # Most workflows
 model = settings.get_model("small")  # Fast/cheap tasks
 model = settings.get_model("full")   # Complex reasoning
@@ -269,9 +269,9 @@ Used by: `findingmodel-ai markdown-to-fm` CLI, `create_model_from_markdown()`
 For production applications, validate API keys are configured at startup:
 
 ```python
-from findingmodel.config import settings
+from findingmodel_ai.config import settings
 
-# Raises ConfigurationError if keys missing for default models
+# Raises ConfigurationError if keys missing for default models (requires findingmodel-ai)
 settings.validate_default_model_keys()
 ```
 
@@ -300,8 +300,8 @@ For production, pre-download or mount databases and specify paths:
 
 ```bash
 # Absolute paths to pre-mounted databases
-DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
-DUCKDB_ANATOMIC_PATH=/mnt/data/anatomic_locations.duckdb
+FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb
+ANATOMIC_DB_PATH=/mnt/data/anatomic_locations.duckdb
 ```
 
 ### Custom Download URLs
@@ -310,11 +310,11 @@ Lock to specific database versions:
 
 ```bash
 # Both URL and hash required
-REMOTE_INDEX_DB_URL=https://your-host/finding_models.duckdb
-REMOTE_INDEX_DB_HASH=sha256:abc123...
+FINDINGMODEL_REMOTE_DB_URL=https://your-host/finding_models.duckdb
+FINDINGMODEL_REMOTE_DB_HASH=sha256:abc123...
 
-REMOTE_ANATOMIC_DB_URL=https://your-host/anatomic_locations.duckdb
-REMOTE_ANATOMIC_DB_HASH=sha256:def456...
+ANATOMIC_REMOTE_DB_URL=https://your-host/anatomic_locations.duckdb
+ANATOMIC_REMOTE_DB_HASH=sha256:def456...
 ```
 
 ### Configuration Priority
@@ -371,12 +371,13 @@ BIOONTOLOGY_API_KEY=...
 | `TAVILY_API_KEY` | For citations | - | Tavily search API key |
 | `TAVILY_SEARCH_DEPTH` | No | `advanced` | Search depth: basic/advanced |
 | `BIOONTOLOGY_API_KEY` | For BioOntology | - | BioPortal API key |
-| `DUCKDB_INDEX_PATH` | No | Auto-download | Path to index database |
-| `DUCKDB_ANATOMIC_PATH` | No | Auto-download | Path to anatomic database |
-| `REMOTE_INDEX_DB_URL` | With hash | - | Custom index download URL |
-| `REMOTE_INDEX_DB_HASH` | With URL | - | SHA256 hash for index |
-| `REMOTE_ANATOMIC_DB_URL` | With hash | - | Custom anatomic download URL |
-| `REMOTE_ANATOMIC_DB_HASH` | With URL | - | SHA256 hash for anatomic |
+| `FINDINGMODEL_DB_PATH` | No | Auto-download | Path to index database |
+| `ANATOMIC_DB_PATH` | No | Auto-download | Path to anatomic database |
+| `FINDINGMODEL_REMOTE_DB_URL` | With hash | - | Custom index download URL |
+| `FINDINGMODEL_REMOTE_DB_HASH` | With URL | - | SHA256 hash for index |
+| `ANATOMIC_REMOTE_DB_URL` | With hash | - | Custom anatomic download URL |
+| `ANATOMIC_REMOTE_DB_HASH` | With URL | - | SHA256 hash for anatomic |
+| `ANATOMIC_OPENAI_API_KEY` | No | Falls back to `OPENAI_API_KEY` | OpenAI key for anatomic semantic search |
 | `LOGFIRE_TOKEN` | For tracing | - | Logfire.dev write token |
 | `DISABLE_SEND_TO_LOGFIRE` | No | `false` | Disable cloud tracing |
 

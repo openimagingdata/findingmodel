@@ -14,7 +14,7 @@ from oidm_common.models import WebReference as WebReference
 
 import findingmodel.tools as tools
 
-from .config import settings as settings
+from .config import get_settings as get_settings
 from .create_stub import create_model_stub_from_info as create_model_stub_from_info
 from .finding_info import FindingInfo as FindingInfo
 from .finding_model import ChoiceAttribute as ChoiceAttribute
@@ -25,7 +25,7 @@ from .finding_model import FindingModelBase as FindingModelBase
 from .finding_model import FindingModelFull as FindingModelFull
 from .finding_model import NumericAttribute as NumericAttribute
 from .finding_model import NumericAttributeIded as NumericAttributeIded
-from .index import DuckDBIndex as Index
+from .index import FindingModelIndex as Index
 
 __all__ = [
     "EmbeddingCache",
@@ -37,8 +37,8 @@ __all__ = [
     "WebReference",
     "__version__",
     "create_model_stub_from_info",
+    "get_settings",
     "logger",
-    "settings",
     "tools",
 ]
 

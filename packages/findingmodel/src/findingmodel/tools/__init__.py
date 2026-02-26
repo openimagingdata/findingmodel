@@ -1,6 +1,6 @@
 # Import types for add_ids_to_model functions
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
-from findingmodel.index import DuckDBIndex as Index
+from findingmodel.index import FindingModelIndex as Index
 
 # Import non-AI utility tools from local package
 from .index_codes import add_standard_codes_to_model

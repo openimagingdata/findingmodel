@@ -45,12 +45,12 @@ Configure automatic downloads by setting environment variables in `.env`:
 
 ```bash
 # Finding models index
-REMOTE_INDEX_DB_URL=https://your-server.com/finding_models.duckdb
-REMOTE_INDEX_DB_HASH=sha256:your_hash_here
+FINDINGMODEL_REMOTE_DB_URL=https://your-server.com/finding_models.duckdb
+FINDINGMODEL_REMOTE_DB_HASH=sha256:your_hash_here
 
 # Anatomic locations database
-REMOTE_ANATOMIC_DB_URL=https://your-server.com/anatomic_locations.duckdb
-REMOTE_ANATOMIC_DB_HASH=sha256:your_hash_here
+ANATOMIC_REMOTE_DB_URL=https://your-server.com/anatomic_locations.duckdb
+ANATOMIC_REMOTE_DB_HASH=sha256:your_hash_here
 ```
 
 Both URL and SHA256 hash must be provided. The package uses [Pooch](https://www.fatiando.org/pooch/) for:
@@ -103,7 +103,7 @@ OIDM_MAINTAIN_AWS_SECRET_ACCESS_KEY=your_secret_key
 #### View Index Statistics (user CLI)
 
 ```bash
-findingmodel index stats
+findingmodel stats
 ```
 
 ### Anatomic Location Database Management
@@ -194,6 +194,6 @@ The `--force` flag overwrites the existing database.
 Override defaults via environment variables:
 ```bash
 # Override database paths (still uses platform-native directory)
-FINDINGMODEL_DUCKDB_INDEX_PATH=my_custom_index.duckdb
-ANATOMIC_DUCKDB_PATH=my_custom_anatomic.duckdb
+FINDINGMODEL_DB_PATH=my_custom_index.duckdb
+ANATOMIC_DB_PATH=my_custom_anatomic.duckdb
 ```

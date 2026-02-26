@@ -1,0 +1,127 @@
+"""Tests for ReadOnlyDuckDBIndex base class."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+from oidm_common.duckdb import ReadOnlyDuckDBIndex, setup_duckdb_connection
+
+
+@pytest.fixture
+def seeded_db(tmp_duckdb_path: Path) -> Path:
+    """Create a DuckDB file with a small table for lifecycle tests."""
+    conn = setup_duckdb_connection(tmp_duckdb_path, read_only=False)
+    conn.execute("CREATE TABLE items (id VARCHAR PRIMARY KEY, name VARCHAR)")
+    conn.execute("INSERT INTO items VALUES ('a', 'alpha'), ('b', 'beta')")
+    conn.close()
+    return tmp_duckdb_path
+
+
+class TestReadOnlyDuckDBIndexInit:
+    """Tests for __init__ resolution logic."""
+
+    def test_explicit_path(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(seeded_db)
+        assert idx.db_path == seeded_db
+        assert idx.conn is None
+
+    def test_ensure_db_callable(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(ensure_db=lambda: seeded_db)
+        assert idx.db_path == seeded_db
+
+    def test_no_path_no_ensure_db_raises(self) -> None:
+        with pytest.raises(ValueError, match="Either db_path or ensure_db"):
+            ReadOnlyDuckDBIndex()
+
+    def test_path_takes_precedence_over_ensure_db(self, seeded_db: Path, tmp_path: Path) -> None:
+        other = tmp_path / "other.duckdb"
+        idx = ReadOnlyDuckDBIndex(seeded_db, ensure_db=lambda: other)
+        assert idx.db_path == seeded_db
+
+    def test_string_path_converted(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(str(seeded_db))
+        assert idx.db_path == seeded_db
+
+
+class TestReadOnlyDuckDBIndexLifecycle:
+    """Tests for open/close/auto-open."""
+
+    def test_open_returns_self(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(seeded_db)
+        result = idx.open()
+        assert result is idx
+        assert idx.conn is not None
+        idx.close()
+
+    def test_close_sets_conn_none(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(seeded_db)
+        idx.open()
+        idx.close()
+        assert idx.conn is None
+
+    def test_close_when_not_open_is_noop(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(seeded_db)
+        idx.close()  # should not raise
+        assert idx.conn is None
+
+    def test_ensure_connection_auto_opens(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(seeded_db)
+        conn = idx._ensure_connection()
+        assert conn is not None
+        row = conn.execute("SELECT count(*) FROM items").fetchone()
+        assert row is not None and row[0] == 2
+        idx.close()
+
+    def test_ensure_connection_reuses_existing(self, seeded_db: Path) -> None:
+        idx = ReadOnlyDuckDBIndex(seeded_db)
+        conn1 = idx._ensure_connection()
+        conn2 = idx._ensure_connection()
+        assert conn1 is conn2
+        idx.close()
+
+
+class TestReadOnlyDuckDBIndexContextManagers:
+    """Tests for sync and async context managers."""
+
+    def test_sync_context_manager(self, seeded_db: Path) -> None:
+        with ReadOnlyDuckDBIndex(seeded_db) as idx:
+            assert idx.conn is not None
+            row = idx.conn.execute("SELECT name FROM items WHERE id = 'a'").fetchone()
+            assert row is not None and row[0] == "alpha"
+        assert idx.conn is None
+
+    @pytest.mark.asyncio
+    async def test_async_context_manager(self, seeded_db: Path) -> None:
+        async with ReadOnlyDuckDBIndex(seeded_db) as idx:
+            assert idx.conn is not None
+            row = idx.conn.execute("SELECT name FROM items WHERE id = 'b'").fetchone()
+            assert row is not None and row[0] == "beta"
+        assert idx.conn is None
+
+
+class TestReadOnlyDuckDBIndexSubclass:
+    """Test that subclasses work correctly."""
+
+    def test_subclass_with_ensure_db(self, seeded_db: Path) -> None:
+        class MyIndex(ReadOnlyDuckDBIndex):
+            def __init__(self) -> None:
+                super().__init__(ensure_db=lambda: seeded_db)
+
+        with MyIndex() as idx:
+            assert idx.db_path == seeded_db
+            row = idx.conn.execute("SELECT count(*) FROM items").fetchone()  # type: ignore[union-attr]
+            assert row is not None and row[0] == 2
+
+    def test_subclass_auto_open_on_query(self, seeded_db: Path) -> None:
+        class MyIndex(ReadOnlyDuckDBIndex):
+            def query_count(self) -> int:
+                conn = self._ensure_connection()
+                row = conn.execute("SELECT count(*) FROM items").fetchone()
+                return int(row[0]) if row else 0
+
+        idx = MyIndex(seeded_db)
+        assert idx.conn is None
+        assert idx.query_count() == 2  # auto-opens
+        assert idx.conn is not None
+        idx.close()

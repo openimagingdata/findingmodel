@@ -24,7 +24,7 @@ Create a `.env` file in your project root:
 OPENAI_API_KEY=your_key_here
 
 # Optional: Custom database path
-DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
+FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb
 ```
 
 The finding model database is automatically downloaded on first use.
@@ -35,8 +35,12 @@ The finding model database is automatically downloaded on first use.
 # View configuration
 findingmodel config
 
+
 # Show index statistics
-findingmodel index stats
+findingmodel stats
+
+# Search for finding models
+findingmodel search "lung nodule"
 
 # Convert finding model to Markdown
 findingmodel fm-to-markdown model.json

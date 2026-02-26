@@ -52,7 +52,7 @@ The manifest.json file enables database updates without requiring new library re
 
 1. Hash format must be `sha256:` followed by 64 hex characters
 2. URL must use HTTPS protocol
-3. Database keys should match config field names (e.g., "finding_models" matches `duckdb_index_path`)
+3. Database keys should match config field names (e.g., "finding_models" matches `db_path`)
 4. Version should be sortable (recommend ISO date format: YYYY-MM-DD)
 
 ## Update Process

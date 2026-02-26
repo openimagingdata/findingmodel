@@ -6,6 +6,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## findingmodel 1.0.2 - 2026-02-26
+
+### Added
+
+- Added `findingmodel search` command for hybrid index search
+
+### Changed
+
+- Renamed internal class `DuckDBIndex` to `FindingModelIndex`; public API (`Index`) is unchanged
+- Environment variables renamed to `FINDINGMODEL_` prefix (`FINDINGMODEL_DB_PATH`, `FINDINGMODEL_REMOTE_DB_URL`, etc.); legacy names (`DUCKDB_INDEX_PATH`, `REMOTE_INDEX_DB_*`) still accepted
+
+### Removed
+
+- Removed `findingmodel index stats` subcommand; stats is now top-level
+
+## anatomic-locations 0.2.2 - 2026-02-26
+
+### Added
+
+- `get()` now accepts descriptions and synonyms in addition to RID identifiers (case-insensitive)
+- `search_batch()` method for searching multiple queries with a single embedding API call
+
+### Fixed
+
+- Made sure `OPENAI_API_KEY` is used for embedding-based search, both from environment and `.env` file.
+
+## oidm-common 0.2.3 - 2026-02-26
+
+### Added
+
+- `ReadOnlyDuckDBIndex` base class providing shared connection lifecycle, auto-open, and context managers for all DuckDB-backed indexes
+
 ## oidm-common 0.2.2 - 2026-02-03
 
 ### Added
