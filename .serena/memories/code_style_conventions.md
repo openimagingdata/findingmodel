@@ -31,11 +31,11 @@
 - **Test pattern**: Session-scoped fixture in `conftest.py` enables logging and adds file handler
 
 ## Configuration & Secrets
-- **Settings class**: `FindingModelConfig` extends Pydantic `BaseSettings`
-- **Access**: `from findingmodel.config import settings` (singleton, auto-loads `.env`)
-- **Secret fields**: Use `QuoteStrippedSecretStr` (handles shell-quoted values from .env)
-- **NEVER use os.getenv**: All config access through `settings.*` - ensures validation and type safety
-- **Validation**: Call `settings.validate_default_model_keys()` at app startup for fail-fast
+- **Settings class**: `FindingModelConfig` extends Pydantic `BaseSettings` with `env_prefix="FINDINGMODEL_"`
+- **Access**: `from findingmodel.config import get_settings` (lazy singleton, auto-loads `.env`)
+- **Secret fields**: Use `SecretStr | None` with `AliasChoices` for shared keys (e.g., `OPENAI_API_KEY`)
+- **NEVER use os.getenv**: All config access through `get_settings().*` - ensures validation and type safety
+- **Validation**: Call `get_settings().validate_default_model_keys()` at app startup for fail-fast
 
 ## Testing
 - pytest with asyncio support

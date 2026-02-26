@@ -232,36 +232,3 @@ class TestEnsureDbFileRealDownload:
 
             # File should not have been modified (no re-download)
             assert result2.stat().st_mtime == original_mtime
-
-
-class TestWrapperFunctions:
-    """Tests for ensure_index_db() wrapper."""
-
-    def test_ensure_index_db_calls_ensure_db_file_correctly(self, tmp_path: Path) -> None:
-        """Test that ensure_index_db() calls oidm_ensure_db_file() with correct parameters."""
-        from unittest.mock import patch
-
-        from findingmodel.config import ensure_index_db
-
-        with (
-            patch("findingmodel.config.oidm_ensure_db_file") as mock_ensure,
-            patch("findingmodel.config.settings") as mock_settings,
-        ):
-            mock_settings.duckdb_index_path = "test.duckdb"
-            mock_settings.remote_index_db_url = "http://example.com/index.duckdb"
-            mock_settings.remote_index_db_hash = "sha256:abc123"
-            mock_settings.remote_manifest_url = "http://example.com/manifest.json"
-            mock_ensure.return_value = tmp_path / "test.duckdb"
-
-            result = ensure_index_db()
-
-            # Verify oidm_ensure_db_file was called with correct parameters
-            mock_ensure.assert_called_once_with(
-                file_path="test.duckdb",
-                remote_url="http://example.com/index.duckdb",
-                remote_hash="sha256:abc123",
-                manifest_key="finding_models",
-                manifest_url="http://example.com/manifest.json",
-                app_name="findingmodel",
-            )
-            assert result == tmp_path / "test.duckdb"

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Renamed internal class `DuckDBIndex` to `FindingModelIndex`; public API (`Index`) is unchanged
+- Environment variables renamed to `FINDINGMODEL_` prefix (`FINDINGMODEL_DB_PATH`, `FINDINGMODEL_REMOTE_DB_URL`, etc.); legacy names (`DUCKDB_INDEX_PATH`, `REMOTE_INDEX_DB_*`) still accepted
 
 ### Removed
 

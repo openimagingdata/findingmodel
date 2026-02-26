@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from oidm_common.distribution import ensure_db_file as oidm_ensure_db_file
-from pydantic import Field, SecretStr, model_validator
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing_extensions import Self
 
 
 class ConfigurationError(RuntimeError):
@@ -11,52 +12,68 @@ class ConfigurationError(RuntimeError):
 
 
 class FindingModelConfig(BaseSettings):
-    # API Keys (kept for embeddings)
-    openai_api_key: SecretStr = Field(default=SecretStr(""))
+    """Settings for finding model database management.
+
+    Configuration can be provided via environment variables with FINDINGMODEL_ prefix:
+    - FINDINGMODEL_DB_PATH: Path to database file (also accepts legacy DUCKDB_INDEX_PATH)
+    - FINDINGMODEL_REMOTE_DB_URL: URL to download database from (also accepts legacy REMOTE_INDEX_DB_URL)
+    - FINDINGMODEL_REMOTE_DB_HASH: Expected hash for database file (also accepts legacy REMOTE_INDEX_DB_HASH)
+    - FINDINGMODEL_MANIFEST_URL: URL to JSON manifest for database versions
+
+    Embedding configuration uses AliasChoices to fall back to standard env vars:
+    - FINDINGMODEL_OPENAI_API_KEY or OPENAI_API_KEY: OpenAI API key for embeddings
+    - FINDINGMODEL_OPENAI_EMBEDDING_MODEL or OPENAI_EMBEDDING_MODEL: model (default: text-embedding-3-small)
+    - FINDINGMODEL_OPENAI_EMBEDDING_DIMENSIONS or OPENAI_EMBEDDING_DIMENSIONS: dimensions (default: 512)
+    """
+
+    model_config = SettingsConfigDict(env_prefix="FINDINGMODEL_", env_file=".env", extra="ignore")
 
     # DuckDB configuration
-    duckdb_index_path: str | None = Field(
+    # AliasChoices: new FINDINGMODEL_* names preferred, old DUCKDB_INDEX_* still accepted
+    db_path: str | None = Field(
         default=None,
-        description="Path to finding models index database (absolute, relative to user data dir, or None for default)",
+        validation_alias=AliasChoices("FINDINGMODEL_DB_PATH", "DUCKDB_INDEX_PATH"),
+    )
+    remote_db_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FINDINGMODEL_REMOTE_DB_URL", "REMOTE_INDEX_DB_URL"),
+    )
+    remote_db_hash: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FINDINGMODEL_REMOTE_DB_HASH", "REMOTE_INDEX_DB_HASH"),
+    )
+    manifest_url: str = "https://findingmodelsdata.t3.storage.dev/manifest.json"
+
+    # Embedding configuration
+    # AliasChoices: try package-specific env var first, fall back to standard name
+    openai_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FINDINGMODEL_OPENAI_API_KEY", "OPENAI_API_KEY"),
     )
     openai_embedding_model: str = Field(
-        default="text-embedding-3-small", description="OpenAI model for generating embeddings"
+        default="text-embedding-3-small",
+        validation_alias=AliasChoices("FINDINGMODEL_OPENAI_EMBEDDING_MODEL", "OPENAI_EMBEDDING_MODEL"),
     )
     openai_embedding_dimensions: int = Field(
-        default=512, description="Embedding dimensions (512 for text-embedding-3-small reduced, 1536 for full)"
+        default=512,
+        validation_alias=AliasChoices("FINDINGMODEL_OPENAI_EMBEDDING_DIMENSIONS", "OPENAI_EMBEDDING_DIMENSIONS"),
     )
 
-    # Optional remote DuckDB download URLs
-    remote_index_db_url: str | None = Field(
-        default=None,
-        description="URL to download finding models index database",
-    )
-    remote_index_db_hash: str | None = Field(
-        default=None,
-        description="SHA256 hash for index DB (e.g. 'sha256:def...')",
-    )
-    remote_manifest_url: str | None = Field(
-        default="https://findingmodelsdata.t3.storage.dev/manifest.json",
-        description="URL to JSON manifest for database versions",
-    )
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
-
-    @model_validator(mode="after")
-    def validate_remote_db_config(self) -> Self:
-        """Validate that remote URL and hash are provided together (or neither)."""
-        # Check index database config
-        if (self.remote_index_db_url is None) != (self.remote_index_db_hash is None):
-            raise ValueError(
-                "Must provide both REMOTE_INDEX_DB_URL and REMOTE_INDEX_DB_HASH, or neither. "
-                f"Got URL={'set' if self.remote_index_db_url else 'unset'}, "
-                f"hash={'set' if self.remote_index_db_hash else 'unset'}"
-            )
-
-        return self
+# Lazy singleton instance
+_settings: FindingModelConfig | None = None
 
 
-settings = FindingModelConfig()
+def get_settings() -> FindingModelConfig:
+    """Get the singleton settings instance.
+
+    Returns:
+        Cached settings instance (loads from environment on first call)
+    """
+    global _settings
+    if _settings is None:
+        _settings = FindingModelConfig()
+    return _settings
 
 
 def ensure_index_db() -> Path:
@@ -68,12 +85,13 @@ def ensure_index_db() -> Path:
     Returns:
         Path to the finding models index database
     """
+    s = get_settings()
     return oidm_ensure_db_file(
-        file_path=settings.duckdb_index_path,
-        remote_url=settings.remote_index_db_url,
-        remote_hash=settings.remote_index_db_hash,
+        file_path=s.db_path,
+        remote_url=s.remote_db_url,
+        remote_hash=s.remote_db_hash,
         manifest_key="finding_models",
-        manifest_url=settings.remote_manifest_url,
+        manifest_url=s.manifest_url,
         app_name="findingmodel",
     )
 
@@ -82,5 +100,5 @@ __all__ = [
     "ConfigurationError",
     "FindingModelConfig",
     "ensure_index_db",
-    "settings",
+    "get_settings",
 ]
