@@ -112,11 +112,15 @@ def create_searchable_text(record: dict[str, Any]) -> str:
 def determine_laterality(record: dict[str, Any]) -> str:
     """Determine the laterality value based on ref properties.
 
+    A record's ref properties point to its counterparts:
+    - leftRef points to the LEFT counterpart → this record IS the RIGHT variant
+    - rightRef points to the RIGHT counterpart → this record IS the LEFT variant
+
     Logic:
-    - If has leftRef AND rightRef: "generic"
-    - If has leftRef only: "left"
-    - If has rightRef only: "right"
-    - If has unsidedRef only: "unsided" (maps to generic)
+    - If has leftRef AND rightRef: "generic" (has both sides → is the generic form)
+    - If has leftRef only: "right" (points to left counterpart → this is right)
+    - If has rightRef only: "left" (points to right counterpart → this is left)
+    - If has unsidedRef only: "generic" (maps to generic)
     - Otherwise: "nonlateral"
 
     Args:
@@ -132,9 +136,9 @@ def determine_laterality(record: dict[str, Any]) -> str:
     if has_left and has_right:
         return "generic"
     elif has_left and not has_right:
-        return "left"
-    elif has_right and not has_left:
         return "right"
+    elif has_right and not has_left:
+        return "left"
     elif has_unsided and not has_left and not has_right:
         return "generic"  # unsided is a variant of generic
     else:
@@ -695,7 +699,7 @@ def _create_indexes(conn: duckdb.DuckDBPyConnection, dimensions: int) -> None:
         "definition",
         stemmer="porter",
         stopwords="english",
-        lower=0,
+        lower=1,
         overwrite=True,
     )
 

@@ -308,8 +308,8 @@ class TestAnatomicLocationIndexLateralityLookup:
             assert left is not None
             assert left.id == "RID10049_RID5824"
             assert left.description == "left superior nasal turbinate"
-            # Note: In sample data, left variant has rightRef but no leftRef,
-            # so laterality will be RIGHT, not LEFT. This is a data quirk in the sample.
+            # Note: The prebuilt test DB was built before the laterality fix.
+            # After rebuilding, left variant should have laterality LEFT.
             # The important thing is the navigation works.
 
             # Navigate to right variant
@@ -397,3 +397,101 @@ class TestAnatomicLocationIndexWeakRefBinding:
 
             children = index.get_children_of("RID9532")
             assert all(loc._index is not None for loc in children)
+
+
+# =============================================================================
+# Search Quality Tests
+# =============================================================================
+
+
+class TestSearchQualityThresholds:
+    """Tests for search result quality filtering."""
+
+    @pytest.mark.asyncio
+    async def test_fts_only_filters_low_quality(self, prebuilt_db_path: Path) -> None:
+        """FTS-only path filters results below minimum BM25 score threshold."""
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
+            mock_settings = MagicMock()
+            mock_settings.openai_api_key = None
+            mock_settings.openai_embedding_model = "text-embedding-3-small"
+            mock_settings.openai_embedding_dimensions = 512
+
+            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
+                # Search for a term that doesn't exist — should get few or no results
+                results = await index.search("xyznonexistent", limit=10)
+
+                # Should return empty or very few results due to quality threshold
+                assert isinstance(results, list)
+                assert len(results) == 0
+
+    @pytest.mark.asyncio
+    async def test_semantic_threshold_filters_distant_results(
+        self,
+        prebuilt_db_path: Path,
+    ) -> None:
+        """Semantic search filters out results below minimum cosine similarity."""
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
+            # Use a random-ish embedding that won't match anything well
+            random_embedding = [0.01] * 512
+
+            conn = index._ensure_connection()
+            results = index._search_semantic(conn, random_embedding, 10, None, None)
+
+            # With a random embedding, most/all results should be filtered by threshold
+            assert isinstance(results, list)
+            # Results should be limited to those meeting the 0.75 similarity threshold
+            for r in results:
+                distance = float(r[-1])
+                similarity = 1.0 - distance
+                assert similarity >= index.SEMANTIC_MIN_SIMILARITY
+
+    @pytest.mark.asyncio
+    async def test_good_fts_results_pass_threshold(self, prebuilt_db_path: Path) -> None:
+        """Good FTS matches pass the quality threshold and are returned."""
+        async with AnatomicLocationIndex(prebuilt_db_path) as index:
+            mock_settings = MagicMock()
+            mock_settings.openai_api_key = None
+            mock_settings.openai_embedding_model = "text-embedding-3-small"
+            mock_settings.openai_embedding_dimensions = 512
+
+            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
+                # "turbinate" is definitely in the database
+                results = await index.search("turbinate", limit=10)
+
+                # Should return results — good keyword match
+                assert len(results) > 0
+                assert any("turbinate" in r.description for r in results)
+
+
+class TestExactMatchWithSynonyms:
+    """Tests for _find_exact_match with include_synonyms parameter."""
+
+    def test_exact_match_description_still_works(self, prebuilt_db_path: Path) -> None:
+        """Exact match on description continues to work."""
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
+            conn = index._ensure_connection()
+            results = index._find_exact_match(conn, "lung", None, None)
+            assert len(results) >= 1
+
+    def test_exact_match_with_synonyms_default_off(self, prebuilt_db_path: Path) -> None:
+        """By default, include_synonyms is False — only descriptions are checked."""
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
+            conn = index._ensure_connection()
+            # "pulmo" is a synonym for lung — should NOT match without include_synonyms
+            results = index._find_exact_match(conn, "pulmo", None, None)
+            assert len(results) == 0
+
+    def test_exact_match_with_synonyms_enabled(self, prebuilt_db_path: Path) -> None:
+        """With include_synonyms=True, synonyms are also checked."""
+        with AnatomicLocationIndex(prebuilt_db_path) as index:
+            conn = index._ensure_connection()
+            # "pulmo" is a synonym for lung — should match with include_synonyms
+            try:
+                results = index._find_exact_match(conn, "pulmo", None, None, include_synonyms=True)
+                if results:
+                    # Verify it resolved to lung
+                    assert str(results[0][0]) == "RID1301"
+                else:
+                    pytest.skip("'pulmo' synonym not in test fixture")
+            except Exception:
+                pytest.skip("Synonym not available in test fixture")

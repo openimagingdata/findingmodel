@@ -258,9 +258,12 @@ async def generate_embeddings_batch(
     client: "AsyncOpenAI",
     model: str,
     dimensions: int,
+    *,
+    chunk_size: int = 2048,
 ) -> list[list[float] | None]:
-    """Generate embeddings for multiple texts in a single API call (low-level API).
+    """Generate embeddings for multiple texts via the OpenAI API (low-level API).
 
+    Automatically chunks large batches to stay within API limits.
     For most use cases, prefer `get_embeddings_batch` which handles client management.
 
     Args:
@@ -268,6 +271,7 @@ async def generate_embeddings_batch(
         client: AsyncOpenAI client
         model: Embedding model name (e.g., "text-embedding-3-small")
         dimensions: Vector dimensions
+        chunk_size: Maximum number of texts per API call (default: 2048)
 
     Returns:
         List of float32 embedding vectors (or None for failed items)
@@ -275,23 +279,26 @@ async def generate_embeddings_batch(
     if not texts:
         return []
 
-    try:
-        response = await client.embeddings.create(
-            input=texts,
-            model=model,
-            dimensions=dimensions,
-        )
+    results: list[list[float] | None] = []
 
-        # Convert to float32 precision and return in order
-        results: list[list[float] | None] = []
-        for embedding_obj in response.data:
-            results.append(_to_float32(embedding_obj.embedding))
+    for start in range(0, len(texts), chunk_size):
+        chunk = texts[start : start + chunk_size]
+        try:
+            response = await client.embeddings.create(
+                input=chunk,
+                model=model,
+                dimensions=dimensions,
+            )
 
-        return results
+            # Convert to float32 precision and return in order
+            for embedding_obj in response.data:
+                results.append(_to_float32(embedding_obj.embedding))
 
-    except Exception as e:
-        logger.error(f"Error generating embeddings batch: {e}")
-        return [None] * len(texts)
+        except Exception as e:
+            logger.error(f"Error generating embeddings batch (chunk {start}-{start + len(chunk)}): {e}")
+            results.extend([None] * len(chunk))
+
+    return results
 
 
 def create_openai_client(api_key: str) -> "AsyncOpenAI":

@@ -17,6 +17,7 @@ from oidm_maintenance.anatomic.build import (
     _create_schema,
     _get_location_columns,
     _prepare_all_records,
+    determine_laterality,
 )
 from pydantic_ai import models
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -342,7 +343,7 @@ def test_index_creation_fts(schema_conn: duckdb.DuckDBPyConnection) -> None:
         "definition",
         stemmer="porter",
         stopwords="english",
-        lower=0,
+        lower=1,
         overwrite=True,
     )
 
@@ -491,3 +492,41 @@ def test_full_build_pipeline(
 
     finally:
         conn.close()
+
+
+# =============================================================================
+# Laterality determination tests
+# =============================================================================
+
+
+class TestDetermineLaterality:
+    """Tests for determine_laterality() ref-to-laterality mapping."""
+
+    def test_both_refs_is_generic(self) -> None:
+        """Record with both leftRef and rightRef is the generic form."""
+        record = {"leftRef": "RID123", "rightRef": "RID456"}
+        assert determine_laterality(record) == "generic"
+
+    def test_left_ref_only_is_right(self) -> None:
+        """Record with leftRef only points to its left counterpart → this is the RIGHT variant."""
+        record = {"leftRef": "RID123"}
+        assert determine_laterality(record) == "right"
+
+    def test_right_ref_only_is_left(self) -> None:
+        """Record with rightRef only points to its right counterpart → this is the LEFT variant."""
+        record = {"rightRef": "RID456"}
+        assert determine_laterality(record) == "left"
+
+    def test_unsided_ref_only_is_generic(self) -> None:
+        """Record with only unsidedRef maps to generic."""
+        record = {"unsidedRef": "RID789"}
+        assert determine_laterality(record) == "generic"
+
+    def test_no_refs_is_nonlateral(self) -> None:
+        """Record with no ref properties is nonlateral."""
+        record = {"description": "some structure"}
+        assert determine_laterality(record) == "nonlateral"
+
+    def test_empty_record_is_nonlateral(self) -> None:
+        """Empty record is nonlateral."""
+        assert determine_laterality({}) == "nonlateral"

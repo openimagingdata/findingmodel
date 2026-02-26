@@ -6,6 +6,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## oidm-common 0.2.4 - 2026-02-26
+
+### Fixed
+
+- `generate_embeddings_batch` now auto-chunks large batches (2048 per API call) to avoid OpenAI 400 errors on batch sizes >2048
+
+## anatomic-locations 0.2.3 - 2026-02-26
+
+### Fixed
+
+- FTS search now searches both `description` and `definition` columns (was restricted to `description` only)
+- FTS index is now case-insensitive (`lower=1`), matching findingmodel's configuration
+- Search quality: added minimum similarity threshold (0.75) for semantic results and minimum BM25 score (0.5) for FTS-only results, filtering garbage matches
+
+### Added
+
+- `search()` and `search_batch()` exact-match path now checks synonyms in addition to descriptions
+- `build_anatomic_test_fixture.py` script for rebuilding the test fixture database
+
+### Testing
+
+- Added search quality threshold tests and synonym exact-match tests
+
+## oidm-maintenance 0.2.2 - 2026-02-26
+
+### Fixed
+
+- **Laterality determination was inverted**: `leftRef` only → now correctly returns `"right"` (was `"left"`); `rightRef` only → now correctly returns `"left"` (was `"right"`)
+- FTS index creation uses `lower=1` (case-insensitive) to match production search behavior
+
+### Testing
+
+- Added 6 unit tests for `determine_laterality()` covering all ref combinations
+
 ## findingmodel 1.0.2 - 2026-02-26
 
 ### Added
