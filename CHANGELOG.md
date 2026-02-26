@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## findingmodel 1.0.2 - Unreleased
+## findingmodel 1.0.2 - 2026-02-26
 
 ### Added
 
@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `findingmodel index stats` subcommand; stats is now top-level
 
-## anatomic-locations 0.2.2 - Unreleased
+## anatomic-locations 0.2.2 - 2026-02-26
 
 ### Added
 
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Made sure `OPENAI_API_KEY` is used for embedding-based search, both from environment and `.env` file.
 
-## oidm-common 0.2.3 - Unreleased
+## oidm-common 0.2.3 - 2026-02-26
 
 ### Added
 
