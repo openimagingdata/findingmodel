@@ -139,24 +139,22 @@ async def execute_anatomic_search(
     Returns:
         List of OntologySearchResult objects with normalized concept text
     """
-    # Execute searches for each query term
-    all_locations: list[AnatomicLocation] = []
-    for query in query_info.terms:
-        locations = await index.search(
-            query,
-            limit=limit,
-            region=query_info.region,
-            sided_filter=["generic", "nonlateral"],  # Only generic or nonlateral sided
-        )
-        all_locations.extend(locations)
+    # Batch search all terms with a single embedding API call
+    batch_results = await index.search_batch(
+        query_info.terms,
+        limit=limit,
+        region=query_info.region,
+        sided_filter=["generic", "nonlateral"],  # Only generic or nonlateral sided
+    )
 
-    # Deduplicate by ID (in case same location matches multiple queries)
-    seen_ids = set()
-    unique_locations = []
-    for loc in all_locations:
-        if loc.id not in seen_ids:
-            seen_ids.add(loc.id)
-            unique_locations.append(loc)
+    # Flatten and deduplicate by ID
+    seen_ids: set[str] = set()
+    unique_locations: list[AnatomicLocation] = []
+    for locations in batch_results.values():
+        for loc in locations:
+            if loc.id not in seen_ids:
+                seen_ids.add(loc.id)
+                unique_locations.append(loc)
 
     # Convert to OntologySearchResult format
     results = _convert_to_ontology_results(unique_locations)

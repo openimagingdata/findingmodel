@@ -126,7 +126,7 @@ def test_id_assignment(base_model: FindingModelBase):
 ```python
 @pytest.mark.asyncio
 async def test_add_model(full_model: FindingModelFull, tmp_path: Path):
-    index = DuckDBIndex(tmp_path / "test.duckdb")
+    index = FindingModelIndex(tmp_path / "test.duckdb")
     await index.setup()
     
     # Use full_model directly - it has valid IDs
@@ -140,7 +140,7 @@ async def test_add_model(full_model: FindingModelFull, tmp_path: Path):
 ```python
 @pytest.mark.asyncio
 async def test_batch_update(tmp_defs_path: Path, tmp_path: Path):
-    index = DuckDBIndex(tmp_path / "test.duckdb")
+    index = FindingModelIndex(tmp_path / "test.duckdb")
     await index.setup()
     
     # tmp_defs_path has real .fm.json files
@@ -152,7 +152,7 @@ async def test_batch_update(tmp_defs_path: Path, tmp_path: Path):
 ```python
 @pytest.mark.asyncio
 async def test_duplicate_validation(full_model: FindingModelFull, tmp_path: Path):
-    index = DuckDBIndex(tmp_path / "test.duckdb")
+    index = FindingModelIndex(tmp_path / "test.duckdb")
     await index.setup()
     
     # Add once

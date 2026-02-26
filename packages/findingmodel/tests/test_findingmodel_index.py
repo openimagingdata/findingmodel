@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 from findingmodel.finding_model import AttributeType, FindingModelBase, FindingModelFull
-from findingmodel.index import DuckDBIndex, IndexEntry
+from findingmodel.index import FindingModelIndex, IndexEntry
 
 # ============================================================================
 # Fixtures Overview
@@ -29,16 +29,16 @@ from findingmodel.index import DuckDBIndex, IndexEntry
 # - prebuilt_db_path: Path (session-scoped, path to pre-built test database)
 #
 # From this file:
-# - index: Pre-built DuckDBIndex (function-scoped, read-only)
+# - index: Pre-built FindingModelIndex (function-scoped, read-only)
 #   Use for: All tests that read from a populated index
 #
 # ============================================================================
 
 
 @pytest_asyncio.fixture
-async def index(prebuilt_db_path: Path) -> AsyncGenerator[DuckDBIndex, None]:
+async def index(prebuilt_db_path: Path) -> AsyncGenerator[FindingModelIndex, None]:
     """Load the pre-built test database (read-only)."""
-    async with DuckDBIndex(prebuilt_db_path) as idx:
+    async with FindingModelIndex(prebuilt_db_path) as idx:
         yield idx
 
 
@@ -58,7 +58,7 @@ OIFM_IDS_IN_DEFS_DIR = [
 
 
 @pytest.mark.asyncio
-async def test_count_method(index: DuckDBIndex) -> None:
+async def test_count_method(index: FindingModelIndex) -> None:
     """Test count returns correct number of models."""
     count = await index.count()
     # Should be at least as many as the number of *.fm.json files in test/data/defs
@@ -66,7 +66,7 @@ async def test_count_method(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_by_id(index: DuckDBIndex) -> None:
+async def test_get_by_id(index: FindingModelIndex) -> None:
     """Test retrieving all models by ID from populated index."""
     for oifm_id in OIFM_IDS_IN_DEFS_DIR:
         entry = await index.get(oifm_id)
@@ -75,7 +75,7 @@ async def test_get_by_id(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_by_name(index: DuckDBIndex) -> None:
+async def test_get_by_name(index: FindingModelIndex) -> None:
     """Test retrieving a model by name."""
     entry = await index.get("abdominal aortic aneurysm")
     assert entry is not None
@@ -83,7 +83,7 @@ async def test_get_by_name(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_full(index: DuckDBIndex) -> None:
+async def test_get_full(index: FindingModelIndex) -> None:
     """Test retrieving full model data."""
     full = await index.get_full(OIFM_IDS_IN_DEFS_DIR[0])
     assert full is not None
@@ -92,7 +92,7 @@ async def test_get_full(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_full_batch(index: DuckDBIndex) -> None:
+async def test_get_full_batch(index: FindingModelIndex) -> None:
     """Test batch retrieval of full models."""
     ids_to_fetch = OIFM_IDS_IN_DEFS_DIR[:3]
     models = await index.get_full_batch(ids_to_fetch)
@@ -102,7 +102,7 @@ async def test_get_full_batch(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_contains_method(index: DuckDBIndex) -> None:
+async def test_contains_method(index: FindingModelIndex) -> None:
     """Test the contains method with ID and name lookups."""
     # Should exist by ID
     assert await index.contains(OIFM_IDS_IN_DEFS_DIR[0]) is True
@@ -114,7 +114,7 @@ async def test_contains_method(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_contains_resolve_by_slug(index: DuckDBIndex) -> None:
+async def test_get_contains_resolve_by_slug(index: FindingModelIndex) -> None:
     """Test that get/contains resolve identifiers by slug name."""
     # Test contains with slug format
     assert await index.contains("abdominal_aortic_aneurysm") is True
@@ -127,7 +127,7 @@ async def test_get_contains_resolve_by_slug(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_contains_resolve_by_synonym(index: DuckDBIndex) -> None:
+async def test_get_contains_resolve_by_synonym(index: FindingModelIndex) -> None:
     """Test that get/contains resolve identifiers by synonym."""
     # Test contains with synonym
     assert await index.contains("AAA") is True
@@ -141,14 +141,14 @@ async def test_get_contains_resolve_by_synonym(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_full_missing_id_raises_keyerror(index: DuckDBIndex) -> None:
+async def test_get_full_missing_id_raises_keyerror(index: FindingModelIndex) -> None:
     """Test that get_full raises KeyError for missing ID."""
     with pytest.raises(KeyError, match="Model not found"):
         await index.get_full("OIFM_NONEXISTENT_999999")
 
 
 @pytest.mark.asyncio
-async def test_get_full_batch_returns_only_found_ids(index: DuckDBIndex) -> None:
+async def test_get_full_batch_returns_only_found_ids(index: FindingModelIndex) -> None:
     """Test that get_full_batch returns only found models (excludes missing IDs)."""
     # Request batch with one valid and one invalid ID
     valid_id = "OIFM_MSFT_134126"
@@ -171,7 +171,7 @@ async def test_get_full_batch_returns_only_found_ids(index: DuckDBIndex) -> None
 
 
 @pytest.mark.asyncio
-async def test_all_pagination(index: DuckDBIndex) -> None:
+async def test_all_pagination(index: FindingModelIndex) -> None:
     """Test paginated retrieval of all entries."""
     # Get first page
     page1, total1 = await index.all(limit=2, offset=0)
@@ -190,7 +190,7 @@ async def test_all_pagination(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_all_sorting_by_name(index: DuckDBIndex) -> None:
+async def test_all_sorting_by_name(index: FindingModelIndex) -> None:
     """Test sorting all entries by name."""
     # Sort ascending (case-insensitive)
     entries_asc, _ = await index.all(order_by="name", order_dir="asc", limit=10)
@@ -204,7 +204,7 @@ async def test_all_sorting_by_name(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_all_sorting_by_id(index: DuckDBIndex) -> None:
+async def test_all_sorting_by_id(index: FindingModelIndex) -> None:
     """Test sorting all entries by OIFM ID."""
     entries, _ = await index.all(order_by="oifm_id", order_dir="asc", limit=10)
     ids = [e.oifm_id for e in entries]
@@ -212,7 +212,7 @@ async def test_all_sorting_by_id(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_all_case_insensitive_sorting(index: DuckDBIndex) -> None:
+async def test_all_case_insensitive_sorting(index: FindingModelIndex) -> None:
     """Test that sorting is case-insensitive."""
     entries, _ = await index.all(order_by="name", order_dir="asc")
     names = [e.name for e in entries]
@@ -222,21 +222,21 @@ async def test_all_case_insensitive_sorting(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_all_invalid_order_by(index: DuckDBIndex) -> None:
+async def test_all_invalid_order_by(index: FindingModelIndex) -> None:
     """Test that invalid order_by raises ValueError."""
     with pytest.raises(ValueError, match="Invalid order_by"):
         await index.all(order_by="invalid_field")
 
 
 @pytest.mark.asyncio
-async def test_all_invalid_order_dir(index: DuckDBIndex) -> None:
+async def test_all_invalid_order_dir(index: FindingModelIndex) -> None:
     """Test that invalid order_dir raises ValueError."""
     with pytest.raises(ValueError, match="Invalid order_dir"):
         await index.all(order_dir="invalid")
 
 
 @pytest.mark.asyncio
-async def test_all_single_page(index: DuckDBIndex) -> None:
+async def test_all_single_page(index: FindingModelIndex) -> None:
     """Test retrieving all entries in a single page."""
     count = await index.count()
     entries, total = await index.all(limit=count)
@@ -250,7 +250,7 @@ async def test_all_single_page(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_basic_functionality(index: DuckDBIndex) -> None:
+async def test_search_basic_functionality(index: FindingModelIndex) -> None:
     """Test basic search functionality with populated index."""
     # Search for "aneurysm" should find abdominal aortic aneurysm
     results = await index.search("aneurysm", limit=10)
@@ -265,7 +265,7 @@ async def test_search_basic_functionality(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_name(index: DuckDBIndex) -> None:
+async def test_search_by_name(index: FindingModelIndex) -> None:
     """Test search functionality by exact and partial name matches."""
     # Exact name search
     results = await index.search("abdominal aortic aneurysm")
@@ -279,7 +279,7 @@ async def test_search_by_name(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_description(index: DuckDBIndex) -> None:
+async def test_search_by_description(index: FindingModelIndex) -> None:
     """Test search functionality using description content."""
     # Search for terms that should appear in descriptions
     results = await index.search("dilation")
@@ -291,7 +291,7 @@ async def test_search_by_description(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_synonyms(index: DuckDBIndex) -> None:
+async def test_search_by_synonyms(index: FindingModelIndex) -> None:
     """Test search functionality using synonyms."""
     # Search for "AAA" which should be a synonym for abdominal aortic aneurysm
     results = await index.search("AAA")
@@ -299,7 +299,7 @@ async def test_search_by_synonyms(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_limit_parameter(index: DuckDBIndex) -> None:
+async def test_search_limit_parameter(index: FindingModelIndex) -> None:
     """Test that search respects the limit parameter."""
     # Search with different limits
     results_limit_1 = await index.search("aneurysm", limit=1)
@@ -314,14 +314,14 @@ async def test_search_limit_parameter(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_no_results(index: DuckDBIndex) -> None:
+async def test_search_no_results(index: FindingModelIndex) -> None:
     """Test search with query that should return no results."""
     results = await index.search("zyxwvutsrqponmlkjihgfedcba")
     assert isinstance(results, list)
 
 
 @pytest.mark.asyncio
-async def test_search_empty_query_raises_valueerror(index: DuckDBIndex) -> None:
+async def test_search_empty_query_raises_valueerror(index: FindingModelIndex) -> None:
     """Test that empty query raises ValueError."""
     with pytest.raises(ValueError, match="empty or whitespace"):
         await index.search("", limit=5)
@@ -331,7 +331,7 @@ async def test_search_empty_query_raises_valueerror(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_batch_all_blank_queries_raises_valueerror(index: DuckDBIndex) -> None:
+async def test_search_batch_all_blank_queries_raises_valueerror(index: FindingModelIndex) -> None:
     """Test that search_batch raises ValueError when all queries are blank."""
     # All empty/whitespace queries should raise
     with pytest.raises(ValueError, match="All queries are empty or whitespace"):
@@ -343,7 +343,7 @@ async def test_search_batch_all_blank_queries_raises_valueerror(index: DuckDBInd
 
 
 @pytest.mark.asyncio
-async def test_search_case_insensitive(index: DuckDBIndex) -> None:
+async def test_search_case_insensitive(index: FindingModelIndex) -> None:
     """Test that search is case insensitive."""
     results_lower = await index.search("aneurysm")
     results_upper = await index.search("ANEURYSM")
@@ -354,7 +354,7 @@ async def test_search_case_insensitive(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_multiple_terms(index: DuckDBIndex) -> None:
+async def test_search_multiple_terms(index: FindingModelIndex) -> None:
     """Test search with multiple terms."""
     # Search for multiple terms
     results = await index.search("abdominal aortic")
@@ -368,7 +368,7 @@ async def test_search_multiple_terms(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_with_single_tag(index: DuckDBIndex) -> None:
+async def test_search_with_single_tag(index: FindingModelIndex) -> None:
     """Test search with tag filter."""
     # Get all entries to find a common tag
     all_entries, _ = await index.all(limit=100)
@@ -395,7 +395,7 @@ async def test_search_with_single_tag(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_with_multiple_tags_and_logic(index: DuckDBIndex) -> None:
+async def test_search_with_multiple_tags_and_logic(index: FindingModelIndex) -> None:
     """Test search with multiple tags (AND logic is enforced by default)."""
     # Get all entries to find entries with multiple tags
     all_entries, _ = await index.all(limit=100)
@@ -420,7 +420,7 @@ async def test_search_with_multiple_tags_and_logic(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_batch_multiple_queries(index: DuckDBIndex) -> None:
+async def test_search_batch_multiple_queries(index: FindingModelIndex) -> None:
     """Test batch search with multiple queries."""
     queries = ["aneurysm", "embolism", "fracture"]
     results = await index.search_batch(queries, limit=5)
@@ -431,14 +431,14 @@ async def test_search_batch_multiple_queries(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_batch_empty_queries_list(index: DuckDBIndex) -> None:
+async def test_search_batch_empty_queries_list(index: FindingModelIndex) -> None:
     """Test batch search with empty list."""
     results = await index.search_batch([], limit=5)
     assert results == {}
 
 
 @pytest.mark.asyncio
-async def test_search_batch_with_valid_and_invalid_queries(index: DuckDBIndex) -> None:
+async def test_search_batch_with_valid_and_invalid_queries(index: FindingModelIndex) -> None:
     """Test search_batch with mix of valid and invalid queries."""
     queries = ["aneurysm", "zzzzzznonexistent", "aortic"]
     results = await index.search_batch(queries, limit=5)
@@ -462,7 +462,7 @@ async def test_search_batch_with_valid_and_invalid_queries(index: DuckDBIndex) -
 
 
 @pytest.mark.asyncio
-async def test_search_by_slug_exact_match(index: DuckDBIndex) -> None:
+async def test_search_by_slug_exact_match(index: FindingModelIndex) -> None:
     """Test slug search with exact match."""
     results, _total = await index.search_by_slug("abdominal_aortic_aneurysm", limit=10)
     assert len(results) >= 1
@@ -471,7 +471,7 @@ async def test_search_by_slug_exact_match(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_slug_prefix_match(index: DuckDBIndex) -> None:
+async def test_search_by_slug_prefix_match(index: FindingModelIndex) -> None:
     """Test slug search with prefix match."""
     results, _total = await index.search_by_slug("abdominal_", limit=10)
     assert len(results) >= 1
@@ -479,7 +479,7 @@ async def test_search_by_slug_prefix_match(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_slug_contains_match(index: DuckDBIndex) -> None:
+async def test_search_by_slug_contains_match(index: FindingModelIndex) -> None:
     """Test slug search with contains match."""
     results, _total = await index.search_by_slug("aortic", limit=10)
     assert len(results) >= 1
@@ -487,7 +487,7 @@ async def test_search_by_slug_contains_match(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_slug_pattern_normalization(index: DuckDBIndex) -> None:
+async def test_search_by_slug_pattern_normalization(index: FindingModelIndex) -> None:
     """Test slug search handles pattern normalization."""
     # Search with spaces should work the same as hyphens
     results_with_spaces, _ = await index.search_by_slug("abdominal aortic", limit=10)
@@ -498,7 +498,7 @@ async def test_search_by_slug_pattern_normalization(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_slug_pagination(index: DuckDBIndex) -> None:
+async def test_search_by_slug_pagination(index: FindingModelIndex) -> None:
     """Test slug search pagination."""
     # Get first page - pattern must be at least 3 characters
     page1, _total1 = await index.search_by_slug("abdominal", limit=2, offset=0)
@@ -513,7 +513,7 @@ async def test_search_by_slug_pagination(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_by_slug_no_matches(index: DuckDBIndex) -> None:
+async def test_search_by_slug_no_matches(index: FindingModelIndex) -> None:
     """Test slug search with no matches."""
     results, _total = await index.search_by_slug("zyxwvutsrqponmlkjihgfedcba", limit=10)
     assert isinstance(results, list)
@@ -521,21 +521,21 @@ async def test_search_by_slug_no_matches(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_count_search_exact_match(index: DuckDBIndex) -> None:
+async def test_count_search_exact_match(index: FindingModelIndex) -> None:
     """Test count_search with exact name match."""
     count = await index.count_search(pattern="abdominal-aortic-aneurysm", match_type="exact")
     assert count >= 1
 
 
 @pytest.mark.asyncio
-async def test_count_search_prefix_match(index: DuckDBIndex) -> None:
+async def test_count_search_prefix_match(index: FindingModelIndex) -> None:
     """Test count_search with prefix match."""
     count = await index.count_search(pattern="abdominal", match_type="prefix")
     assert count >= 1
 
 
 @pytest.mark.asyncio
-async def test_count_search_contains_match(index: DuckDBIndex) -> None:
+async def test_count_search_contains_match(index: FindingModelIndex) -> None:
     """Test count_search with contains match."""
     count = await index.count_search(pattern="aortic", match_type="contains")
     assert count >= 1
@@ -547,7 +547,7 @@ async def test_count_search_contains_match(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_people(index: DuckDBIndex) -> None:
+async def test_get_people(index: FindingModelIndex) -> None:
     """Test retrieving all people from the index."""
     people = await index.get_people()
     # Pre-built test database has at least 1 person
@@ -558,7 +558,7 @@ async def test_get_people(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_organizations(index: DuckDBIndex) -> None:
+async def test_get_organizations(index: FindingModelIndex) -> None:
     """Test retrieving all organizations from the index."""
     orgs = await index.get_organizations()
     # Pre-built test database has at least 1 organization
@@ -569,7 +569,7 @@ async def test_get_organizations(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_count_people(index: DuckDBIndex) -> None:
+async def test_count_people(index: FindingModelIndex) -> None:
     """Test counting people in the index."""
     count = await index.count_people()
     # Pre-built test database has at least 1 person
@@ -577,7 +577,7 @@ async def test_count_people(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_count_organizations(index: DuckDBIndex) -> None:
+async def test_count_organizations(index: FindingModelIndex) -> None:
     """Test counting organizations in the index."""
     count = await index.count_organizations()
     # Pre-built test database has at least 1 organization
@@ -585,7 +585,7 @@ async def test_count_organizations(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_person(index: DuckDBIndex) -> None:
+async def test_get_person(index: FindingModelIndex) -> None:
     """Test retrieving a person by github username."""
     # HeatherChase is a contributor in the test data
     person = await index.get_person("HeatherChase")
@@ -596,14 +596,14 @@ async def test_get_person(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_person_not_found(index: DuckDBIndex) -> None:
+async def test_get_person_not_found(index: FindingModelIndex) -> None:
     """Test retrieving a person that doesn't exist returns None."""
     person = await index.get_person("nonexistent_user_12345")
     assert person is None
 
 
 @pytest.mark.asyncio
-async def test_get_organization(index: DuckDBIndex) -> None:
+async def test_get_organization(index: FindingModelIndex) -> None:
     """Test retrieving an organization by code."""
     # MSFT is an organization in the test data
     org = await index.get_organization("MSFT")
@@ -613,7 +613,7 @@ async def test_get_organization(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_organization_not_found(index: DuckDBIndex) -> None:
+async def test_get_organization_not_found(index: FindingModelIndex) -> None:
     """Test retrieving an organization that doesn't exist returns None."""
     org = await index.get_organization("NONEXISTENT")
     assert org is None
@@ -624,21 +624,21 @@ async def test_get_organization_not_found(index: DuckDBIndex) -> None:
 # ============================================================================
 
 
-def test_generate_model_id_format(index: DuckDBIndex) -> None:
+def test_generate_model_id_format(index: FindingModelIndex) -> None:
     """Test that generated model IDs follow the correct format."""
     model_id = index.generate_model_id(source="TEST")
     assert model_id.startswith("OIFM_TEST_")
     assert len(model_id) == 16  # OIFM_ + 4 chars + _ + 6 digits
 
 
-def test_generate_model_id_uniqueness(index: DuckDBIndex) -> None:
+def test_generate_model_id_uniqueness(index: FindingModelIndex) -> None:
     """Test that generated IDs are unique."""
     id1 = index.generate_model_id(source="TEST")
     id2 = index.generate_model_id(source="TEST")
     assert id1 != id2
 
 
-def test_generate_model_id_different_sources_independent(index: DuckDBIndex) -> None:
+def test_generate_model_id_different_sources_independent(index: FindingModelIndex) -> None:
     """Test that IDs from different sources are independent."""
     id_msft = index.generate_model_id(source="MSFT")
     id_test = index.generate_model_id(source="TEST")
@@ -647,7 +647,7 @@ def test_generate_model_id_different_sources_independent(index: DuckDBIndex) -> 
     assert "TEST" in id_test
 
 
-def test_generate_model_id_cache_prevents_self_collision(index: DuckDBIndex) -> None:
+def test_generate_model_id_cache_prevents_self_collision(index: FindingModelIndex) -> None:
     """Test that the ID cache prevents self-collision within a session."""
     # Generate many IDs in quick succession
     ids = {index.generate_model_id(source="TEST") for _ in range(100)}
@@ -656,25 +656,25 @@ def test_generate_model_id_cache_prevents_self_collision(index: DuckDBIndex) -> 
     assert len(ids) == 100
 
 
-def test_generate_model_id_invalid_source_too_short(index: DuckDBIndex) -> None:
+def test_generate_model_id_invalid_source_too_short(index: FindingModelIndex) -> None:
     """Test that source must be at least 3 characters."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.generate_model_id(source="AB")
 
 
-def test_generate_model_id_invalid_source_too_long(index: DuckDBIndex) -> None:
+def test_generate_model_id_invalid_source_too_long(index: FindingModelIndex) -> None:
     """Test that source must be at most 4 characters."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.generate_model_id(source="TOOLONG")
 
 
-def test_generate_model_id_invalid_source_contains_digits(index: DuckDBIndex) -> None:
+def test_generate_model_id_invalid_source_contains_digits(index: FindingModelIndex) -> None:
     """Test that source cannot contain digits."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.generate_model_id(source="TE5T")
 
 
-def test_generate_model_id_source_normalization(index: DuckDBIndex) -> None:
+def test_generate_model_id_source_normalization(index: FindingModelIndex) -> None:
     """Test that source is normalized to uppercase."""
     # Lowercase should be normalized
     id_lower = index.generate_model_id(source="test")
@@ -685,21 +685,21 @@ def test_generate_model_id_source_normalization(index: DuckDBIndex) -> None:
     assert "TEST" in id_mixed
 
 
-def test_generate_attribute_id_format(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_format(index: FindingModelIndex) -> None:
     """Test that generated attribute IDs follow the correct format."""
     attr_id = index.generate_attribute_id(source="TEST")
     assert attr_id.startswith("OIFMA_TEST_")
     assert len(attr_id) == 17  # OIFMA_ + 4 chars + _ + 6 digits
 
 
-def test_generate_attribute_id_uniqueness(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_uniqueness(index: FindingModelIndex) -> None:
     """Test that generated attribute IDs are unique."""
     id1 = index.generate_attribute_id(source="TEST")
     id2 = index.generate_attribute_id(source="TEST")
     assert id1 != id2
 
 
-def test_generate_attribute_id_independent_from_oifm_ids(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_independent_from_oifm_ids(index: FindingModelIndex) -> None:
     """Test that attribute IDs are independent from model IDs."""
     # Generate some model IDs
     model_id = index.generate_model_id(source="TEST")
@@ -713,39 +713,39 @@ def test_generate_attribute_id_independent_from_oifm_ids(index: DuckDBIndex) -> 
     assert attr_id.startswith("OIFMA_")
 
 
-def test_generate_attribute_id_infer_source_from_model_id(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_infer_source_from_model_id(index: FindingModelIndex) -> None:
     """Test that source can be inferred from model ID."""
     attr_id = index.generate_attribute_id(model_oifm_id="OIFM_TEST_123456")
     assert "TEST" in attr_id
 
 
-def test_generate_attribute_id_explicit_source_overrides_inference(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_explicit_source_overrides_inference(index: FindingModelIndex) -> None:
     """Test that explicit source overrides inferred source."""
     attr_id = index.generate_attribute_id(model_oifm_id="OIFM_MSFT_123456", source="TEST")
     assert "TEST" in attr_id
     assert "MSFT" not in attr_id
 
 
-def test_generate_attribute_id_default_source(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_default_source(index: FindingModelIndex) -> None:
     """Test that default source is used when no source is provided."""
     attr_id = index.generate_attribute_id()
     # Should use default source from settings
     assert attr_id.startswith("OIFMA_")
 
 
-def test_generate_attribute_id_invalid_model_id_format(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_invalid_model_id_format(index: FindingModelIndex) -> None:
     """Test that invalid model ID format raises error."""
     with pytest.raises(ValueError, match="Cannot infer source from invalid model ID"):
         index.generate_attribute_id(model_oifm_id="INVALID_ID")
 
 
-def test_generate_attribute_id_invalid_source(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_invalid_source(index: FindingModelIndex) -> None:
     """Test that invalid source raises error."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.generate_attribute_id(source="AB")
 
 
-def test_generate_attribute_id_cache_prevents_self_collision(index: DuckDBIndex) -> None:
+def test_generate_attribute_id_cache_prevents_self_collision(index: FindingModelIndex) -> None:
     """Test that the ID cache prevents self-collision within a session."""
     # Generate many IDs in quick succession
     ids = {index.generate_attribute_id(source="TEST") for _ in range(100)}
@@ -759,7 +759,7 @@ def test_generate_attribute_id_cache_prevents_self_collision(index: DuckDBIndex)
 # ============================================================================
 
 
-def test_add_ids_to_model_complete_new_model(index: DuckDBIndex, base_model: FindingModelBase) -> None:
+def test_add_ids_to_model_complete_new_model(index: FindingModelIndex, base_model: FindingModelBase) -> None:
     """Test add_ids_to_model with a complete new model (no IDs)."""
     # Model should have no IDs initially
     assert not hasattr(base_model, "oifm_id")
@@ -780,7 +780,7 @@ def test_add_ids_to_model_complete_new_model(index: DuckDBIndex, base_model: Fin
                 assert value.value_code == f"{attr.oifma_id}.{i}"
 
 
-def test_add_ids_to_model_existing_oifm_id(index: DuckDBIndex, full_model: FindingModelFull) -> None:
+def test_add_ids_to_model_existing_oifm_id(index: FindingModelIndex, full_model: FindingModelFull) -> None:
     """Test add_ids_to_model preserves existing OIFM ID."""
     original_id = full_model.oifm_id
 
@@ -791,7 +791,7 @@ def test_add_ids_to_model_existing_oifm_id(index: DuckDBIndex, full_model: Findi
     assert processed.oifm_id == original_id
 
 
-def test_add_ids_to_model_multiple_attributes(index: DuckDBIndex) -> None:
+def test_add_ids_to_model_multiple_attributes(index: FindingModelIndex) -> None:
     """Test add_ids_to_model assigns unique IDs to multiple attributes."""
     from findingmodel.finding_model import NumericAttribute
 
@@ -819,7 +819,7 @@ def test_add_ids_to_model_multiple_attributes(index: DuckDBIndex) -> None:
     assert attr_ids[0] != attr_ids[1]  # IDs should be unique
 
 
-def test_add_ids_to_model_all_ids_present(index: DuckDBIndex, full_model: FindingModelFull) -> None:
+def test_add_ids_to_model_all_ids_present(index: FindingModelIndex, full_model: FindingModelFull) -> None:
     """Test add_ids_to_model when all IDs are already present."""
     original_oifm_id = full_model.oifm_id
     original_attr_ids = [attr.oifma_id for attr in full_model.attributes]
@@ -832,7 +832,7 @@ def test_add_ids_to_model_all_ids_present(index: DuckDBIndex, full_model: Findin
     assert [attr.oifma_id for attr in processed.attributes] == original_attr_ids
 
 
-def test_add_ids_to_model_source_used(index: DuckDBIndex, base_model: FindingModelBase) -> None:
+def test_add_ids_to_model_source_used(index: FindingModelIndex, base_model: FindingModelBase) -> None:
     """Test that the specified source is used for generated IDs."""
     full_model = index.add_ids_to_model(base_model, source="ABCD")
 
@@ -841,19 +841,21 @@ def test_add_ids_to_model_source_used(index: DuckDBIndex, base_model: FindingMod
         assert "ABCD" in attr.oifma_id
 
 
-def test_add_ids_to_model_invalid_source_too_short(index: DuckDBIndex, base_model: FindingModelBase) -> None:
+def test_add_ids_to_model_invalid_source_too_short(index: FindingModelIndex, base_model: FindingModelBase) -> None:
     """Test that invalid source raises error."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.add_ids_to_model(base_model, source="AB")
 
 
-def test_add_ids_to_model_invalid_source_too_long(index: DuckDBIndex, base_model: FindingModelBase) -> None:
+def test_add_ids_to_model_invalid_source_too_long(index: FindingModelIndex, base_model: FindingModelBase) -> None:
     """Test that invalid source raises error."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.add_ids_to_model(base_model, source="TOOLONG")
 
 
-def test_add_ids_to_model_invalid_source_contains_digits(index: DuckDBIndex, base_model: FindingModelBase) -> None:
+def test_add_ids_to_model_invalid_source_contains_digits(
+    index: FindingModelIndex, base_model: FindingModelBase
+) -> None:
     """Test that invalid source raises error."""
     with pytest.raises(ValueError, match="Source must be 3-4 uppercase letters"):
         index.add_ids_to_model(base_model, source="TE5T")
@@ -866,7 +868,7 @@ def test_add_ids_to_model_concurrent_id_generation(prebuilt_db_path: Path, base_
     def generate_ids(source_suffix: int) -> FindingModelFull:
         # Use valid 3-character source codes
         sources = ["TST", "TES", "TEX"]
-        index = DuckDBIndex(prebuilt_db_path)
+        index = FindingModelIndex(prebuilt_db_path)
         index._ensure_connection()
         return index.add_ids_to_model(base_model, source=sources[source_suffix])
 
@@ -881,7 +883,7 @@ def test_add_ids_to_model_concurrent_id_generation(prebuilt_db_path: Path, base_
     assert len(set(oifm_ids)) == 3  # All should be unique
 
 
-def test_finalize_placeholder_single_placeholder(index: DuckDBIndex) -> None:
+def test_finalize_placeholder_single_placeholder(index: FindingModelIndex) -> None:
     """Test finalize_placeholder_attribute_ids with single placeholder."""
     from findingmodel.finding_model import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
@@ -905,7 +907,7 @@ def test_finalize_placeholder_single_placeholder(index: DuckDBIndex) -> None:
     assert finalized.attributes[0].oifma_id.startswith("OIFMA_TEST_")
 
 
-def test_finalize_placeholder_multiple_placeholders(index: DuckDBIndex) -> None:
+def test_finalize_placeholder_multiple_placeholders(index: FindingModelIndex) -> None:
     """Test finalize_placeholder_attribute_ids with multiple placeholders."""
     from findingmodel.finding_model import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
@@ -936,7 +938,7 @@ def test_finalize_placeholder_multiple_placeholders(index: DuckDBIndex) -> None:
     assert finalized.attributes[0].oifma_id != finalized.attributes[1].oifma_id
 
 
-def test_finalize_placeholder_no_placeholders(index: DuckDBIndex, full_model: FindingModelFull) -> None:
+def test_finalize_placeholder_no_placeholders(index: FindingModelIndex, full_model: FindingModelFull) -> None:
     """Test finalize_placeholder_attribute_ids when no placeholders exist."""
     original_attr_ids = [attr.oifma_id for attr in full_model.attributes]
 
@@ -946,7 +948,7 @@ def test_finalize_placeholder_no_placeholders(index: DuckDBIndex, full_model: Fi
     assert [attr.oifma_id for attr in finalized.attributes] == original_attr_ids
 
 
-def test_finalize_placeholder_source_inference(index: DuckDBIndex) -> None:
+def test_finalize_placeholder_source_inference(index: FindingModelIndex) -> None:
     """Test that source is inferred from model ID."""
     from findingmodel.finding_model import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
@@ -969,7 +971,7 @@ def test_finalize_placeholder_source_inference(index: DuckDBIndex) -> None:
     assert "ABCD" in finalized.attributes[0].oifma_id
 
 
-def test_finalize_placeholder_explicit_source_override(index: DuckDBIndex) -> None:
+def test_finalize_placeholder_explicit_source_override(index: FindingModelIndex) -> None:
     """Test that explicit source overrides inferred source."""
     from findingmodel.finding_model import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
@@ -993,7 +995,7 @@ def test_finalize_placeholder_explicit_source_override(index: DuckDBIndex) -> No
     assert "MSFT" not in finalized.attributes[0].oifma_id
 
 
-def test_finalize_placeholder_choice_value_codes(index: DuckDBIndex) -> None:
+def test_finalize_placeholder_choice_value_codes(index: FindingModelIndex) -> None:
     """Test that choice value codes are updated when placeholder is replaced."""
     from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
@@ -1023,7 +1025,7 @@ def test_finalize_placeholder_choice_value_codes(index: DuckDBIndex) -> None:
     assert finalized.attributes[0].values[1].value_code == f"{new_attr_id}.1"
 
 
-def test_finalize_placeholder_invalid_source(index: DuckDBIndex) -> None:
+def test_finalize_placeholder_invalid_source(index: FindingModelIndex) -> None:
     """Test that invalid source raises error."""
     from findingmodel.finding_model import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
@@ -1044,7 +1046,7 @@ def test_finalize_placeholder_invalid_source(index: DuckDBIndex) -> None:
         index.finalize_placeholder_attribute_ids(model, source="AB")
 
 
-def test_finalize_placeholder_invalid_model_id_inference(index: DuckDBIndex) -> None:
+def test_finalize_placeholder_invalid_model_id_inference(index: FindingModelIndex) -> None:
     """Test that FindingModelFull validates oifm_id format at creation.
 
     Note: FindingModelFull validates oifm_id against pattern '^OIFM_[A-Z]{3,4}_[0-9]{6}$'
@@ -1069,7 +1071,7 @@ def test_finalize_placeholder_invalid_model_id_inference(index: DuckDBIndex) -> 
 
 
 @pytest.mark.asyncio
-async def test_search_latency_benchmark(index: DuckDBIndex) -> None:
+async def test_search_latency_benchmark(index: FindingModelIndex) -> None:
     """Test that search latency is reasonable (< 500ms for typical query).
 
     This test catches performance regressions in the search implementation.
@@ -1091,7 +1093,7 @@ async def test_search_latency_benchmark(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_large_query_handling(index: DuckDBIndex) -> None:
+async def test_large_query_handling(index: FindingModelIndex) -> None:
     """Test Index behavior with very large search queries."""
     # Test with very long search query
     very_long_query = "a" * 10000  # 10k character query
@@ -1112,7 +1114,7 @@ async def test_large_query_handling(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_semantic_search_returns_results(index: DuckDBIndex) -> None:
+async def test_semantic_search_returns_results(index: FindingModelIndex) -> None:
     """Test semantic search with HNSW returns results.
 
     The prebuilt test database has deterministic fake embeddings,
@@ -1139,7 +1141,7 @@ async def test_semantic_search_returns_results(index: DuckDBIndex) -> None:
     assert all(isinstance(r[1], float) for r in results)
 
 
-def test_semantic_search_with_precomputed_embedding(index: DuckDBIndex) -> None:
+def test_semantic_search_with_precomputed_embedding(index: FindingModelIndex) -> None:
     """Test semantic search using pre-computed embedding (deterministic, no API calls).
 
     This verifies the HNSW index is properly built and functional.
@@ -1165,7 +1167,7 @@ def test_semantic_search_with_precomputed_embedding(index: DuckDBIndex) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.callout
-async def test_semantic_search_with_real_openai_api(index: DuckDBIndex) -> None:
+async def test_semantic_search_with_real_openai_api(index: FindingModelIndex) -> None:
     """Test semantic search using real OpenAI API (requires OPENAI_API_KEY).
 
     This test makes real API calls - only run with pytest -m callout.
@@ -1191,7 +1193,7 @@ async def test_semantic_search_with_real_openai_api(index: DuckDBIndex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_batch_calls_embeddings_once(index: DuckDBIndex) -> None:
+async def test_search_batch_calls_embeddings_once(index: FindingModelIndex) -> None:
     """Test that search_batch calls embeddings API exactly once.
 
     Plan reference: test-suite-upgrade-plan.md lines 52-55 (item 8)
@@ -1258,7 +1260,7 @@ def test_index_entry_match_handles_synonyms() -> None:
 
 
 @pytest.mark.asyncio
-async def test_all_sorting_by_timestamps(index: DuckDBIndex) -> None:
+async def test_all_sorting_by_timestamps(index: FindingModelIndex) -> None:
     """Test that all() can sort by created_at and updated_at timestamps.
 
     Plan reference: test-suite-upgrade-plan.md lines 62-65 (item 10)

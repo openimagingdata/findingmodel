@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 import duckdb
 from asyncer import asyncify
-from oidm_common.duckdb import rrf_fusion, setup_duckdb_connection
+from oidm_common.duckdb import ReadOnlyDuckDBIndex, rrf_fusion, setup_duckdb_connection
 from oidm_common.embeddings import get_embedding
 from oidm_common.models import IndexCode, WebReference
 
@@ -26,11 +26,8 @@ from anatomic_locations.models import (
     StructureType,
 )
 
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
-
-class AnatomicLocationIndex:
+class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
     """Index for looking up and navigating anatomic locations.
 
     Wraps DuckDB connection and provides high-level navigation API.
@@ -45,6 +42,10 @@ class AnatomicLocationIndex:
             location = index.get("RID2772")
             ancestors = location.get_containment_ancestors()  # Uses bound index
 
+        # Auto-open (queries auto-open the connection)
+        index = AnatomicLocationIndex()
+        location = index.get("lung")  # opens connection automatically
+
         # Explicit open/close (FastAPI lifespan)
         index = AnatomicLocationIndex()
         index.open()
@@ -53,100 +54,63 @@ class AnatomicLocationIndex:
     """
 
     def __init__(self, db_path: Path | None = None) -> None:
-        """Initialize the index with optional custom database path.
+        from anatomic_locations.config import ensure_anatomic_db
 
-        Args:
-            db_path: Optional path to DuckDB file. If not provided,
-                     uses ensure_anatomic_db() from config module to locate/download standard database.
-
-        Raises:
-            ValueError: If db_path is None and config module is not available
-        """
-        if db_path is not None:
-            self.db_path = Path(db_path).expanduser()
-        else:
-            # Import config to locate/download standard database
-            try:
-                from anatomic_locations.config import ensure_anatomic_db
-
-                self.db_path = ensure_anatomic_db()
-            except ImportError:
-                raise ValueError(
-                    "db_path is required. Config module not available for automatic database location."
-                ) from None
-
-        self.conn: duckdb.DuckDBPyConnection | None = None
-
-    def open(self) -> Self:
-        """Open the database connection explicitly.
-
-        For FastAPI lifespan pattern. Returns self for chaining.
-
-        Returns:
-            Self for method chaining
-        """
-        if self.conn is not None:
-            return self  # Already open
-        self.conn = setup_duckdb_connection(self.db_path, read_only=True)
-        return self
-
-    def close(self) -> None:
-        """Close the database connection explicitly."""
-        if self.conn is not None:
-            self.conn.close()
-            self.conn = None
-
-    def __enter__(self) -> Self:
-        """Enter context manager, opening connection.
-
-        Returns:
-            Self for context manager pattern
-        """
-        return self.open()
-
-    def __exit__(self, *_args: object) -> None:
-        """Exit context manager, closing connection."""
-        self.close()
-
-    async def __aenter__(self) -> Self:
-        """Enter async context manager, opening connection.
-
-        Returns:
-            Self for async context manager pattern
-        """
-        return self.open()
-
-    async def __aexit__(self, *_args: object) -> None:
-        """Exit async context manager, closing connection."""
-        self.close()
+        super().__init__(db_path, ensure_db=ensure_anatomic_db)
 
     # =========================================================================
     # Core Lookups (all methods auto-bind returned objects)
     # =========================================================================
 
-    def get(self, location_id: str) -> AnatomicLocation:
-        """Get a single anatomic location by ID.
+    def _resolve_location_id(self, conn: duckdb.DuckDBPyConnection, identifier: str) -> str | None:
+        """Resolve identifier to location ID.
 
+        Resolution order: direct ID -> case-insensitive description -> case-insensitive synonym.
+
+        Args:
+            conn: Active DuckDB connection
+            identifier: RID, description, or synonym text
+
+        Returns:
+            Location ID if found, None otherwise
+        """
+        row = conn.execute("SELECT id FROM anatomic_locations WHERE id = ?", [identifier]).fetchone()
+        if row:
+            return str(row[0])
+        row = conn.execute(
+            "SELECT id FROM anatomic_locations WHERE LOWER(description) = LOWER(?) LIMIT 1", [identifier]
+        ).fetchone()
+        if row:
+            return str(row[0])
+        row = conn.execute(
+            "SELECT location_id FROM anatomic_synonyms WHERE LOWER(synonym) = LOWER(?) LIMIT 1", [identifier]
+        ).fetchone()
+        if row:
+            return str(row[0])
+        return None
+
+    def get(self, identifier: str) -> AnatomicLocation:
+        """Get a single anatomic location by ID, description, or synonym.
+
+        Resolution order: direct ID -> case-insensitive description -> case-insensitive synonym.
         The returned object is automatically bound to this index.
 
         Args:
-            location_id: RID identifier (e.g., "RID2772")
+            identifier: RID identifier (e.g., "RID2772"), description (e.g., "lung"),
+                       or synonym (e.g., "pulmonary")
 
         Returns:
             AnatomicLocation bound to this index
 
         Raises:
-            KeyError: If location_id not found
+            KeyError: If identifier not found by any strategy
         """
         conn = self._ensure_connection()
-        row = conn.execute(
-            "SELECT * FROM anatomic_locations WHERE id = ?",
-            [location_id],
-        ).fetchone()
-
-        if not row:
-            raise KeyError(f"Anatomic location not found: {location_id}")
-
+        location_id = self._resolve_location_id(conn, identifier)
+        if location_id is None:
+            raise KeyError(f"Anatomic location not found: {identifier}")
+        row = conn.execute("SELECT * FROM anatomic_locations WHERE id = ?", [location_id]).fetchone()
+        assert row is not None, f"Resolved location_id {location_id} but row not found"
         return self._row_to_location(row)
 
     def find_by_code(self, system: str, code: str) -> list[AnatomicLocation]:
@@ -231,6 +195,85 @@ class AnatomicLocationIndex:
         # Apply RRF fusion - CPU-bound, fast, stays sync (no I/O)
         fused = self._apply_rrf_fusion(fts_rows, semantic_rows, limit)
         return [self._row_to_location(r) for r in fused]
+
+    async def search_batch(
+        self,
+        queries: list[str],
+        *,
+        limit: int = 10,
+        region: str | None = None,
+        sided_filter: list[str] | None = None,
+    ) -> dict[str, list[AnatomicLocation]]:
+        """Search multiple queries with a single embedding API call.
+
+        Embeds ALL queries in one batch call, then runs the standard
+        exact -> FTS -> semantic -> RRF fusion pipeline per query.
+
+        Args:
+            queries: List of search query strings
+            limit: Maximum number of results per query
+            region: Optional region filter (e.g., "Head", "Thorax")
+            sided_filter: Optional list of allowed laterality values
+
+        Returns:
+            Dictionary mapping each non-blank query string to its results
+
+        Raises:
+            ValueError: If all queries are empty or whitespace-only
+        """
+        if not queries:
+            return {}
+
+        valid_queries = [q for q in queries if q and q.strip()]
+        if not valid_queries:
+            raise ValueError("All queries are empty or whitespace-only")
+
+        conn = self._ensure_connection()
+
+        # Batch embed all queries in a single API call
+        from anatomic_locations.config import get_settings as get_anatomic_settings
+
+        anatomic_settings = get_anatomic_settings()
+        api_key = anatomic_settings.openai_api_key.get_secret_value() if anatomic_settings.openai_api_key else ""
+
+        embeddings: list[list[float] | None] = []
+        if api_key:
+            from oidm_common.embeddings import get_embeddings_batch
+
+            raw_embeddings = await get_embeddings_batch(
+                valid_queries,
+                api_key=api_key,
+                model=anatomic_settings.openai_embedding_model,
+                dimensions=anatomic_settings.openai_embedding_dimensions,
+            )
+            embeddings = list(raw_embeddings)
+        else:
+            embeddings = [None] * len(valid_queries)
+
+        results: dict[str, list[AnatomicLocation]] = {}
+        for query, embedding in zip(valid_queries, embeddings, strict=True):
+            # Exact match
+            exact_rows = await asyncify(self._find_exact_match)(conn, query, region, sided_filter)
+            if exact_rows:
+                results[query] = [self._row_to_location(r) for r in exact_rows[:limit]]
+                continue
+
+            # FTS
+            fts_rows = await asyncify(self._search_fts)(conn, query, limit * 2, region, sided_filter)
+
+            # Semantic (using pre-computed embedding)
+            semantic_rows: list[tuple[Any, ...]] = []
+            if embedding is not None:
+                semantic_rows = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
+
+            if not semantic_rows:
+                results[query] = [self._row_to_location(r) for r in fts_rows[:limit]]
+                continue
+
+            fused = self._apply_rrf_fusion(fts_rows, semantic_rows, limit)
+            results[query] = [self._row_to_location(r) for r in fused]
+
+        return results
 
     # =========================================================================
     # Hierarchy Navigation (using pre-computed paths, auto-binds results)
@@ -636,19 +679,6 @@ class AnatomicLocationIndex:
                 combined_results.append(result_map[location_id])
 
         return combined_results
-
-    def _ensure_connection(self) -> duckdb.DuckDBPyConnection:
-        """Ensure connection is open, raising if not.
-
-        Returns:
-            Active DuckDB connection
-
-        Raises:
-            RuntimeError: If connection not open
-        """
-        if self.conn is None:
-            raise RuntimeError("AnatomicLocationIndex connection not open. Use context manager or call open() first.")
-        return self.conn
 
     def _row_to_location(self, row: tuple[object, ...]) -> AnatomicLocation:
         """Convert a database row to an AnatomicLocation object.

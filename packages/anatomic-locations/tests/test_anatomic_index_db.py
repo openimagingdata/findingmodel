@@ -354,8 +354,8 @@ class TestAnatomicLocationIndexWeakRefBinding:
             assert len(ancestors) >= 1
             assert all(a._index is not None for a in ancestors)
 
-    def test_weakref_fails_after_close(self, prebuilt_db_path: Path) -> None:
-        """Appropriate error after index closed."""
+    def test_weakref_auto_reopens_after_close(self, prebuilt_db_path: Path) -> None:
+        """Bound location auto-reopens connection after index is closed."""
         index = AnatomicLocationIndex(prebuilt_db_path)
         index.open()
 
@@ -364,11 +364,13 @@ class TestAnatomicLocationIndexWeakRefBinding:
 
         # Close the index
         index.close()
+        assert index.conn is None
 
-        # Trying to navigate should fail with appropriate error
-        # The weakref is still valid, but the connection is closed, so we get RuntimeError
-        with pytest.raises(RuntimeError, match="connection not open"):
-            location.get_containment_ancestors()
+        # Navigation auto-reopens the connection via _ensure_connection()
+        ancestors = location.get_containment_ancestors()
+        assert isinstance(ancestors, list)
+        assert index.conn is not None
+        index.close()
 
     @pytest.mark.asyncio
     async def test_all_returned_objects_bound(self, prebuilt_db_path: Path) -> None:

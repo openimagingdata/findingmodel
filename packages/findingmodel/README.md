@@ -24,7 +24,7 @@ Create a `.env` file in your project root:
 OPENAI_API_KEY=your_key_here
 
 # Optional: Custom database path
-DUCKDB_INDEX_PATH=/mnt/data/finding_models.duckdb
+FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb
 ```
 
 The finding model database is automatically downloaded on first use.

@@ -41,23 +41,59 @@ oidm-maintain anatomic publish --db-path anatomic.duckdb
 - Exact match detection with priority (score=1.0)
 
 ### Remote Database Downloads (2025-10-11)
-**Configuration**:
+**Configuration** (`AnatomicLocationSettings` in `packages/anatomic-locations/src/anatomic_locations/config.py`):
 ```python
-# In config.py
-duckdb_anatomic_path: str = Field(default="anatomic_locations.duckdb")  # filename only
-remote_anatomic_db_url: str | None = Field(default=None)
-remote_anatomic_db_hash: str | None = Field(default=None)
+# env_prefix="ANATOMIC_", env_file=".env"
+db_path: str | None = None                    # ANATOMIC_DB_PATH
+remote_db_url: str | None = None              # ANATOMIC_REMOTE_DB_URL
+remote_db_hash: str | None = None            # ANATOMIC_REMOTE_DB_HASH
+openai_api_key: SecretStr | None = Field(     # ANATOMIC_OPENAI_API_KEY or OPENAI_API_KEY (AliasChoices)
+    default=None,
+    validation_alias=AliasChoices("ANATOMIC_OPENAI_API_KEY", "OPENAI_API_KEY"),
+)
 ```
 
+**Key design notes**:
+- `env_file=".env"` ensures settings are read from project `.env` (not just exported env vars)
+- `AliasChoices` on `openai_api_key` allows fallback to standard `OPENAI_API_KEY`
+- Without OpenAI key, search silently degrades to FTS-only (keyword matching)
+
 **Implementation**:
-- Uses `importlib.resources.files('findingmodel') / 'data'` to locate package data directory
 - Helper: `ensure_db_file(filename, url, hash)` downloads if missing and both URL/hash provided
-- Files cached in package installation directory
+- Files cached in platform-native user data directory via platformdirs
 - SHA256 verification via Pooch library
 - Explicit paths still honored (for dev/testing)
 
+## AnatomicLocationIndex API (2025-02)
+
+### Base Class
+`AnatomicLocationIndex` inherits `ReadOnlyDuckDBIndex` from `oidm_common.duckdb.base`.
+- Auto-open: `_ensure_connection()` opens the connection on first use; no explicit `open()` needed.
+- Sync + async context managers supported.
+
+### `get()` — Flexible Lookup
+```python
+index.get(identifier)  # raises KeyError if not found
+```
+Resolution order (case-insensitive):
+1. Direct ID match (`RID2772`)
+2. Description match (`"kidney"`)
+3. Synonym match (`"renal"`)
+
+### `search_batch()` — Efficient Multi-Query Search
+```python
+results: dict[str, list[AnatomicLocation]] = await index.search_batch(
+    ["knee joint", "liver", "axillary lymph node"],
+    limit=5,
+)
+```
+- Batches ALL embedding API calls into one `get_embeddings_batch()` call before running per-query FTS + semantic + RRF pipeline.
+- Runs same exact → FTS → semantic → RRF pipeline as `search()` per query.
+- Skips blank/whitespace queries; raises `ValueError` if all queries are blank.
+- `execute_anatomic_search()` in `findingmodel-ai` uses this for efficiency.
+
 ### Reusable Components
-- **DuckDBOntologySearchClient**: Production-ready DuckDB client with proper connection lifecycle management
+- **ReadOnlyDuckDBIndex**: Base class in `oidm_common.duckdb.base` for connection lifecycle
 - **OntologySearchResult**: Standardized model for ontology search results with conversion to IndexCode
 - **get_openai_model()**: Centralized in common.py for use by all AI tools
 
@@ -90,10 +126,11 @@ remote_anatomic_db_hash: str | None = Field(default=None)
 - Graceful handling of empty search results
 
 ### Configuration
-- DuckDB database path configurable: DUCKDB_ANATOMIC_PATH
-- Optional remote download: REMOTE_ANATOMIC_DB_URL, REMOTE_ANATOMIC_DB_HASH
-- Uses existing settings pattern from config.py
-- Falls back to environment variables if not in settings
+- DuckDB database path configurable: `ANATOMIC_DB_PATH`
+- Optional remote download: `ANATOMIC_REMOTE_DB_URL`, `ANATOMIC_REMOTE_DB_HASH`
+- OpenAI key for semantic search: `OPENAI_API_KEY` or `ANATOMIC_OPENAI_API_KEY` (AliasChoices fallback)
+- `env_file=".env"` reads from project `.env` file
+- Uses `AnatomicLocationSettings` in `packages/anatomic-locations/src/anatomic_locations/config.py`
 
 ### Search Client Refactoring (2025-10-13)
 - `duckdb_search.py` now uses `settings.openai_embedding_dimensions` (no hardcoded values)
@@ -120,9 +157,3 @@ remote_anatomic_db_hash: str | None = Field(default=None)
 - Works with existing FindingModel structures via IndexCode conversion
 - Follows same patterns as find_similar_models() tool
 - Uses centralized get_openai_model() from common.py
-
-## Future Considerations
-- DuckDBOntologySearchClient could be extended for other ontology-based searches
-- Two-agent pattern could be applied to other complex AI tools
-- Consider adding caching for frequently searched terms
-- CLI could support additional operations (rebuild indexes, backup, etc.)

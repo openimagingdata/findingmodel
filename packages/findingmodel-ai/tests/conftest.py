@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-from findingmodel import Index, logger
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import (
     ChoiceAttribute,
@@ -13,6 +12,8 @@ from findingmodel.finding_model import (
     NumericAttribute,
     NumericAttributeIded,
 )
+
+from findingmodel import Index, logger
 
 # =============================================================================
 # Test Model Constants

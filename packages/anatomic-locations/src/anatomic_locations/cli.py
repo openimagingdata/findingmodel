@@ -25,68 +25,35 @@ def _resolve_location(
     query: str,
     console: Console,
 ) -> AnatomicLocation:
-    """Resolve a location from ID or partial name/synonym match.
+    """Resolve a location from ID, description, or synonym.
+
+    Uses index.get() which resolves by ID -> description -> synonym.
+    Falls back to LIKE-based suggestions if no exact match found.
 
     Args:
         index: The anatomic location index
-        query: Location ID (RID*) or search term
+        query: Location ID (RID*), description, or synonym
         console: Rich console for output
 
     Returns:
         The resolved AnatomicLocation
 
     Raises:
-        SystemExit: If location not found or multiple matches
+        SystemExit: If location not found
     """
-    # If it looks like an ID, try direct lookup first
-    if query.upper().startswith("RID"):
-        try:
-            return index.get(query.upper())
-        except KeyError:
-            console.print(f"[bold red]Location not found: {query}")
-            sys.exit(1)
-
-    # Otherwise, do exact match on description or synonym
-    query_lower = query.lower()
-
-    # Check exact description match
     try:
-        conn = index._ensure_connection()
-        row = conn.execute(
-            "SELECT * FROM anatomic_locations WHERE LOWER(description) = ?",
-            [query_lower],
-        ).fetchone()
-        if row:
-            return index._row_to_location(row)
-    except Exception:
+        return index.get(query)
+    except KeyError:
         pass
 
-    # Check synonym match
-    try:
-        conn = index._ensure_connection()
-        row = conn.execute(
-            """
-            SELECT al.* FROM anatomic_locations al
-            JOIN anatomic_synonyms als ON al.id = als.location_id
-            WHERE LOWER(als.synonym) = ?
-            """,
-            [query_lower],
-        ).fetchone()
-        if row:
-            return index._row_to_location(row)
-    except Exception:
-        pass
-
-    # No exact match found - show suggestions
+    # No exact match — show suggestions via LIKE search
     console.print(f"[bold red]Location not found: {query}")
-
-    # Try to find similar descriptions
     try:
         conn = index._ensure_connection()
         rows = conn.execute(
             "SELECT id, description FROM anatomic_locations "
             "WHERE LOWER(description) LIKE ? ORDER BY description LIMIT 5",
-            [f"%{query_lower}%"],
+            [f"%{query.lower()}%"],
         ).fetchall()
         if rows:
             console.print("\n[yellow]Did you mean one of these?")

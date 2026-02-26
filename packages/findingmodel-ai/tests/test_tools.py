@@ -1,12 +1,13 @@
 from types import SimpleNamespace
 
-import findingmodel.tools
 import pytest
-from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
 from findingmodel.finding_model import ChoiceAttributeIded
 from findingmodel_ai.authoring import description as finding_description
 from findingmodel_ai.config import settings as ai_settings
 from pydantic_ai import models
+
+import findingmodel.tools
+from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
 
 # Prevent accidental model requests in unit tests
 # Tests marked with @pytest.mark.callout can enable this as needed

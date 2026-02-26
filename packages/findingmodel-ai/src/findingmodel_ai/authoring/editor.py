@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Mapping, cast
 
-from findingmodel import Index
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from pydantic import BaseModel, Field
 from pydantic_ai import ModelRetry, RunContext
 from pydantic_ai.agent import Agent
 
+from findingmodel import Index
 from findingmodel_ai.config import ModelTier, settings
 
 # Module-level Index instance with lazy initialization

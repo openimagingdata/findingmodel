@@ -15,9 +15,10 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from findingmodel import logger
-from findingmodel.index import DuckDBIndex
+from findingmodel.index import FindingModelIndex
 from findingmodel_ai.enrichment.unified import enrich_finding_unified
+
+from findingmodel import logger
 
 # Enable loguru logger
 logger.enable("findingmodel")
@@ -55,7 +56,7 @@ def is_already_enriched(finding_name: str, existing_output: dict[str, Any]) -> s
     return None
 
 
-async def enrich_single_finding(finding_name: str, index: DuckDBIndex) -> dict[str, Any] | None:
+async def enrich_single_finding(finding_name: str, index: FindingModelIndex) -> dict[str, Any] | None:
     """Enrich a single finding and return the formatted output.
 
     Returns None if the finding model doesn't exist in the index.
@@ -120,7 +121,7 @@ async def main(input_path: Path, output_path: Path) -> None:
     total_start = perf_counter()
 
     # Open index once for all lookups
-    index = DuckDBIndex()
+    index = FindingModelIndex()
     async with index:
         for i, finding_name in enumerate(finding_names, 1):
             # Check if already enriched

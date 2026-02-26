@@ -1,7 +1,7 @@
 from pathlib import Path
+from typing import Iterator
 
 import pytest
-from findingmodel import logger
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import (
     ChoiceAttribute,
@@ -13,6 +13,8 @@ from findingmodel.finding_model import (
     NumericAttribute,
     NumericAttributeIded,
 )
+
+from findingmodel import logger
 
 # =============================================================================
 # Test Model Constants
@@ -33,6 +35,15 @@ def configure_test_logging() -> None:
     logger.enable("findingmodel")
     # Add a file handler to the findingmodel logger
     logger.add("test.log", level="INFO", rotation="10 MB")
+
+
+@pytest.fixture(autouse=True)
+def _reset_config_singleton() -> Iterator[None]:
+    """Reset the config singleton between tests to prevent state leakage."""
+    import findingmodel.config as config_module
+
+    yield
+    config_module._settings = None
 
 
 @pytest.fixture

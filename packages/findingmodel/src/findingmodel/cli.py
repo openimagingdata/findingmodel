@@ -5,7 +5,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from .config import settings
+from .config import get_settings
 from .finding_model import FindingModelBase, FindingModelFull
 from .index import Index
 
@@ -20,7 +20,7 @@ def config() -> None:
     """Show the currently active configuration."""
     console = Console()
     console.print("[yellow bold]Finding Model Forge configuration:")
-    console.print_json(settings.model_dump_json())
+    console.print_json(get_settings().model_dump_json())
 
 
 @cli.command()

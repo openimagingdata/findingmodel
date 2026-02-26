@@ -5,7 +5,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
-from findingmodel.index import DuckDBIndex
+from findingmodel.index import FindingModelIndex
 
 
 class AttributeResult(BaseModel):
@@ -91,7 +91,7 @@ async def search_finding_models(
     normalized_tags = tags if tags else None
 
     # Perform search using the Index
-    async with DuckDBIndex() as index:
+    async with FindingModelIndex() as index:
         entries = await index.search(query, limit=limit, tags=normalized_tags)
 
         # Convert entries to response format
@@ -152,7 +152,7 @@ async def get_finding_model(identifier: str) -> SearchResult | None:
         Get by synonym:
             identifier: "collapsed lung"
     """
-    async with DuckDBIndex() as index:
+    async with FindingModelIndex() as index:
         entry = await index.get(identifier)
 
         if entry is None:
@@ -197,7 +197,7 @@ async def count_finding_models() -> dict[str, int]:
             "organizations": 12
         }
     """
-    async with DuckDBIndex() as index:
+    async with FindingModelIndex() as index:
         models_count = await index.count()
         people_count = await index.count_people()
         orgs_count = await index.count_organizations()

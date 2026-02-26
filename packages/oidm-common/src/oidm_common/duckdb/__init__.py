@@ -1,5 +1,6 @@
 """DuckDB utilities and helpers for OIDM packages."""
 
+from oidm_common.duckdb.base import ReadOnlyDuckDBIndex
 from oidm_common.duckdb.connection import setup_duckdb_connection
 from oidm_common.duckdb.indexes import create_fts_index, create_hnsw_index, drop_search_indexes
 from oidm_common.duckdb.search import (
@@ -11,6 +12,8 @@ from oidm_common.duckdb.search import (
 )
 
 __all__ = [
+    # Base class
+    "ReadOnlyDuckDBIndex",
     # Search utilities
     "ScoreTuple",
     # Index management

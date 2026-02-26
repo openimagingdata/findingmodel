@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from findingmodel import IndexCode
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.protocols import OntologySearchResult
 from findingmodel_ai.enrichment.unified import (
@@ -27,6 +26,8 @@ from findingmodel_ai.enrichment.unified import (
 )
 from pydantic import ValidationError
 from pydantic_ai import models
+
+from findingmodel import IndexCode
 
 # Import test model constants (defined in conftest.py)
 from .conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL
@@ -1132,7 +1133,7 @@ class TestEnrichFindingOrchestration:
             file_hash_sha256="abc123def456",
         )
 
-        # Mock DuckDBIndex
+        # Mock FindingModelIndex
         mock_index = AsyncMock()
         mock_index.__aenter__ = AsyncMock(return_value=mock_index)
         mock_index.__aexit__ = AsyncMock(return_value=None)
@@ -1157,7 +1158,7 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.FindingModelIndex", return_value=mock_index),
             patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
             patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
             patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
@@ -1185,7 +1186,7 @@ class TestEnrichFindingOrchestration:
 
         from findingmodel_ai.enrichment.unified import enrich_finding
 
-        # Mock DuckDBIndex to return None (not found)
+        # Mock FindingModelIndex to return None (not found)
         mock_index = AsyncMock()
         mock_index.__aenter__ = AsyncMock(return_value=mock_index)
         mock_index.__aexit__ = AsyncMock(return_value=None)
@@ -1209,7 +1210,7 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.FindingModelIndex", return_value=mock_index),
             patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
             patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
             patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
@@ -1235,7 +1236,7 @@ class TestEnrichFindingOrchestration:
 
         from findingmodel_ai.enrichment.unified import enrich_finding
 
-        # Mock DuckDBIndex
+        # Mock FindingModelIndex
         mock_index = AsyncMock()
         mock_index.__aenter__ = AsyncMock(return_value=mock_index)
         mock_index.__aexit__ = AsyncMock(return_value=None)
@@ -1258,7 +1259,7 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.FindingModelIndex", return_value=mock_index),
             patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
             patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
             patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
@@ -1291,7 +1292,7 @@ class TestEnrichFindingOrchestration:
 
         from findingmodel_ai.enrichment.unified import enrich_finding
 
-        # Mock DuckDBIndex
+        # Mock FindingModelIndex
         mock_index = AsyncMock()
         mock_index.__aenter__ = AsyncMock(return_value=mock_index)
         mock_index.__aexit__ = AsyncMock(return_value=None)
@@ -1315,7 +1316,7 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.FindingModelIndex", return_value=mock_index),
             patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
             patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
             patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
@@ -1340,7 +1341,7 @@ class TestEnrichFindingOrchestration:
 
         from findingmodel_ai.enrichment.unified import enrich_finding
 
-        # Mock DuckDBIndex
+        # Mock FindingModelIndex
         mock_index = AsyncMock()
         mock_index.__aenter__ = AsyncMock(return_value=mock_index)
         mock_index.__aexit__ = AsyncMock(return_value=None)
@@ -1355,7 +1356,7 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.FindingModelIndex", return_value=mock_index),
             patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
             patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
             patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,
@@ -1379,7 +1380,7 @@ class TestEnrichFindingOrchestration:
 
         from findingmodel_ai.enrichment.unified import enrich_finding
 
-        # Mock DuckDBIndex
+        # Mock FindingModelIndex
         mock_index = AsyncMock()
         mock_index.__aenter__ = AsyncMock(return_value=mock_index)
         mock_index.__aexit__ = AsyncMock(return_value=None)
@@ -1403,7 +1404,7 @@ class TestEnrichFindingOrchestration:
         )
 
         with (
-            patch("findingmodel_ai.enrichment.unified.DuckDBIndex", return_value=mock_index),
+            patch("findingmodel_ai.enrichment.unified.FindingModelIndex", return_value=mock_index),
             patch("findingmodel_ai.enrichment.unified.search_ontology_codes_for_finding", mock_search_ontology),
             patch("findingmodel_ai.search.anatomic.find_anatomic_locations", mock_find_anatomic),
             patch("findingmodel_ai.enrichment.unified.create_enrichment_agent") as mock_create_agent,

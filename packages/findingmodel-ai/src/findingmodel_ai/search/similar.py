@@ -12,7 +12,7 @@ import json
 from dataclasses import dataclass
 from typing import Literal
 
-from findingmodel.index import DuckDBIndex as Index
+from findingmodel.index import FindingModelIndex as Index
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from typing_extensions import NotRequired, TypedDict

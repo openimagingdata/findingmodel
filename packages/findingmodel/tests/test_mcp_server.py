@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from findingmodel.index import AttributeInfo, DuckDBIndex, IndexEntry
+from findingmodel.index import AttributeInfo, FindingModelIndex, IndexEntry
 from findingmodel.mcp_server import (
     count_finding_models,
     get_finding_model,
@@ -38,7 +38,7 @@ async def test_search_finding_models_basic() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         result = await search_finding_models(query="pneumothorax", limit=5)
 
         assert result.query == "pneumothorax"
@@ -56,7 +56,7 @@ async def test_search_finding_models_limit_validation() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         # Test minimum limit
         result_min = await search_finding_models(query="test", limit=0)
         assert result_min.limit == 1
@@ -74,7 +74,7 @@ async def test_search_finding_models_with_tags() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         result = await search_finding_models(query="lesion", limit=10, tags=["chest"])
 
         assert result.query == "lesion"
@@ -90,7 +90,7 @@ async def test_search_finding_models_empty_tags() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         result = await search_finding_models(query="test", limit=5, tags=[])
 
         assert result.tags is None
@@ -114,7 +114,7 @@ async def test_get_finding_model_by_id() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         result = await get_finding_model(identifier="OIFM_TEST_000001")
 
         assert result is not None
@@ -130,7 +130,7 @@ async def test_get_finding_model_not_found() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         result = await get_finding_model(identifier="NONEXISTENT_ID_12345")
 
         assert result is None
@@ -146,7 +146,7 @@ async def test_count_finding_models() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         result = await count_finding_models()
 
         assert result == {
@@ -180,7 +180,7 @@ async def test_search_result_structure() -> None:
     mock_index.__aenter__ = AsyncMock(return_value=mock_index)
     mock_index.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("findingmodel.mcp_server.DuckDBIndex", return_value=mock_index):
+    with patch("findingmodel.mcp_server.FindingModelIndex", return_value=mock_index):
         result = await search_finding_models(query="test", limit=1)
 
         assert result.result_count == 1
@@ -214,8 +214,8 @@ async def test_mcp_server_integration(prebuilt_db_path: Path) -> None:
     Run with: pytest test/test_mcp_server.py::test_mcp_server_integration -v
     """
     # Use pre-built database and test MCP server functions
-    async with DuckDBIndex(prebuilt_db_path) as test_index:
-        with patch("findingmodel.mcp_server.DuckDBIndex") as mock_duckdb_class:
+    async with FindingModelIndex(prebuilt_db_path) as test_index:
+        with patch("findingmodel.mcp_server.FindingModelIndex") as mock_duckdb_class:
             mock_duckdb_class.return_value.__aenter__.return_value = test_index
 
             # Test search - use a term from the pre-built database

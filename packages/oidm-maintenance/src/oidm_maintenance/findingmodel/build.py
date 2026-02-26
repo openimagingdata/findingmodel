@@ -1,6 +1,6 @@
 """Build findingmodel database from source models.
 
-This module extracts the database build logic from findingmodel.index.DuckDBIndex
+This module extracts the database build logic from findingmodel.index.FindingModelIndex
 and provides standalone functions for use by oidm-maintenance CLI tools.
 """
 
@@ -24,7 +24,7 @@ from oidm_maintenance.config import get_settings
 console = Console()
 DEFAULT_CONTRIBUTOR_ROLE = "contributor"
 
-# Schema statements copied from findingmodel.index.DuckDBIndex
+# Schema statements copied from findingmodel.index.FindingModelIndex
 _SCHEMA_STATEMENTS: tuple[str, ...] = (
     """
     CREATE TABLE IF NOT EXISTS finding_models (
@@ -109,7 +109,7 @@ _SCHEMA_STATEMENTS: tuple[str, ...] = (
     """,
 )
 
-# Index statements copied from findingmodel.index.DuckDBIndex
+# Index statements copied from findingmodel.index.FindingModelIndex
 _INDEX_STATEMENTS: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS idx_finding_models_name ON finding_models(name)",
     "CREATE INDEX IF NOT EXISTS idx_finding_models_slug_name ON finding_models(slug_name)",
