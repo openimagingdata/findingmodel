@@ -6,22 +6,18 @@ All returned AnatomicLocation objects are automatically bound to the index.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import duckdb
 from asyncer import asyncify
 from oidm_common.duckdb import ReadOnlyDuckDBIndex, rrf_fusion, setup_duckdb_connection
 from oidm_common.embeddings import get_embedding
-from oidm_common.models import IndexCode, WebReference
 
 from anatomic_locations.models import (
     AnatomicLocation,
-    AnatomicRef,
-    AnatomicRegion,
     BodySystem,
-    Laterality,
     LocationType,
     StructureType,
 )
@@ -56,6 +52,22 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
     # Quality thresholds to filter irrelevant search results
     SEMANTIC_MIN_SIMILARITY: float = 0.75  # Minimum cosine similarity (1 - distance)
     FTS_MIN_SCORE: float = 0.5  # Minimum BM25 score for FTS-only results
+
+    # Base SELECT for all location queries. Correlated subqueries bring codes, synonyms,
+    # and references inline — DuckDB optimizes these into a single join plan.
+    # Note: aliased as 'refs' (not 'references') to avoid SQL reserved word.
+    # Only exclude columns present in ALL schema versions; 'synonyms_text' (added v0.2.3)
+    # is intentionally NOT excluded — old schemas lack it and EXCLUDE raises a Binder Error.
+    _LOCATION_SELECT = """
+        SELECT al.* EXCLUDE (search_text, vector),
+            (SELECT list({system: system, code: code, display: display} ORDER BY system)
+             FROM anatomic_codes WHERE location_id = al.id) AS codes,
+            (SELECT list(synonym ORDER BY synonym)
+             FROM anatomic_synonyms WHERE location_id = al.id) AS synonyms,
+            (SELECT list({url: url, title: title, description: description} ORDER BY url)
+             FROM anatomic_references WHERE location_id = al.id AND title IS NOT NULL) AS refs
+        FROM anatomic_locations al
+    """
 
     def __init__(self, db_path: Path | None = None) -> None:
         from anatomic_locations.config import ensure_anatomic_db
@@ -113,9 +125,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         location_id = self._resolve_location_id(conn, identifier)
         if location_id is None:
             raise KeyError(f"Anatomic location not found: {identifier}")
-        row = conn.execute("SELECT * FROM anatomic_locations WHERE id = ?", [location_id]).fetchone()
-        assert row is not None, f"Resolved location_id {location_id} but row not found"
-        return self._row_to_location(row)
+        return self._fetch_locations(conn, "WHERE al.id = ?", [location_id])[0]
 
     def find_by_code(self, system: str, code: str) -> list[AnatomicLocation]:
         """Find locations by external code (SNOMED, FMA, etc.).
@@ -130,17 +140,11 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of matching AnatomicLocation objects (may be empty)
         """
         conn = self._ensure_connection()
-        rows = conn.execute(
-            """
-            SELECT al.*
-            FROM anatomic_locations al
-            JOIN anatomic_codes alc ON al.id = alc.location_id
-            WHERE UPPER(alc.system) = UPPER(?) AND alc.code = ?
-            """,
+        return self._fetch_locations(
+            conn,
+            "WHERE al.id IN (SELECT location_id FROM anatomic_codes WHERE UPPER(system) = UPPER(?) AND code = ?)",
             [system, code],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        )
 
     async def search(
         self,
@@ -166,12 +170,12 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         conn = self._ensure_connection()
 
         # Check for exact matches first (including synonyms) - wrap typed sync helper
-        exact_rows = await asyncify(self._find_exact_match)(conn, query, region, sided_filter, include_synonyms=True)
-        if exact_rows:
-            return [self._row_to_location(r) for r in exact_rows[:limit]]
+        exact_ids = await asyncify(self._find_exact_match)(conn, query, region, sided_filter, include_synonyms=True)
+        if exact_ids:
+            return self._get_locations_by_ids(conn, exact_ids[:limit])
 
         # FTS search - wrap typed sync helper
-        fts_rows = await asyncify(self._search_fts)(conn, query, limit * 2, region, sided_filter)
+        fts_results = await asyncify(self._search_fts)(conn, query, limit * 2, region, sided_filter)
 
         # Semantic search - embedding API already async, then wrap sync helper
         from anatomic_locations.config import get_settings as get_anatomic_settings
@@ -188,18 +192,18 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             if api_key
             else None
         )
-        semantic_rows = []
+        semantic_results: list[tuple[str, float]] = []
         if embedding is not None:
-            semantic_rows = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
+            semantic_results = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
 
         # If no semantic results, return FTS only (with quality threshold)
-        if not semantic_rows:
-            filtered_fts = [r for r in fts_rows if float(r[-1]) >= self.FTS_MIN_SCORE]
-            return [self._row_to_location(r) for r in filtered_fts[:limit]]
+        if not semantic_results:
+            filtered_ids = [lid for lid, score in fts_results if score >= self.FTS_MIN_SCORE]
+            return self._get_locations_by_ids(conn, filtered_ids[:limit])
 
         # Apply RRF fusion - CPU-bound, fast, stays sync (no I/O)
-        fused = self._apply_rrf_fusion(fts_rows, semantic_rows, limit)
-        return [self._row_to_location(r) for r in fused]
+        fused_ids = self._apply_rrf_fusion(fts_results, semantic_results, limit)
+        return self._get_locations_by_ids(conn, fused_ids)
 
     async def search_batch(
         self,
@@ -258,28 +262,28 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         results: dict[str, list[AnatomicLocation]] = {}
         for query, embedding in zip(valid_queries, embeddings, strict=True):
             # Exact match (including synonyms)
-            exact_rows = await asyncify(self._find_exact_match)(
-                conn, query, region, sided_filter, include_synonyms=True
-            )
-            if exact_rows:
-                results[query] = [self._row_to_location(r) for r in exact_rows[:limit]]
+            exact_ids = await asyncify(self._find_exact_match)(conn, query, region, sided_filter, include_synonyms=True)
+            if exact_ids:
+                results[query] = self._get_locations_by_ids(conn, exact_ids[:limit])
                 continue
 
             # FTS
-            fts_rows = await asyncify(self._search_fts)(conn, query, limit * 2, region, sided_filter)
+            fts_results = await asyncify(self._search_fts)(conn, query, limit * 2, region, sided_filter)
 
             # Semantic (using pre-computed embedding)
-            semantic_rows: list[tuple[Any, ...]] = []
+            semantic_results: list[tuple[str, float]] = []
             if embedding is not None:
-                semantic_rows = await asyncify(self._search_semantic)(conn, embedding, limit * 2, region, sided_filter)
+                semantic_results = await asyncify(self._search_semantic)(
+                    conn, embedding, limit * 2, region, sided_filter
+                )
 
-            if not semantic_rows:
-                filtered_fts = [r for r in fts_rows if float(r[-1]) >= self.FTS_MIN_SCORE]
-                results[query] = [self._row_to_location(r) for r in filtered_fts[:limit]]
+            if not semantic_results:
+                filtered_ids = [lid for lid, score in fts_results if score >= self.FTS_MIN_SCORE]
+                results[query] = self._get_locations_by_ids(conn, filtered_ids[:limit])
                 continue
 
-            fused = self._apply_rrf_fusion(fts_rows, semantic_rows, limit)
-            results[query] = [self._row_to_location(r) for r in fused]
+            fused_ids = self._apply_rrf_fusion(fts_results, semantic_results, limit)
+            results[query] = self._get_locations_by_ids(conn, fused_ids)
 
         return results
 
@@ -299,31 +303,17 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of ancestor locations (may be empty if location has no parent)
         """
         conn = self._ensure_connection()
-
-        # Get the location's path
-        path_row = conn.execute(
-            "SELECT containment_path FROM anatomic_locations WHERE id = ?",
-            [location_id],
-        ).fetchone()
-
-        if not path_row or not path_row[0]:
+        path_row = self._execute_one(
+            conn, "SELECT containment_path FROM anatomic_locations WHERE id = ?", [location_id]
+        )
+        if not path_row or not path_row["containment_path"]:
             return []
-
-        path = path_row[0]
-
-        # Find all ancestors by matching their paths as prefixes
-        # Order by depth descending (immediate parent first, root last)
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM anatomic_locations
-            WHERE ? LIKE containment_path || '%' AND id != ?
-            ORDER BY containment_depth DESC
-            """,
+        path = str(path_row["containment_path"])
+        return self._fetch_locations(
+            conn,
+            "WHERE ? LIKE al.containment_path || '%' AND al.id != ? ORDER BY al.containment_depth DESC",
             [path, location_id],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        )
 
     def get_containment_descendants(self, location_id: str) -> list[AnatomicLocation]:
         """Get containment descendants using materialized path.
@@ -335,30 +325,17 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of descendant locations (may be empty)
         """
         conn = self._ensure_connection()
-
-        # Get the location's path
-        path_row = conn.execute(
-            "SELECT containment_path FROM anatomic_locations WHERE id = ?",
-            [location_id],
-        ).fetchone()
-
-        if not path_row or not path_row[0]:
+        path_row = self._execute_one(
+            conn, "SELECT containment_path FROM anatomic_locations WHERE id = ?", [location_id]
+        )
+        if not path_row or not path_row["containment_path"]:
             return []
-
-        path = path_row[0]
-
-        # Find all descendants by matching path prefix
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM anatomic_locations
-            WHERE containment_path LIKE ? || '%' AND id != ?
-            ORDER BY containment_depth
-            """,
+        path = str(path_row["containment_path"])
+        return self._fetch_locations(
+            conn,
+            "WHERE al.containment_path LIKE ? || '%' AND al.id != ? ORDER BY al.containment_depth",
             [path, location_id],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        )
 
     def get_partof_ancestors(self, location_id: str) -> list[AnatomicLocation]:
         """Get partOf ancestors using materialized path.
@@ -370,30 +347,15 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of part-of ancestors (may be empty)
         """
         conn = self._ensure_connection()
-
-        # Get the location's part-of path
-        path_row = conn.execute(
-            "SELECT partof_path FROM anatomic_locations WHERE id = ?",
-            [location_id],
-        ).fetchone()
-
-        if not path_row or not path_row[0]:
+        path_row = self._execute_one(conn, "SELECT partof_path FROM anatomic_locations WHERE id = ?", [location_id])
+        if not path_row or not path_row["partof_path"]:
             return []
-
-        path = path_row[0]
-
-        # Find all part-of ancestors by matching their paths as prefixes
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM anatomic_locations
-            WHERE ? LIKE partof_path || '%' AND id != ?
-            ORDER BY partof_depth DESC
-            """,
+        path = str(path_row["partof_path"])
+        return self._fetch_locations(
+            conn,
+            "WHERE ? LIKE al.partof_path || '%' AND al.id != ? ORDER BY al.partof_depth DESC",
             [path, location_id],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        )
 
     def get_children_of(self, parent_id: str) -> list[AnatomicLocation]:
         """Get direct children (containment_parent_id = parent_id).
@@ -405,19 +367,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of child locations (may be empty)
         """
         conn = self._ensure_connection()
-
-        # Query for direct children via parent reference
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM anatomic_locations
-            WHERE containment_parent_id = ?
-            ORDER BY description
-            """,
-            [parent_id],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        return self._fetch_locations(conn, "WHERE al.containment_parent_id = ? ORDER BY al.description", [parent_id])
 
     # =========================================================================
     # Filtering and Iteration (auto-binds results)
@@ -433,12 +383,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of locations in that region
         """
         conn = self._ensure_connection()
-        rows = conn.execute(
-            "SELECT * FROM anatomic_locations WHERE region = ? ORDER BY description",
-            [region],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        return self._fetch_locations(conn, "WHERE al.region = ? ORDER BY al.description", [region])
 
     def by_location_type(self, ltype: LocationType) -> list[AnatomicLocation]:
         """Get all locations of a specific location type.
@@ -450,12 +395,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of locations with that type
         """
         conn = self._ensure_connection()
-        rows = conn.execute(
-            "SELECT * FROM anatomic_locations WHERE location_type = ? ORDER BY description",
-            [ltype.value],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        return self._fetch_locations(conn, "WHERE al.location_type = ? ORDER BY al.description", [ltype.value])
 
     def by_system(self, system: BodySystem) -> list[AnatomicLocation]:
         """Get all locations in a body system.
@@ -467,12 +407,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of locations in that system
         """
         conn = self._ensure_connection()
-        rows = conn.execute(
-            "SELECT * FROM anatomic_locations WHERE body_system = ? ORDER BY description",
-            [system.value],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        return self._fetch_locations(conn, "WHERE al.body_system = ? ORDER BY al.description", [system.value])
 
     def by_structure_type(self, stype: StructureType) -> list[AnatomicLocation]:
         """Get all locations of a structure type.
@@ -486,12 +421,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of locations with that structure type
         """
         conn = self._ensure_connection()
-        rows = conn.execute(
-            "SELECT * FROM anatomic_locations WHERE structure_type = ? ORDER BY description",
-            [stype.value],
-        ).fetchall()
-
-        return [self._row_to_location(row) for row in rows]
+        return self._fetch_locations(conn, "WHERE al.structure_type = ? ORDER BY al.description", [stype.value])
 
     def __iter__(self) -> Iterator[AnatomicLocation]:
         """Iterate over all anatomic locations.
@@ -500,10 +430,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             AnatomicLocation objects bound to this index
         """
         conn = self._ensure_connection()
-        rows = conn.execute("SELECT * FROM anatomic_locations ORDER BY description").fetchall()
-
-        for row in rows:
-            yield self._row_to_location(row)
+        yield from self._fetch_locations(conn, "ORDER BY al.description")
 
     # =========================================================================
     # Internal Helpers
@@ -517,7 +444,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         sided_filter: list[str] | None,
         *,
         include_synonyms: bool = False,
-    ) -> list[tuple[Any, ...]]:
+    ) -> list[str]:
         """Find exact matches on description, optionally also on synonyms (sync, typed).
 
         Args:
@@ -528,7 +455,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             include_synonyms: If True, also check the anatomic_synonyms table
 
         Returns:
-            List of matching rows from anatomic_locations table
+            List of matching location IDs
         """
         query_lower = query.lower()
         where_conditions = ["LOWER(description) = ?"]
@@ -547,11 +474,14 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
 
         where_clause = " AND ".join(where_conditions)
 
-        sql = f"SELECT * FROM anatomic_locations WHERE {where_clause}"
+        sql = f"SELECT id FROM anatomic_locations WHERE {where_clause}"
         results = conn.execute(sql, params).fetchall()
 
+        if results:
+            return [str(r[0]) for r in results]
+
         # If no description match and synonyms requested, check synonyms table
-        if not results and include_synonyms:
+        if include_synonyms:
             synonym_conditions = ["LOWER(s.synonym) = ?"]
             synonym_params: list[Any] = [query_lower]
 
@@ -566,13 +496,14 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
 
             synonym_where = " AND ".join(synonym_conditions)
             synonym_sql = f"""
-                SELECT a.* FROM anatomic_locations a
+                SELECT a.id FROM anatomic_locations a
                 JOIN anatomic_synonyms s ON a.id = s.location_id
                 WHERE {synonym_where}
             """
             results = conn.execute(synonym_sql, synonym_params).fetchall()
+            return [str(r[0]) for r in results]
 
-        return results
+        return []
 
     def _search_fts(
         self,
@@ -581,7 +512,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         limit: int,
         region: str | None,
         sided_filter: list[str] | None,
-    ) -> list[tuple[Any, ...]]:
+    ) -> list[tuple[str, float]]:
         """FTS search with BM25 scoring (sync, typed).
 
         Args:
@@ -592,7 +523,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             sided_filter: Optional list of allowed laterality values
 
         Returns:
-            List of (id, description, ..., score) tuples sorted by BM25 score descending
+            List of (location_id, bm25_score) tuples sorted by score descending
         """
         where_conditions = ["score IS NOT NULL"]
         params: list[Any] = [query]
@@ -612,12 +543,13 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         params.append(limit)
 
         sql = f"""
-            SELECT *, fts_main_anatomic_locations.match_bm25(id, ?) as score
+            SELECT id, fts_main_anatomic_locations.match_bm25(id, ?) as score
             FROM anatomic_locations
             WHERE {where_clause}
             ORDER BY score DESC LIMIT ?
         """
-        return conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
+        return [(str(r[0]), float(r[1])) for r in rows]
 
     def _search_semantic(
         self,
@@ -626,10 +558,11 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         limit: int,
         region: str | None,
         sided_filter: list[str] | None,
-    ) -> list[tuple[Any, ...]]:
+    ) -> list[tuple[str, float]]:
         """Semantic search with cosine distance (sync, typed).
 
         Results are filtered by SEMANTIC_MIN_SIMILARITY to exclude irrelevant matches.
+        Returns similarity scores (1 - distance), not raw distances.
 
         Args:
             conn: DuckDB connection
@@ -639,7 +572,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             sided_filter: Optional list of allowed laterality values
 
         Returns:
-            List of (id, description, ..., distance) tuples sorted by distance ascending
+            List of (location_id, similarity) tuples sorted by similarity descending
         """
         max_distance = 1.0 - self.SEMANTIC_MIN_SIMILARITY
 
@@ -667,212 +600,98 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         dimensions = settings.openai_embedding_dimensions
 
         sql = f"""
-            SELECT *, array_cosine_distance(vector, ?::FLOAT[{dimensions}]) as distance
+            SELECT id, array_cosine_distance(vector, ?::FLOAT[{dimensions}]) as distance
             FROM anatomic_locations
             WHERE {where_clause}
             ORDER BY distance ASC LIMIT ?
         """
         rows = conn.execute(sql, params).fetchall()
 
-        # Filter out results below minimum similarity threshold
-        return [r for r in rows if float(r[-1]) <= max_distance]
+        # Filter by min similarity and convert distance to similarity
+        return [(str(r[0]), 1.0 - float(r[1])) for r in rows if float(r[1]) <= max_distance]
 
     def _apply_rrf_fusion(
         self,
-        fts_results: list[tuple[Any, ...]],
-        semantic_results: list[tuple[Any, ...]],
+        fts_results: list[tuple[str, float]],
+        semantic_results: list[tuple[str, float]],
         limit: int,
-    ) -> list[tuple[Any, ...]]:
+    ) -> list[str]:
         """Apply RRF fusion to combine result sets (sync - CPU-bound, fast).
 
         Args:
-            fts_results: FTS search results (rows with score in last column)
-            semantic_results: Semantic search results (rows with distance in last column)
+            fts_results: FTS search results as (location_id, bm25_score) tuples
+            semantic_results: Semantic search results as (location_id, similarity) tuples
             limit: Maximum number of results to return
 
         Returns:
-            Combined results sorted by RRF score, limited to max results
+            Ordered list of location IDs sorted by RRF score
         """
-        # If no semantic results, just return FTS results
+        # If no semantic results, just return FTS IDs
         if not semantic_results:
-            return fts_results[:limit]
-
-        # Extract (id, score) tuples from results
-        # FTS results have BM25 score in last column (higher is better)
-        fts_scores = [(str(r[0]), float(r[-1])) for r in fts_results]
-
-        # Semantic results have cosine distance in last column (lower is better)
-        # Convert distance to similarity score (1 - distance for cosine)
-        semantic_scores = [(str(r[0]), 1.0 - float(r[-1])) for r in semantic_results]
+            return [location_id for location_id, _score in fts_results[:limit]]
 
         # Apply RRF fusion using utility function
-        fused_scores = rrf_fusion(fts_scores, semantic_scores)
+        # Both inputs are already (id, score) where higher is better
+        fused_scores = rrf_fusion(fts_results, semantic_results)
 
-        # Build result lookup by ID (use FTS results as base, they have all columns)
-        result_map = {}
-        for r in fts_results + semantic_results:
-            if r[0] not in result_map:
-                result_map[r[0]] = r
+        return [location_id for location_id, _score in fused_scores[:limit]]
 
-        # Reconstruct results with RRF scores
-        combined_results = []
-        for location_id, _score in fused_scores[:limit]:
-            if location_id in result_map:
-                combined_results.append(result_map[location_id])
+    def _fetch_locations(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        suffix_sql: str = "",
+        params: Sequence[object] | None = None,
+    ) -> list[AnatomicLocation]:
+        """Execute _LOCATION_SELECT + suffix_sql and hydrate results.
 
-        return combined_results
-
-    def _row_to_location(self, row: tuple[object, ...]) -> AnatomicLocation:
-        """Convert a database row to an AnatomicLocation object.
-
-        Eagerly loads codes and synonyms via JOIN queries.
-        Automatically binds the location to this index.
-
-        Args:
-            row: Database row from anatomic_locations table
-
-        Returns:
-            AnatomicLocation object bound to this index
+        Single entry point for all location queries. Codes, synonyms, and
+        references arrive via correlated subqueries — one query total.
         """
-        conn = self._ensure_connection()
+        rows = self._execute_all(conn, self._LOCATION_SELECT + " " + suffix_sql, params)
+        return [self._build_location(row) for row in rows]
 
-        # Map row columns to fields (based on table schema)
-        # Schema: id, description, region, location_type, body_system, structure_type,
-        #         laterality, definition, sex_specific, search_text, vector,
-        #         containment_path, containment_parent_id, containment_parent_display,
-        #         containment_depth, containment_children,
-        #         partof_path, partof_parent_id, partof_parent_display,
-        #         partof_depth, partof_children,
-        #         left_id, left_display, right_id, right_display, generic_id, generic_display,
-        #         created_at, updated_at
-        location_id = str(row[0])
-        description = str(row[1])
-        region_str = row[2]
-        location_type_str = row[3]
-        body_system_str = row[4]
-        structure_type_str = row[5]
-        laterality_str = row[6]
-        definition = str(row[7]) if row[7] else None
-        sex_specific = str(row[8]) if row[8] else None
-        # Skip search_text (row[9]) and vector (row[10])
-        containment_path = str(row[11]) if row[11] else None
-        containment_parent_id = str(row[12]) if row[12] else None
-        containment_parent_display = str(row[13]) if row[13] else None
-        containment_depth = cast(int, row[14]) if row[14] is not None else None
-        containment_children_raw = cast(list[dict[str, str]], row[15]) if row[15] else []
-        partof_path = str(row[16]) if row[16] else None
-        partof_parent_id = str(row[17]) if row[17] else None
-        partof_parent_display = str(row[18]) if row[18] else None
-        partof_depth = cast(int, row[19]) if row[19] is not None else None
-        partof_children_raw = cast(list[dict[str, str]], row[20]) if row[20] else []
-        left_id = str(row[21]) if row[21] else None
-        left_display = str(row[22]) if row[22] else None
-        right_id = str(row[23]) if row[23] else None
-        right_display = str(row[24]) if row[24] else None
-        generic_id = str(row[25]) if row[25] else None
-        generic_display = str(row[26]) if row[26] else None
-        # Skip created_at (row[27]) and updated_at (row[28])
+    def _get_locations_by_ids(self, conn: duckdb.DuckDBPyConnection, location_ids: list[str]) -> list[AnatomicLocation]:
+        """Fetch multiple locations by ID, preserving input order.
 
-        # Load codes
-        code_rows = conn.execute(
-            "SELECT system, code, display FROM anatomic_codes WHERE location_id = ?",
-            [location_id],
-        ).fetchall()
-        codes = [IndexCode(system=str(r[0]), code=str(r[1]), display=str(r[2]) if r[2] else None) for r in code_rows]
+        IDs not found in the database are silently omitted.
+        """
+        if not location_ids:
+            return []
+        placeholders = ", ".join(["?" for _ in location_ids])
+        locs = self._fetch_locations(conn, f"WHERE al.id IN ({placeholders})", location_ids)
+        locs_by_id = {loc.id: loc for loc in locs}
+        return [locs_by_id[lid] for lid in location_ids if lid in locs_by_id]
 
-        # Load synonyms
-        synonym_rows = conn.execute(
-            "SELECT synonym FROM anatomic_synonyms WHERE location_id = ? ORDER BY synonym",
-            [location_id],
-        ).fetchall()
-        synonyms = [str(r[0]) for r in synonym_rows]
+    def _build_location(self, row: dict[str, object]) -> AnatomicLocation:
+        """Pure row→AnatomicLocation transform. No database access."""
 
-        # Load references
-        ref_rows = conn.execute(
-            "SELECT url, title, description FROM anatomic_references WHERE location_id = ?",
-            [location_id],
-        ).fetchall()
-        references = [
-            WebReference(
-                url=str(r[0]),
-                title=str(r[1]),  # title is required in WebReference
-                description=str(r[2]) if r[2] else None,
+        def _ref(id_key: str, display_key: str) -> dict[str, object] | None:
+            # Both id AND display must be non-null; AnatomicRef.display is a required str.
+            return (
+                {"id": row[id_key], "display": row[display_key]} if row.get(id_key) and row.get(display_key) else None
             )
-            for r in ref_rows
-            if r[1]  # Skip rows without title
-        ]
 
-        # Parse containment parent from denormalized columns
-        containment_parent = None
-        if containment_parent_id and containment_parent_display:
-            containment_parent = AnatomicRef(id=containment_parent_id, display=containment_parent_display)
+        def _child_refs(key: str) -> list[dict[str, object]]:
+            # Filter STRUCT arrays: keep only entries where both id and display are non-null.
+            raw = row.get(key)
+            if not isinstance(raw, list):
+                return []
+            return [c for c in raw if isinstance(c, dict) and c.get("id") and c.get("display")]
 
-        # Parse containment children from STRUCT array (DuckDB returns list of dicts)
-        containment_children = [
-            AnatomicRef(id=str(child["id"]), display=str(child["display"]))
-            for child in containment_children_raw
-            if isinstance(child, dict) and "id" in child and "display" in child
-        ]
-
-        # Parse part-of parent from denormalized columns
-        partof_parent = None
-        if partof_parent_id and partof_parent_display:
-            partof_parent = AnatomicRef(id=partof_parent_id, display=partof_parent_display)
-
-        # Parse part-of children from STRUCT array (DuckDB returns list of dicts)
-        partof_children = [
-            AnatomicRef(id=str(child["id"]), display=str(child["display"]))
-            for child in partof_children_raw
-            if isinstance(child, dict) and "id" in child and "display" in child
-        ]
-
-        # Parse laterality variants from denormalized columns
-        left_variant = None
-        right_variant = None
-        generic_variant = None
-
-        if left_id and left_display:
-            left_variant = AnatomicRef(id=left_id, display=left_display)
-        if right_id and right_display:
-            right_variant = AnatomicRef(id=right_id, display=right_display)
-        if generic_id and generic_display:
-            generic_variant = AnatomicRef(id=generic_id, display=generic_display)
-
-        # Convert enum strings to enums
-        region = AnatomicRegion(region_str) if region_str else None
-        location_type = LocationType(location_type_str) if location_type_str else LocationType.STRUCTURE
-        body_system = BodySystem(body_system_str) if body_system_str else None
-        structure_type = StructureType(structure_type_str) if structure_type_str else None
-        laterality = Laterality(laterality_str) if laterality_str else Laterality.NONLATERAL
-
-        # Create and bind location
-        location = AnatomicLocation(
-            id=location_id,
-            description=description,
-            region=region,
-            location_type=location_type,
-            body_system=body_system,
-            structure_type=structure_type,
-            laterality=laterality,
-            definition=definition,
-            sex_specific=sex_specific,
-            synonyms=synonyms,
-            codes=codes,
-            references=references,
-            containment_path=containment_path,
-            containment_parent=containment_parent,
-            containment_depth=containment_depth,
-            containment_children=containment_children,
-            partof_path=partof_path,
-            partof_parent=partof_parent,
-            partof_depth=partof_depth,
-            partof_children=partof_children,
-            left_variant=left_variant,
-            right_variant=right_variant,
-            generic_variant=generic_variant,
-        )
-
-        return location.bind(self)
+        data = {
+            **row,
+            "containment_parent": _ref("containment_parent_id", "containment_parent_display"),
+            "partof_parent": _ref("partof_parent_id", "partof_parent_display"),
+            "left_variant": _ref("left_id", "left_display"),
+            "right_variant": _ref("right_id", "right_display"),
+            "generic_variant": _ref("generic_id", "generic_display"),
+            "containment_children": _child_refs("containment_children"),
+            "partof_children": _child_refs("partof_children"),
+            "references": row.get("refs") or [],
+            "codes": row.get("codes") or [],
+            "synonyms": row.get("synonyms") or [],
+        }
+        return AnatomicLocation.model_validate(data).bind(self)
 
 
 def get_database_stats(db_path: Path) -> dict[str, Any]:

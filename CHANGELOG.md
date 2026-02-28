@@ -6,6 +6,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## oidm-common 0.2.5 (unreleased)
+
+### Added
+
+- `_execute_one` and `_execute_all` helpers on `ReadOnlyDuckDBIndex` — return named dicts via `cursor.description`, eliminating positional `row[N]` brittleness across all subclasses
+
+## anatomic-locations 0.2.4 (unreleased)
+
+### Changed
+
+- Rewrote hydration with DuckDB correlated subqueries: codes, synonyms, and references fetched inline in a single query per operation (was 1+3N queries); `model_validate` replaces 95 lines of manual field extraction; `index.py` reduced from 1186 to 915 lines
+- FTS search now matches synonyms (requires rebuilt database from oidm-maintenance 0.2.3)
+
+### Fixed
+
+- `_ref()` now requires both `id` and `display` non-null — previously a NULL display field caused `ValidationError` during model validation
+- Malformed STRUCT entries in `containment_children`/`partof_children` are now filtered before model validation, preserving prior null-tolerant behavior
+
+## findingmodel 1.0.3 (unreleased)
+
+### Fixed
+
+- `_fetch_index_entry` now uses named-dict access via `_execute_one` — eliminates positional `row[N]` brittleness
+
+## oidm-maintenance 0.2.3 (unreleased)
+
+### Added
+
+- `synonyms_text` column added to `anatomic_locations` schema and FTS index — synonyms are now keyword-searchable (requires database rebuild)
+- Roundtrip build→read integration tests using `AnatomicLocationIndex`
+
 ## oidm-common 0.2.4 - 2026-02-26
 
 ### Fixed

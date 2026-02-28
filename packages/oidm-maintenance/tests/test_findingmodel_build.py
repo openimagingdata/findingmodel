@@ -498,6 +498,26 @@ class TestBuiltDatabaseRetrieval:
         if index.conn is not None:
             index.conn.close()
 
+    async def test_built_db_all_method_loads_fields(self, built_test_db: Path) -> None:
+        """all() returns IndexEntry objects with correctly typed fields.
+
+        Exercises _fetch_index_entry in bulk to catch positional-index offset bugs.
+        """
+        index = FindingModelIndex(built_test_db)
+        try:
+            entries, total = await index.all(limit=5)
+            assert total > 0
+            assert len(entries) > 0
+            first = entries[0]
+            # Verify named fields parse correctly — catches positional index drift
+            assert isinstance(first.oifm_id, str)
+            assert first.oifm_id.startswith("OIFM_")
+            assert isinstance(first.name, str)
+            assert len(first.name) > 0
+        finally:
+            if index.conn is not None:
+                index.conn.close()
+
 
 # =============================================================================
 # Embedding Generation Tests

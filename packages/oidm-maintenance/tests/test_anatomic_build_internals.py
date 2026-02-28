@@ -1,15 +1,17 @@
 """DuckDB integration tests for anatomic location build internals.
 
 These tests verify schema creation, STRUCT[] insertion, duplicate handling,
-and index creation with real DuckDB instances (using temp files).
+index creation, and roundtrip build→read with real DuckDB instances (using temp files).
 No external API calls - embeddings are loaded from test/data.
 """
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import duckdb
 import pytest
+from anatomic_locations import AnatomicLocationIndex
 from oidm_common.duckdb import setup_duckdb_connection
 from oidm_maintenance.anatomic.build import (
     _bulk_load_table,
@@ -17,8 +19,11 @@ from oidm_maintenance.anatomic.build import (
     _create_schema,
     _get_location_columns,
     _prepare_all_records,
+    build_anatomic_database,
     determine_laterality,
 )
+from oidm_maintenance.config import MaintenanceSettings
+from pydantic import SecretStr
 from pydantic_ai import models
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -80,6 +85,7 @@ def test_schema_creation(duckdb_conn: duckdb.DuckDBPyConnection) -> None:
     assert "description" in location_col_names
     assert "laterality" in location_col_names
     assert "search_text" in location_col_names
+    assert "synonyms_text" in location_col_names
     assert "vector" in location_col_names
     assert "containment_path" in location_col_names
     assert "containment_children" in location_col_names
@@ -172,14 +178,14 @@ def test_prepare_all_records(
     anatomic_records_by_id: dict[str, dict[str, object]],
 ) -> None:
     """Verify _prepare_all_records returns correct 4-tuple structure."""
-    # Use first 3 records from sample data
-    records = anatomic_sample_data[:3]
+    # Use first 4 records from sample data (index 3 = RID1243/thorax has synonym "chest")
+    records = anatomic_sample_data[:4]
 
     location_rows, searchable_texts, synonym_rows, code_rows = _prepare_all_records(records, anatomic_records_by_id)
 
-    # Should have successfully prepared all 3 records
-    assert len(location_rows) == 3
-    assert len(searchable_texts) == 3
+    # Should have successfully prepared all 4 records
+    assert len(location_rows) == 4
+    assert len(searchable_texts) == 4
 
     # Verify structure of location rows
     for location_row in location_rows:
@@ -187,10 +193,17 @@ def test_prepare_all_records(
         assert "description" in location_row
         assert "laterality" in location_row
         assert "search_text" in location_row
+        assert "synonyms_text" in location_row
         assert "containment_children" in location_row
         assert "partof_children" in location_row
         assert isinstance(location_row["containment_children"], list)
         assert isinstance(location_row["partof_children"], list)
+
+    # Verify synonyms_text is populated for records that have synonyms
+    # Sample data: RID1243 (thorax) has synonym "chest"
+    thorax_rows = [r for r in location_rows if r["id"] == "RID1243"]
+    if thorax_rows:
+        assert "chest" in thorax_rows[0]["synonyms_text"]
 
     # Verify synonym rows are dicts with correct keys
     for synonym_row in synonym_rows:
@@ -313,13 +326,13 @@ def test_insert_or_ignore_duplicate_code(schema_conn: duckdb.DuckDBPyConnection)
 
 
 def test_index_creation_fts(schema_conn: duckdb.DuckDBPyConnection) -> None:
-    """Verify that FTS index is created successfully."""
-    # Insert a test record
+    """Verify that FTS index is created successfully and includes synonyms_text."""
+    # Insert test records: one with synonyms_text, one without
     schema_conn.execute(
         """
         INSERT INTO anatomic_locations
-            (id, description, laterality, search_text, vector, definition)
-        VALUES (?, ?, ?, ?, ?, ?)
+            (id, description, laterality, search_text, vector, definition, synonyms_text)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
             "TEST001",
@@ -328,11 +341,12 @@ def test_index_creation_fts(schema_conn: duckdb.DuckDBPyConnection) -> None:
             "test structure",
             [0.1] * test_settings.openai_embedding_dimensions,
             "test definition",
+            "alias1 alias2",
         ),
     )
     schema_conn.commit()
 
-    # Create FTS index
+    # Create FTS index (matching production _create_indexes)
     from oidm_common.duckdb import create_fts_index
 
     create_fts_index(
@@ -341,6 +355,7 @@ def test_index_creation_fts(schema_conn: duckdb.DuckDBPyConnection) -> None:
         "id",
         "description",
         "definition",
+        "synonyms_text",
         stemmer="porter",
         stopwords="english",
         lower=1,
@@ -359,6 +374,17 @@ def test_index_creation_fts(schema_conn: duckdb.DuckDBPyConnection) -> None:
 
     # Should return at least one result
     assert len(result) > 0
+
+    # Verify that searching for a synonym-only term finds the record
+    synonym_result = schema_conn.execute(
+        """
+        SELECT id, fts_main_anatomic_locations.match_bm25(id, 'alias1') AS score
+        FROM anatomic_locations
+        WHERE score IS NOT NULL
+        """
+    ).fetchall()
+    assert len(synonym_result) == 1
+    assert synonym_result[0][0] == "TEST001"
 
 
 def test_index_creation_hnsw(schema_conn: duckdb.DuckDBPyConnection) -> None:
@@ -453,20 +479,22 @@ def test_full_build_pipeline(
         table_names = {row[0] for row in tables}
         assert len(table_names) == 4
 
-        # Insert a few test records
+        # Insert a few test records (include synonyms_text for FTS coverage)
         for record in anatomic_sample_data[:2]:
             record_id = str(record["_id"])
             description = str(record["description"])
+            raw_synonyms = record.get("synonyms", [])
+            synonyms_text = " ".join(raw_synonyms) if raw_synonyms and isinstance(raw_synonyms, list) else ""
             embedding = anatomic_sample_embeddings.get(record_id, [0.1] * test_settings.openai_embedding_dimensions)
 
             conn.execute(
                 """
                 INSERT INTO anatomic_locations
-                    (id, description, laterality, search_text, vector,
+                    (id, description, laterality, search_text, synonyms_text, vector,
                      containment_children, partof_children)
-                VALUES (?, ?, ?, ?, ?, [], [])
+                VALUES (?, ?, ?, ?, ?, ?, [], [])
                 """,
-                (record_id, description, "nonlateral", description, embedding),
+                (record_id, description, "nonlateral", description, synonyms_text, embedding),
             )
 
         conn.commit()
@@ -530,3 +558,185 @@ class TestDetermineLaterality:
     def test_empty_record_is_nonlateral(self) -> None:
         """Empty record is nonlateral."""
         assert determine_laterality({}) == "nonlateral"
+
+
+# =============================================================================
+# Roundtrip build → read tests
+# =============================================================================
+
+
+def _mock_embeddings_from_fixture(
+    sample_ids: list[str],
+    embeddings_by_id: dict[str, list[float]],
+) -> Callable[..., list[list[float]]]:
+    """Create a mock get_embeddings_batch that returns real pre-generated embeddings.
+
+    Maps searchable_texts (in build order) back to pre-generated embeddings
+    by tracking the call counter across invocations.
+    """
+    call_counter = 0
+
+    def _mock(
+        texts: list[str],
+        *,
+        api_key: str,
+        model: str | None = None,
+        dimensions: int = 512,
+        cache: object | None = None,
+    ) -> list[list[float]]:
+        nonlocal call_counter
+        _ = (api_key, model, cache)
+        result: list[list[float]] = []
+        for i, _text in enumerate(texts):
+            record_id = sample_ids[call_counter + i]
+            result.append(embeddings_by_id.get(record_id, [0.0] * dimensions))
+        call_counter += len(texts)
+        return result
+
+    return _mock
+
+
+@pytest.fixture
+async def built_anatomic_db(
+    tmp_path: Path,
+    anatomic_sample_data: list[dict[str, object]],
+    anatomic_sample_embeddings: dict[str, list[float]],
+) -> Path:
+    """Build anatomic DB from sample data with real pre-generated embeddings.
+
+    Exercises the full build_anatomic_database() pipeline so roundtrip
+    tests verify schema alignment between producer (build.py) and
+    consumer (AnatomicLocationIndex._row_to_location).
+    """
+    source_json = Path(__file__).parent / "data" / "anatomic_sample.json"
+    db_path = tmp_path / "test_anatomic_roundtrip.duckdb"
+
+    sample_ids = [str(r["_id"]) for r in anatomic_sample_data]
+    mock_fn = _mock_embeddings_from_fixture(sample_ids, anatomic_sample_embeddings)
+
+    settings = MaintenanceSettings(openai_api_key=SecretStr("fake-key-not-used"))
+    with (
+        patch("oidm_maintenance.anatomic.build.get_settings", return_value=settings),
+        patch(
+            "oidm_maintenance.anatomic.build.get_embeddings_batch",
+            new_callable=AsyncMock,
+            side_effect=mock_fn,
+        ),
+    ):
+        await build_anatomic_database(
+            source_json=source_json,
+            output_path=db_path,
+            generate_embeddings=True,
+        )
+
+    return db_path
+
+
+class TestBuiltAnatomicDatabaseRetrieval:
+    """Roundtrip tests: build DB via build_anatomic_database, read via AnatomicLocationIndex.
+
+    Catches schema drift between oidm-maintenance build.py and
+    anatomic-locations index.py (_row_to_location positional mapping).
+    """
+
+    async def test_built_db_allows_retrieval_by_id(self, built_anatomic_db: Path) -> None:
+        """Can retrieve locations by ID from freshly built database."""
+        with AnatomicLocationIndex(built_anatomic_db) as index:
+            # Get a known ID from sample data via raw SQL
+            conn = index._ensure_connection()
+            row = conn.execute("SELECT id FROM anatomic_locations LIMIT 1").fetchone()
+            assert row is not None
+            location_id = str(row[0])
+
+            location = index.get(location_id)
+            assert location.id == location_id
+            assert location.description  # non-empty
+            assert location.region is not None
+
+    async def test_built_db_retrieval_loads_codes(self, built_anatomic_db: Path) -> None:
+        """Codes are loadable from freshly built database."""
+        with AnatomicLocationIndex(built_anatomic_db) as index:
+            # Find a location that has codes in sample data
+            conn = index._ensure_connection()
+            row = conn.execute("SELECT DISTINCT location_id FROM anatomic_codes LIMIT 1").fetchone()
+            if row is None:
+                pytest.skip("No codes in sample data")
+            location = index.get(str(row[0]))
+            assert len(location.codes) >= 1
+
+    async def test_built_db_count_matches_source(
+        self,
+        built_anatomic_db: Path,
+        anatomic_sample_data: list[dict[str, object]],
+    ) -> None:
+        """Built database record count matches source data count."""
+        with AnatomicLocationIndex(built_anatomic_db) as index:
+            locations = list(index)
+            assert len(locations) == len(anatomic_sample_data)
+
+    async def test_built_db_hierarchy_methods(self, built_anatomic_db: Path) -> None:
+        """get_children_of() returns correctly typed AnatomicLocation objects."""
+        with AnatomicLocationIndex(built_anatomic_db) as index:
+            conn = index._ensure_connection()
+            # Find a location that has children
+            row = conn.execute(
+                "SELECT containment_parent_id FROM anatomic_locations WHERE containment_parent_id IS NOT NULL LIMIT 1"
+            ).fetchone()
+            if row is None:
+                pytest.skip("No parent→child relationships in sample data")
+            parent_id = str(row[0])
+            children = index.get_children_of(parent_id)
+            assert len(children) >= 1
+            for child in children:
+                # Verify types — catches positional-index offset bugs
+                assert isinstance(child.id, str)
+                assert isinstance(child.description, str)
+                assert child.laterality is not None
+
+    async def test_built_db_filter_by_region(self, built_anatomic_db: Path) -> None:
+        """by_region() returns correctly typed AnatomicLocation objects."""
+        with AnatomicLocationIndex(built_anatomic_db) as index:
+            conn = index._ensure_connection()
+            # Find a region present in the sample data
+            row = conn.execute("SELECT region FROM anatomic_locations WHERE region IS NOT NULL LIMIT 1").fetchone()
+            if row is None:
+                pytest.skip("No region data in sample data")
+            region_val = str(row[0])
+            locations = index.by_region(region_val)
+            assert len(locations) >= 1
+            for loc in locations:
+                assert isinstance(loc.id, str)
+                assert isinstance(loc.description, str)
+                assert loc.region is not None
+
+    async def test_built_db_partof_ancestors(self, built_anatomic_db: Path) -> None:
+        """get_partof_ancestors() returns correctly typed AnatomicLocation objects."""
+        with AnatomicLocationIndex(built_anatomic_db) as index:
+            conn = index._ensure_connection()
+            # Find a record with a partof_path
+            row = conn.execute(
+                "SELECT id FROM anatomic_locations WHERE partof_path IS NOT NULL AND partof_path != '' LIMIT 1"
+            ).fetchone()
+            if row is None:
+                pytest.skip("No partof_path data in sample data")
+            location_id = str(row[0])
+            ancestors = index.get_partof_ancestors(location_id)
+            # May be empty if there are no proper ancestors, but must not raise
+            for anc in ancestors:
+                assert isinstance(anc.id, str)
+                assert isinstance(anc.description, str)
+
+    async def test_built_db_iteration_loads_all_fields(self, built_anatomic_db: Path) -> None:
+        """Iterating over the index yields objects with correct field types."""
+        with AnatomicLocationIndex(built_anatomic_db) as index:
+            # Take the first result from iteration
+            first = next(iter(index), None)
+            assert first is not None
+            # Verify field types — catches any offset bug in bulk methods
+            assert isinstance(first.id, str)
+            assert isinstance(first.description, str)
+            # region, laterality are enums or None — just check not int/list/dict
+            if first.region is not None:
+                assert not isinstance(first.region, (int, list, dict))
+            if first.laterality is not None:
+                assert not isinstance(first.laterality, (int, list, dict))

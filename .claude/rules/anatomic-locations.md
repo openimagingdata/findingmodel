@@ -18,6 +18,8 @@ Anatomic location ontology navigation: hierarchy traversal, laterality variants,
 - Auto-open: `_ensure_connection()` opens the connection on first use; no explicit `open()` required
 - Hybrid search (FTS + vector) with RRF fusion
 - Laterality variant generation (left, right, bilateral)
+- **Hydration pattern**: All location queries go through `_fetch_locations(conn, suffix_sql, params)` — a single entry point that appends WHERE/ORDER to `_LOCATION_SELECT` and returns hydrated objects. `_LOCATION_SELECT` uses DuckDB correlated subqueries to pull codes, synonyms, and references inline in one query (DuckDB optimizes these into a join plan). `_build_location(row)` is a pure transform using `AnatomicLocation.model_validate(data)` — Pydantic handles enum coercion, nested-model construction, and extra-key ignoring automatically. `_get_locations_by_ids(conn, ids)` wraps `_fetch_locations` and re-sorts to preserve input order.
+- **Schema evolution safety**: `_LOCATION_SELECT` uses `SELECT al.* EXCLUDE (search_text, vector)`. Only exclude columns present in ALL schema versions. `synonyms_text` (added v0.2.3) is NOT excluded — old schemas lack it and `EXCLUDE` raises a `Binder Error` for missing columns. Extra columns from `SELECT *` are silently ignored by `model_validate`. Correlated subqueries alias codes/synonyms/refs inline — also safe on old schemas since all 3 related tables exist in every version.
 
 ## CLI (`anatomic-locations`)
 
