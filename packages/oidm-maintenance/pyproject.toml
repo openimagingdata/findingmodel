@@ -1,6 +1,6 @@
 [project]
 name = "oidm-maintenance"
-version = "0.2.2"
+version = "0.2.3"
 description = "Maintenance tools for OIDM packages (database build and publish)"
 readme = "README.md"
 requires-python = ">=3.11"
