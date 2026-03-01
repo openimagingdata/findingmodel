@@ -112,9 +112,42 @@ Path resolution:
 7. **attributes** – denormalized attribute storage
 8. **tags** – denormalized tag storage
 
+## Row Hydration
+
+Both `AnatomicLocationIndex` and `FindingModelIndex` use **named dict access** via helpers on `ReadOnlyDuckDBIndex`:
+
+- **`_execute_one(conn, sql, params)`** — runs query, returns `dict[str, object] | None` using `cursor.description` for column names
+- **`_execute_all(conn, sql, params)`** — runs query, returns `list[dict[str, object]]`
+
+This eliminates positional indexing (`row[N]`) brittleness. Column additions/reorderings no longer require updating hardcoded indices.
+
+### Anatomic location hydration pipeline (1 query)
+
+`AnatomicLocationIndex` uses DuckDB correlated subqueries to bring all data in one query:
+
+| Method | Purpose |
+|--------|---------|
+| `_LOCATION_SELECT` | Class constant: `SELECT al.* EXCLUDE (search_text, vector)` + correlated subqueries for codes, synonyms, refs |
+| `_fetch_locations(conn, suffix_sql, params)` | Single entry point — appends WHERE/ORDER suffix, hydrates all results |
+| `_build_location(row)` | Pure row→object transform using `AnatomicLocation.model_validate(data)` |
+| `_get_locations_by_ids(conn, ids)` | Wraps `_fetch_locations`, re-sorts to preserve input order |
+
+**Cost**: any bulk method → **1 query total** (correlated subqueries are join-optimized by DuckDB).
+
+**`SELECT al.* EXCLUDE (search_text, vector)` pattern:**
+- Excludes `search_text` and `vector` — large blobs not needed for hydration, present in all schema versions
+- Does NOT exclude `synonyms_text` — added in v0.2.3; absent from older production DBs; EXCLUDEing it raises `Binder Error` on old schemas
+- Extra columns from `SELECT *` are silently ignored by `model_validate` — schema additions don't break hydration
+
+**When changing a schema:**
+1. No positional index updates needed — named access is self-adjusting
+2. Rebuild the test fixture
+3. Run `task test` — roundtrip tests in `test_anatomic_build_internals.py` / `test_findingmodel_build.py` catch drift
+
 ## Common Pitfalls
 
 - Unquoted column types in `read_json()`
 - Missing float32 conversion for embeddings
 - HNSW on read-only connections (must be writable during index creation)
 - `CURRENT_TIMESTAMP()` syntax (use `now()` instead)
+- Do NOT use `SELECT * EXCLUDE (synonyms_text)` on anatomic_locations — that column does not exist in pre-v0.2.3 DBs and will raise a Binder Error

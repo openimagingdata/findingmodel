@@ -24,7 +24,7 @@ Database build/publish lives in `oidm-maintenance` package:
 oidm-maintain anatomic build --source /path/to/data.json --output anatomic.duckdb
 
 # Publish to S3
-oidm-maintain anatomic publish --db-path anatomic.duckdb
+oidm-maintain anatomic publish anatomic.duckdb
 ```
 
 ## Architecture Decisions
@@ -39,6 +39,7 @@ oidm-maintain anatomic publish --db-path anatomic.duckdb
 - BM25 full-text search on descriptions/synonyms
 - Hybrid search with RRF (Reciprocal Rank Fusion)
 - Exact match detection with priority (score=1.0)
+- **Correlated subquery hydration** (2026-02): All queries go through `_fetch_locations(conn, suffix_sql, params)` using class constant `_LOCATION_SELECT` — a single SELECT that brings codes, synonyms, and refs inline via DuckDB correlated subqueries (DuckDB optimizes into join plans: 1 query total, not 1+3N). `_build_location(row)` is a pure transform using `AnatomicLocation.model_validate(data)` — Pydantic handles enum coercion, nested-model construction, and extra-key ignoring. `_get_locations_by_ids(conn, ids)` wraps `_fetch_locations` and re-sorts to preserve input order. Uses `SELECT al.* EXCLUDE (search_text, vector)` and named dict access throughout — no positional indices. `FindingModelIndex._fetch_index_entry` uses the same `_execute_one` pattern.
 
 ### Remote Database Downloads (2025-10-11)
 **Configuration** (`AnatomicLocationSettings` in `packages/anatomic-locations/src/anatomic_locations/config.py`):
