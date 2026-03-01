@@ -1,6 +1,12 @@
 """CLI for OIDM maintenance operations."""
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from oidm_maintenance.anatomic.validate import ValidationResult
 
 import click
 from rich.console import Console
@@ -55,6 +61,41 @@ def anatomic_build(source: Path, output: Path, no_embeddings: bool) -> None:
         )
     )
     console.print(f"\n[bold green]✓ Created:[/bold green] {result}")
+
+
+@anatomic.command(name="validate")
+@click.argument("source", type=click.Path(exists=True, path_type=Path))
+def anatomic_validate(source: Path) -> None:
+    """Validate anatomic-locations source JSON."""
+    from oidm_maintenance.anatomic.validate import validate_anatomic_json
+
+    console.print(f"[bold]Validating {source}...[/bold]")
+    result = validate_anatomic_json(source)
+    _print_validation_result(result)
+
+
+def _print_validation_result(result: ValidationResult) -> None:
+    """Print validation result details to console."""
+    for w in result.warnings:
+        console.print(f"  [yellow]⚠ {w}[/yellow]")
+
+    if result.parse_errors:
+        console.print("\n[bold red]Parse errors:[/bold red]")
+        for rid, errs in result.parse_errors.items():
+            for e in errs:
+                console.print(f"  {rid}: {e}")
+
+    if result.relationship_errors:
+        console.print("\n[bold red]Relationship errors:[/bold red]")
+        for e in result.relationship_errors:
+            console.print(f"  {e}")
+
+    console.print()
+    if result.ok:
+        console.print(f"[bold green]✓ {result.summary()}[/bold green]")
+    else:
+        console.print(f"[bold red]✗ {result.summary()}[/bold red]")
+        raise SystemExit(1)
 
 
 @anatomic.command(name="publish")
