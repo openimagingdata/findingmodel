@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -73,3 +73,42 @@ class ReadOnlyDuckDBIndex:
 
     async def __aexit__(self, *_args: object) -> None:
         self.close()
+
+    # -- named-dict query helpers ----------------------------------------------
+
+    def _execute_one(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        sql: str,
+        params: Sequence[object] | None = None,
+    ) -> dict[str, object] | None:
+        """Execute a query and return the single result row as a named dict, or None.
+
+        Uses cursor.description to map column names, eliminating positional
+        indexing brittleness. Safe against column additions and reorderings.
+
+        Note: If the query produces duplicate column names, later columns
+        silently overwrite earlier ones in the dict. Avoid ambiguous aliases.
+        """
+        result = conn.execute(sql, list(params) if params is not None else [])
+        columns = [d[0] for d in result.description]
+        row = result.fetchone()
+        return dict(zip(columns, row, strict=True)) if row is not None else None
+
+    def _execute_all(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        sql: str,
+        params: Sequence[object] | None = None,
+    ) -> list[dict[str, object]]:
+        """Execute a query and return all result rows as named dicts.
+
+        Uses cursor.description to map column names, eliminating positional
+        indexing brittleness. Safe against column additions and reorderings.
+
+        Note: If the query produces duplicate column names, later columns
+        silently overwrite earlier ones in the dict. Avoid ambiguous aliases.
+        """
+        result = conn.execute(sql, list(params) if params is not None else [])
+        columns = [d[0] for d in result.description]
+        return [dict(zip(columns, row, strict=True)) for row in result.fetchall()]

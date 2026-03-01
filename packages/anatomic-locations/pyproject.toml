@@ -1,11 +1,11 @@
 [project]
 name = "anatomic-locations"
-version = "0.2.3"
+version = "0.2.4"
 description = "Anatomic location ontology navigation"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "oidm-common>=0.2.2",
+    "oidm-common>=0.2.5",
     "asyncer>=0.0.2",
     "click>=8.0",
     "duckdb>=1.0",

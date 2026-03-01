@@ -100,6 +100,58 @@ class TestReadOnlyDuckDBIndexContextManagers:
         assert idx.conn is None
 
 
+class TestReadOnlyDuckDBIndexHelpers:
+    """Tests for _execute_one and _execute_all named-dict helpers."""
+
+    @pytest.fixture
+    def two_col_db(self, tmp_path: Path) -> Path:
+        """In-memory-style DB with a two-column table for helper tests."""
+        db = tmp_path / "helper_test.duckdb"
+        conn = setup_duckdb_connection(db, read_only=False)
+        conn.execute("CREATE TABLE things (id INTEGER, label VARCHAR)")
+        conn.execute("INSERT INTO things VALUES (1, 'alpha'), (2, 'beta'), (3, 'gamma')")
+        conn.close()
+        return db
+
+    def test_execute_one_returns_dict(self, two_col_db: Path) -> None:
+        """_execute_one maps column names to dict keys."""
+        idx = ReadOnlyDuckDBIndex(two_col_db)
+        conn = idx._ensure_connection()
+        row = idx._execute_one(conn, "SELECT id, label FROM things WHERE id = ?", [1])
+        assert row is not None
+        assert row["id"] == 1
+        assert row["label"] == "alpha"
+        idx.close()
+
+    def test_execute_one_returns_none_when_not_found(self, two_col_db: Path) -> None:
+        """_execute_one returns None when the query produces no rows."""
+        idx = ReadOnlyDuckDBIndex(two_col_db)
+        conn = idx._ensure_connection()
+        row = idx._execute_one(conn, "SELECT id, label FROM things WHERE id = ?", [999])
+        assert row is None
+        idx.close()
+
+    def test_execute_all_returns_list_of_dicts(self, two_col_db: Path) -> None:
+        """_execute_all returns a list of named dicts, one per row."""
+        idx = ReadOnlyDuckDBIndex(two_col_db)
+        conn = idx._ensure_connection()
+        rows = idx._execute_all(conn, "SELECT id, label FROM things ORDER BY id")
+        assert len(rows) == 3
+        assert rows[0]["id"] == 1
+        assert rows[0]["label"] == "alpha"
+        assert rows[2]["id"] == 3
+        assert rows[2]["label"] == "gamma"
+        idx.close()
+
+    def test_execute_all_returns_empty_list(self, two_col_db: Path) -> None:
+        """_execute_all returns an empty list when no rows match."""
+        idx = ReadOnlyDuckDBIndex(two_col_db)
+        conn = idx._ensure_connection()
+        rows = idx._execute_all(conn, "SELECT id, label FROM things WHERE id > ?", [100])
+        assert rows == []
+        idx.close()
+
+
 class TestReadOnlyDuckDBIndexSubclass:
     """Test that subclasses work correctly."""
 

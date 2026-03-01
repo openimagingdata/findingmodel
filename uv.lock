@@ -18,7 +18,7 @@ members = [
 
 [[package]]
 name = "anatomic-locations"
-version = "0.2.3"
+version = "0.2.4"
 source = { editable = "packages/anatomic-locations" }
 dependencies = [
     { name = "asyncer" },
@@ -682,7 +682,7 @@ wheels = [
 
 [[package]]
 name = "findingmodel"
-version = "1.0.2"
+version = "1.0.3"
 source = { editable = "packages/findingmodel" }
 dependencies = [
     { name = "click" },
@@ -1830,7 +1830,7 @@ wheels = [
 
 [[package]]
 name = "oidm-common"
-version = "0.2.4"
+version = "0.2.5"
 source = { editable = "packages/oidm-common" }
 dependencies = [
     { name = "asyncer" },
@@ -1870,7 +1870,7 @@ dev = [{ name = "pydantic-settings", specifier = ">=2.9" }]
 
 [[package]]
 name = "oidm-maintenance"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "packages/oidm-maintenance" }
 dependencies = [
     { name = "anatomic-locations" },

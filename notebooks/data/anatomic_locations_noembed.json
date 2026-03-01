@@ -5539,8 +5539,8 @@
     "description": "left common pulmonary vein",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1243",
-      "display": "thorax"
+      "id": "RID34566_RID5824",
+      "display": "left pulmonary hilum"
     },
     "partOfRef": {
       "id": "RID49962",
@@ -5963,8 +5963,8 @@
     "description": "right common pulmonary vein",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1243",
-      "display": "thorax"
+      "id": "RID34566_RID5825",
+      "display": "right pulmonary hilum"
     },
     "partOfRef": {
       "id": "RID49962",
@@ -5993,8 +5993,8 @@
     "description": "left main bronchus",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1384",
-      "display": "mediastinum"
+      "id": "RID34566_RID5824",
+      "display": "left pulmonary hilum"
     },
     "rightRef": {
       "id": "RID1250",
@@ -6124,8 +6124,8 @@
     "description": "pulmonary vein",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1384",
-      "display": "mediastinum"
+      "id": "RID34566",
+      "display": "pulmonary hilum"
     },
     "definition": "The veins that return the oxygenated blood from the lungs to the left atrium of the heart. [MeSH]"
   },
@@ -6369,8 +6369,8 @@
     "description": "right main bronchus",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1384",
-      "display": "mediastinum"
+      "id": "RID34566_RID5825",
+      "display": "right pulmonary hilum"
     },
     "partOfRef": {
       "id": "RID1246",
@@ -31798,6 +31798,12 @@
         "system": "UMLS",
         "code": "C0817878"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7752",
+        "display": "C3 vertebral body"
+      }
     ]
   },
   {
@@ -32090,6 +32096,12 @@
         "system": "UMLS",
         "code": "C0819166"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7763",
+        "display": "T6 vertebral body"
+      }
     ]
   },
   {
@@ -32153,6 +32165,12 @@
         "system": "UMLS",
         "code": "C0818199"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7755",
+        "display": "C6 vertebral body"
+      }
     ]
   },
   {
@@ -32211,6 +32229,12 @@
         "system": "UMLS",
         "code": "C0819162"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7759",
+        "display": "T2 vertebral body"
+      }
     ]
   },
   {
@@ -32239,6 +32263,12 @@
       {
         "system": "UMLS",
         "code": "C0819168"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7765",
+        "display": "T8 vertebral body"
       }
     ]
   },
@@ -32269,6 +32299,12 @@
         "system": "UMLS",
         "code": "C0819171"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7768",
+        "display": "T11 vertebral body"
+      }
     ]
   },
   {
@@ -32297,6 +32333,12 @@
       {
         "system": "UMLS",
         "code": "C0820011"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7771",
+        "display": "L1 vertebral body"
       }
     ]
   },
@@ -32327,6 +32369,12 @@
         "system": "UMLS",
         "code": "C0820015"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7775",
+        "display": "L5 vertebral body"
+      }
     ]
   },
   {
@@ -32355,6 +32403,12 @@
       {
         "system": "UMLS",
         "code": "C0819164"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7761",
+        "display": "T4 vertebral body"
       }
     ]
   },
@@ -32521,6 +32575,12 @@
         "system": "UMLS",
         "code": "C0819165"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7762",
+        "display": "T5 vertebral body"
+      }
     ]
   },
   {
@@ -32549,6 +32609,12 @@
       {
         "system": "UMLS",
         "code": "C0820014"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7774",
+        "display": "L4 vertebral body"
       }
     ]
   },
@@ -32652,6 +32718,12 @@
         "system": "UMLS",
         "code": "C0818197"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7753",
+        "display": "C4 vertebral body"
+      }
     ]
   },
   {
@@ -32680,6 +32752,12 @@
       {
         "system": "UMLS",
         "code": "C0820012"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7772",
+        "display": "L2 vertebral body"
       }
     ]
   },
@@ -32710,6 +32788,12 @@
         "system": "UMLS",
         "code": "C0819163"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7760",
+        "display": "T3 vertebral body"
+      }
     ]
   },
   {
@@ -32738,6 +32822,12 @@
       {
         "system": "UMLS",
         "code": "C0819169"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7766",
+        "display": "T9 vertebral body"
       }
     ]
   },
@@ -32768,6 +32858,12 @@
         "system": "UMLS",
         "code": "C0819167"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7764",
+        "display": "T7 vertebral body"
+      }
     ]
   },
   {
@@ -32797,6 +32893,12 @@
         "system": "UMLS",
         "code": "C0819172"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7769",
+        "display": "T12 vertebral body"
+      }
     ]
   },
   {
@@ -32825,6 +32927,12 @@
       {
         "system": "UMLS",
         "code": "C0819161"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7758",
+        "display": "T1 vertebral body"
       }
     ]
   },
@@ -32892,6 +33000,12 @@
       {
         "system": "UMLS",
         "code": "C0818200"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7756",
+        "display": "C7 vertebral body"
       }
     ]
   },
@@ -32989,6 +33103,12 @@
         "system": "UMLS",
         "code": "C0819170"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7767",
+        "display": "T10 vertebral body"
+      }
     ]
   },
   {
@@ -33047,6 +33167,12 @@
         "system": "UMLS",
         "code": "C0818198"
       }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7754",
+        "display": "C5 vertebral body"
+      }
     ]
   },
   {
@@ -33104,6 +33230,12 @@
       {
         "system": "UMLS",
         "code": "C0820013"
+      }
+    ],
+    "hasPartsRefs": [
+      {
+        "id": "RID7773",
+        "display": "L3 vertebral body"
       }
     ]
   },
@@ -46198,8 +46330,8 @@
     "description": "main bronchus",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1384",
-      "display": "mediastinum"
+      "id": "RID34566",
+      "display": "pulmonary hilum"
     },
     "partOfRef": {
       "id": "RID1246",
@@ -87069,8 +87201,8 @@
     "description": "right pulmonary artery",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1384",
-      "display": "mediastinum"
+      "id": "RID34566_RID5825",
+      "display": "right pulmonary hilum"
     },
     "leftRef": {
       "id": "RID993",
@@ -87689,8 +87821,8 @@
     "description": "pulmonary artery",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1384",
-      "display": "mediastinum"
+      "id": "RID34566",
+      "display": "pulmonary hilum"
     },
     "leftRef": {
       "id": "RID993",
@@ -89636,8 +89768,8 @@
     "description": "left pulmonary artery",
     "region": "Thorax",
     "containedByRef": {
-      "id": "RID1384",
-      "display": "mediastinum"
+      "id": "RID34566_RID5824",
+      "display": "left pulmonary hilum"
     },
     "rightRef": {
       "id": "RID976",
@@ -90512,5 +90644,582 @@
       "id": "RID9989_RID5825",
       "display": "right retromolar trigone"
     }
+  },
+  {
+    "_id": "RID34566",
+    "snomedId": "46750007",
+    "snomedDisplay": "Structure of hilum of lung",
+    "description": "pulmonary hilum",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1301",
+      "display": "lung"
+    },
+    "containsRefs": [
+      {
+        "id": "RID974",
+        "display": "pulmonary artery"
+      },
+      {
+        "id": "RID34918",
+        "display": "main bronchus"
+      },
+      {
+        "id": "RID1231",
+        "display": "pulmonary vein"
+      }
+    ],
+    "synonyms": [
+      "hilum",
+      "lung hilum",
+      "hilum of lung"
+    ],
+    "leftRef": {
+      "id": "RID34566_RID5824",
+      "display": "left pulmonary hilum"
+    },
+    "rightRef": {
+      "id": "RID34566_RID5825",
+      "display": "right pulmonary hilum"
+    },
+    "definition": "The site on the medial aspect of the lung where the vessels and bronchi enter and leave the lung. On radiographs and CT scans, a hilum appears as a composite opacity at the root of each lung produced by bronchi, arteries, veins, lymph nodes, nerves, and other tissue. [Fleischner Society]"
+  },
+  {
+    "_id": "RID34566_RID5824",
+    "snomedId": "1650005",
+    "snomedDisplay": "Structure of hilum of left lung",
+    "description": "left pulmonary hilum",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1326",
+      "display": "left lung"
+    },
+    "containsRefs": [
+      {
+        "id": "RID993",
+        "display": "left pulmonary artery"
+      },
+      {
+        "id": "RID1275",
+        "display": "left main bronchus"
+      },
+      {
+        "id": "RID1238",
+        "display": "left common pulmonary vein"
+      }
+    ],
+    "synonyms": [
+      "left hilum",
+      "left lung hilum",
+      "hilum of left lung"
+    ],
+    "rightRef": {
+      "id": "RID34566_RID5825",
+      "display": "right pulmonary hilum"
+    },
+    "unsidedRef": {
+      "id": "RID34566",
+      "display": "pulmonary hilum"
+    }
+  },
+  {
+    "_id": "RID34566_RID5825",
+    "snomedId": "88838000",
+    "snomedDisplay": "Structure of hilum of right lung",
+    "description": "right pulmonary hilum",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID1302",
+      "display": "right lung"
+    },
+    "containsRefs": [
+      {
+        "id": "RID976",
+        "display": "right pulmonary artery"
+      },
+      {
+        "id": "RID1250",
+        "display": "right main bronchus"
+      },
+      {
+        "id": "RID1232",
+        "display": "right common pulmonary vein"
+      }
+    ],
+    "synonyms": [
+      "right hilum",
+      "right lung hilum",
+      "hilum of right lung"
+    ],
+    "leftRef": {
+      "id": "RID34566_RID5824",
+      "display": "left pulmonary hilum"
+    },
+    "unsidedRef": {
+      "id": "RID34566",
+      "display": "pulmonary hilum"
+    }
+  },
+  {
+    "_id": "RID7752",
+    "snomedId": "91116008",
+    "snomedDisplay": "Structure of body of third cervical vertebra",
+    "description": "C3 vertebral body",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID29160",
+      "display": "third cervical vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29160",
+      "display": "third cervical vertebra"
+    },
+    "synonyms": [
+      "body of third cervical vertebra",
+      "C3 body",
+      "body of C3",
+      "third cervical vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7753",
+    "snomedId": "14705001",
+    "snomedDisplay": "Structure of body of fourth cervical vertebra",
+    "description": "C4 vertebral body",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID29161",
+      "display": "fourth cervical vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29161",
+      "display": "fourth cervical vertebra"
+    },
+    "synonyms": [
+      "body of fourth cervical vertebra",
+      "C4 body",
+      "body of C4",
+      "fourth cervical vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7754",
+    "snomedId": "67479001",
+    "snomedDisplay": "Structure of body of fifth cervical vertebra",
+    "description": "C5 vertebral body",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID29224",
+      "display": "fifth cervical vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29224",
+      "display": "fifth cervical vertebra"
+    },
+    "synonyms": [
+      "body of fifth cervical vertebra",
+      "C5 body",
+      "body of C5",
+      "fifth cervical vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7755",
+    "snomedId": "88298007",
+    "snomedDisplay": "Structure of body of sixth cervical vertebra",
+    "description": "C6 vertebral body",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID29162",
+      "display": "sixth cervical vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29162",
+      "display": "sixth cervical vertebra"
+    },
+    "synonyms": [
+      "body of sixth cervical vertebra",
+      "C6 body",
+      "body of C6",
+      "sixth cervical vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7756",
+    "snomedId": "16126006",
+    "snomedDisplay": "Structure of body of seventh cervical vertebra",
+    "description": "C7 vertebral body",
+    "region": "Neck",
+    "containedByRef": {
+      "id": "RID29163",
+      "display": "seventh cervical vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29163",
+      "display": "seventh cervical vertebra"
+    },
+    "synonyms": [
+      "body of seventh cervical vertebra",
+      "C7 body",
+      "body of C7",
+      "seventh cervical vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7758",
+    "snomedId": "56094003",
+    "snomedDisplay": "Structure of body of first thoracic vertebra",
+    "description": "T1 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29198",
+      "display": "first thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29198",
+      "display": "first thoracic vertebra"
+    },
+    "synonyms": [
+      "body of first thoracic vertebra",
+      "T1 body",
+      "body of T1",
+      "first thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7759",
+    "snomedId": "50060007",
+    "snomedDisplay": "Structure of body of second thoracic vertebra",
+    "description": "T2 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29199",
+      "display": "second thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29199",
+      "display": "second thoracic vertebra"
+    },
+    "synonyms": [
+      "body of second thoracic vertebra",
+      "T2 body",
+      "body of T2",
+      "second thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7760",
+    "snomedId": "73138009",
+    "snomedDisplay": "Structure of body of third thoracic vertebra",
+    "description": "T3 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29200",
+      "display": "third thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29200",
+      "display": "third thoracic vertebra"
+    },
+    "synonyms": [
+      "body of third thoracic vertebra",
+      "T3 body",
+      "body of T3",
+      "third thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7761",
+    "snomedId": "86197001",
+    "snomedDisplay": "Structure of body of fourth thoracic vertebra",
+    "description": "T4 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29201",
+      "display": "fourth thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29201",
+      "display": "fourth thoracic vertebra"
+    },
+    "synonyms": [
+      "body of fourth thoracic vertebra",
+      "T4 body",
+      "body of T4",
+      "fourth thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7762",
+    "snomedId": "6105006",
+    "snomedDisplay": "Structure of body of fifth thoracic vertebra",
+    "description": "T5 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29202",
+      "display": "fifth thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29202",
+      "display": "fifth thoracic vertebra"
+    },
+    "synonyms": [
+      "body of fifth thoracic vertebra",
+      "T5 body",
+      "body of T5",
+      "fifth thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7763",
+    "snomedId": "32430008",
+    "snomedDisplay": "Structure of body of sixth thoracic vertebra",
+    "description": "T6 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29203",
+      "display": "sixth thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29203",
+      "display": "sixth thoracic vertebra"
+    },
+    "synonyms": [
+      "body of sixth thoracic vertebra",
+      "T6 body",
+      "body of T6",
+      "sixth thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7764",
+    "snomedId": "71737002",
+    "snomedDisplay": "Structure of body of seventh thoracic vertebra",
+    "description": "T7 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29204",
+      "display": "seventh thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29204",
+      "display": "seventh thoracic vertebra"
+    },
+    "synonyms": [
+      "body of seventh thoracic vertebra",
+      "T7 body",
+      "body of T7",
+      "seventh thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7765",
+    "snomedId": "77435000",
+    "snomedDisplay": "Structure of body of eighth thoracic vertebra",
+    "description": "T8 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29205",
+      "display": "eight thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29205",
+      "display": "eight thoracic vertebra"
+    },
+    "synonyms": [
+      "body of eighth thoracic vertebra",
+      "T8 body",
+      "body of T8",
+      "eighth thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7766",
+    "snomedId": "33766003",
+    "snomedDisplay": "Structure of body of ninth thoracic vertebra",
+    "description": "T9 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29206",
+      "display": "ninth thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29206",
+      "display": "ninth thoracic vertebra"
+    },
+    "synonyms": [
+      "body of ninth thoracic vertebra",
+      "T9 body",
+      "body of T9",
+      "ninth thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7767",
+    "snomedId": "48405002",
+    "snomedDisplay": "Structure of body of tenth thoracic vertebra",
+    "description": "T10 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29207",
+      "display": "tenth thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29207",
+      "display": "tenth thoracic vertebra"
+    },
+    "synonyms": [
+      "body of tenth thoracic vertebra",
+      "T10 body",
+      "body of T10",
+      "tenth thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7768",
+    "snomedId": "52120002",
+    "snomedDisplay": "Structure of body of eleventh thoracic vertebra",
+    "description": "T11 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29208",
+      "display": "eleventh thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29208",
+      "display": "eleventh thoracic vertebra"
+    },
+    "synonyms": [
+      "body of eleventh thoracic vertebra",
+      "T11 body",
+      "body of T11",
+      "eleventh thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7769",
+    "snomedId": "33274003",
+    "snomedDisplay": "Structure of body of twelfth thoracic vertebra",
+    "description": "T12 vertebral body",
+    "region": "Thorax",
+    "containedByRef": {
+      "id": "RID29209",
+      "display": "twelfth thoracic vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29209",
+      "display": "twelfth thoracic vertebra"
+    },
+    "synonyms": [
+      "body of twelfth thoracic vertebra",
+      "T12 body",
+      "body of T12",
+      "twelfth thoracic vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7771",
+    "snomedId": "61032001",
+    "snomedDisplay": "Structure of body of first lumbar vertebra",
+    "description": "L1 vertebral body",
+    "region": "Abdomen",
+    "containedByRef": {
+      "id": "RID29193",
+      "display": "first lumbar vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29193",
+      "display": "first lumbar vertebra"
+    },
+    "synonyms": [
+      "body of first lumbar vertebra",
+      "L1 body",
+      "body of L1",
+      "first lumbar vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7772",
+    "snomedId": "53983007",
+    "snomedDisplay": "Structure of body of second lumbar vertebra",
+    "description": "L2 vertebral body",
+    "region": "Abdomen",
+    "containedByRef": {
+      "id": "RID29194",
+      "display": "second lumbar vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29194",
+      "display": "second lumbar vertebra"
+    },
+    "synonyms": [
+      "body of second lumbar vertebra",
+      "L2 body",
+      "body of L2",
+      "second lumbar vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7773",
+    "snomedId": "55492004",
+    "snomedDisplay": "Structure of body of third lumbar vertebra",
+    "description": "L3 vertebral body",
+    "region": "Abdomen",
+    "containedByRef": {
+      "id": "RID29195",
+      "display": "third lumbar vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29195",
+      "display": "third lumbar vertebra"
+    },
+    "synonyms": [
+      "body of third lumbar vertebra",
+      "L3 body",
+      "body of L3",
+      "third lumbar vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7774",
+    "snomedId": "71996003",
+    "snomedDisplay": "Structure of body of fourth lumbar vertebra",
+    "description": "L4 vertebral body",
+    "region": "Abdomen",
+    "containedByRef": {
+      "id": "RID29196",
+      "display": "fourth lumbar vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29196",
+      "display": "fourth lumbar vertebra"
+    },
+    "synonyms": [
+      "body of fourth lumbar vertebra",
+      "L4 body",
+      "body of L4",
+      "fourth lumbar vertebral body"
+    ]
+  },
+  {
+    "_id": "RID7775",
+    "snomedId": "21799000",
+    "snomedDisplay": "Structure of body of fifth lumbar vertebra",
+    "description": "L5 vertebral body",
+    "region": "Abdomen",
+    "containedByRef": {
+      "id": "RID29197",
+      "display": "fifth lumbar vertebra"
+    },
+    "partOfRef": {
+      "id": "RID29197",
+      "display": "fifth lumbar vertebra"
+    },
+    "synonyms": [
+      "body of fifth lumbar vertebra",
+      "L5 body",
+      "body of L5",
+      "fifth lumbar vertebral body"
+    ]
   }
 ]

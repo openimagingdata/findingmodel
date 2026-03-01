@@ -58,6 +58,7 @@ def _get_location_columns(dimensions: int = 512) -> dict[str, str]:
         "definition": "VARCHAR",
         "sex_specific": "VARCHAR",
         "search_text": "VARCHAR",
+        "synonyms_text": "VARCHAR",
         "vector": f"FLOAT[{dimensions}]",
         "containment_path": "VARCHAR",
         "containment_parent_id": "VARCHAR",
@@ -448,6 +449,7 @@ def _create_schema(conn: duckdb.DuckDBPyConnection, dimensions: int = 512) -> No
             definition TEXT,
             sex_specific VARCHAR,
             search_text TEXT NOT NULL,
+            synonyms_text TEXT,
             vector FLOAT[{dimensions}] NOT NULL,
 
             -- Pre-computed CONTAINMENT hierarchy (materialized path)
@@ -601,6 +603,8 @@ def _prepare_record_for_insert(
     seen_synonyms: set[str] = set()
     synonyms: list[tuple[str, str]] = []
     raw_synonyms = record.get("synonyms", [])
+    synonyms_text = " ".join(raw_synonyms) if raw_synonyms and isinstance(raw_synonyms, list) else ""
+    record_data["synonyms_text"] = synonyms_text
     if raw_synonyms and isinstance(raw_synonyms, list):
         for synonym in raw_synonyms:
             if synonym not in seen_synonyms:
@@ -697,6 +701,7 @@ def _create_indexes(conn: duckdb.DuckDBPyConnection, dimensions: int) -> None:
         "id",
         "description",
         "definition",
+        "synonyms_text",
         stemmer="porter",
         stopwords="english",
         lower=1,

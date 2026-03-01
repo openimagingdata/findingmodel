@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from anatomic_locations import AnatomicLocation, AnatomicLocationIndex, AnatomicRegion, Laterality
+from oidm_common.duckdb import setup_duckdb_connection
 from pydantic_ai import models
 
 # Block all AI model requests - embeddings are pre-generated fixtures
@@ -439,10 +440,9 @@ class TestSearchQualityThresholds:
 
             # With a random embedding, most/all results should be filtered by threshold
             assert isinstance(results, list)
-            # Results should be limited to those meeting the 0.75 similarity threshold
-            for r in results:
-                distance = float(r[-1])
-                similarity = 1.0 - distance
+            # Results are (location_id, similarity) tuples — all should meet threshold
+            for location_id, similarity in results:
+                assert isinstance(location_id, str)
                 assert similarity >= index.SEMANTIC_MIN_SIMILARITY
 
     @pytest.mark.asyncio
@@ -489,9 +489,292 @@ class TestExactMatchWithSynonyms:
             try:
                 results = index._find_exact_match(conn, "pulmo", None, None, include_synonyms=True)
                 if results:
-                    # Verify it resolved to lung
-                    assert str(results[0][0]) == "RID1301"
+                    # Results are now list[str] (location IDs)
+                    assert results[0] == "RID1301"
                 else:
                     pytest.skip("'pulmo' synonym not in test fixture")
             except Exception:
                 pytest.skip("Synonym not available in test fixture")
+
+
+# =============================================================================
+# Old-Schema Compatibility Tests
+# =============================================================================
+
+
+class TestOldSchemaCompatibility:
+    """Regression tests for backward compatibility with pre-v0.2.3 databases.
+
+    Ensures AnatomicLocationIndex can read databases that predate the
+    synonyms_text column (added in v0.2.3). This guards against the crash
+    that prompted the dict-based hydration refactor.
+    """
+
+    def _create_old_schema_db(self, db_path: Path, dimensions: int = 512) -> None:
+        """Build a minimal old-schema DB (no synonyms_text column)."""
+        conn = setup_duckdb_connection(db_path, read_only=False)
+        try:
+            # Schema WITHOUT synonyms_text (pre-v0.2.3)
+            conn.execute(f"""
+                CREATE TABLE anatomic_locations (
+                    id VARCHAR PRIMARY KEY,
+                    description VARCHAR NOT NULL,
+                    region VARCHAR,
+                    location_type VARCHAR DEFAULT 'structure',
+                    body_system VARCHAR,
+                    structure_type VARCHAR,
+                    laterality VARCHAR DEFAULT 'nonlateral',
+                    definition VARCHAR,
+                    sex_specific VARCHAR,
+                    search_text VARCHAR,
+                    vector FLOAT[{dimensions}],
+                    containment_path VARCHAR,
+                    containment_parent_id VARCHAR,
+                    containment_parent_display VARCHAR,
+                    containment_depth INTEGER,
+                    containment_children STRUCT(id VARCHAR, display VARCHAR)[],
+                    partof_path VARCHAR,
+                    partof_parent_id VARCHAR,
+                    partof_parent_display VARCHAR,
+                    partof_depth INTEGER,
+                    partof_children STRUCT(id VARCHAR, display VARCHAR)[],
+                    left_id VARCHAR,
+                    left_display VARCHAR,
+                    right_id VARCHAR,
+                    right_display VARCHAR,
+                    generic_id VARCHAR,
+                    generic_display VARCHAR,
+                    created_at TIMESTAMP DEFAULT now(),
+                    updated_at TIMESTAMP DEFAULT now()
+                )
+            """)
+            conn.execute("CREATE TABLE anatomic_synonyms (location_id VARCHAR, synonym VARCHAR)")
+            conn.execute(
+                "CREATE TABLE anatomic_codes (location_id VARCHAR, system VARCHAR, code VARCHAR, display VARCHAR)"
+            )
+            conn.execute(
+                "CREATE TABLE anatomic_references (location_id VARCHAR, url VARCHAR, title VARCHAR, description VARCHAR)"
+            )
+            conn.execute(
+                """
+                INSERT INTO anatomic_locations
+                    (id, description, region, location_type, laterality, containment_children, partof_children)
+                VALUES (?, ?, ?, ?, ?, [], [])
+                """,
+                ("RID_test", "test kidney", "Abdomen", "structure", "nonlateral"),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def test_reads_db_without_synonyms_text(self, tmp_path: Path) -> None:
+        """AnatomicLocationIndex reads old-schema DBs (no synonyms_text) without error.
+
+        This is a regression guard for the int_type validation crash that occurred
+        when the production DB (no synonyms_text) was read with code expecting
+        synonyms_text at a specific positional index.
+        """
+        db_path = tmp_path / "old_schema.duckdb"
+        self._create_old_schema_db(db_path)
+
+        with AnatomicLocationIndex(db_path) as index:
+            location = index.get("RID_test")
+            assert location.id == "RID_test"
+            assert location.description == "test kidney"
+            assert location.region is not None
+            assert location.laterality is not None
+
+
+# =============================================================================
+# Hydration Robustness Regression Tests
+# =============================================================================
+
+
+class TestBuildLocationRobustness:
+    """Regression tests for _build_location null-tolerance.
+
+    Guards against ValidationError regressions introduced when the hydration
+    was rewritten to use model_validate: null display fields and malformed
+    STRUCT array entries must be tolerated, not crash.
+    """
+
+    def _make_index_with_row(self, tmp_path: Path, overrides: dict) -> tuple[AnatomicLocationIndex, object]:
+        """Build a minimal DB with one row using the given field overrides, return index."""
+        from oidm_common.duckdb import setup_duckdb_connection
+
+        db_path = tmp_path / "robust.duckdb"
+        conn = setup_duckdb_connection(db_path, read_only=False)
+        base = {
+            "id": "RID_rob",
+            "description": "robustness test location",
+            "region": "Head",
+            "location_type": "structure",
+            "laterality": "nonlateral",
+            "containment_children": [],
+            "partof_children": [],
+            "left_id": None,
+            "left_display": None,
+            "right_id": None,
+            "right_display": None,
+            "generic_id": None,
+            "generic_display": None,
+            "containment_parent_id": None,
+            "containment_parent_display": None,
+            "partof_parent_id": None,
+            "partof_parent_display": None,
+        }
+        base.update(overrides)
+        try:
+            conn.execute("""
+                CREATE TABLE anatomic_locations (
+                    id VARCHAR PRIMARY KEY, description VARCHAR NOT NULL,
+                    region VARCHAR, location_type VARCHAR DEFAULT 'structure',
+                    body_system VARCHAR, structure_type VARCHAR,
+                    laterality VARCHAR DEFAULT 'nonlateral',
+                    definition VARCHAR, sex_specific VARCHAR,
+                    search_text VARCHAR, vector FLOAT[512],
+                    containment_path VARCHAR, containment_parent_id VARCHAR,
+                    containment_parent_display VARCHAR, containment_depth INTEGER,
+                    containment_children STRUCT(id VARCHAR, display VARCHAR)[],
+                    partof_path VARCHAR, partof_parent_id VARCHAR,
+                    partof_parent_display VARCHAR, partof_depth INTEGER,
+                    partof_children STRUCT(id VARCHAR, display VARCHAR)[],
+                    left_id VARCHAR, left_display VARCHAR,
+                    right_id VARCHAR, right_display VARCHAR,
+                    generic_id VARCHAR, generic_display VARCHAR,
+                    created_at TIMESTAMP DEFAULT now(), updated_at TIMESTAMP DEFAULT now()
+                )
+            """)
+            conn.execute("CREATE TABLE anatomic_synonyms (location_id VARCHAR, synonym VARCHAR)")
+            conn.execute(
+                "CREATE TABLE anatomic_codes (location_id VARCHAR, system VARCHAR, code VARCHAR, display VARCHAR)"
+            )
+            conn.execute(
+                "CREATE TABLE anatomic_references (location_id VARCHAR, url VARCHAR, title VARCHAR, description VARCHAR)"
+            )
+            conn.execute(
+                """
+                INSERT INTO anatomic_locations
+                    (id, description, region, location_type, laterality,
+                     containment_children, partof_children,
+                     left_id, left_display, right_id, right_display,
+                     generic_id, generic_display,
+                     containment_parent_id, containment_parent_display,
+                     partof_parent_id, partof_parent_display)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    base["id"],
+                    base["description"],
+                    base["region"],
+                    base["location_type"],
+                    base["laterality"],
+                    base["containment_children"],
+                    base["partof_children"],
+                    base["left_id"],
+                    base["left_display"],
+                    base["right_id"],
+                    base["right_display"],
+                    base["generic_id"],
+                    base["generic_display"],
+                    base["containment_parent_id"],
+                    base["containment_parent_display"],
+                    base["partof_parent_id"],
+                    base["partof_parent_display"],
+                ],
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        return AnatomicLocationIndex(db_path)
+
+    def test_null_variant_display_does_not_crash(self, tmp_path: Path) -> None:
+        """Hydration succeeds when a laterality variant has id set but display is NULL.
+
+        Previously _ref returned {"id": x, "display": None} which caused a
+        ValidationError because AnatomicRef.display is a required str field.
+        """
+        index = self._make_index_with_row(
+            tmp_path,
+            {"left_id": "RID_left", "left_display": None},  # id present, display NULL
+        )
+        with index:
+            location = index.get("RID_rob")
+        # Must not raise; left_variant must be None (not a broken AnatomicRef)
+        assert location.left_variant is None
+
+    def test_null_parent_display_does_not_crash(self, tmp_path: Path) -> None:
+        """Hydration succeeds when containment_parent has id but NULL display."""
+        index = self._make_index_with_row(
+            tmp_path,
+            {"containment_parent_id": "RID_parent", "containment_parent_display": None},
+        )
+        with index:
+            location = index.get("RID_rob")
+        assert location.containment_parent is None
+
+    def test_malformed_child_refs_are_filtered(self, tmp_path: Path) -> None:
+        """Malformed STRUCT entries (null id or display) in child arrays are dropped.
+
+        Previously the raw STRUCT array was passed to model_validate directly,
+        which could raise ValidationError for entries with null required fields.
+        """
+        from oidm_common.duckdb import setup_duckdb_connection
+
+        # Build a DB whose child arrays contain a mix of valid and invalid refs.
+        db_path = tmp_path / "malformed_children.duckdb"
+        conn = setup_duckdb_connection(db_path, read_only=False)
+        try:
+            conn.execute("""
+                CREATE TABLE anatomic_locations (
+                    id VARCHAR PRIMARY KEY, description VARCHAR NOT NULL,
+                    region VARCHAR, location_type VARCHAR DEFAULT 'structure',
+                    laterality VARCHAR DEFAULT 'nonlateral',
+                    search_text VARCHAR, vector FLOAT[512],
+                    containment_path VARCHAR, containment_parent_id VARCHAR,
+                    containment_parent_display VARCHAR, containment_depth INTEGER,
+                    containment_children STRUCT(id VARCHAR, display VARCHAR)[],
+                    partof_path VARCHAR, partof_parent_id VARCHAR,
+                    partof_parent_display VARCHAR, partof_depth INTEGER,
+                    partof_children STRUCT(id VARCHAR, display VARCHAR)[],
+                    left_id VARCHAR, left_display VARCHAR,
+                    right_id VARCHAR, right_display VARCHAR,
+                    generic_id VARCHAR, generic_display VARCHAR,
+                    body_system VARCHAR, structure_type VARCHAR,
+                    definition VARCHAR, sex_specific VARCHAR,
+                    created_at TIMESTAMP DEFAULT now(), updated_at TIMESTAMP DEFAULT now()
+                )
+            """)
+            conn.execute("CREATE TABLE anatomic_synonyms (location_id VARCHAR, synonym VARCHAR)")
+            conn.execute(
+                "CREATE TABLE anatomic_codes (location_id VARCHAR, system VARCHAR, code VARCHAR, display VARCHAR)"
+            )
+            conn.execute(
+                "CREATE TABLE anatomic_references (location_id VARCHAR, url VARCHAR, title VARCHAR, description VARCHAR)"
+            )
+            # Insert row with one valid child + one child with null display
+            conn.execute(
+                """
+                INSERT INTO anatomic_locations
+                    (id, description, region, location_type, laterality,
+                     containment_children, partof_children)
+                VALUES (?, ?, ?, ?, ?,
+                    [{'id': 'RID_good', 'display': 'good child'},
+                     {'id': 'RID_bad', 'display': NULL}],
+                    [{'id': NULL, 'display': 'no id child'}]
+                )
+                """,
+                ["RID_mc", "malformed children test", "Head", "structure", "nonlateral"],
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        with AnatomicLocationIndex(db_path) as index:
+            location = index.get("RID_mc")
+
+        # Must not raise; only the fully valid child survives
+        assert len(location.containment_children) == 1
+        assert location.containment_children[0].id == "RID_good"
+        # partof_children had only a null-id entry — should be empty
+        assert location.partof_children == []

@@ -899,14 +899,15 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         return int(result[0]) if result else 0
 
     def _fetch_index_entry(self, conn: duckdb.DuckDBPyConnection, oifm_id: str) -> IndexEntry | None:
-        row = conn.execute(
+        row = self._execute_one(
+            conn,
             """
             SELECT oifm_id, name, slug_name, filename, file_hash_sha256, description, created_at, updated_at
             FROM finding_models
             WHERE oifm_id = ?
             """,
-            (oifm_id,),
-        ).fetchone()
+            [oifm_id],
+        )
         if row is None:
             return None
 
@@ -933,14 +934,14 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         contributors = self._collect_contributors(conn, oifm_id)
 
         return IndexEntry(
-            oifm_id=row[0],
-            name=row[1],
-            slug_name=row[2],
-            filename=row[3],
-            file_hash_sha256=row[4],
-            description=row[5],
-            created_at=row[6],
-            updated_at=row[7],
+            oifm_id=str(row["oifm_id"]),
+            name=str(row["name"]),
+            slug_name=str(row["slug_name"]),
+            filename=str(row["filename"]),
+            file_hash_sha256=str(row["file_hash_sha256"]),
+            description=str(row["description"]) if row["description"] else None,
+            created_at=row["created_at"],  # type: ignore[arg-type]
+            updated_at=row["updated_at"],  # type: ignore[arg-type]
             synonyms=synonyms or None,
             tags=tags or None,
             contributors=contributors or None,
