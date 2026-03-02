@@ -17,6 +17,7 @@ def create_fts_index(
     *text_columns: str,
     stemmer: str = "porter",
     stopwords: str = "english",
+    ignore: str | None = None,
     lower: int = 0,
     overwrite: bool = True,
 ) -> None:
@@ -29,6 +30,8 @@ def create_fts_index(
         text_columns: One or more text column names to include in the FTS index
         stemmer: Stemmer to use (default: "porter")
         stopwords: Stopword list to use (default: "english")
+        ignore: Optional regex pattern of characters to ignore during tokenization.
+            If omitted, DuckDB FTS default is used.
         lower: Whether to lowercase text during indexing (0=no, 1=yes; default: 0)
         overwrite: Whether to overwrite existing index (default: True)
     """
@@ -37,14 +40,21 @@ def create_fts_index(
 
     columns_str = ", ".join([f"'{id_column}'"] + [f"'{col}'" for col in text_columns])
     overwrite_flag = 1 if overwrite else 0
+    options = [
+        f"stemmer = '{stemmer}'",
+        f"stopwords = '{stopwords}'",
+    ]
+    if ignore is not None:
+        # Escape single quotes for SQL string literal safety.
+        escaped_ignore = ignore.replace("'", "''")
+        options.append(f"ignore = '{escaped_ignore}'")
+    options.extend([f"lower = {lower}", f"overwrite = {overwrite_flag}"])
+    options_sql = ",\n            ".join(options)
     conn.execute(f"""
         PRAGMA create_fts_index(
             '{table}',
             {columns_str},
-            stemmer = '{stemmer}',
-            stopwords = '{stopwords}',
-            lower = {lower},
-            overwrite = {overwrite_flag}
+            {options_sql}
         )
     """)
     logger.info(f"Created FTS index on table '{table}' with columns: {', '.join(text_columns)}")

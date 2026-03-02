@@ -54,8 +54,9 @@ uv run oidm-maintain findingmodel build --source DIR --output PATH
 uv run oidm-maintain findingmodel publish --db-path PATH
 
 # Anatomic database  
+uv run oidm-maintain anatomic validate SOURCE_JSON  # Validate source JSON before building
 uv run oidm-maintain anatomic build --source FILE --output PATH
-uv run oidm-maintain anatomic publish --db-path PATH
+uv run oidm-maintain anatomic publish PATH
 ```
 
 ## Alternative Commands (using uv directly)
