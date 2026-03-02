@@ -50,7 +50,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
     """
 
     # Quality thresholds to filter irrelevant search results
-    SEMANTIC_MIN_SIMILARITY: float = 0.75  # Minimum cosine similarity (1 - distance)
+    SEMANTIC_MIN_SIMILARITY: float = 0.60  # Minimum cosine similarity (1 - distance)
     FTS_MIN_SCORE: float = 0.5  # Minimum BM25 score for FTS-only results
 
     # Base SELECT for all location queries. Correlated subqueries bring codes, synonyms,

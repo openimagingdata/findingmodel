@@ -26,6 +26,7 @@ FindingModel database:
 ## Key Patterns
 - Embedding generation for semantic search
 - DuckDB index building with HNSW/FTS
+- For anatomic FTS, preserve alphanumeric tokens (e.g., `T12`, `C7/T1`) by configuring `create_fts_index(..., ignore=...)` in build code.
 - SHA256 checksum + S3 manifest for pooch auto-download
 
 ## Schema Change Checklist

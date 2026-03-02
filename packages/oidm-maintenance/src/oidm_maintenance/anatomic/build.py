@@ -704,6 +704,8 @@ def _create_indexes(conn: duckdb.DuckDBPyConnection, dimensions: int) -> None:
         "synonyms_text",
         stemmer="porter",
         stopwords="english",
+        # Keep numeric tokens (e.g., T12, C7/T1) searchable in FTS.
+        ignore=r"(\.|[^a-z0-9])+",
         lower=1,
         overwrite=True,
     )
