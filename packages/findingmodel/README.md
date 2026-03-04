@@ -42,6 +42,14 @@ findingmodel stats
 # Search for finding models
 findingmodel search "lung nodule"
 
+# Validate one model JSON file
+findingmodel validate model.fm.json
+
+# Validate and reformat all models under a directory
+findingmodel validate ./defs --reformat
+# - validates all matching files and exits non-zero if any fail
+# - --reformat updates valid files in place
+
 # Convert finding model to Markdown
 findingmodel fm-to-markdown model.json
 ```

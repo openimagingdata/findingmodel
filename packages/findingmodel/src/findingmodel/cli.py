@@ -1,7 +1,10 @@
 import asyncio
+import json
 from pathlib import Path
+from typing import Any
 
 import click
+from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 
@@ -34,12 +37,13 @@ def fm_to_markdown(finding_model_path: Path, output: Path | None) -> None:
     console = Console()
     console.print("[bold green]Loading finding model...")
     with open(finding_model_path, "r") as f:
-        json = f.read()
-        if "oifm_id" in json:
-            fm_full = FindingModelFull.model_validate_json(json)
+        json_text = f.read()
+        payload = json.loads(json_text)
+        if _is_full_model_payload(payload):
+            fm_full = FindingModelFull.model_validate_json(json_text)
             markdown = fm_full.as_markdown()
         else:
-            fm_base = FindingModelBase.model_validate_json(json)
+            fm_base = FindingModelBase.model_validate_json(json_text)
             markdown = fm_base.as_markdown()
     if output:
         with open(output, "w") as f:
@@ -49,6 +53,190 @@ def fm_to_markdown(finding_model_path: Path, output: Path | None) -> None:
         from rich.markdown import Markdown
 
         console.print(Markdown(markdown))
+
+
+def _is_full_model_payload(payload: object) -> bool:
+    """Treat payload as full model only when an OIFM ID is present."""
+    if not isinstance(payload, dict):
+        return False
+    return "oifm_id" in payload
+
+
+def _format_error_location(loc: tuple[Any, ...]) -> str:
+    if not loc:
+        return "<root>"
+
+    path = ""
+    for part in loc:
+        if isinstance(part, int):
+            path += f"[{part}]"
+        else:
+            if path:
+                path += "."
+            path += str(part)
+    return path
+
+
+def _validate_model_json(
+    json_text: str, is_full_model: bool
+) -> tuple[FindingModelBase | FindingModelFull | None, str, list[str], list[str]]:
+    """Validate JSON using strict extras first, then retry when only extras are present."""
+    model_cls = FindingModelFull if is_full_model else FindingModelBase
+    model_kind = "full" if is_full_model else "base"
+
+    try:
+        validated = model_cls.model_validate_json(json_text, extra="forbid")
+        return validated, model_kind, [], []
+    except ValidationError as exc:
+        errors = exc.errors()
+        extra_errors = [err for err in errors if err.get("type") == "extra_forbidden"]
+        non_extra_errors = [err for err in errors if err.get("type") != "extra_forbidden"]
+        if non_extra_errors:
+            return None, model_kind, [], [
+                f"{_format_error_location(tuple(err.get('loc', ()) or ()))}: {err.get('msg', 'Validation error')}"
+                for err in non_extra_errors
+            ]
+
+        warnings = [
+            f"{_format_error_location(tuple(err.get('loc', ()) or ()))}: unknown field ignored"
+            for err in extra_errors
+        ]
+        validated = model_cls.model_validate_json(json_text)
+        return validated, model_kind, warnings, []
+
+
+def _expand_target_files(paths: tuple[Path, ...]) -> tuple[list[Path], list[str]]:
+    """Expand input paths to files, recursively resolving directories to *.fm.json."""
+    files: list[Path] = []
+    errors: list[str] = []
+    seen: set[str] = set()
+
+    for input_path in paths:
+        if input_path.is_file():
+            candidates = [input_path]
+        elif input_path.is_dir():
+            candidates = sorted(path for path in input_path.rglob("*.fm.json") if path.is_file())
+            if not candidates:
+                errors.append(f"{input_path}: no '*.fm.json' files found")
+        else:
+            errors.append(f"{input_path}: not a file or directory")
+            continue
+
+        for candidate in candidates:
+            key = str(candidate.resolve())
+            if key in seen:
+                continue
+            seen.add(key)
+            files.append(candidate)
+
+    return files, errors
+
+
+def _optional_empty_list_fields(model: FindingModelBase | FindingModelFull) -> set[str]:
+    """Collect optional top-level list fields that are empty and should be omitted."""
+    exclude_fields: set[str] = set()
+    for name, field in model.__class__.model_fields.items():
+        value = getattr(model, name, None)
+        if value == [] and not field.is_required() and field.default is None:
+            exclude_fields.add(name)
+    return exclude_fields
+
+
+def _canonical_json(model: FindingModelBase | FindingModelFull) -> str:
+    exclude = _optional_empty_list_fields(model)
+    return model.model_dump_json(exclude_none=True, indent=2, exclude=exclude or None) + "\n"
+
+
+def _process_validate_file(file_path: Path, reformat: bool, console: Console) -> tuple[bool, int, bool]:
+    """Validate one file and optionally rewrite it.
+
+    Returns:
+        tuple: (is_valid, warning_count, was_reformatted)
+    """
+    try:
+        json_text = file_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        console.print(f"[red]FAIL[/red] {file_path}: unable to read file ({exc})")
+        return False, 0, False
+
+    try:
+        parsed_json = json.loads(json_text)
+    except json.JSONDecodeError as exc:
+        console.print(f"[red]FAIL[/red] {file_path}: invalid JSON ({exc.msg} at line {exc.lineno}, col {exc.colno})")
+        return False, 0, False
+
+    model, model_kind, warnings, errors = _validate_model_json(json_text, _is_full_model_payload(parsed_json))
+    if errors:
+        console.print(f"[red]FAIL[/red] {file_path} ({model_kind})")
+        for error in errors:
+            console.print(f"  [red]- {error}[/red]")
+        return False, 0, False
+
+    for warning in warnings:
+        console.print(f"[yellow]WARN[/yellow] {file_path}: {warning}")
+
+    if not reformat:
+        console.print(f"[green]OK[/green] {file_path} ({model_kind})")
+        return True, len(warnings), False
+
+    if model is None:
+        console.print(f"[red]FAIL[/red] {file_path}: internal validation state error")
+        return False, len(warnings), False
+
+    formatted = _canonical_json(model)
+    if formatted != json_text:
+        try:
+            file_path.write_text(formatted, encoding="utf-8")
+        except Exception as exc:
+            console.print(f"[red]FAIL[/red] {file_path}: unable to write file ({exc})")
+            return False, len(warnings), False
+        console.print(f"[green]OK[/green] {file_path} ({model_kind}) [cyan]reformatted[/cyan]")
+        return True, len(warnings), True
+
+    console.print(f"[green]OK[/green] {file_path} ({model_kind}) [dim]unchanged[/dim]")
+    return True, len(warnings), False
+
+
+@cli.command()
+@click.argument("paths", nargs=-1, type=click.Path(exists=True, path_type=Path))
+@click.option("--reformat", is_flag=True, help="Rewrite valid files in canonical JSON format.")
+def validate(paths: tuple[Path, ...], reformat: bool) -> None:
+    """Validate finding model JSON files or directories of *.fm.json files."""
+    console = Console()
+    files, path_errors = _expand_target_files(paths)
+
+    total = len(files)
+    valid = 0
+    invalid = 0
+    warnings_count = 0
+    reformatted = 0
+
+    for error in path_errors:
+        invalid += 1
+        console.print(f"[red]FAIL[/red] {error}")
+
+    if not files:
+        console.print("[bold red]No files to validate.")
+        raise SystemExit(1)
+
+    for file_path in files:
+        is_valid, warning_count, was_reformatted = _process_validate_file(file_path, reformat=reformat, console=console)
+        if is_valid:
+            valid += 1
+            warnings_count += warning_count
+            if was_reformatted:
+                reformatted += 1
+        else:
+            invalid += 1
+
+    console.print(
+        "\n"
+        f"[bold]Summary:[/bold] scanned={total}, valid={valid}, invalid={invalid}, "
+        f"warnings={warnings_count}, reformatted={reformatted}"
+    )
+
+    if invalid > 0:
+        raise SystemExit(1)
 
 
 @cli.command()
