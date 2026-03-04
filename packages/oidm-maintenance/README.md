@@ -24,15 +24,32 @@ pip install oidm-maintenance
 ## CLI
 
 ```bash
-# Build finding model index
-oidm-maintain build-index
+# Build findingmodel database
+oidm-maintain findingmodel build --source /path/to/fm-json/ --output /tmp/finding_models.duckdb
 
 # Build anatomic location database
-oidm-maintain build-anatomic
+oidm-maintain anatomic build --source /path/to/anatomic.json --output /tmp/anatomic_locations.duckdb
 
-# Publish to S3
-oidm-maintain publish --bucket oidm-data
+# Publish databases
+oidm-maintain findingmodel publish /tmp/finding_models.duckdb --dry-run
+oidm-maintain anatomic publish /tmp/anatomic_locations.duckdb --dry-run
+
+# Migrate embedding cache into current oidm-common namespace
+oidm-maintain embeddings migrate
+
+# Show current cache stats (total/new metadata keys and per-model counts)
+oidm-maintain embeddings stats
+
+# Import arbitrary DuckDB embedding cache file (upsert into current cache)
+oidm-maintain embeddings import-duckdb /path/to/embeddings.duckdb
+
+# Import entries from another diskcache directory
+oidm-maintain embeddings import-cache /path/to/embeddings.cache
 ```
+
+Embedding import commands report `written/new/updated/skipped/total` counts.
+They exit non-zero if the current cache directory cannot be opened for writes.
+`import-cache` expects a diskcache directory; copy the entire directory when transferring between machines.
 
 ## Documentation
 

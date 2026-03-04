@@ -805,6 +805,154 @@ class TestAnatomicPublishCommand:
 
 
 # =============================================================================
+# Embedding Cache Command Tests
+# =============================================================================
+
+
+class TestEmbeddingsCommands:
+    """Tests for embedding cache migration/import commands."""
+
+    def test_embeddings_migrate_success(self, runner: CliRunner) -> None:
+        """Embeddings migrate command reports cache path on success."""
+        with patch(
+            "oidm_maintenance.embeddings.migrate_default_cache",
+            new_callable=AsyncMock,
+            return_value=Path("/tmp/oidm-cache"),
+        ):
+            result = runner.invoke(main, ["embeddings", "migrate"])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert "Migrating embedding cache" in result.output
+        assert "Cache ready:" in result.output
+        assert "/tmp/oidm-cache" in result.output
+
+    def test_embeddings_migrate_failure(self, runner: CliRunner) -> None:
+        """Embeddings migrate command exits non-zero on failure."""
+        with patch(
+            "oidm_maintenance.embeddings.migrate_default_cache",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("boom"),
+        ):
+            result = runner.invoke(main, ["embeddings", "migrate"])
+
+        assert result.exit_code == 1
+        assert "Migration failed" in result.output
+
+    def test_embeddings_stats_success(self, runner: CliRunner) -> None:
+        """Embeddings stats command reports cache stats on success."""
+        with patch(
+            "oidm_maintenance.embeddings.get_default_cache_stats",
+            new_callable=AsyncMock,
+            return_value=(
+                Path("/tmp/oidm-cache"),
+                {"total_keys": 10, "embedding_keys": 8, "migration_keys": 2, "models": {"model-a": 8}},
+            ),
+        ):
+            result = runner.invoke(main, ["embeddings", "stats"])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert "Embedding cache stats" in result.output
+        assert "Total keys: 10" in result.output
+        assert "Embedding keys: 8" in result.output
+        assert "Migration keys: 2" in result.output
+        assert "model-a: 8" in result.output
+
+    def test_embeddings_stats_failure(self, runner: CliRunner) -> None:
+        """Embeddings stats command exits non-zero on failure."""
+        with patch(
+            "oidm_maintenance.embeddings.get_default_cache_stats",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("boom"),
+        ):
+            result = runner.invoke(main, ["embeddings", "stats"])
+
+        assert result.exit_code == 1
+        assert "Stats failed" in result.output
+
+    def test_embeddings_import_duckdb_defaults(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Import command uses default assumption flags."""
+        source = tmp_path / "source.duckdb"
+        source.touch()
+
+        mock_import = AsyncMock(
+            return_value=(Path("/tmp/oidm-cache"), {"written": 5, "new": 4, "updated": 1, "skipped": 1, "total": 6})
+        )
+        with patch("oidm_maintenance.embeddings.import_duckdb_into_current_cache", new=mock_import):
+            result = runner.invoke(main, ["embeddings", "import-duckdb", str(source)])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert "Importing embeddings from DuckDB" in result.output
+        assert "Written:" in result.output
+        mock_import.assert_awaited_once_with(
+            source_path=source,
+            assume_defaults=True,
+            default_model="text-embedding-3-small",
+            default_dimensions=512,
+        )
+
+    def test_embeddings_import_duckdb_preserve_metadata(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Import command supports preserving row model/dimensions."""
+        source = tmp_path / "source.duckdb"
+        source.touch()
+
+        mock_import = AsyncMock(
+            return_value=(Path("/tmp/oidm-cache"), {"written": 3, "new": 3, "updated": 0, "skipped": 0, "total": 3})
+        )
+        with patch("oidm_maintenance.embeddings.import_duckdb_into_current_cache", new=mock_import):
+            result = runner.invoke(
+                main,
+                [
+                    "embeddings",
+                    "import-duckdb",
+                    str(source),
+                    "--preserve-metadata",
+                ],
+            )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        mock_import.assert_awaited_once_with(
+            source_path=source,
+            assume_defaults=False,
+            default_model="text-embedding-3-small",
+            default_dimensions=512,
+        )
+
+    def test_embeddings_import_cache_default_upsert(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Import-cache command uses upsert by default."""
+        source_dir = tmp_path / "source.cache"
+        source_dir.mkdir()
+
+        mock_import = AsyncMock(
+            return_value=(Path("/tmp/oidm-cache"), {"written": 2, "new": 1, "updated": 1, "skipped": 1, "total": 3})
+        )
+        with patch("oidm_maintenance.embeddings.import_cache_into_current_cache", new=mock_import):
+            result = runner.invoke(main, ["embeddings", "import-cache", str(source_dir)])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        assert "Importing embeddings from diskcache" in result.output
+        mock_import.assert_awaited_once_with(
+            source_cache_dir=source_dir,
+            upsert=True,
+        )
+
+    def test_embeddings_import_cache_skip_existing(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Import-cache command supports --skip-existing."""
+        source_dir = tmp_path / "source.cache"
+        source_dir.mkdir()
+
+        mock_import = AsyncMock(
+            return_value=(Path("/tmp/oidm-cache"), {"written": 2, "new": 0, "updated": 2, "skipped": 3, "total": 5})
+        )
+        with patch("oidm_maintenance.embeddings.import_cache_into_current_cache", new=mock_import):
+            result = runner.invoke(main, ["embeddings", "import-cache", str(source_dir), "--skip-existing"])
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        mock_import.assert_awaited_once_with(
+            source_cache_dir=source_dir,
+            upsert=False,
+        )
+
+# =============================================================================
 # Version and Help Tests
 # =============================================================================
 
@@ -820,6 +968,7 @@ class TestCLIMetadata:
         assert "OIDM Maintenance Tools" in result.output
         assert "findingmodel" in result.output
         assert "anatomic" in result.output
+        assert "embeddings" in result.output
 
     def test_findingmodel_help(self, runner: CliRunner) -> None:
         """Findingmodel subcommand shows help text."""
@@ -838,6 +987,17 @@ class TestCLIMetadata:
         assert "Anatomic-locations database operations" in result.output
         assert "build" in result.output
         assert "publish" in result.output
+
+    def test_embeddings_help(self, runner: CliRunner) -> None:
+        """Embeddings subcommand shows help text."""
+        result = runner.invoke(main, ["embeddings", "--help"])
+
+        assert result.exit_code == 0
+        assert "Embedding cache operations" in result.output
+        assert "migrate" in result.output
+        assert "stats" in result.output
+        assert "import-duckdb" in result.output
+        assert "import-cache" in result.output
 
     def test_findingmodel_build_help(self, runner: CliRunner) -> None:
         """Findingmodel build command shows help text."""
