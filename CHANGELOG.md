@@ -6,6 +6,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## findingmodel 1.0.4 - 2026-03-04
+
+### Added
+
+- Added `findingmodel validate PATH [PATH ...]` to validate FindingModel JSON files.
+- `validate` accepts files and directories (directories are scanned recursively for `*.fm.json`).
+- Added `--reformat` to rewrite valid files in-place in canonical JSON format.
+
+## oidm-common 0.2.7 - 2026-03-04
+
+### Changed
+
+- Embedding cache now uses a SQLite-backed cache engine instead of DuckDB for safer concurrent writes.
+- Default cache location moved to a shared `oidm-common` cache directory used across OIDM apps.
+
+### Added
+
+- One-time migration from legacy `findingmodel` embedding caches into the new shared cache.
+- Cache import operations now report merge counts (`written/new/updated/skipped`).
+
+### Fixed
+
+- Automatic legacy diskcache migration now runs only for the default `oidm-common` runtime cache directory,
+  preventing accidental import into custom cache locations.
+
+## oidm-maintenance 0.2.5 - 2026-03-04
+
+### Added
+
+- Added embedding cache maintenance commands:
+  - `oidm-maintain embeddings migrate`
+  - `oidm-maintain embeddings stats`
+  - `oidm-maintain embeddings import-duckdb <source>`
+  - `oidm-maintain embeddings import-cache <source_cache_dir>`
+
+### Changed
+
+- Embedding migration/import commands now fail if the target cache cannot be opened for writes.
+- Embedding import output now shows merge counts (`written/new/updated/skipped/total`).
+
 ## oidm-common 0.2.6 - 2026-03-02
 
 ### Added

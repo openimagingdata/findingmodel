@@ -1,25 +1,50 @@
-"""DuckDB-based cache for OpenAI embeddings."""
+"""DiskCache-backed cache for OpenAI embeddings."""
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import json
 import logging
+import time
 from array import array
+from datetime import datetime
 from pathlib import Path
 from typing import Final
 
 import duckdb
+from diskcache import Cache
 from platformdirs import user_cache_dir
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_CACHE_PATH: Final[Path] = (
-    Path(user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True)) / "embeddings.duckdb"
+_DEFAULT_RUNTIME_CACHE_ROOT: Final[Path] = Path(
+    user_cache_dir(appname="oidm-common", appauthor="openimagingdata", ensure_exists=True)
 )
+_DEFAULT_DISKCACHE_DIR: Final[Path] = (
+    _DEFAULT_RUNTIME_CACHE_ROOT / "embeddings.cache"
+)
+_LEGACY_FINDINGMODEL_CACHE_ROOT: Final[Path] = Path(
+    user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True)
+)
+_DEFAULT_CACHE_PATH: Final[Path] = _LEGACY_FINDINGMODEL_CACHE_ROOT / "embeddings.duckdb"
+_LEGACY_DISKCACHE_DIR: Final[Path] = _LEGACY_FINDINGMODEL_CACHE_ROOT / "embeddings.cache"
+_MIGRATION_DUCKDB_STATE_KEY: Final[str] = "__oidm_embedding_cache_migration_duckdb_v1__"
+_MIGRATION_DISKCACHE_STATE_KEY: Final[str] = "__oidm_embedding_cache_migration_diskcache_v1__"
+_MIGRATION_MODEL: Final[str] = "text-embedding-3-small"
+_MIGRATION_DIMENSIONS: Final[int] = 512
+
+
+class _LegacyTableMissingError(RuntimeError):
+    """Raised when legacy duckdb cache does not have embedding_cache table."""
+
+
+class _EmbeddingCacheTableMissingError(RuntimeError):
+    """Raised when duckdb file does not contain embedding_cache table."""
 
 
 class EmbeddingCache:
-    """DuckDB-based cache for OpenAI embeddings.
+    """DiskCache-backed cache for OpenAI embeddings.
 
     This cache stores embeddings with SHA256 text hashing to avoid redundant API calls.
     It operates in a fail-safe manner - cache errors never block embedding operations.
@@ -29,10 +54,17 @@ class EmbeddingCache:
         """Initialize the embedding cache.
 
         Args:
-            db_path: Path to cache database file. Defaults to data/embeddings_cache.duckdb
+            db_path: Legacy DuckDB cache file path used as migration source.
+                Defaults to the legacy findingmodel cache file in the platform cache directory.
         """
         self.db_path = db_path or _DEFAULT_CACHE_PATH
-        self._conn: duckdb.DuckDBPyConnection | None = None
+        if db_path is None:
+            self.cache_dir = _DEFAULT_DISKCACHE_DIR
+        else:
+            self.cache_dir = Path(f"{self.db_path}.cache")
+        self._cache: Cache | None = None
+        self._setup_complete = False
+        self._setup_lock = asyncio.Lock()
 
     async def __aenter__(self) -> EmbeddingCache:
         """Enter context manager."""
@@ -41,62 +73,48 @@ class EmbeddingCache:
 
     async def __aexit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         """Exit context manager."""
-        if self._conn is not None:
-            self._conn.close()
-            self._conn = None
+        if self._cache is not None:
+            self._cache.close()
+            self._cache = None
+        self._setup_complete = False
 
     async def setup(self) -> None:
-        """Create schema if not exists."""
-        try:
-            # Ensure parent directory exists
-            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        """Initialize diskcache and perform one-time legacy migration."""
+        if self._setup_complete and self._cache is not None:
+            return
 
-            # Create connection (read-write for setup)
-            conn = duckdb.connect(str(self.db_path), read_only=False)
+        async with self._setup_lock:
+            if self._setup_complete and self._cache is not None:
+                return
 
-            # Create table with dynamic dimensions
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS embedding_cache (
-                    text_hash TEXT PRIMARY KEY,
-                    model TEXT NOT NULL,
-                    dimensions INTEGER NOT NULL,
-                    embedding FLOAT[] NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            try:
+                self.cache_dir.mkdir(parents=True, exist_ok=True)
+                self._cache = Cache(
+                    directory=str(self.cache_dir),
+                    sqlite_journal_mode="wal",
                 )
-            """)
+                self._migrate_legacy_diskcache_if_needed()
+                self._migrate_legacy_duckdb_if_needed()
+                self._setup_complete = True
+                logger.debug(f"Embedding cache initialized at {self.cache_dir}")
+            except Exception as e:
+                logger.warning(f"Failed to setup embedding cache: {e}")
+                if self._cache is not None:
+                    self._cache.close()
+                    self._cache = None
+                self._setup_complete = False
 
-            # Create indexes for fast lookups
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_cache_model
-                ON embedding_cache(model, dimensions)
-            """)
+    async def _ensure_cache_available(self, *, strict: bool = False) -> bool:
+        await self.setup()
+        if self._cache is not None:
+            return True
+        if strict:
+            raise RuntimeError(f"Embedding cache unavailable at {self.cache_dir}")
+        return False
 
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_cache_created
-                ON embedding_cache(created_at)
-            """)
-
-            # Close setup connection to ensure schema is committed
-            conn.close()
-
-            logger.debug(f"Embedding cache initialized at {self.db_path}")
-
-        except Exception as e:
-            logger.warning(f"Failed to setup embedding cache: {e}")
-            # Don't raise - graceful degradation
-
-    def _get_connection(self, read_only: bool = True) -> duckdb.DuckDBPyConnection:
-        """Get or create connection with specified mode.
-
-        Args:
-            read_only: Whether to open in read-only mode
-
-        Returns:
-            DuckDB connection
-        """
-        # Always create a new connection for the requested mode
-        # This avoids issues with switching between read/write modes
-        return duckdb.connect(str(self.db_path), read_only=read_only)
+    async def require_cache_ready(self) -> None:
+        """Ensure cache storage is available, or raise RuntimeError."""
+        await self._ensure_cache_available(strict=True)
 
     def _hash_text(self, text: str) -> str:
         """Generate SHA256 hash of text.
@@ -120,6 +138,440 @@ class EmbeddingCache:
         """
         return list(array("f", embedding))
 
+    def _to_epoch(self, timestamp: object | None) -> float:
+        if isinstance(timestamp, datetime):
+            return timestamp.timestamp()
+        if isinstance(timestamp, int | float):
+            return float(timestamp)
+        return time.time()
+
+    def _build_key(self, text_hash: str, model: str, dimensions: int) -> str:
+        return json.dumps([text_hash, model, dimensions], separators=(",", ":"), ensure_ascii=True)
+
+    def _parse_key(self, key: object) -> tuple[str, str, int] | None:
+        if not isinstance(key, str):
+            return None
+        try:
+            values = json.loads(key)
+        except Exception:
+            return None
+        if not isinstance(values, list) or len(values) != 3:
+            return None
+        text_hash, model, dimensions = values
+        if not isinstance(text_hash, str) or not isinstance(model, str) or not isinstance(dimensions, int):
+            return None
+        return text_hash, model, dimensions
+
+    def _migration_state(self, state_key: str) -> dict[str, object] | None:
+        if self._cache is None:
+            return None
+        value = self._cache.get(state_key, default=None)
+        if isinstance(value, dict):
+            return value
+        return None
+
+    def _set_migration_state(self, state_key: str, **kwargs: object) -> None:
+        if self._cache is None:
+            return
+        payload = {"at": time.time(), **kwargs}
+        self._cache.set(state_key, payload)
+
+    def _get_legacy_diskcache_source_dir(self) -> Path | None:
+        source_dir = _LEGACY_DISKCACHE_DIR
+        if source_dir == self.cache_dir:
+            self._set_migration_state(
+                _MIGRATION_DISKCACHE_STATE_KEY,
+                status="same_dir",
+                source=str(source_dir),
+            )
+            return None
+        if not source_dir.exists():
+            self._set_migration_state(
+                _MIGRATION_DISKCACHE_STATE_KEY,
+                status="no_source",
+                source=str(source_dir),
+            )
+            return None
+        return source_dir
+
+    def _legacy_diskcache_payload_to_record(self, payload: object) -> dict[str, object] | None:
+        if not isinstance(payload, dict):
+            return None
+        embedding = payload.get("embedding")
+        created_at = payload.get("created_at")
+        if not isinstance(embedding, list):
+            return None
+        if not isinstance(created_at, int | float):
+            created_at = time.time()
+        return {
+            "embedding": self._to_float32(embedding),
+            "created_at": float(created_at),
+        }
+
+    def _migrate_from_legacy_diskcache(self, source_cache: Cache) -> tuple[int, int]:
+        if self._cache is None:
+            return 0, 0
+
+        migrated = 0
+        skipped = 0
+        with self._cache.transact():
+            for key in source_cache.iterkeys():
+                if self._parse_key(key) is None:
+                    continue
+                record = self._legacy_diskcache_payload_to_record(source_cache.get(key, default=None))
+                if record is None:
+                    skipped += 1
+                    continue
+                if self._cache.add(key, record):
+                    migrated += 1
+        return migrated, skipped
+
+    def _import_from_diskcache(self, source_cache: Cache, *, upsert: bool) -> tuple[int, int, int, int]:
+        """Import embedding entries from another diskcache instance."""
+        if self._cache is None:
+            return 0, 0, 0, 0
+
+        written = 0
+        new = 0
+        updated = 0
+        skipped = 0
+        with self._cache.transact():
+            for key in source_cache.iterkeys():
+                if self._parse_key(key) is None:
+                    continue
+                record = self._legacy_diskcache_payload_to_record(source_cache.get(key, default=None))
+                if record is None:
+                    skipped += 1
+                    continue
+
+                if upsert:
+                    existing = self._cache.get(key, default=None)
+                    self._cache.set(key, record)
+                    written += 1
+                    if existing is None:
+                        new += 1
+                    else:
+                        updated += 1
+                    continue
+
+                if self._cache.add(key, record):
+                    written += 1
+                    new += 1
+                else:
+                    skipped += 1
+        return written, new, updated, skipped
+
+    def _migrate_legacy_diskcache_if_needed(self) -> None:
+        """Migrate entries from legacy findingmodel diskcache directory once."""
+        if self._cache is None:
+            return
+        # Only default runtime cache should auto-migrate from global legacy findingmodel cache.
+        if self.cache_dir != _DEFAULT_DISKCACHE_DIR:
+            return
+        if self._migration_state(_MIGRATION_DISKCACHE_STATE_KEY) is not None:
+            return
+
+        source_dir = self._get_legacy_diskcache_source_dir()
+        if source_dir is None:
+            return
+
+        source_cache: Cache | None = None
+        try:
+            source_cache = Cache(directory=str(source_dir), sqlite_journal_mode="wal")
+            migrated, skipped = self._migrate_from_legacy_diskcache(source_cache)
+
+            self._set_migration_state(
+                _MIGRATION_DISKCACHE_STATE_KEY,
+                status="migrated",
+                source=str(source_dir),
+                migrated=migrated,
+                skipped=skipped,
+            )
+            logger.info(
+                "Embedding cache diskcache migration completed: "
+                f"{migrated} migrated, {skipped} skipped from {source_dir}"
+            )
+        except Exception as e:
+            logger.warning(f"Legacy diskcache migration failed: {e}")
+            self._set_migration_state(
+                _MIGRATION_DISKCACHE_STATE_KEY,
+                status="failed",
+                source=str(source_dir),
+                error=str(e),
+            )
+        finally:
+            if source_cache is not None:
+                source_cache.close()
+
+    def _read_legacy_rows(self) -> list[tuple[object, object, object]]:
+        conn = duckdb.connect(str(self.db_path), read_only=True)
+        try:
+            table_exists = conn.execute(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_cache'"
+            ).fetchone()
+            if table_exists is None or table_exists[0] == 0:
+                raise _LegacyTableMissingError("embedding_cache table not found")
+            return conn.execute("SELECT text_hash, embedding, created_at FROM embedding_cache").fetchall()
+        finally:
+            conn.close()
+
+    def _legacy_row_to_record(self, row: tuple[object, object, object]) -> tuple[str, dict[str, object]] | None:
+        text_hash, embedding, created_at = row
+        if not isinstance(text_hash, str) or not isinstance(embedding, list):
+            return None
+        if len(embedding) != _MIGRATION_DIMENSIONS:
+            return None
+        key = self._build_key(text_hash, _MIGRATION_MODEL, _MIGRATION_DIMENSIONS)
+        payload = {
+            "embedding": self._to_float32(embedding),
+            "created_at": self._to_epoch(created_at),
+        }
+        return key, payload
+
+    def _migrate_rows_into_cache(self, rows: list[tuple[object, object, object]]) -> tuple[int, int]:
+        if self._cache is None:
+            return 0, len(rows)
+
+        migrated = 0
+        skipped = 0
+        with self._cache.transact():
+            for row in rows:
+                record = self._legacy_row_to_record(row)
+                if record is None:
+                    skipped += 1
+                    continue
+                key, payload = record
+                if self._cache.add(key, payload):
+                    migrated += 1
+        return migrated, skipped
+
+    def _migrate_legacy_duckdb_if_needed(self) -> None:
+        """Migrate data from legacy DuckDB cache into diskcache once."""
+        if self._cache is None:
+            return
+        if self._migration_state(_MIGRATION_DUCKDB_STATE_KEY) is not None:
+            return
+
+        if not self.db_path.exists():
+            self._set_migration_state(_MIGRATION_DUCKDB_STATE_KEY, status="no_source", source=str(self.db_path))
+            return
+
+        try:
+            rows = self._read_legacy_rows()
+            migrated, skipped = self._migrate_rows_into_cache(rows)
+
+            self._set_migration_state(
+                _MIGRATION_DUCKDB_STATE_KEY,
+                status="migrated",
+                source=str(self.db_path),
+                migrated=migrated,
+                skipped=skipped,
+                total=len(rows),
+            )
+            logger.info(
+                "Embedding cache migration completed: "
+                f"{migrated} migrated, {skipped} skipped from {self.db_path}"
+            )
+        except _LegacyTableMissingError:
+            self._set_migration_state(_MIGRATION_DUCKDB_STATE_KEY, status="no_table", source=str(self.db_path))
+        except Exception as e:
+            logger.warning(f"Legacy embedding cache migration failed: {e}")
+            self._set_migration_state(
+                _MIGRATION_DUCKDB_STATE_KEY,
+                status="failed",
+                source=str(self.db_path),
+                error=str(e),
+            )
+
+    def _read_import_rows(self, source_path: Path) -> list[tuple[object, object, object, object, object]]:
+        conn = duckdb.connect(str(source_path), read_only=True)
+        try:
+            table_exists = conn.execute(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_cache'"
+            ).fetchone()
+            if table_exists is None or table_exists[0] == 0:
+                raise _EmbeddingCacheTableMissingError("embedding_cache table not found")
+
+            describe_rows = conn.execute("DESCRIBE embedding_cache").fetchall()
+            columns = {row[0] for row in describe_rows if row and isinstance(row[0], str)}
+            if "text_hash" not in columns or "embedding" not in columns:
+                raise ValueError("embedding_cache must include text_hash and embedding columns")
+
+            model_sql = "model" if "model" in columns else "NULL"
+            dimensions_sql = "dimensions" if "dimensions" in columns else "NULL"
+            created_at_sql = "created_at" if "created_at" in columns else "NULL"
+
+            return conn.execute(
+                f"""
+                SELECT text_hash, {model_sql}, {dimensions_sql}, embedding, {created_at_sql}
+                FROM embedding_cache
+                """
+            ).fetchall()
+        finally:
+            conn.close()
+
+    def _import_row_to_record(
+        self,
+        row: tuple[object, object, object, object, object],
+        *,
+        assume_defaults: bool,
+        default_model: str,
+        default_dimensions: int,
+    ) -> tuple[str, dict[str, object]] | None:
+        text_hash, row_model, row_dimensions, embedding, created_at = row
+        if not isinstance(text_hash, str) or not isinstance(embedding, list):
+            return None
+
+        if assume_defaults:
+            model = default_model
+            dimensions = default_dimensions
+        else:
+            if not isinstance(row_model, str) or not isinstance(row_dimensions, int):
+                return None
+            model = row_model
+            dimensions = row_dimensions
+
+        if len(embedding) != dimensions:
+            return None
+
+        key = self._build_key(text_hash, model, dimensions)
+        payload = {
+            "embedding": self._to_float32(embedding),
+            "created_at": self._to_epoch(created_at),
+        }
+        return key, payload
+
+    async def import_duckdb_file(
+        self,
+        source_path: Path,
+        *,
+        assume_defaults: bool = True,
+        default_model: str = _MIGRATION_MODEL,
+        default_dimensions: int = _MIGRATION_DIMENSIONS,
+        strict: bool = False,
+    ) -> dict[str, int]:
+        """Import embeddings from a DuckDB embedding_cache table into current cache.
+
+        Args:
+            source_path: Path to source DuckDB file containing embedding_cache table.
+            assume_defaults: If True, import all rows under default model/dimensions.
+                If False, preserve model and dimensions from each row.
+            default_model: Model used when assume_defaults=True.
+            default_dimensions: Dimensions used when assume_defaults=True.
+            strict: If True, raise when cache storage is unavailable.
+
+        Returns:
+            Stats dict with written/new/updated/skipped/total rows.
+        """
+        if not await self._ensure_cache_available(strict=strict):
+            return {"imported": 0, "written": 0, "new": 0, "updated": 0, "skipped": 0, "total": 0}
+        if default_dimensions <= 0:
+            raise ValueError("default_dimensions must be positive")
+
+        rows = self._read_import_rows(source_path)
+        assert self._cache is not None
+        written = 0
+        new = 0
+        updated = 0
+        skipped = 0
+        with self._cache.transact():
+            for row in rows:
+                record = self._import_row_to_record(
+                    row,
+                    assume_defaults=assume_defaults,
+                    default_model=default_model,
+                    default_dimensions=default_dimensions,
+                )
+                if record is None:
+                    skipped += 1
+                    continue
+                key, payload = record
+                # Upsert semantics: always overwrite existing value for the key.
+                existing = self._cache.get(key, default=None)
+                self._cache.set(key, payload)
+                written += 1
+                if existing is None:
+                    new += 1
+                else:
+                    updated += 1
+
+        return {
+            "imported": written,
+            "written": written,
+            "new": new,
+            "updated": updated,
+            "skipped": skipped,
+            "total": len(rows),
+        }
+
+    async def import_cache_dir(self, source_dir: Path, *, upsert: bool = True, strict: bool = False) -> dict[str, int]:
+        """Import embedding entries from another diskcache directory.
+
+        Args:
+            source_dir: Source diskcache directory.
+            upsert: If True, overwrite existing keys. If False, keep existing keys.
+            strict: If True, raise when cache storage is unavailable.
+
+        Returns:
+            Stats dict with written/new/updated/skipped/total rows.
+        """
+        if not await self._ensure_cache_available(strict=strict):
+            return {"imported": 0, "written": 0, "new": 0, "updated": 0, "skipped": 0, "total": 0}
+        if source_dir == self.cache_dir:
+            raise ValueError("source_dir must be different from current cache directory")
+        if not source_dir.exists():
+            raise FileNotFoundError(source_dir)
+
+        source_cache: Cache | None = None
+        try:
+            source_cache = Cache(directory=str(source_dir), sqlite_journal_mode="wal")
+            written, new, updated, skipped = self._import_from_diskcache(source_cache, upsert=upsert)
+            return {
+                "imported": written,
+                "written": written,
+                "new": new,
+                "updated": updated,
+                "skipped": skipped,
+                "total": written + skipped,
+            }
+        finally:
+            if source_cache is not None:
+                source_cache.close()
+
+    def _embedding_keys(self) -> list[tuple[object, str]]:
+        if self._cache is None:
+            return []
+        keys: list[tuple[object, str]] = []
+        for key in self._cache.iterkeys():
+            parsed = self._parse_key(key)
+            if parsed is None:
+                continue
+            _text_hash, item_model, _dimensions = parsed
+            keys.append((key, item_model))
+        return keys
+
+    def _is_older_than_cutoff(self, key: object, cutoff: float) -> bool:
+        if self._cache is None:
+            return False
+        payload = self._cache.get(key, default=None)
+        if not isinstance(payload, dict):
+            return False
+        created_at = payload.get("created_at")
+        if not isinstance(created_at, int | float):
+            return False
+        return float(created_at) < cutoff
+
+    def _collect_filtered_keys(self, model: str | None, older_than_days: int | None) -> list[object]:
+        cutoff = time.time() - (older_than_days * 86400) if older_than_days is not None else None
+        keys_to_delete: list[object] = []
+        for key, item_model in self._embedding_keys():
+            if model is not None and item_model != model:
+                continue
+            if cutoff is not None and not self._is_older_than_cutoff(key, cutoff):
+                continue
+            keys_to_delete.append(key)
+        return keys_to_delete
+
     async def get_embedding(self, text: str, model: str, dimensions: int) -> list[float] | None:
         """Get cached embedding or None if not found.
 
@@ -132,25 +584,15 @@ class EmbeddingCache:
             Cached embedding vector or None if cache miss
         """
         try:
+            await self.setup()
+            if self._cache is None:
+                return None
             text_hash = self._hash_text(text)
-            conn = self._get_connection(read_only=True)
-
-            result = conn.execute(
-                """
-                SELECT embedding
-                FROM embedding_cache
-                WHERE text_hash = ?
-                  AND model = ?
-                  AND dimensions = ?
-            """,
-                (text_hash, model, dimensions),
-            ).fetchone()
-
-            conn.close()
-
-            if result is not None:
+            key = self._build_key(text_hash, model, dimensions)
+            payload = self._cache.get(key, default=None)
+            if isinstance(payload, dict) and isinstance(payload.get("embedding"), list):
                 logger.debug(f"Cache hit for text hash {text_hash[:8]}...")
-                return list(result[0])
+                return list(payload["embedding"])
 
             logger.debug(f"Cache miss for text hash {text_hash[:8]}...")
             return None
@@ -169,6 +611,9 @@ class EmbeddingCache:
             embedding: Embedding vector to cache
         """
         try:
+            await self.setup()
+            if self._cache is None:
+                return
             # Validate dimensions match
             if len(embedding) != dimensions:
                 logger.warning(
@@ -178,20 +623,14 @@ class EmbeddingCache:
 
             text_hash = self._hash_text(text)
             embedding_f32 = self._to_float32(embedding)
-
-            conn = self._get_connection(read_only=False)
-
-            # Use INSERT OR REPLACE to handle duplicates
-            conn.execute(
-                """
-                INSERT OR REPLACE INTO embedding_cache
-                (text_hash, model, dimensions, embedding, created_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """,
-                (text_hash, model, dimensions, embedding_f32),
+            key = self._build_key(text_hash, model, dimensions)
+            self._cache.set(
+                key,
+                {
+                    "embedding": embedding_f32,
+                    "created_at": time.time(),
+                },
             )
-
-            conn.close()
             logger.debug(f"Cached embedding for text hash {text_hash[:8]}...")
 
         except Exception as e:
@@ -213,33 +652,24 @@ class EmbeddingCache:
             return []
 
         try:
+            await self.setup()
+            if self._cache is None:
+                return [None] * len(texts)
             # Generate hashes for all texts
             text_hashes = [self._hash_text(text) for text in texts]
             hash_to_text_idx = {h: i for i, h in enumerate(text_hashes)}
-
-            conn = self._get_connection(read_only=True)
-
-            # Bulk query using IN clause
-            placeholders = ",".join("?" * len(text_hashes))
-            query = f"""
-                SELECT text_hash, embedding
-                FROM embedding_cache
-                WHERE text_hash IN ({placeholders})
-                  AND model = ?
-                  AND dimensions = ?
-            """
-
-            results = conn.execute(query, (*text_hashes, model, dimensions)).fetchall()
-            conn.close()
 
             # Build result list, preserving order
             embeddings: list[list[float] | None] = [None] * len(texts)
             hits = 0
 
-            for text_hash, embedding in results:
-                idx = hash_to_text_idx[text_hash]
-                embeddings[idx] = list(embedding)
-                hits += 1
+            for text_hash in text_hashes:
+                key = self._build_key(text_hash, model, dimensions)
+                payload = self._cache.get(key, default=None)
+                if isinstance(payload, dict) and isinstance(payload.get("embedding"), list):
+                    idx = hash_to_text_idx[text_hash]
+                    embeddings[idx] = list(payload["embedding"])
+                    hits += 1
 
             logger.debug(f"Batch cache: {hits}/{len(texts)} hits")
             return embeddings
@@ -269,7 +699,9 @@ class EmbeddingCache:
             return
 
         try:
-            conn = self._get_connection(read_only=False)
+            await self.setup()
+            if self._cache is None:
+                return
 
             # Prepare batch insert data
             records = []
@@ -280,23 +712,23 @@ class EmbeddingCache:
 
                 text_hash = self._hash_text(text)
                 embedding_f32 = self._to_float32(embedding)
-                records.append((text_hash, model, dimensions, embedding_f32))
+                records.append(
+                    (
+                        self._build_key(text_hash, model, dimensions),
+                        {
+                            "embedding": embedding_f32,
+                            "created_at": time.time(),
+                        },
+                    )
+                )
 
             if not records:
-                conn.close()
                 return
 
-            # Bulk insert with executemany
-            conn.executemany(
-                """
-                INSERT OR REPLACE INTO embedding_cache
-                (text_hash, model, dimensions, embedding, created_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """,
-                records,
-            )
+            with self._cache.transact():
+                for key, payload in records:
+                    self._cache.set(key, payload)
 
-            conn.close()
             logger.debug(f"Cached {len(records)} embeddings in batch")
 
         except Exception as e:
@@ -314,36 +746,66 @@ class EmbeddingCache:
             Number of entries deleted
         """
         try:
-            conn = self._get_connection(read_only=False)
+            await self.setup()
+            if self._cache is None:
+                return 0
 
-            conditions: list[str] = []
-            params: list[str | int] = []
+            if model is None and older_than_days is None:
+                keys_to_delete = [key for key, _ in self._embedding_keys()]
+                with self._cache.transact():
+                    for key in keys_to_delete:
+                        self._cache.pop(key, default=None)
+                deleted_count = len(keys_to_delete)
+                logger.info(f"Cleared {deleted_count} cached embeddings")
+                return deleted_count
 
-            if model is not None:
-                conditions.append("model = ?")
-                params.append(model)
+            keys_to_delete = self._collect_filtered_keys(model, older_than_days)
 
-            if older_than_days is not None:
-                conditions.append("created_at < CURRENT_TIMESTAMP - INTERVAL ? DAY")
-                params.append(older_than_days)
+            with self._cache.transact():
+                for key in keys_to_delete:
+                    self._cache.pop(key, default=None)
 
-            if conditions:
-                where_clause = " AND ".join(conditions)
-                query = f"DELETE FROM embedding_cache WHERE {where_clause}"
-            else:
-                query = "DELETE FROM embedding_cache"
-
-            result = conn.execute(query, params if params else None)
-            row = result.fetchone()
-            deleted_count = row[0] if row else 0
-
-            conn.close()
+            deleted_count = len(keys_to_delete)
             logger.info(f"Cleared {deleted_count} cached embeddings")
             return deleted_count
 
         except Exception as e:
             logger.warning(f"Failed to clear cache: {e}")
             return 0
+
+    async def get_stats(self, *, strict: bool = False) -> dict[str, object]:
+        """Return cache key and model distribution statistics."""
+        if not await self._ensure_cache_available(strict=strict):
+            return {
+                "cache_dir": str(self.cache_dir),
+                "total_keys": 0,
+                "embedding_keys": 0,
+                "migration_keys": 0,
+                "models": {},
+            }
+        assert self._cache is not None
+
+        total_keys = 0
+        migration_keys = 0
+        model_counts: dict[str, int] = {}
+
+        for key in self._cache.iterkeys():
+            total_keys += 1
+            parsed = self._parse_key(key)
+            if parsed is not None:
+                _text_hash, model, _dimensions = parsed
+                model_counts[model] = model_counts.get(model, 0) + 1
+                continue
+            if isinstance(key, str) and key.startswith("__oidm_embedding_cache_migration_"):
+                migration_keys += 1
+
+        return {
+            "cache_dir": str(self.cache_dir),
+            "total_keys": total_keys,
+            "embedding_keys": sum(model_counts.values()),
+            "migration_keys": migration_keys,
+            "models": model_counts,
+        }
 
 
 __all__ = ["EmbeddingCache"]

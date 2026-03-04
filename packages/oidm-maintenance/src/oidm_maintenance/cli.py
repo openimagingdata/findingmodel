@@ -166,5 +166,129 @@ def findingmodel_publish(db_path: Path, version: str | None, dry_run: bool) -> N
         raise SystemExit(1)
 
 
+@main.group()
+def embeddings() -> None:
+    """Embedding cache operations."""
+    pass
+
+
+@embeddings.command(name="migrate")
+def embeddings_migrate() -> None:
+    """Run one-time migration into current embedding cache namespace."""
+    import asyncio
+
+    from oidm_maintenance.embeddings import migrate_default_cache
+
+    console.print("[bold]Migrating embedding cache...[/bold]")
+    try:
+        cache_dir = asyncio.run(migrate_default_cache())
+    except Exception as e:
+        console.print(f"[bold red]✗ Migration failed:[/bold red] {e}")
+        raise SystemExit(1) from e
+    console.print(f"[bold green]✓ Cache ready:[/bold green] {cache_dir}")
+
+
+@embeddings.command(name="stats")
+def embeddings_stats() -> None:
+    """Show current embedding cache statistics."""
+    import asyncio
+
+    from oidm_maintenance.embeddings import get_default_cache_stats
+
+    console.print("[bold]Embedding cache stats...[/bold]")
+    try:
+        cache_dir, stats = asyncio.run(get_default_cache_stats())
+    except Exception as e:
+        console.print(f"[bold red]✗ Stats failed:[/bold red] {e}")
+        raise SystemExit(1) from e
+
+    models = stats["models"] if isinstance(stats.get("models"), dict) else {}
+    console.print(f"[bold green]✓ Cache:[/bold green] {cache_dir}")
+    console.print(f"  Total keys: {stats['total_keys']}")
+    console.print(f"  Embedding keys: {stats['embedding_keys']}")
+    console.print(f"  Migration keys: {stats['migration_keys']}")
+    if models:
+        console.print("  Models:")
+        for model, count in sorted(models.items()):
+            console.print(f"    - {model}: {count}")
+
+
+@embeddings.command(name="import-duckdb")
+@click.argument("source", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--assume-defaults/--preserve-metadata",
+    default=True,
+    show_default=True,
+    help=(
+        "Assume all rows belong to --default-model/--default-dimensions "
+        "(recommended for legacy text_hash-keyed cache files)."
+    ),
+)
+@click.option("--default-model", default="text-embedding-3-small", show_default=True, help="Default model value.")
+@click.option("--default-dimensions", default=512, type=int, show_default=True, help="Default dimensions value.")
+def embeddings_import_duckdb(source: Path, assume_defaults: bool, default_model: str, default_dimensions: int) -> None:
+    """Import a DuckDB embedding_cache table and upsert into current cache."""
+    import asyncio
+
+    from oidm_maintenance.embeddings import import_duckdb_into_current_cache
+
+    console.print("[bold]Importing embeddings from DuckDB...[/bold]")
+    console.print(f"  Source: {source}")
+    try:
+        cache_dir, stats = asyncio.run(
+            import_duckdb_into_current_cache(
+                source_path=source,
+                assume_defaults=assume_defaults,
+                default_model=default_model,
+                default_dimensions=default_dimensions,
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]✗ Import failed:[/bold red] {e}")
+        raise SystemExit(1) from e
+
+    console.print(f"[bold green]✓ Cache:[/bold green] {cache_dir}")
+    console.print(
+        f"[bold green]✓ Written:[/bold green] {stats['written']} "
+        f"(new: {stats['new']}, updated: {stats['updated']}, "
+        f"skipped: {stats['skipped']}, total: {stats['total']})"
+    )
+
+
+@embeddings.command(name="import-cache")
+@click.argument("source_cache_dir", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option(
+    "--upsert/--skip-existing",
+    default=True,
+    show_default=True,
+    help="Overwrite existing entries when keys overlap.",
+)
+def embeddings_import_cache(source_cache_dir: Path, upsert: bool) -> None:
+    """Import entries from another diskcache embedding cache directory."""
+    import asyncio
+
+    from oidm_maintenance.embeddings import import_cache_into_current_cache
+
+    console.print("[bold]Importing embeddings from diskcache...[/bold]")
+    console.print(f"  Source cache: {source_cache_dir}")
+    try:
+        cache_dir, stats = asyncio.run(
+            import_cache_into_current_cache(
+                source_cache_dir=source_cache_dir,
+                upsert=upsert,
+            )
+        )
+    except Exception as e:
+        console.print(f"[bold red]✗ Import failed:[/bold red] {e}")
+        raise SystemExit(1) from e
+
+    console.print(f"[bold green]✓ Cache:[/bold green] {cache_dir}")
+    console.print(
+        f"[bold green]✓ Written:[/bold green] {stats['written']} "
+        f"(new: {stats['new']}, updated: {stats['updated']}, "
+        f"skipped: {stats['skipped']}, total: {stats['total']})"
+    )
+
+
 if __name__ == "__main__":
     main()

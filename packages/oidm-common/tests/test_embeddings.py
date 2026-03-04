@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, patch
 
+import duckdb
 import pytest
 from oidm_common.embeddings.cache import EmbeddingCache
 
@@ -17,15 +19,15 @@ class TestEmbeddingCacheContextManager:
     """Tests for EmbeddingCache async context manager."""
 
     async def test_embedding_cache_context_manager_setup(self, tmp_path: Path) -> None:
-        """Test that context manager sets up database and connection."""
+        """Test that context manager sets up the cache directory."""
         cache_path = tmp_path / "test_cache.duckdb"
 
         async with EmbeddingCache(db_path=cache_path) as cache:
             assert cache.db_path == cache_path
-            assert cache_path.exists()
+            assert cache.cache_dir.exists()
 
     async def test_embedding_cache_context_manager_cleanup(self, tmp_path: Path) -> None:
-        """Test that context manager closes connection on exit."""
+        """Test that context manager closes cache on exit."""
         cache_path = tmp_path / "test_cache.duckdb"
 
         cache = EmbeddingCache(db_path=cache_path)
@@ -33,8 +35,8 @@ class TestEmbeddingCacheContextManager:
             # Connection should be available during context
             pass
 
-        # After context exit, connection should be closed
-        assert cache._conn is None
+        # After context exit, cache should be closed
+        assert cache._cache is None
 
     async def test_embedding_cache_context_manager_cleanup_on_exception(self, tmp_path: Path) -> None:
         """Test that context manager cleans up even on exception."""
@@ -56,37 +58,323 @@ class TestEmbeddingCacheContextManager:
         """Test that EmbeddingCache uses default path when not specified."""
         cache = EmbeddingCache()
 
-        # Should use default cache directory path
+        # Should use findingmodel legacy migration source and oidm-common runtime cache dir
         assert cache.db_path.name == "embeddings.duckdb"
+        assert cache.cache_dir.name == "embeddings.cache"
         assert "findingmodel" in str(cache.db_path)
+        assert "oidm-common" in str(cache.cache_dir)
 
 
 class TestEmbeddingCacheSchema:
-    """Tests for EmbeddingCache schema setup."""
+    """Tests for EmbeddingCache setup."""
 
-    async def test_setup_creates_schema(self, tmp_path: Path) -> None:
-        """Test that setup() creates the cache schema correctly."""
+    async def test_setup_creates_diskcache_directory(self, tmp_path: Path) -> None:
+        """Test that setup() creates diskcache directory correctly."""
         cache_path = tmp_path / "setup_test.duckdb"
         cache = EmbeddingCache(cache_path)
         await cache.setup()
 
-        assert cache_path.exists()
+        assert cache.cache_dir.exists()
+        assert cache._cache is not None
 
-        conn = cache._get_connection(read_only=True)
-        result = conn.execute(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_cache'"
-        ).fetchone()
-        assert result is not None
-        assert result[0] == 1
 
-        indexes = conn.execute(
-            "SELECT index_name FROM duckdb_indexes() WHERE table_name = 'embedding_cache'"
-        ).fetchall()
-        index_names = [row[0] for row in indexes]
-        assert "idx_cache_model" in index_names
-        assert "idx_cache_created" in index_names
+class TestEmbeddingCacheMigration:
+    """Tests for one-time migration from legacy DuckDB cache."""
 
+    async def test_setup_migrates_legacy_duckdb_with_default_model_dimensions(self, tmp_path: Path) -> None:
+        """Test migration from legacy duckdb cache into diskcache."""
+        cache_path = tmp_path / "legacy_cache.duckdb"
+        text = "legacy text"
+        text_hash = EmbeddingCache(db_path=cache_path)._hash_text(text)
+        embedding = [0.1] * 512
+
+        conn = duckdb.connect(str(cache_path), read_only=False)
+        conn.execute("""
+            CREATE TABLE embedding_cache (
+                text_hash TEXT PRIMARY KEY,
+                model TEXT NOT NULL,
+                dimensions INTEGER NOT NULL,
+                embedding FLOAT[] NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute(
+            """
+            INSERT INTO embedding_cache (text_hash, model, dimensions, embedding, created_at)
+            VALUES (?, 'old-model', 1536, ?, CURRENT_TIMESTAMP)
+            """,
+            (text_hash, embedding),
+        )
         conn.close()
+
+        cache = EmbeddingCache(db_path=cache_path)
+        await cache.setup()
+        result = await cache.get_embedding(text, "text-embedding-3-small", 512)
+        assert result is not None
+        assert len(result) == 512
+        assert result[0] == pytest.approx(0.1, abs=1e-6)
+        assert await cache.get_embedding(text, "old-model", 1536) is None
+
+    async def test_setup_migration_is_one_time(self, tmp_path: Path) -> None:
+        """Test migration marker prevents duplicate migrations."""
+        cache_path = tmp_path / "legacy_once.duckdb"
+
+        conn = duckdb.connect(str(cache_path), read_only=False)
+        conn.execute("""
+            CREATE TABLE embedding_cache (
+                text_hash TEXT PRIMARY KEY,
+                model TEXT NOT NULL,
+                dimensions INTEGER NOT NULL,
+                embedding FLOAT[] NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        first_text = "first legacy text"
+        first_hash = EmbeddingCache(db_path=cache_path)._hash_text(first_text)
+        conn.execute(
+            """
+            INSERT INTO embedding_cache (text_hash, model, dimensions, embedding, created_at)
+            VALUES (?, 'ignored', 42, ?, CURRENT_TIMESTAMP)
+            """,
+            (first_hash, [0.2] * 512),
+        )
+        conn.close()
+
+        first_cache = EmbeddingCache(db_path=cache_path)
+        await first_cache.setup()
+
+        conn = duckdb.connect(str(cache_path), read_only=False)
+        second_text = "second legacy text"
+        second_hash = EmbeddingCache(db_path=cache_path)._hash_text(second_text)
+        conn.execute(
+            """
+            INSERT INTO embedding_cache (text_hash, model, dimensions, embedding, created_at)
+            VALUES (?, 'ignored', 42, ?, CURRENT_TIMESTAMP)
+            """,
+            (second_hash, [0.3] * 512),
+        )
+        conn.close()
+
+        second_cache = EmbeddingCache(db_path=cache_path)
+        await second_cache.setup()
+
+        assert await second_cache.get_embedding(first_text, "text-embedding-3-small", 512) is not None
+        assert await second_cache.get_embedding(second_text, "text-embedding-3-small", 512) is None
+
+    async def test_setup_migrates_legacy_findingmodel_diskcache(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test migration from legacy findingmodel diskcache directory."""
+        from oidm_common.embeddings import cache as cache_module
+
+        legacy_root = tmp_path / "legacy_findingmodel"
+        legacy_dir = legacy_root / "embeddings.cache"
+        runtime_root = tmp_path / "runtime_oidm_common"
+        runtime_dir = runtime_root / "embeddings.cache"
+        legacy_duckdb = legacy_root / "embeddings.duckdb"
+
+        monkeypatch.setattr(cache_module, "_LEGACY_FINDINGMODEL_CACHE_ROOT", legacy_root)
+        monkeypatch.setattr(cache_module, "_LEGACY_DISKCACHE_DIR", legacy_dir)
+        monkeypatch.setattr(cache_module, "_DEFAULT_RUNTIME_CACHE_ROOT", runtime_root)
+        monkeypatch.setattr(cache_module, "_DEFAULT_DISKCACHE_DIR", runtime_dir)
+        monkeypatch.setattr(cache_module, "_DEFAULT_CACHE_PATH", legacy_duckdb)
+
+        from diskcache import Cache
+
+        text = "legacy diskcache text"
+        text_hash = EmbeddingCache()._hash_text(text)
+        key = EmbeddingCache()._build_key(text_hash, "text-embedding-3-small", 512)
+        source_cache = Cache(directory=str(legacy_dir), sqlite_journal_mode="wal")
+        source_cache.set(key, {"embedding": [0.25] * 512, "created_at": time.time() - 123})
+        source_cache.close()
+
+        cache = EmbeddingCache()
+        await cache.setup()
+        result = await cache.get_embedding(text, "text-embedding-3-small", 512)
+        assert result is not None
+        assert result[0] == pytest.approx(0.25, abs=1e-6)
+
+    async def test_setup_does_not_migrate_legacy_diskcache_into_non_default_cache(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that custom cache dirs do not auto-import global legacy diskcache."""
+        from oidm_common.embeddings import cache as cache_module
+
+        legacy_root = tmp_path / "legacy_findingmodel"
+        legacy_dir = legacy_root / "embeddings.cache"
+        runtime_root = tmp_path / "runtime_oidm_common"
+        runtime_dir = runtime_root / "embeddings.cache"
+        legacy_duckdb = legacy_root / "embeddings.duckdb"
+
+        monkeypatch.setattr(cache_module, "_LEGACY_FINDINGMODEL_CACHE_ROOT", legacy_root)
+        monkeypatch.setattr(cache_module, "_LEGACY_DISKCACHE_DIR", legacy_dir)
+        monkeypatch.setattr(cache_module, "_DEFAULT_RUNTIME_CACHE_ROOT", runtime_root)
+        monkeypatch.setattr(cache_module, "_DEFAULT_DISKCACHE_DIR", runtime_dir)
+        monkeypatch.setattr(cache_module, "_DEFAULT_CACHE_PATH", legacy_duckdb)
+
+        from diskcache import Cache
+
+        text = "legacy diskcache text"
+        text_hash = EmbeddingCache()._hash_text(text)
+        key = EmbeddingCache()._build_key(text_hash, "text-embedding-3-small", 512)
+        source_cache = Cache(directory=str(legacy_dir), sqlite_journal_mode="wal")
+        source_cache.set(key, {"embedding": [0.25] * 512, "created_at": time.time() - 123})
+        source_cache.close()
+
+        cache = EmbeddingCache(db_path=tmp_path / "custom.duckdb")
+        await cache.setup()
+
+        result = await cache.get_embedding(text, "text-embedding-3-small", 512)
+        assert result is None
+
+    async def test_import_duckdb_file_assume_defaults_upserts(self, tmp_path: Path) -> None:
+        """Test explicit duckdb import with defaults and upsert behavior."""
+        source_path = tmp_path / "source.duckdb"
+        text_hash = EmbeddingCache()._hash_text("import me")
+
+        conn = duckdb.connect(str(source_path), read_only=False)
+        conn.execute("""
+            CREATE TABLE embedding_cache (
+                text_hash TEXT PRIMARY KEY,
+                model TEXT NOT NULL,
+                dimensions INTEGER NOT NULL,
+                embedding FLOAT[] NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute(
+            """
+            INSERT INTO embedding_cache (text_hash, model, dimensions, embedding, created_at)
+            VALUES (?, 'legacy-model', 1536, ?, CURRENT_TIMESTAMP)
+            """,
+            (text_hash, [0.1] * 512),
+        )
+        conn.close()
+
+        cache = EmbeddingCache(db_path=tmp_path / "cache.duckdb")
+        await cache.setup()
+
+        await cache.store_embedding("import me", "text-embedding-3-small", 512, [0.9] * 512)
+        before = await cache.get_embedding("import me", "text-embedding-3-small", 512)
+        assert before is not None
+        assert before[0] == pytest.approx(0.9, abs=1e-6)
+
+        stats = await cache.import_duckdb_file(source_path, assume_defaults=True)
+
+        assert stats["total"] == 1
+        assert stats["written"] == 1
+        assert stats["new"] == 0
+        assert stats["updated"] == 1
+        assert stats["skipped"] == 0
+        after = await cache.get_embedding("import me", "text-embedding-3-small", 512)
+        assert after is not None
+        assert after[0] == pytest.approx(0.1, abs=1e-6)
+
+    async def test_import_duckdb_file_preserve_metadata(self, tmp_path: Path) -> None:
+        """Test explicit duckdb import preserving model/dimensions columns."""
+        source_path = tmp_path / "source_metadata.duckdb"
+        text_hash = EmbeddingCache()._hash_text("metadata row")
+
+        conn = duckdb.connect(str(source_path), read_only=False)
+        conn.execute("""
+            CREATE TABLE embedding_cache (
+                text_hash TEXT PRIMARY KEY,
+                model TEXT NOT NULL,
+                dimensions INTEGER NOT NULL,
+                embedding FLOAT[] NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute(
+            """
+            INSERT INTO embedding_cache (text_hash, model, dimensions, embedding, created_at)
+            VALUES (?, 'custom-model', 3, ?, CURRENT_TIMESTAMP)
+            """,
+            (text_hash, [0.2, 0.3, 0.4]),
+        )
+        conn.close()
+
+        cache = EmbeddingCache(db_path=tmp_path / "cache.duckdb")
+        stats = await cache.import_duckdb_file(source_path, assume_defaults=False)
+        assert stats["written"] == 1
+        assert stats["new"] == 1
+        assert stats["updated"] == 0
+        result = await cache.get_embedding("metadata row", "custom-model", 3)
+        assert result is not None
+        assert result[0] == pytest.approx(0.2, abs=1e-6)
+
+    async def test_import_cache_dir_upserts_existing_keys(self, tmp_path: Path) -> None:
+        """Test importing from another diskcache directory with upsert behavior."""
+        from diskcache import Cache
+
+        text = "shared text"
+        model = "text-embedding-3-small"
+        dimensions = 3
+        cache = EmbeddingCache(db_path=tmp_path / "target.duckdb")
+
+        await cache.store_embedding(text, model, dimensions, [0.9, 0.9, 0.9])
+
+        source_dir = tmp_path / "source.cache"
+        source_cache = Cache(directory=str(source_dir), sqlite_journal_mode="wal")
+        text_hash = cache._hash_text(text)
+        key = cache._build_key(text_hash, model, dimensions)
+        source_cache.set(key, {"embedding": [0.1, 0.2, 0.3], "created_at": time.time() - 10})
+        source_cache.close()
+
+        stats = await cache.import_cache_dir(source_dir, upsert=True)
+
+        assert stats == {"imported": 1, "written": 1, "new": 0, "updated": 1, "skipped": 0, "total": 1}
+        result = await cache.get_embedding(text, model, dimensions)
+        assert result is not None
+        assert result[0] == pytest.approx(0.1, abs=1e-6)
+
+    async def test_import_duckdb_file_strict_raises_when_cache_unavailable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Strict import should fail if cache setup cannot provide a writable cache."""
+
+        async def _broken_setup(self: EmbeddingCache) -> None:
+            self._cache = None
+            self._setup_complete = False
+
+        monkeypatch.setattr(EmbeddingCache, "setup", _broken_setup)
+        cache = EmbeddingCache(db_path=tmp_path / "cache.duckdb")
+
+        with pytest.raises(RuntimeError, match="Embedding cache unavailable"):
+            await cache.import_duckdb_file(tmp_path / "source.duckdb", strict=True)
+
+    async def test_import_cache_dir_strict_raises_when_cache_unavailable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Strict cache-to-cache import should fail if cache setup is unavailable."""
+
+        async def _broken_setup(self: EmbeddingCache) -> None:
+            self._cache = None
+            self._setup_complete = False
+
+        monkeypatch.setattr(EmbeddingCache, "setup", _broken_setup)
+        cache = EmbeddingCache(db_path=tmp_path / "cache.duckdb")
+
+        with pytest.raises(RuntimeError, match="Embedding cache unavailable"):
+            await cache.import_cache_dir(tmp_path / "source.cache", strict=True)
+
+    async def test_get_stats_reports_model_distribution(self, tmp_path: Path) -> None:
+        """Stats should report total keys, embedding keys, migration keys, and per-model counts."""
+        cache = EmbeddingCache(db_path=tmp_path / "stats.duckdb")
+        await cache.store_embedding("a", "model-a", 3, [0.1, 0.2, 0.3])
+        await cache.store_embedding("b", "model-a", 3, [0.4, 0.5, 0.6])
+        await cache.store_embedding("c", "model-b", 3, [0.7, 0.8, 0.9])
+
+        stats = await cache.get_stats(strict=True)
+
+        assert stats["cache_dir"] == str(cache.cache_dir)
+        assert stats["embedding_keys"] == 3
+        assert stats["migration_keys"] == 1
+        assert stats["total_keys"] == 4
+        assert stats["models"] == {"model-a": 2, "model-b": 1}
 
 
 class TestEmbeddingCacheStoreAndGet:
@@ -241,36 +529,45 @@ class TestEmbeddingCacheStoreAndGet:
             assert result2 is not None
             assert result1 == result2
 
-    async def test_cache_limitation_with_model_variations(self, tmp_path: Path) -> None:
-        """Test known limitation: same text with different model creates cache conflicts."""
+    async def test_cache_key_includes_model(self, tmp_path: Path) -> None:
+        """Test same text with different models are stored independently."""
         cache_path = tmp_path / "test_cache.duckdb"
         text = "model variation test"
-        model = "text-embedding-3-small"
-        dimensions = 512
-        embedding = [0.1] * dimensions
+        dimensions = 3
+        embedding_a = [0.1, 0.2, 0.3]
+        embedding_b = [0.4, 0.5, 0.6]
 
         async with EmbeddingCache(db_path=cache_path) as cache:
-            await cache.store_embedding(text, model, dimensions, embedding)
-            result = await cache.get_embedding(text, model, dimensions)
+            await cache.store_embedding(text, "model-a", dimensions, embedding_a)
+            await cache.store_embedding(text, "model-b", dimensions, embedding_b)
+            result_a = await cache.get_embedding(text, "model-a", dimensions)
+            result_b = await cache.get_embedding(text, "model-b", dimensions)
 
-            assert result is not None
-            assert result[0] == pytest.approx(0.1, abs=1e-6)
+            assert result_a is not None
+            assert result_b is not None
+            assert result_a[0] == pytest.approx(0.1, abs=1e-6)
+            assert result_b[0] == pytest.approx(0.4, abs=1e-6)
 
-    async def test_cache_limitation_with_dimension_variations(self, tmp_path: Path) -> None:
-        """Test known limitation: same text with different dimensions creates cache conflicts."""
+    async def test_cache_key_includes_dimensions(self, tmp_path: Path) -> None:
+        """Test same text/model with different dimensions are stored independently."""
         cache_path = tmp_path / "test_cache.duckdb"
         text = "dimension variation test"
         model = "text-embedding-3-small"
-        dimensions = 512
-        embedding = [0.1] * dimensions
+        embedding_3 = [0.1, 0.2, 0.3]
+        embedding_2 = [0.9, 0.8]
 
         async with EmbeddingCache(db_path=cache_path) as cache:
-            await cache.store_embedding(text, model, dimensions, embedding)
-            result = await cache.get_embedding(text, model, dimensions)
+            await cache.store_embedding(text, model, 3, embedding_3)
+            await cache.store_embedding(text, model, 2, embedding_2)
+            result_3 = await cache.get_embedding(text, model, 3)
+            result_2 = await cache.get_embedding(text, model, 2)
 
-            assert result is not None
-            assert len(result) == dimensions
-            assert result[0] == pytest.approx(0.1, abs=1e-6)
+            assert result_3 is not None
+            assert result_2 is not None
+            assert len(result_3) == 3
+            assert len(result_2) == 2
+            assert result_3[0] == pytest.approx(0.1, abs=1e-6)
+            assert result_2[0] == pytest.approx(0.9, abs=1e-6)
 
 
 class TestEmbeddingCacheBatchOperations:
@@ -469,7 +766,7 @@ class TestEmbeddingCacheClear:
             assert deleted_count == 0
 
     async def test_clear_cache_older_than_days(self, tmp_path: Path) -> None:
-        """Test that clear_cache(older_than_days=N) handles interval errors gracefully."""
+        """Test clearing entries older than N days."""
         cache_path = tmp_path / "test_cache.duckdb"
         model = "text-embedding-3-small"
         dimensions = 512
@@ -478,18 +775,18 @@ class TestEmbeddingCacheClear:
             await cache.store_embedding("text 1", model, dimensions, [0.1] * dimensions)
             await cache.store_embedding("text 2", model, dimensions, [0.2] * dimensions)
 
-            conn = cache._get_connection(read_only=False)
+            assert cache._cache is not None
             text_hash = cache._hash_text("text 1")
-            conn.execute(
-                "UPDATE embedding_cache SET created_at = CURRENT_TIMESTAMP - INTERVAL 10 DAY WHERE text_hash = ?",
-                (text_hash,),
-            )
-            conn.close()
+            key = cache._build_key(text_hash, model, dimensions)
+            payload = cache._cache.get(key)
+            assert isinstance(payload, dict)
+            payload["created_at"] = time.time() - (10 * 86400)
+            cache._cache.set(key, payload)
 
             deleted = await cache.clear_cache(older_than_days=5)
 
-            assert deleted == 0
-            assert await cache.get_embedding("text 1", model, dimensions) is not None
+            assert deleted == 1
+            assert await cache.get_embedding("text 1", model, dimensions) is None
             assert await cache.get_embedding("text 2", model, dimensions) is not None
 
     async def test_clear_cache_combined_filters(self, tmp_path: Path) -> None:
@@ -504,23 +801,25 @@ class TestEmbeddingCacheClear:
             await cache.store_embedding("text 2", model1, dimensions, [0.2] * dimensions)
             await cache.store_embedding("text 3", model2, dimensions, [0.3] * dimensions)
 
-            conn = cache._get_connection(read_only=False)
+            assert cache._cache is not None
             text_hash1 = cache._hash_text("text 1")
             text_hash3 = cache._hash_text("text 3")
-            conn.execute(
-                "UPDATE embedding_cache SET created_at = CURRENT_TIMESTAMP - INTERVAL 10 DAY WHERE text_hash = ?",
-                (text_hash1,),
-            )
-            conn.execute(
-                "UPDATE embedding_cache SET created_at = CURRENT_TIMESTAMP - INTERVAL 10 DAY WHERE text_hash = ?",
-                (text_hash3,),
-            )
-            conn.close()
+            key1 = cache._build_key(text_hash1, model1, dimensions)
+            key3 = cache._build_key(text_hash3, model2, dimensions)
+            payload1 = cache._cache.get(key1)
+            payload3 = cache._cache.get(key3)
+            assert isinstance(payload1, dict)
+            assert isinstance(payload3, dict)
+            old_timestamp = time.time() - (10 * 86400)
+            payload1["created_at"] = old_timestamp
+            payload3["created_at"] = old_timestamp
+            cache._cache.set(key1, payload1)
+            cache._cache.set(key3, payload3)
 
             deleted = await cache.clear_cache(model=model1, older_than_days=5)
 
-            assert deleted == 0
-            assert await cache.get_embedding("text 1", model1, dimensions) is not None
+            assert deleted == 1
+            assert await cache.get_embedding("text 1", model1, dimensions) is None
             assert await cache.get_embedding("text 2", model1, dimensions) is not None
             assert await cache.get_embedding("text 3", model2, dimensions) is not None
 
