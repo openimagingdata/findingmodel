@@ -1,26 +1,36 @@
 ---
 description: Orchestrate a complete release with interactive confirmations at every write step
-argument-hint: [version] (optional - extracts from pyproject.toml if not provided)
+argument-hint: <package1> <package2> ... (e.g., "oidm-common anatomic-locations oidm-maintenance")
 ---
 
 # Release Command
 
 **CRITICAL**: You MUST use the `date` command to get the current date. DO NOT assume you know the date.
 
+## Monorepo Context
+
+This is a monorepo with 5 packages under `packages/`. Releases typically involve **multiple packages at once**. The user specifies which packages to release. Key facts:
+
+- **Published to PyPI**: `oidm-common`, `findingmodel`, `anatomic-locations`, `findingmodel-ai`
+- **NOT published to PyPI**: `oidm-maintenance` (internal tool, but still gets version bumps and tags)
+- **Dependency order**: `oidm-common` → `anatomic-locations`, `findingmodel` → `findingmodel-ai`, `oidm-maintenance`
+- **Tag format**: `<package>-v<version>` (e.g., `oidm-common-v0.2.6`, `anatomic-locations-v0.2.5`)
+- **One combined GitHub release** per batch (not one per package)
+
 ## Process Overview
 
 Fail-fast ordering: PyPI publish happens BEFORE git tag/GitHub release to avoid inconsistent state.
 
 1. **Pre-flight checks** - Verify clean git, on dev branch (assumes tests/checks already run)
-2. **Version & CHANGELOG** - Extract version, update CHANGELOG with current date
+2. **Version & CHANGELOG** - Bump versions in pyproject.toml files, update dependency floors, `uv lock`
 3. **Commit to dev** (local only, not pushed)
 4. **Merge to main** (local only, not pushed)
-5. **Build packages** - Create wheel and tarball
+5. **Build packages** - Create wheels and tarballs for PyPI-published packages only
 6. **Verify artifacts** - Show checksums and sizes
-7. **Publish to PyPI** - Most likely to fail, do this FIRST before any git operations
-8. **Create git tag** (local only)
-9. **Push main + tag** - Now safe because PyPI succeeded
-10. **GitHub release** - Use the pushed tag, include CHANGELOG notes and artifacts
+7. **Publish to PyPI** - Publish in dependency order; most likely to fail, do FIRST
+8. **Create git tags** - One per package (local only)
+9. **Push main + tags + dev**
+10. **GitHub release** - Single combined release with all packages
 11. **Cleanup** - Return to dev, merge main back
 
 ## Instructions for Claude
@@ -33,154 +43,133 @@ Fail-fast ordering: PyPI publish happens BEFORE git tag/GitHub release to avoid 
 
 ### Step 1: Pre-flight Checks
 
-Verify clean state (assumes tests/checks already run):
-
 ```bash
 date +%Y-%m-%d                           # Get current date
 git branch --show-current                # Must be 'dev'
-git status --porcelain                   # Must be clean
+git status --porcelain                   # Must be clean (untracked OK)
 git fetch origin
-git rev-list HEAD...origin/dev --count   # Must be 0 (up to date)
+git rev-list HEAD...origin/dev --count   # Should be 0 (up to date)
 ```
 
-If not clean or not on dev, stop with instructions to fix.
+If local is ahead of origin, push dev first. If not clean or not on dev, stop with instructions to fix.
 
 ### Step 2: Version & CHANGELOG
 
-Extract version from pyproject.toml. If `$1` provided, verify it matches.
+For each package being released:
+1. Bump `version` in `packages/<pkg>/pyproject.toml`
+2. If a package depends on another package being released, bump the dependency floor (e.g., `oidm-common>=0.2.6`)
+3. Run `uv lock` to update the lockfile
 
-Get current date: `date +%Y-%m-%d`
+Read `CHANGELOG.md` (root level, single file for all packages). Verify entries exist for each package with the target version. If entries don't have dates, add the current date.
 
-Read CHANGELOG.md, find section for this version. Show user:
+Show user a summary table:
 ```
-Current version: X.Y.Z
-CHANGELOG preview:
-## [X.Y.Z]
-...
+| Package            | Old   | New   | PyPI? |
+|--------------------|-------|-------|-------|
+| oidm-common        | 0.2.5 | 0.2.6 | Yes   |
+| anatomic-locations | 0.2.4 | 0.2.5 | Yes   |
+| oidm-maintenance   | 0.2.3 | 0.2.4 | No    |
 
-Will update to: ## [X.Y.Z] - YYYY-MM-DD
-
-Proceed?
+Dependency floor changes:
+- oidm-maintenance: oidm-common>=0.2.2 → >=0.2.6
 ```
-
-If confirmed, update CHANGELOG.md. Extract full release notes (from `## [X.Y.Z]` until next `## [`).
 
 ### Step 3: Commit to Dev (Local)
 
-Show: `git status --short`
-
-Ask: "Commit version & CHANGELOG to dev (local only, not pushed)?"
-
 ```bash
-git add pyproject.toml CHANGELOG.md
-git commit -m "Prepare release vX.Y.Z"
+git add packages/*/pyproject.toml CHANGELOG.md uv.lock
+git commit -m "Prepare release: pkg1-X.Y.Z, pkg2-X.Y.Z, ..."
 ```
-
-**Note**: Not pushing yet - will push after PyPI succeeds.
 
 ### Step 4: Merge to Main (Local)
-
-Show:
-```
-About to (LOCAL ONLY):
-1. Switch to main
-2. Pull latest origin/main
-3. Merge dev (--no-ff)
-
-NOT pushing yet. Proceed?
-```
 
 ```bash
 git checkout main
 git pull origin main
-git merge --no-ff dev -m "Merge dev for release vX.Y.Z"
+git merge --no-ff dev -m "Merge dev: pkg1-X.Y.Z, pkg2-X.Y.Z, ..."
 ```
 
 ### Step 5: Build Packages
 
+Only build packages that will be published to PyPI:
 ```bash
 rm -rf dist/
-uv build
-ls -lh dist/
+uv build --package oidm-common
+uv build --package anatomic-locations
+# etc. — skip oidm-maintenance
 ```
-
-Show: "Built packages in dist/"
 
 ### Step 6: Verify Artifacts
 
-Calculate checksums and show summary:
-```bash
-sha256sum dist/findingmodel-X.Y.Z-py3-none-any.whl
-sha256sum dist/findingmodel-X.Y.Z.tar.gz
-```
-
-Show user:
-```
-Artifacts ready for release:
-- findingmodel-X.Y.Z-py3-none-any.whl (SIZE bytes, SHA256: ...)
-- findingmodel-X.Y.Z.tar.gz (SIZE bytes, SHA256: ...)
-
-Artifacts look correct?
-```
+Show checksums and sizes for all built artifacts.
 
 ### Step 7: Publish to PyPI (FIRST!)
 
-**CRITICAL**: Do this BEFORE git tag/GitHub release. If this fails, we can rollback local commits.
-
-Show:
-```
-About to publish to PyPI.
-Requires UV_PUBLISH_TOKEN from ../.env
-
-This is the FIRST public action. If it fails, nothing is pushed to git yet.
-
-Proceed?
-```
+**CRITICAL**: Publish in dependency order (e.g., oidm-common before anatomic-locations).
 
 ```bash
-# Source token
 export $(grep UV_PUBLISH_TOKEN ../.env | xargs)
-if [ -z "$UV_PUBLISH_TOKEN" ]; then
-  echo "ERROR: UV_PUBLISH_TOKEN not found in ../.env"
-  exit 1
-fi
-uv publish
+uv publish dist/oidm_common-*.tar.gz dist/oidm_common-*.whl
+uv publish dist/anatomic_locations-*.tar.gz dist/anatomic_locations-*.whl
+# etc.
 ```
 
-**On failure**: Tell user PyPI publish failed. Nothing pushed yet. Can `git reset --hard` to rollback.
+**On failure**: Nothing pushed yet. Can `git reset --hard` to rollback.
 
-### Step 8: Create Git Tag (Local)
+### Step 8: Create Git Tags (Local)
 
-PyPI succeeded! Now safe to tag.
-
+One tag per package, format `<package>-v<version>`:
 ```bash
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git tag -a oidm-common-v0.2.6 -m "Release oidm-common 0.2.6"
+git tag -a anatomic-locations-v0.2.5 -m "Release anatomic-locations 0.2.5"
+git tag -a oidm-maintenance-v0.2.4 -m "Release oidm-maintenance 0.2.4"
 ```
 
-### Step 9: Push Main + Tag
+### Step 9: Push Main + Tags + Dev
 
 ```bash
 git push origin main
-git push origin vX.Y.Z
-git push origin dev  # Push the prep commit too
+git push origin <tag1> <tag2> <tag3>
+git push origin dev
 ```
 
 ### Step 10: Create GitHub Release
 
-Show:
-```
-Creating GitHub release vX.Y.Z with CHANGELOG notes and artifacts.
+**ONE combined release** for all packages. Use any of the new tags (typically the last one alphabetically). The title lists all packages. The body has `## package version` sections pulled from CHANGELOG.md.
 
-Proceed?
-```
+**Title format**: `pkg1 X.Y.Z / pkg2 X.Y.Z / pkg3 X.Y.Z`
 
-Create temp file with CHANGELOG content, then:
+**Body format**: Each package gets a `## package version` header followed by its CHANGELOG sections.
+
+**Attach all built artifacts** (wheels + tarballs for PyPI-published packages).
+
 ```bash
-gh release create vX.Y.Z \
-  --title "vX.Y.Z" \
-  --notes-file /tmp/release_notes.md \
-  dist/findingmodel-X.Y.Z-py3-none-any.whl \
-  dist/findingmodel-X.Y.Z.tar.gz
+gh release create oidm-maintenance-v0.2.4 \
+  --title "oidm-common 0.2.6 / anatomic-locations 0.2.5 / oidm-maintenance 0.2.4" \
+  --notes "$(cat <<'EOF'
+## oidm-common 0.2.6
+
+### Added
+
+- `create_fts_index()` now accepts an optional `ignore` regex for DuckDB FTS tokenization.
+
+## anatomic-locations 0.2.5
+
+### Changed
+
+- Lowered semantic search minimum similarity threshold from `0.75` to `0.60`.
+
+## oidm-maintenance 0.2.4
+
+### Changed
+
+- Anatomic DB build now preserves alphanumeric FTS tokens (for terms like `T12` and `C7/T1`).
+EOF
+)" \
+  dist/oidm_common-0.2.6-py3-none-any.whl \
+  dist/oidm_common-0.2.6.tar.gz \
+  dist/anatomic_locations-0.2.5-py3-none-any.whl \
+  dist/anatomic_locations-0.2.5.tar.gz
 ```
 
 ### Step 11: Cleanup - Return to Dev
@@ -194,17 +183,16 @@ git push origin dev
 ### Step 12: Summary
 
 ```
-✅ Release vX.Y.Z Complete!
+Release complete!
 
-🔗 Links:
-   - PyPI: https://pypi.org/project/findingmodel/X.Y.Z/
-   - GitHub: https://github.com/talkasab/findingmodel/releases/tag/vX.Y.Z
+Published to PyPI:
+  - oidm-common 0.2.6: https://pypi.org/project/oidm-common/0.2.6/
+  - anatomic-locations 0.2.5: https://pypi.org/project/anatomic-locations/0.2.5/
 
-📦 Artifacts published:
-   - findingmodel-X.Y.Z-py3-none-any.whl (SHA256: ...)
-   - findingmodel-X.Y.Z.tar.gz (SHA256: ...)
+GitHub release:
+  - https://github.com/openimagingdata/findingmodel/releases/tag/<tag>
 
-🎉 Release complete!
+Tags created: oidm-common-v0.2.6, anatomic-locations-v0.2.5, oidm-maintenance-v0.2.4
 ```
 
 ## Error Recovery
@@ -216,7 +204,7 @@ git push origin dev
 
 **GitHub release failure** (Step 10):
 - PyPI already published (can't undo)
-- Tag pushed
+- Tags pushed
 - Recovery: Create release manually via GitHub UI
 
 **General errors**:
