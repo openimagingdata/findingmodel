@@ -76,6 +76,7 @@ findingmodel search "pneumothorax"  # Search finding models
 # AI tools
 findingmodel-ai make-info "pneumothorax"     # Generate finding info
 findingmodel-ai make-stub-model "finding"    # Create model template
+findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT  # BioOntology lookup (needs BIOONTOLOGY_API_KEY)
 
 # Anatomic locations
 anatomic-locations search "knee joint"       # Search locations

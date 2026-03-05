@@ -9,6 +9,9 @@ from rich.console import Console
 from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
 from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
 from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
+from findingmodel_ai.config import settings
+
+console = Console()
 
 
 @click.group()
@@ -16,7 +19,7 @@ def cli() -> None:
     pass
 
 
-def print_info_truncate_detail(console: Console, finding_info: FindingInfo) -> None:
+def print_info_truncate_detail(finding_info: FindingInfo) -> None:
     out = finding_info.model_dump()
     if out.get("detail") and len(out["detail"]) > 100:
         out["detail"] = out["detail"][0:100] + "..."
@@ -31,8 +34,6 @@ def print_info_truncate_detail(console: Console, finding_info: FindingInfo) -> N
 )
 def make_info(finding_name: str, detailed: bool, output: Path | None) -> None:
     """Generate description/synonyms and more details/citations for a finding name."""
-
-    console = Console()
 
     async def _do_make_info(finding_name: str, detailed: bool, output: Path | None) -> None:
         with console.status("[bold green]Getting description and synonyms..."):
@@ -50,7 +51,7 @@ def make_info(finding_name: str, detailed: bool, output: Path | None) -> None:
                 f.write(described_finding.model_dump_json(indent=2, exclude_none=True))
             console.print(f"[green]Saved finding info to [yellow]{output}")
         else:
-            print_info_truncate_detail(console, described_finding)
+            print_info_truncate_detail(described_finding)
 
     asyncio.run(_do_make_info(finding_name, detailed, output))
 
@@ -69,15 +70,12 @@ def make_stub_model(
 ) -> None:
     """Generate a simple finding model object (presence and change elements only) from a finding name."""
 
-    console = Console()
-
     async def _do_make_stub_model(
         finding_name: str, tags: list[str], with_codes: bool, with_ids: bool, source: str | None, output: Path | None
     ) -> None:
         from findingmodel.create_stub import create_model_stub_from_info
 
         console.print(f"[gray] Getting stub model for [yellow bold]{finding_name}")
-        # Get it from the database if it's already there
         with console.status("[bold green]Getting description and synonyms..."):
             described_finding = await create_info_from_name(finding_name)
         assert isinstance(described_finding, FindingInfo)
@@ -103,7 +101,6 @@ def make_stub_model(
 
 
 @cli.command()
-# Indicate that the argument should be a filename
 @click.argument("finding_path", type=click.Path(exists=True, path_type=Path))
 @click.option(
     "--output", "-o", type=click.Path(exists=False, dir_okay=True), help="Output file to save the finding info."
@@ -113,16 +110,13 @@ def make_stub_model(
 def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, output: Path | None) -> None:
     """Convert markdown file to finding model format."""
 
-    console = Console()
-
     async def _do_markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, output: Path | None) -> None:
         finding_name = finding_path.stem.replace("_", " ").replace("-", " ")
         with console.status("[bold green]Getting description..."):
             described_finding = await create_info_from_name(finding_name)
-        print_info_truncate_detail(console, described_finding)
+        print_info_truncate_detail(described_finding)
         assert isinstance(described_finding, FindingInfo), "Finding info not returned."
 
-        # Read markdown file
         markdown_text = finding_path.read_text()
 
         with console.status("Creating model from Markdown description..."):
@@ -143,6 +137,78 @@ def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, outpu
             console.print_json(model.model_dump_json(indent=2, exclude_none=True))
 
     asyncio.run(_do_markdown_to_fm(finding_path, with_ids, source, output))
+
+
+@cli.group()
+def ontology() -> None:
+    """Search medical ontologies via BioOntology.org."""
+
+
+@ontology.command("search")
+@click.argument("query")
+@click.option(
+    "--ontology",
+    "-o",
+    multiple=True,
+    metavar="CODE",
+    help="Ontology to search (repeatable; default: SNOMEDCT, RADLEX, LOINC).",
+)
+@click.option("--max-results", "-n", default=20, show_default=True, help="Maximum number of results.")
+@click.option("--exact", is_flag=True, help="Require exact match only.")
+@click.option(
+    "--semantic-type",
+    "-t",
+    multiple=True,
+    metavar="TYPE",
+    help="UMLS semantic type to filter by (repeatable; e.g. T047 for diseases).",
+)
+def ontology_search(
+    query: str, ontology: tuple[str, ...], max_results: int, exact: bool, semantic_type: tuple[str, ...]
+) -> None:
+    """Search medical ontologies for QUERY via BioOntology.org."""
+    from rich.table import Table
+
+    from findingmodel_ai.search.bioontology import BioOntologySearchClient
+
+    if not settings.bioontology_api_key:
+        console.print("[red]Error:[/red] BIOONTOLOGY_API_KEY is not set. Add it to .env or the environment.")
+        raise SystemExit(1)
+
+    ontologies = list(ontology) or None  # None → client uses its defaults
+    semantic_types = list(semantic_type) or None  # None → no semantic type filter
+
+    async def _run() -> list:
+        with console.status(f"[bold green]Searching BioOntology for {query!r}..."):
+            async with BioOntologySearchClient() as client:
+                return await client.search_all_pages(
+                    query=query,
+                    ontologies=ontologies,
+                    max_results=max_results,
+                    require_exact_match=exact,
+                    semantic_types=semantic_types,
+                )
+
+    results = asyncio.run(_run())
+
+    if not results:
+        console.print(f"No results for [bold]{query!r}[/bold].")
+        return
+
+    table = Table(title=f"BioOntology: {query!r}", show_lines=True)
+    table.add_column("Ontology", style="bold cyan", no_wrap=True)
+    table.add_column("Code", no_wrap=True)
+    table.add_column("Label", style="green")
+    table.add_column("Definition")
+
+    for r in results:
+        code = r.concept_id.split("/")[-1]
+        defn = r.definition or ""
+        if len(defn) > 100:
+            defn = defn[:97] + "..."
+        table.add_row(r.ontology, code, r.pref_label, defn)
+
+    console.print(table)
+    console.print(f"[dim]{len(results)} result(s)[/dim]")
 
 
 if __name__ == "__main__":

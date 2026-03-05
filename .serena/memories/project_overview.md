@@ -127,6 +127,8 @@ anatomic-locations stats                 # Show anatomic DB stats
 findingmodel-ai make-info "pneumothorax"      # Generate FindingInfo from name
 findingmodel-ai make-stub-model "finding"     # Generate stub model
 findingmodel-ai markdown-to-fm file.md        # Convert markdown to model
+findingmodel-ai ontology search QUERY         # Search medical ontologies via BioOntology.org
+  # Options: --ontology CODE (repeatable), --max-results N, --exact, --semantic-type TYPE (repeatable)
 
 # Maintainer commands (oidm-maintenance)
 oidm-maintain findingmodel build    # Build findingmodel database

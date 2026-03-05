@@ -44,9 +44,8 @@ BioOntologySearchResult:
 
 ### Integration with Protocol
 - Implements OntologySearchProtocol interface
-- Works seamlessly with LanceDBOntologySearchClient
-- Automatic parallel execution when both configured
-- Results merged and deduplicated
+- Can be used interchangeably with other OntologySearchProtocol backends
+- Note: References to "LanceDBOntologySearchClient" in comments are stale; no such class exists in the codebase
 
 ## Performance Characteristics
 - ~2-5 seconds for single page (50 results)

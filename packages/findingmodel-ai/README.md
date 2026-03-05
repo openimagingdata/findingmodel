@@ -48,6 +48,9 @@ findingmodel-ai make-stub-model "pneumothorax"
 
 # Convert Markdown to finding model
 findingmodel-ai markdown-to-fm outline.md
+
+# Search BioOntology.org for ontology concepts
+findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results 10
 ```
 
 ## Tools

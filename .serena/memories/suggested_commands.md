@@ -36,6 +36,8 @@ uv run findingmodel-ai --help                    # Show all commands
 uv run findingmodel-ai make-info "finding"       # Generate finding info
 uv run findingmodel-ai make-stub-model "finding" # Create basic model
 uv run findingmodel-ai markdown-to-fm input.md   # Convert markdown to model
+uv run findingmodel-ai ontology search "pleural effusion"  # Search BioOntology.org
+uv run findingmodel-ai ontology search "disease" --ontology SNOMEDCT --semantic-type T047
 ```
 
 ### anatomic-locations

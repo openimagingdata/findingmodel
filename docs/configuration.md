@@ -353,6 +353,12 @@ Required for searching 800+ medical ontologies (SNOMED-CT, ICD-10, LOINC, etc.) 
 BIOONTOLOGY_API_KEY=...
 ```
 
+Example CLI usage:
+
+```bash
+findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results 10
+```
+
 > **Note:** The DuckDB-based ontology search works without this key. BioOntology provides additional coverage.
 
 ## Environment Variables Reference
