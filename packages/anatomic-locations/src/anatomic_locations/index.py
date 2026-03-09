@@ -6,14 +6,16 @@ All returned AnatomicLocation objects are automatically bound to the index.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
 import duckdb
 from asyncer import asyncify
+from loguru import logger
 from oidm_common.duckdb import ReadOnlyDuckDBIndex, rrf_fusion, setup_duckdb_connection
-from oidm_common.embeddings import get_embedding
+from oidm_common.embeddings import get_embedding, get_embeddings_batch
 
 from anatomic_locations.models import (
     AnatomicLocation,
@@ -73,6 +75,9 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         from anatomic_locations.config import ensure_anatomic_db
 
         super().__init__(db_path, ensure_db=ensure_anatomic_db)
+        self._db_embedding_profile: tuple[str, str, int] | None = None
+        self._db_embedding_dimensions: int | None = None
+        self._embedding_mismatch_warned = False
 
     # =========================================================================
     # Core Lookups (all methods auto-bind returned objects)
@@ -168,6 +173,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             List of matching AnatomicLocation objects sorted by relevance
         """
         conn = self._ensure_connection()
+        self._require_openai_key_if_needed(conn)
 
         # Check for exact matches first (including synonyms) - wrap typed sync helper
         exact_ids = await asyncify(self._find_exact_match)(conn, query, region, sided_filter, include_synonyms=True)
@@ -181,16 +187,17 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         from anatomic_locations.config import get_settings as get_anatomic_settings
 
         anatomic_settings = get_anatomic_settings()
+        provider, model, dimensions = self._get_db_embedding_profile(conn)
         api_key = anatomic_settings.openai_api_key.get_secret_value() if anatomic_settings.openai_api_key else ""
-        embedding = (
-            await get_embedding(
-                query,
-                api_key=api_key,
-                model=anatomic_settings.openai_embedding_model,
-                dimensions=anatomic_settings.openai_embedding_dimensions,
-            )
-            if api_key
-            else None
+        if provider.strip().lower() == "openai" and not api_key.strip():
+            raise RuntimeError("This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set.")
+        embedding = await get_embedding(
+            query,
+            api_key=api_key,
+            provider=provider,
+            model=model,
+            dimensions=dimensions,
+            embed_mode="query",
         )
         semantic_results: list[tuple[str, float]] = []
         if embedding is not None:
@@ -238,26 +245,24 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
             raise ValueError("All queries are empty or whitespace-only")
 
         conn = self._ensure_connection()
+        self._require_openai_key_if_needed(conn)
 
         # Batch embed all queries in a single API call
         from anatomic_locations.config import get_settings as get_anatomic_settings
 
         anatomic_settings = get_anatomic_settings()
+        provider, model, dimensions = self._get_db_embedding_profile(conn)
         api_key = anatomic_settings.openai_api_key.get_secret_value() if anatomic_settings.openai_api_key else ""
 
-        embeddings: list[list[float] | None] = []
-        if api_key:
-            from oidm_common.embeddings import get_embeddings_batch
-
-            raw_embeddings = await get_embeddings_batch(
-                valid_queries,
-                api_key=api_key,
-                model=anatomic_settings.openai_embedding_model,
-                dimensions=anatomic_settings.openai_embedding_dimensions,
-            )
-            embeddings = list(raw_embeddings)
-        else:
-            embeddings = [None] * len(valid_queries)
+        raw_embeddings = await get_embeddings_batch(
+            valid_queries,
+            api_key=api_key,
+            provider=provider,
+            model=model,
+            dimensions=dimensions,
+            embed_mode="query",
+        )
+        embeddings: list[list[float] | None] = list(raw_embeddings)
 
         results: dict[str, list[AnatomicLocation]] = {}
         for query, embedding in zip(valid_queries, embeddings, strict=True):
@@ -593,11 +598,10 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         where_clause = " AND ".join(where_conditions)
         params.append(limit)
 
-        # Get dimensions from config
-        from anatomic_locations.config import get_settings
-
-        settings = get_settings()
-        dimensions = settings.openai_embedding_dimensions
+        dimensions = self._get_db_embedding_dimensions(conn)
+        if len(embedding) != dimensions:
+            self._warn_embedding_mismatch_once(len(embedding), dimensions)
+            return []
 
         sql = f"""
             SELECT id, array_cosine_distance(vector, ?::FLOAT[{dimensions}]) as distance
@@ -609,6 +613,70 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
 
         # Filter by min similarity and convert distance to similarity
         return [(str(r[0]), 1.0 - float(r[1])) for r in rows if float(r[1]) <= max_distance]
+
+    def _require_openai_key_if_needed(self, conn: duckdb.DuckDBPyConnection) -> None:
+        provider, _model, _dimensions = self._get_db_embedding_profile(conn)
+        if provider.strip().lower() != "openai":
+            return
+        from anatomic_locations.config import get_settings
+
+        settings = get_settings()
+        api_key = settings.openai_api_key.get_secret_value().strip() if settings.openai_api_key else ""
+        if not api_key:
+            raise RuntimeError("This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set.")
+
+    def _get_db_embedding_profile(self, conn: duckdb.DuckDBPyConnection) -> tuple[str, str, int]:
+        if self._db_embedding_profile is not None:
+            return self._db_embedding_profile
+
+        from anatomic_locations.config import get_settings
+
+        settings = get_settings()
+        provider = settings.embedding_provider
+        model = settings.embedding_model
+        dimensions = settings.embedding_dimensions
+
+        try:
+            has_profile = conn.execute(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_profile'"
+            ).fetchone()
+            if has_profile and int(has_profile[0]) > 0:
+                row = conn.execute("SELECT provider, model, dimensions FROM embedding_profile LIMIT 1").fetchone()
+                if row and isinstance(row[0], str) and isinstance(row[1], str) and isinstance(row[2], int):
+                    self._db_embedding_profile = (row[0], row[1], int(row[2]))
+                    self._db_embedding_dimensions = int(row[2])
+                    return self._db_embedding_profile
+        except Exception:
+            pass
+
+        row = self._execute_one(
+            conn,
+            (
+                "SELECT data_type FROM information_schema.columns "
+                "WHERE table_name = 'anatomic_locations' AND column_name = 'vector' LIMIT 1"
+            ),
+        )
+        if row and isinstance(row.get("data_type"), str):
+            match = re.search(r"FLOAT\[(\d+)\]", row["data_type"].upper())
+            if match is not None:
+                dimensions = int(match.group(1))
+
+        self._db_embedding_profile = (provider, model, dimensions)
+        self._db_embedding_dimensions = dimensions
+        return self._db_embedding_profile
+
+    def _get_db_embedding_dimensions(self, conn: duckdb.DuckDBPyConnection) -> int:
+        if self._db_embedding_dimensions is not None:
+            return self._db_embedding_dimensions
+        return self._get_db_embedding_profile(conn)[2]
+
+    def _warn_embedding_mismatch_once(self, actual: int, expected: int) -> None:
+        if self._embedding_mismatch_warned:
+            return
+        self._embedding_mismatch_warned = True
+        logger.warning(
+            f"Query embedding dimension mismatch (got {actual}, expected {expected}). Falling back to FTS-only results."
+        )
 
     def _apply_rrf_fusion(
         self,

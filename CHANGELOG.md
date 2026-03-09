@@ -27,6 +27,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Anthropic Opus 4.6+ now uses adaptive thinking instead of deprecated `budget_tokens`.
 - `gateway/google-vertex` model specs now correctly receive Google reasoning settings.
 
+### oidm-common
+
+#### Added
+
+- Local embedding provider support using FastEmbed (`fastembed`, model `BAAI/bge-small-en-v1.5`, 384 dims).
+
+#### Changed
+
+- Database artifact resolution is profile-aware (`openai` vs `local`) and uses explicit profile artifacts (`__openai`, `__local`).
+- Downloaded profile artifacts are cached side-by-side so OpenAI/local DB files are kept separate.
+
+#### Fixed
+
+- Embedding cache now falls back to a writable temp location if the default cache path is unavailable.
+- FastEmbed model artifacts now default to a stable platform cache directory (`oidm-common/fastembed`).
+- Explicit custom DB URL/hash downloads are normalized to the correct local profile cache file using DB metadata.
+
+### findingmodel
+
+#### Added
+
+- Runtime embedding profile setting: `FINDINGMODEL_EMBEDDING_PROFILE` (`auto`, `openai`, or `local`).
+
+#### Changed
+
+- `auto` profile now uses OpenAI embeddings when an API key is present, otherwise local FastEmbed embeddings.
+- Query embedding provider/model/dimensions are now taken from the selected DB file metadata.
+- If the selected DB is OpenAI-embedded and no OpenAI key is configured, search now fails immediately with a clear configuration error.
+- Removed obsolete runtime embedding env vars and obsolete DB alias env vars.
+
+### anatomic-locations
+
+#### Added
+
+- Runtime embedding profile setting: `ANATOMIC_EMBEDDING_PROFILE` (`auto`, `openai`, or `local`).
+
+#### Changed
+
+- `auto` profile now uses OpenAI embeddings when an API key is present, otherwise local FastEmbed embeddings.
+- Query embedding provider/model/dimensions are now taken from the selected DB file metadata.
+- If the selected DB is OpenAI-embedded and no OpenAI key is configured, search now fails immediately with a clear configuration error.
+- Removed obsolete runtime embedding env vars.
+
 ## findingmodel 1.0.4 - 2026-03-04
 
 ### Added

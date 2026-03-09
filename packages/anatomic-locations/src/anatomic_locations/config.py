@@ -3,10 +3,34 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Final
 
 from oidm_common.distribution import ensure_db_file
-from pydantic import AliasChoices, Field, SecretStr
+from oidm_common.distribution.profiles import read_embedding_profile_from_db
+from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class ConfigurationError(RuntimeError):
+    """Raised when runtime configuration is incompatible with selected database."""
+
+
+_RUNTIME_EMBEDDING_PROFILES: Final[dict[str, tuple[str, str, int]]] = {
+    "openai": ("openai", "text-embedding-3-small", 512),
+    "local": ("fastembed", "BAAI/bge-small-en-v1.5", 384),
+}
+
+
+def _supported_profile_help(env_prefix: str) -> str:
+    openai_provider, openai_model, openai_dims = _RUNTIME_EMBEDDING_PROFILES["openai"]
+    local_provider, local_model, local_dims = _RUNTIME_EMBEDDING_PROFILES["local"]
+    return (
+        "Supported runtime embedding profiles are: "
+        "auto (default, resolves to openai when OpenAI API key is set, else local), "
+        f"openai ({openai_provider}/{openai_model}/{openai_dims}) and "
+        f"local ({local_provider}/{local_model}/{local_dims}). "
+        f"Set {env_prefix}_EMBEDDING_PROFILE to one of those values."
+    )
 
 
 class AnatomicLocationSettings(BaseSettings):
@@ -18,10 +42,9 @@ class AnatomicLocationSettings(BaseSettings):
     - ANATOMIC_REMOTE_DB_HASH: Expected hash for database file (format: "sha256:...")
     - ANATOMIC_MANIFEST_URL: URL to JSON manifest for database versions
 
-    Embedding configuration uses AliasChoices to fall back to standard env vars:
-    - ANATOMIC_OPENAI_API_KEY or OPENAI_API_KEY: OpenAI API key for embeddings (enables semantic search)
-    - ANATOMIC_OPENAI_EMBEDDING_MODEL or OPENAI_EMBEDDING_MODEL: model (default: text-embedding-3-small)
-    - ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS or OPENAI_EMBEDDING_DIMENSIONS: dimensions (default: 512)
+    Embedding configuration:
+    - ANATOMIC_EMBEDDING_PROFILE: runtime embedding profile (`auto`, `openai`, or `local`)
+    - ANATOMIC_OPENAI_API_KEY or OPENAI_API_KEY: OpenAI API key (for provider=openai)
     """
 
     model_config = SettingsConfigDict(env_prefix="ANATOMIC_", env_file=".env", extra="ignore")
@@ -37,14 +60,46 @@ class AnatomicLocationSettings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("ANATOMIC_OPENAI_API_KEY", "OPENAI_API_KEY"),
     )
-    openai_embedding_model: str = Field(
-        default="text-embedding-3-small",
-        validation_alias=AliasChoices("ANATOMIC_OPENAI_EMBEDDING_MODEL", "OPENAI_EMBEDDING_MODEL"),
+    embedding_profile: str = Field(
+        default="auto",
+        validation_alias=AliasChoices("ANATOMIC_EMBEDDING_PROFILE"),
     )
-    openai_embedding_dimensions: int = Field(
-        default=512,
-        validation_alias=AliasChoices("ANATOMIC_OPENAI_EMBEDDING_DIMENSIONS", "OPENAI_EMBEDDING_DIMENSIONS"),
-    )
+
+    @model_validator(mode="after")
+    def _validate_embedding_profile(self) -> AnatomicLocationSettings:
+        requested_profile = self.embedding_profile.strip().lower()
+        if requested_profile not in {"auto", *tuple(_RUNTIME_EMBEDDING_PROFILES.keys())}:
+            raise ValueError(
+                f"Invalid ANATOMIC_EMBEDDING_PROFILE: {self.embedding_profile!r}. {_supported_profile_help('ANATOMIC')}"
+            )
+        if requested_profile == "auto":
+            openai_key = self.openai_api_key.get_secret_value().strip() if self.openai_api_key else ""
+            self.embedding_profile = "openai" if openai_key else "local"
+        else:
+            self.embedding_profile = requested_profile
+        return self
+
+    @property
+    def embedding_provider(self) -> str:
+        return _RUNTIME_EMBEDDING_PROFILES[self.embedding_profile][0]
+
+    @property
+    def embedding_model(self) -> str:
+        return _RUNTIME_EMBEDDING_PROFILES[self.embedding_profile][1]
+
+    @property
+    def embedding_dimensions(self) -> int:
+        return _RUNTIME_EMBEDDING_PROFILES[self.embedding_profile][2]
+
+    @property
+    def openai_embedding_model(self) -> str:
+        """Alias for compatibility with existing call sites."""
+        return self.embedding_model
+
+    @property
+    def openai_embedding_dimensions(self) -> int:
+        """Alias for compatibility with existing call sites."""
+        return self.embedding_dimensions
 
 
 # Singleton instance
@@ -76,18 +131,31 @@ def ensure_anatomic_db() -> Path:
         DistributionError: If explicit file doesn't exist or download fails
     """
     s = get_settings()
-    return ensure_db_file(
+    db_path = ensure_db_file(
         file_path=s.db_path,
         remote_url=s.remote_db_url,
         remote_hash=s.remote_db_hash,
         manifest_key="anatomic_locations",
         manifest_url=s.manifest_url,
         app_name="anatomic-locations",
+        embedding_provider=s.embedding_provider,
+        embedding_model=s.embedding_model,
+        embedding_dimensions=s.embedding_dimensions,
     )
+    detected = read_embedding_profile_from_db(db_path)
+    if detected is not None and detected[0].strip().lower() == "openai":
+        api_key = s.openai_api_key.get_secret_value().strip() if s.openai_api_key else ""
+        if not api_key:
+            raise ConfigurationError(
+                "The selected anatomic-locations database uses OpenAI embeddings "
+                f"({detected[1]}/{detected[2]}), but OPENAI_API_KEY is not set."
+            )
+    return db_path
 
 
 __all__ = [
     "AnatomicLocationSettings",
+    "ConfigurationError",
     "ensure_anatomic_db",
     "get_settings",
 ]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
@@ -15,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from findingmodel import logger
 from findingmodel.common import normalize_name
-from findingmodel.config import get_settings
+from findingmodel.config import ConfigurationError, get_settings
 from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
 
@@ -65,6 +66,9 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         super().__init__(db_path, ensure_db=ensure_index_db)
         self._oifm_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
         self._oifma_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
+        self._db_embedding_profile: tuple[str, str, int] | None = None
+        self._db_embedding_dimensions: int | None = None
+        self._embedding_mismatch_warned = False
 
     async def contains(self, identifier: str) -> bool:
         """Return True if an ID, name, or synonym exists in the index."""
@@ -421,6 +425,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             raise ValueError("Search query must not be empty or whitespace-only")
 
         conn = self._ensure_connection()
+        self._require_openai_key_if_needed(conn)
 
         # Exact matches take priority - return immediately if found
         exact_matches = await asyncify(self._search_exact)(conn, query, tags=tags)
@@ -482,15 +487,20 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             raise ValueError("All queries are empty or whitespace-only")
 
         conn = self._ensure_connection()
+        self._require_openai_key_if_needed(conn)
 
-        # Generate embeddings for all valid queries in a single batch API call
+        provider, model, dimensions = self._get_db_embedding_profile(conn)
         cfg = get_settings()
         api_key = cfg.openai_api_key.get_secret_value() if cfg.openai_api_key else ""
+
+        # Generate embeddings for all valid queries in a single batch API call
         embeddings = await get_embeddings_batch(
             valid_queries,
             api_key=api_key,
-            model=cfg.openai_embedding_model,
-            dimensions=cfg.openai_embedding_dimensions,
+            provider=provider,
+            model=model,
+            dimensions=dimensions,
+            embed_mode="query",
         )
 
         results: dict[str, list[IndexEntry]] = {}
@@ -1115,13 +1125,20 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         if not trimmed_query:
             return []
 
+        provider, model, dimensions = self._get_db_embedding_profile(conn)
         cfg = get_settings()
         api_key = cfg.openai_api_key.get_secret_value() if cfg.openai_api_key else ""
+        if provider.strip().lower() == "openai" and not api_key.strip():
+            raise ConfigurationError(
+                "This findingmodel database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
+            )
         embedding = await get_embedding(
             trimmed_query,
             api_key=api_key,
-            model=cfg.openai_embedding_model,
-            dimensions=cfg.openai_embedding_dimensions,
+            provider=provider,
+            model=model,
+            dimensions=dimensions,
+            embed_mode="query",
         )
         if embedding is None:
             return []
@@ -1152,7 +1169,10 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         if limit <= 0:
             return []
 
-        dimensions = get_settings().openai_embedding_dimensions
+        dimensions = self._get_db_embedding_dimensions(conn)
+        if len(embedding) != dimensions:
+            self._warn_embedding_mismatch_once(len(embedding), dimensions)
+            return []
         rows = conn.execute(
             f"""
             SELECT oifm_id, array_distance(embedding, CAST(? AS FLOAT[{dimensions}])) AS l2_distance
@@ -1182,6 +1202,68 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         paired = list(zip(entries, scores, strict=True))
         paired.sort(key=lambda item: item[1], reverse=True)
         return [(entry, score) for entry, score in paired]
+
+    def _require_openai_key_if_needed(self, conn: duckdb.DuckDBPyConnection) -> None:
+        provider, _model, _dimensions = self._get_db_embedding_profile(conn)
+        if provider.strip().lower() != "openai":
+            return
+        cfg = get_settings()
+        api_key = cfg.openai_api_key.get_secret_value().strip() if cfg.openai_api_key else ""
+        if not api_key:
+            raise ConfigurationError(
+                "This findingmodel database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
+            )
+
+    def _get_db_embedding_profile(self, conn: duckdb.DuckDBPyConnection) -> tuple[str, str, int]:
+        if self._db_embedding_profile is not None:
+            return self._db_embedding_profile
+
+        cfg = get_settings()
+        provider = cfg.embedding_provider
+        model = cfg.embedding_model
+        dimensions = cfg.embedding_dimensions
+
+        try:
+            has_profile = conn.execute(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_profile'"
+            ).fetchone()
+            if has_profile and int(has_profile[0]) > 0:
+                row = conn.execute("SELECT provider, model, dimensions FROM embedding_profile LIMIT 1").fetchone()
+                if row and isinstance(row[0], str) and isinstance(row[1], str) and isinstance(row[2], int):
+                    self._db_embedding_profile = (row[0], row[1], int(row[2]))
+                    self._db_embedding_dimensions = int(row[2])
+                    return self._db_embedding_profile
+        except Exception:
+            pass
+
+        # Fallback: parse vector column dimensions and keep runtime provider/model defaults.
+        row = self._execute_one(
+            conn,
+            (
+                "SELECT data_type FROM information_schema.columns "
+                "WHERE table_name = 'finding_models' AND column_name = 'embedding' LIMIT 1"
+            ),
+        )
+        if row and isinstance(row.get("data_type"), str):
+            match = re.search(r"FLOAT\[(\d+)\]", row["data_type"].upper())
+            if match is not None:
+                dimensions = int(match.group(1))
+        self._db_embedding_profile = (provider, model, dimensions)
+        self._db_embedding_dimensions = dimensions
+        return self._db_embedding_profile
+
+    def _get_db_embedding_dimensions(self, conn: duckdb.DuckDBPyConnection) -> int:
+        if self._db_embedding_dimensions is not None:
+            return self._db_embedding_dimensions
+        return self._get_db_embedding_profile(conn)[2]
+
+    def _warn_embedding_mismatch_once(self, actual: int, expected: int) -> None:
+        if self._embedding_mismatch_warned:
+            return
+        self._embedding_mismatch_warned = True
+        logger.warning(
+            f"Query embedding dimension mismatch (got {actual}, expected {expected}). Falling back to FTS-only results."
+        )
 
 
 # Alias for backward compatibility

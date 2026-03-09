@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import tempfile
 import time
 from array import array
 from datetime import datetime
@@ -19,16 +20,15 @@ from platformdirs import user_cache_dir
 logger = logging.getLogger(__name__)
 
 _DEFAULT_RUNTIME_CACHE_ROOT: Final[Path] = Path(
-    user_cache_dir(appname="oidm-common", appauthor="openimagingdata", ensure_exists=True)
+    user_cache_dir(appname="oidm-common", appauthor="openimagingdata", ensure_exists=False)
 )
-_DEFAULT_DISKCACHE_DIR: Final[Path] = (
-    _DEFAULT_RUNTIME_CACHE_ROOT / "embeddings.cache"
-)
+_DEFAULT_DISKCACHE_DIR: Final[Path] = _DEFAULT_RUNTIME_CACHE_ROOT / "embeddings.cache"
 _LEGACY_FINDINGMODEL_CACHE_ROOT: Final[Path] = Path(
-    user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=True)
+    user_cache_dir(appname="findingmodel", appauthor="openimagingdata", ensure_exists=False)
 )
 _DEFAULT_CACHE_PATH: Final[Path] = _LEGACY_FINDINGMODEL_CACHE_ROOT / "embeddings.duckdb"
 _LEGACY_DISKCACHE_DIR: Final[Path] = _LEGACY_FINDINGMODEL_CACHE_ROOT / "embeddings.cache"
+_TEMP_DISKCACHE_DIR: Final[Path] = Path(tempfile.gettempdir()) / "oidm-common" / "embeddings.cache"
 _MIGRATION_DUCKDB_STATE_KEY: Final[str] = "__oidm_embedding_cache_migration_duckdb_v1__"
 _MIGRATION_DISKCACHE_STATE_KEY: Final[str] = "__oidm_embedding_cache_migration_diskcache_v1__"
 _MIGRATION_MODEL: Final[str] = "text-embedding-3-small"
@@ -41,6 +41,30 @@ class _LegacyTableMissingError(RuntimeError):
 
 class _EmbeddingCacheTableMissingError(RuntimeError):
     """Raised when duckdb file does not contain embedding_cache table."""
+
+
+def _normalize_cache_path(path: Path) -> Path:
+    expanded = path.expanduser()
+    if expanded.is_absolute():
+        return expanded
+    return Path.cwd() / expanded
+
+
+def _dedupe_paths(paths: list[Path]) -> list[Path]:
+    unique: list[Path] = []
+    seen: set[Path] = set()
+    for path in paths:
+        normalized = _normalize_cache_path(path)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        unique.append(normalized)
+    return unique
+
+
+def _default_cache_dir_candidates() -> list[Path]:
+    candidates: list[Path] = [_DEFAULT_DISKCACHE_DIR, _TEMP_DISKCACHE_DIR]
+    return _dedupe_paths(candidates)
 
 
 class EmbeddingCache:
@@ -59,9 +83,12 @@ class EmbeddingCache:
         """
         self.db_path = db_path or _DEFAULT_CACHE_PATH
         if db_path is None:
-            self.cache_dir = _DEFAULT_DISKCACHE_DIR
+            self._cache_dir_candidates = _default_cache_dir_candidates()
+            self._auto_migrate_global_legacy_diskcache = True
         else:
-            self.cache_dir = Path(f"{self.db_path}.cache")
+            self._cache_dir_candidates = [Path(f"{self.db_path}.cache")]
+            self._auto_migrate_global_legacy_diskcache = False
+        self.cache_dir = self._cache_dir_candidates[0]
         self._cache: Cache | None = None
         self._setup_complete = False
         self._setup_lock = asyncio.Lock()
@@ -87,22 +114,39 @@ class EmbeddingCache:
             if self._setup_complete and self._cache is not None:
                 return
 
-            try:
-                self.cache_dir.mkdir(parents=True, exist_ok=True)
-                self._cache = Cache(
-                    directory=str(self.cache_dir),
-                    sqlite_journal_mode="wal",
-                )
-                self._migrate_legacy_diskcache_if_needed()
-                self._migrate_legacy_duckdb_if_needed()
-                self._setup_complete = True
-                logger.debug(f"Embedding cache initialized at {self.cache_dir}")
-            except Exception as e:
-                logger.warning(f"Failed to setup embedding cache: {e}")
-                if self._cache is not None:
-                    self._cache.close()
+            setup_errors: list[str] = []
+            primary_cache_dir = self._cache_dir_candidates[0]
+
+            for candidate in self._cache_dir_candidates:
+                candidate_cache: Cache | None = None
+                try:
+                    candidate.mkdir(parents=True, exist_ok=True)
+                    candidate_cache = Cache(
+                        directory=str(candidate),
+                        sqlite_journal_mode="wal",
+                    )
+                    self.cache_dir = candidate
+                    self._cache = candidate_cache
+                    self._migrate_legacy_diskcache_if_needed()
+                    self._migrate_legacy_duckdb_if_needed()
+                    self._setup_complete = True
+                    if candidate != primary_cache_dir:
+                        logger.warning(
+                            "Primary embedding cache path unavailable (%s); using fallback cache at %s",
+                            primary_cache_dir,
+                            candidate,
+                        )
+                    logger.debug(f"Embedding cache initialized at {self.cache_dir}")
+                    return
+                except Exception as e:
+                    if candidate_cache is not None:
+                        candidate_cache.close()
                     self._cache = None
-                self._setup_complete = False
+                    setup_errors.append(f"{candidate}: {e}")
+
+            joined_errors = "; ".join(setup_errors)
+            logger.warning(f"Failed to setup embedding cache: {joined_errors}")
+            self._setup_complete = False
 
     async def _ensure_cache_available(self, *, strict: bool = False) -> bool:
         await self.setup()
@@ -265,8 +309,8 @@ class EmbeddingCache:
         """Migrate entries from legacy findingmodel diskcache directory once."""
         if self._cache is None:
             return
-        # Only default runtime cache should auto-migrate from global legacy findingmodel cache.
-        if self.cache_dir != _DEFAULT_DISKCACHE_DIR:
+        # Only the default cache initialization flow should auto-migrate global legacy diskcache.
+        if not self._auto_migrate_global_legacy_diskcache:
             return
         if self._migration_state(_MIGRATION_DISKCACHE_STATE_KEY) is not None:
             return
@@ -369,8 +413,7 @@ class EmbeddingCache:
                 total=len(rows),
             )
             logger.info(
-                "Embedding cache migration completed: "
-                f"{migrated} migrated, {skipped} skipped from {self.db_path}"
+                f"Embedding cache migration completed: {migrated} migrated, {skipped} skipped from {self.db_path}"
             )
         except _LegacyTableMissingError:
             self._set_migration_state(_MIGRATION_DUCKDB_STATE_KEY, status="no_table", source=str(self.db_path))
@@ -712,15 +755,13 @@ class EmbeddingCache:
 
                 text_hash = self._hash_text(text)
                 embedding_f32 = self._to_float32(embedding)
-                records.append(
-                    (
-                        self._build_key(text_hash, model, dimensions),
-                        {
-                            "embedding": embedding_f32,
-                            "created_at": time.time(),
-                        },
-                    )
-                )
+                records.append((
+                    self._build_key(text_hash, model, dimensions),
+                    {
+                        "embedding": embedding_f32,
+                        "created_at": time.time(),
+                    },
+                ))
 
             if not records:
                 return

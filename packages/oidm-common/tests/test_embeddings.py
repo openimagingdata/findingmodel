@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, patch
 
@@ -63,6 +66,45 @@ class TestEmbeddingCacheContextManager:
         assert cache.cache_dir.name == "embeddings.cache"
         assert "findingmodel" in str(cache.db_path)
         assert "oidm-common" in str(cache.cache_dir)
+
+    async def test_embedding_cache_uses_platform_primary_dir(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Default cache location should use the platform primary cache directory."""
+        from oidm_common.embeddings import cache as cache_module
+
+        custom_cache_dir = tmp_path / "platform-default.cache"
+        monkeypatch.setattr(cache_module, "_DEFAULT_DISKCACHE_DIR", custom_cache_dir)
+        monkeypatch.setattr(cache_module, "_TEMP_DISKCACHE_DIR", tmp_path / "temp-fallback.cache")
+
+        cache = EmbeddingCache()
+        await cache.setup()
+
+        assert cache.cache_dir == custom_cache_dir
+        assert cache._cache is not None
+
+    async def test_embedding_cache_falls_back_when_primary_is_invalid(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """If primary cache path is unusable, setup should fall back to next candidate."""
+        from oidm_common.embeddings import cache as cache_module
+
+        invalid_primary = tmp_path / "not-a-directory"
+        invalid_primary.write_text("x")
+        fallback_dir = tmp_path / "fallback.cache"
+
+        monkeypatch.setattr(cache_module, "_DEFAULT_DISKCACHE_DIR", invalid_primary)
+        monkeypatch.setattr(cache_module, "_TEMP_DISKCACHE_DIR", fallback_dir)
+
+        cache = EmbeddingCache()
+        await cache.setup()
+
+        assert cache.cache_dir == fallback_dir
+        assert cache._cache is not None
 
 
 class TestEmbeddingCacheSchema:
@@ -337,6 +379,7 @@ class TestEmbeddingCacheMigration:
         """Strict import should fail if cache setup cannot provide a writable cache."""
 
         async def _broken_setup(self: EmbeddingCache) -> None:
+            await asyncio.sleep(0)
             self._cache = None
             self._setup_complete = False
 
@@ -352,6 +395,7 @@ class TestEmbeddingCacheMigration:
         """Strict cache-to-cache import should fail if cache setup is unavailable."""
 
         async def _broken_setup(self: EmbeddingCache) -> None:
+            await asyncio.sleep(0)
             self._cache = None
             self._setup_complete = False
 
@@ -970,6 +1014,64 @@ class TestEmbeddingGenerationCaching:
 
         assert result == [[0.1, 0.1], None, [0.3, 0.3]]
         assert cache.calls == [(["a", "c"], [[0.1, 0.1], [0.3, 0.3]])]
+
+
+class TestFastEmbedCachePathResolution:
+    """Tests for FastEmbed model cache directory selection."""
+
+    def test_fastembed_uses_oidm_common_cache_dir_by_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Runtime should use oidm-common platform cache dir by default."""
+        from oidm_common.embeddings import generation
+
+        calls: list[dict[str, object]] = []
+
+        class _FakeTextEmbedding:
+            def __init__(self, **kwargs: object) -> None:
+                calls.append(kwargs)
+
+        monkeypatch.setattr(generation, "_DEFAULT_FASTEMBED_CACHE_DIR", tmp_path / "oidm-fastembed")
+        monkeypatch.setattr(generation, "_TEMP_FASTEMBED_CACHE_DIR", tmp_path / "temp-fastembed")
+        monkeypatch.setattr(generation, "_fastembed_model_cache", {})
+        monkeypatch.setitem(sys.modules, "fastembed", SimpleNamespace(TextEmbedding=_FakeTextEmbedding))
+
+        runtime = generation._get_or_create_fastembed_model("BAAI/bge-small-en-v1.5", threads=2)
+
+        assert runtime is not None
+        assert len(calls) == 1
+        assert calls[0]["model_name"] == "BAAI/bge-small-en-v1.5"
+        assert calls[0]["threads"] == 2
+        assert calls[0]["cache_dir"] == str(tmp_path / "oidm-fastembed")
+        assert (tmp_path / "oidm-fastembed").exists()
+
+    def test_fastembed_falls_back_when_primary_cache_dir_unwritable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """If primary cache path is invalid/unwritable, runtime should use temp fallback."""
+        from oidm_common.embeddings import generation
+
+        calls: list[dict[str, object]] = []
+
+        class _FakeTextEmbedding:
+            def __init__(self, **kwargs: object) -> None:
+                calls.append(kwargs)
+
+        invalid_primary = tmp_path / "not-a-directory"
+        invalid_primary.write_text("x")
+        fallback = tmp_path / "fallback-fastembed-cache"
+
+        monkeypatch.setattr(generation, "_DEFAULT_FASTEMBED_CACHE_DIR", invalid_primary)
+        monkeypatch.setattr(generation, "_TEMP_FASTEMBED_CACHE_DIR", fallback)
+        monkeypatch.setattr(generation, "_fastembed_model_cache", {})
+        monkeypatch.setitem(sys.modules, "fastembed", SimpleNamespace(TextEmbedding=_FakeTextEmbedding))
+
+        runtime = generation._get_or_create_fastembed_model("BAAI/bge-small-en-v1.5", threads=None)
+
+        assert runtime is not None
+        assert len(calls) == 1
+        assert calls[0]["cache_dir"] == str(fallback)
+        assert fallback.exists()
 
 
 @pytest.mark.callout

@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from findingmodel.config import FindingModelConfig, ensure_index_db, get_settings
+from pydantic import ValidationError
 
 
 class TestFindingModelConfig:
@@ -20,8 +21,9 @@ class TestFindingModelConfig:
         assert config.remote_db_hash is None
         assert config.manifest_url == "https://findingmodelsdata.t3.storage.dev/manifest.json"
         assert config.openai_api_key is None
-        assert config.openai_embedding_model == "text-embedding-3-small"
-        assert config.openai_embedding_dimensions == 512
+        assert config.embedding_profile == "local"
+        assert config.openai_embedding_model == "BAAI/bge-small-en-v1.5"
+        assert config.openai_embedding_dimensions == 384
 
     def test_environment_variable_loading_with_findingmodel_prefix(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that environment variables with FINDINGMODEL_ prefix are loaded correctly."""
@@ -37,34 +39,17 @@ class TestFindingModelConfig:
         assert config.remote_db_hash == "sha256:def456"
         assert config.manifest_url == "https://example.com/manifest.json"
 
-    # --- Legacy env var alias tests ---
-
-    def test_legacy_duckdb_index_path_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that legacy DUCKDB_INDEX_PATH is still accepted."""
-        monkeypatch.setenv("DUCKDB_INDEX_PATH", "/legacy/path.duckdb")
-
-        config = FindingModelConfig(_env_file=None)
-
-        assert config.db_path == "/legacy/path.duckdb"
-
-    def test_findingmodel_db_path_takes_priority_over_legacy(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that FINDINGMODEL_DB_PATH takes priority over DUCKDB_INDEX_PATH."""
-        monkeypatch.setenv("FINDINGMODEL_DB_PATH", "/new/path.duckdb")
-        monkeypatch.setenv("DUCKDB_INDEX_PATH", "/legacy/path.duckdb")
+    def test_obsolete_path_aliases_are_ignored(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Obsolete path aliases should not be recognized."""
+        monkeypatch.setenv("DUCKDB_INDEX_PATH", "/obsolete/path.duckdb")
+        monkeypatch.setenv("REMOTE_INDEX_DB_URL", "https://obsolete.example.com/db.duckdb")
+        monkeypatch.setenv("REMOTE_INDEX_DB_HASH", "sha256:obsolete")
 
         config = FindingModelConfig(_env_file=None)
 
-        assert config.db_path == "/new/path.duckdb"
-
-    def test_legacy_remote_index_db_url_accepted(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that legacy REMOTE_INDEX_DB_URL and REMOTE_INDEX_DB_HASH are still accepted."""
-        monkeypatch.setenv("REMOTE_INDEX_DB_URL", "https://legacy.example.com/db.duckdb")
-        monkeypatch.setenv("REMOTE_INDEX_DB_HASH", "sha256:legacy123")
-
-        config = FindingModelConfig(_env_file=None)
-
-        assert config.remote_db_url == "https://legacy.example.com/db.duckdb"
-        assert config.remote_db_hash == "sha256:legacy123"
+        assert config.db_path is None
+        assert config.remote_db_url is None
+        assert config.remote_db_hash is None
 
     def test_remote_config_with_both_url_and_hash_succeeds(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that providing both URL and hash succeeds."""
@@ -91,6 +76,7 @@ class TestFindingModelConfig:
 
         assert config.openai_api_key is not None
         assert config.openai_api_key.get_secret_value() == "sk-standard-key"
+        assert config.embedding_profile == "openai"
 
     def test_findingmodel_api_key_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that FINDINGMODEL_OPENAI_API_KEY takes priority over OPENAI_API_KEY."""
@@ -101,46 +87,50 @@ class TestFindingModelConfig:
 
         assert config.openai_api_key is not None
         assert config.openai_api_key.get_secret_value() == "sk-findingmodel-key"
+        assert config.embedding_profile == "openai"
 
     def test_openai_api_key_none_when_unset(self) -> None:
         """Test that openai_api_key is None when neither env var is set."""
         config = FindingModelConfig(_env_file=None)
 
         assert config.openai_api_key is None
+        assert config.embedding_profile == "local"
 
-    def test_embedding_model_from_standard_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that OPENAI_EMBEDDING_MODEL is picked up as fallback."""
-        monkeypatch.setenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
+    def test_embedding_profile_auto_uses_local_when_openai_key_blank(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Auto profile should resolve to local when OPENAI_API_KEY is blank."""
+        monkeypatch.setenv("OPENAI_API_KEY", "   ")
 
-        config = FindingModelConfig()
+        config = FindingModelConfig(_env_file=None)
 
-        assert config.openai_embedding_model == "text-embedding-3-large"
+        assert config.embedding_profile == "local"
 
-    def test_findingmodel_embedding_model_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that FINDINGMODEL_OPENAI_EMBEDDING_MODEL takes priority over OPENAI_EMBEDDING_MODEL."""
-        monkeypatch.setenv("FINDINGMODEL_OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
-        monkeypatch.setenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
+    def test_embedding_profile_local_selects_fastembed_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """FINDINGMODEL_EMBEDDING_PROFILE=local should resolve to supported local profile tuple."""
+        monkeypatch.setenv("FINDINGMODEL_EMBEDDING_PROFILE", "local")
 
-        config = FindingModelConfig()
+        config = FindingModelConfig(_env_file=None)
 
-        assert config.openai_embedding_model == "text-embedding-ada-002"
+        assert config.embedding_profile == "local"
+        assert config.embedding_provider == "fastembed"
+        assert config.embedding_model == "BAAI/bge-small-en-v1.5"
+        assert config.embedding_dimensions == 384
 
-    def test_embedding_dimensions_from_standard_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that OPENAI_EMBEDDING_DIMENSIONS is picked up as fallback."""
-        monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSIONS", "1536")
+    def test_embedding_profile_auto_with_key_resolves_openai(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Explicit auto profile should resolve to openai when key is available."""
+        monkeypatch.setenv("FINDINGMODEL_EMBEDDING_PROFILE", "auto")
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-standard-key")
 
-        config = FindingModelConfig()
+        config = FindingModelConfig(_env_file=None)
 
-        assert config.openai_embedding_dimensions == 1536
+        assert config.embedding_profile == "openai"
+        assert config.embedding_provider == "openai"
 
-    def test_findingmodel_embedding_dimensions_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that FINDINGMODEL_OPENAI_EMBEDDING_DIMENSIONS takes priority."""
-        monkeypatch.setenv("FINDINGMODEL_OPENAI_EMBEDDING_DIMENSIONS", "256")
-        monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSIONS", "1536")
+    def test_invalid_embedding_profile_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Only supported runtime profiles should be accepted."""
+        monkeypatch.setenv("FINDINGMODEL_EMBEDDING_PROFILE", "custom")
 
-        config = FindingModelConfig()
-
-        assert config.openai_embedding_dimensions == 256
+        with pytest.raises(ValidationError, match="Invalid FINDINGMODEL_EMBEDDING_PROFILE"):
+            FindingModelConfig(_env_file=None)
 
     def test_reads_dotenv_file(self, tmp_path: Path) -> None:
         """Test that settings reads from a .env file."""
@@ -151,6 +141,7 @@ class TestFindingModelConfig:
 
         assert config.openai_api_key is not None
         assert config.openai_api_key.get_secret_value() == "sk-from-dotenv"
+        assert config.embedding_profile == "openai"
 
     def test_env_var_overrides_dotenv_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that environment variables take priority over .env file values."""
@@ -202,7 +193,7 @@ class TestEnsureIndexDb:
 
         with (
             patch("findingmodel.config.oidm_ensure_db_file") as mock_ensure,
-            patch.dict(os.environ, {}, clear=True),
+            patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=True),
         ):
             mock_ensure.return_value = tmp_path / "finding_models.duckdb"
 
@@ -215,6 +206,9 @@ class TestEnsureIndexDb:
                 manifest_key="finding_models",
                 manifest_url="https://findingmodelsdata.t3.storage.dev/manifest.json",
                 app_name="findingmodel",
+                embedding_provider="fastembed",
+                embedding_model="BAAI/bge-small-en-v1.5",
+                embedding_dimensions=384,
             )
             assert result == tmp_path / "finding_models.duckdb"
 
@@ -228,6 +222,7 @@ class TestEnsureIndexDb:
         monkeypatch.setenv("FINDINGMODEL_REMOTE_DB_URL", "https://custom.example.com/db.duckdb")
         monkeypatch.setenv("FINDINGMODEL_REMOTE_DB_HASH", "sha256:custom123")
         monkeypatch.setenv("FINDINGMODEL_MANIFEST_URL", "https://custom.example.com/manifest.json")
+        monkeypatch.setenv("OPENAI_API_KEY", "")
 
         with patch("findingmodel.config.oidm_ensure_db_file") as mock_ensure:
             mock_ensure.return_value = tmp_path / "custom.duckdb"
@@ -241,5 +236,42 @@ class TestEnsureIndexDb:
                 manifest_key="finding_models",
                 manifest_url="https://custom.example.com/manifest.json",
                 app_name="findingmodel",
+                embedding_provider="fastembed",
+                embedding_model="BAAI/bge-small-en-v1.5",
+                embedding_dimensions=384,
             )
             assert result == tmp_path / "custom.duckdb"
+
+    def test_profile_local_resolves_to_supported_embedding_tuple(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """FINDINGMODEL_EMBEDDING_PROFILE=local should drive manifest/query embedding tuple."""
+        import findingmodel.config as config_module
+
+        config_module._settings = None
+        monkeypatch.setenv("FINDINGMODEL_EMBEDDING_PROFILE", "local")
+
+        with patch("findingmodel.config.oidm_ensure_db_file") as mock_ensure:
+            mock_ensure.return_value = tmp_path / "finding_models_local.duckdb"
+            result = ensure_index_db()
+
+            call_kwargs = mock_ensure.call_args.kwargs
+            assert call_kwargs["embedding_provider"] == "fastembed"
+            assert call_kwargs["embedding_model"] == "BAAI/bge-small-en-v1.5"
+            assert call_kwargs["embedding_dimensions"] == 384
+            assert result == tmp_path / "finding_models_local.duckdb"
+
+    def test_errors_immediately_for_openai_db_without_key(self, tmp_path: Path) -> None:
+        """OpenAI-profile DB should fail fast when no OpenAI key is configured."""
+        import findingmodel.config as config_module
+
+        config_module._settings = None
+        db_path = tmp_path / "fm_openai.duckdb"
+
+        with (
+            patch("findingmodel.config.oidm_ensure_db_file", return_value=db_path),
+            patch("findingmodel.config.read_embedding_profile_from_db", return_value=("openai", "text-embedding-3-small", 512)),
+            patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=True),
+            pytest.raises(config_module.ConfigurationError, match="uses OpenAI embeddings"),
+        ):
+            ensure_index_db()
