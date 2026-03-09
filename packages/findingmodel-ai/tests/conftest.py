@@ -22,9 +22,9 @@ from findingmodel import Index, logger
 # These should be valid ModelSpec strings (see config.MODEL_SPEC_PATTERN).
 # Update when model families change.
 
-TEST_OPENAI_MODEL = "openai:gpt-5-nano"
+TEST_OPENAI_MODEL = "openai:gpt-5-mini"
 TEST_ANTHROPIC_MODEL = "anthropic:claude-haiku-4-5"
-TEST_GOOGLE_MODEL = "google:gemini-3-flash-preview"
+TEST_GOOGLE_MODEL = "google-gla:gemini-3-flash-preview"
 
 
 @pytest.fixture(scope="session", autouse=True)

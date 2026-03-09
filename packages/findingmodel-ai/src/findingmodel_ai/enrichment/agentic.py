@@ -223,7 +223,7 @@ async def enrich_finding_agentic(identifier: str, model: str | None = None) -> F
 
     Args:
         identifier: Either an OIFM ID or finding name
-        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5')
+        model: Optional model string override (e.g., 'openai:gpt-5.4', 'anthropic:claude-sonnet-4-6')
 
     Returns:
         FindingEnrichmentResult with all enrichment data

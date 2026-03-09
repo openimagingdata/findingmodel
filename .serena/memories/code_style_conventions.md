@@ -81,19 +81,25 @@
 |----------|--------|----------------|
 | OpenAI | `openai:` | `OPENAI_API_KEY` |
 | Anthropic | `anthropic:` | `ANTHROPIC_API_KEY` |
-| Google (GLA) | `google:` or `google-gla:` | `GOOGLE_API_KEY` |
+| Google | `google:` / `google-gla:` / `google-vertex:` | `GOOGLE_API_KEY` |
 | Ollama | `ollama:` | `OLLAMA_BASE_URL` |
 | Gateway | `gateway/openai:`, `gateway/anthropic:`, `gateway/google:` | `PYDANTIC_AI_GATEWAY_API_KEY` |
 
+**Gateway fallback**: If a direct provider key is missing but `PYDANTIC_AI_GATEWAY_API_KEY` is set, requests route through the gateway automatically. Direct keys take priority.
+
+**Google prefixes**: `google:`, `google-gla:`, `google-vertex:` are interchangeable — routes to GLA when `GOOGLE_API_KEY` is set, or Vertex AI via gateway otherwise.
+
 ### Tier-Based Selection
 
-| Tier | Default | Use Case |
-|------|---------|----------|
-| `small` | `openai:gpt-5-nano` | Simple classification, query generation |
-| `base` | `openai:gpt-5-mini` | Most agent workflows |
-| `full` | `openai:gpt-5.2` | Complex reasoning, editing |
+| Tier | Default | Reasoning | Use Case |
+|------|---------|-----------|----------|
+| `small` | `google-gla:gemini-3-flash-preview` | `low` | Simple classification, query generation |
+| `base` | `openai:gpt-5.4` | `none` | Most agent workflows |
+| `full` | `openai:gpt-5.4` | `high` | Complex reasoning, editing |
 
 Access via: `settings.get_model("base")` or `settings.get_model("small")`
+
+Reasoning levels configurable via `DEFAULT_REASONING_SMALL` / `_BASE` / `_FULL` (values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`). Levels are normalized per-provider automatically.
 
 ### Coding Rules
 - **ModelSpec Type**: Use validated `ModelSpec` type for model strings (see `MODEL_SPEC_PATTERN` in config.py)

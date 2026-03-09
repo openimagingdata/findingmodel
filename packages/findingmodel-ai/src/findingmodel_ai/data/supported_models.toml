@@ -1,0 +1,174 @@
+# Supported Models Reference
+#
+# This file is the single source of truth for model configurations.
+# Code consults this for reasoning normalization; smoke tests verify every entry.
+#
+# For unknown models (not listed here), the system falls back to provider-level
+# defaults and passes the reasoning level as-is.
+#
+# Structure:
+#   [providers.<name>]       — provider-level reasoning config
+#   [models.<spec>]          — per-model reasoning support and normalization
+#
+# Model spec format: "provider:model-name" (e.g., "openai:gpt-5.4")
+
+# =============================================================================
+# Provider configurations
+# =============================================================================
+
+[providers.openai]
+# Reasoning via OpenAIResponsesModelSettings(openai_reasoning_effort=level).
+# "none" returns no settings (no reasoning overhead).
+
+[providers.google]
+# Reasoning via GoogleModelSettings(google_thinking_config={"thinking_level": LEVEL}).
+# Level values are uppercase: MINIMAL, LOW, MEDIUM, HIGH.
+# Thinking cannot be fully disabled on Gemini 3 models.
+
+[providers.anthropic]
+# Opus 4.6+ uses adaptive thinking: AnthropicModelSettings(anthropic_thinking={'type': 'adaptive'}, anthropic_effort=level).
+# Older models (sonnet-4-6, haiku-4-5) use extended thinking with budget_tokens (see budget_map below).
+# "none" disables thinking entirely on all models.
+# max_tokens capped at 16384 to avoid Anthropic SDK streaming requirement.
+[providers.anthropic.budget_map]
+minimal = { budget_tokens = 1024, max_tokens = 8192 }
+low     = { budget_tokens = 1024, max_tokens = 8192 }
+medium  = { budget_tokens = 4096, max_tokens = 16384 }
+high    = { budget_tokens = 10240, max_tokens = 16384 }
+xhigh   = { budget_tokens = 16000, max_tokens = 16384 }
+
+[providers.ollama]
+# No API key required. No reasoning support.
+
+[providers.gateway]
+# Gateway routes to the underlying provider — the SAME models with the SAME
+# reasoning configurations, just accessed through a single gateway API key
+# instead of per-provider keys.
+#
+# Gateway prefixes and their canonical equivalents:
+#   gateway/openai:gpt-5.4         → same as openai:gpt-5.4
+#   gateway/anthropic:claude-...   → same as anthropic:claude-...
+#   gateway/google:gemini-...      → same as google-gla:gemini-...
+#   gateway/google-vertex:gemini-… → same as google-gla:gemini-...
+#
+# Models are NOT duplicated below — normalization resolves gateway specs to
+# their canonical direct-provider form automatically.
+
+
+# =============================================================================
+# OpenAI models
+# =============================================================================
+
+[models."openai:gpt-5.4"]
+provider = "openai"
+valid_reasoning = ["none", "low", "medium", "high", "xhigh"]
+notes = "Flagship model. Default base and full tier."
+[models."openai:gpt-5.4".normalize]
+minimal = "low"
+
+[models."openai:gpt-5-mini"]
+provider = "openai"
+valid_reasoning = ["none", "low", "medium", "high"]
+notes = "Cost-effective. Good base tier override."
+[models."openai:gpt-5-mini".normalize]
+minimal = "low"
+xhigh = "high"
+
+[models."openai:gpt-5-nano"]
+provider = "openai"
+valid_reasoning = ["none", "low", "medium", "high"]
+notes = "Lightest OpenAI option."
+[models."openai:gpt-5-nano".normalize]
+minimal = "low"
+xhigh = "high"
+
+
+# =============================================================================
+# Google models (use google-gla: prefix for direct AI Studio access)
+# =============================================================================
+
+[models."google-gla:gemini-3-flash-preview"]
+provider = "google"
+valid_reasoning = ["minimal", "low", "medium", "high"]
+notes = "Default small tier. Thinking cannot be fully disabled."
+[models."google-gla:gemini-3-flash-preview".normalize]
+none = "minimal"
+xhigh = "high"
+
+[models."google-gla:gemini-3.1-pro-preview"]
+provider = "google"
+valid_reasoning = ["low", "medium", "high"]
+notes = "Full-capability Gemini. Minimum thinking level is LOW."
+[models."google-gla:gemini-3.1-pro-preview".normalize]
+none = "low"
+minimal = "low"
+xhigh = "high"
+
+[models."google-gla:gemini-3.1-flash-lite-preview"]
+provider = "google"
+valid_reasoning = ["minimal", "low", "medium", "high"]
+notes = "Lightest Gemini option."
+[models."google-gla:gemini-3.1-flash-lite-preview".normalize]
+none = "minimal"
+xhigh = "high"
+
+
+# =============================================================================
+# Anthropic models
+# =============================================================================
+
+[models."anthropic:claude-sonnet-4-6"]
+provider = "anthropic"
+valid_reasoning = ["none", "minimal", "low", "medium", "high", "xhigh"]
+notes = "Balanced. Recommended Anthropic model."
+
+[models."anthropic:claude-haiku-4-5"]
+provider = "anthropic"
+valid_reasoning = ["none", "minimal", "low", "medium", "high"]
+notes = "Fast, low cost."
+[models."anthropic:claude-haiku-4-5".normalize]
+xhigh = "high"
+
+[models."anthropic:claude-opus-4-6"]
+provider = "anthropic"
+valid_reasoning = ["none", "minimal", "low", "medium", "high", "xhigh"]
+notes = "Most capable. Use for complex editing."
+
+
+# =============================================================================
+# Ollama models (local / self-hosted)
+# No reasoning support — levels are ignored.
+# =============================================================================
+
+[models."ollama:gpt-oss:120b"]
+provider = "ollama"
+
+[models."ollama:gpt-oss:20b"]
+provider = "ollama"
+
+[models."ollama:gemma3:27b"]
+provider = "ollama"
+
+[models."ollama:medgemma1.5:4b"]
+provider = "ollama"
+notes = "Medical-domain Gemma. Highly relevant for imaging."
+
+[models."ollama:medgemma1.0:27b"]
+provider = "ollama"
+notes = "Medical-domain Gemma 27B."
+
+[models."ollama:llama3.3"]
+provider = "ollama"
+
+[models."ollama:llama4:maverick"]
+provider = "ollama"
+notes = "Meta Llama 4 16x17B MoE via Ollama."
+
+[models."ollama:qwen3.5:27B"]
+provider = "ollama"
+
+[models."ollama:qwen3.5:35B-A3B"]
+provider = "ollama"
+
+[models."ollama:qwen3.5:9B"]
+provider = "ollama"

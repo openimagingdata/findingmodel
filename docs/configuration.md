@@ -21,9 +21,13 @@ The library supports multiple AI providers through [Pydantic AI](https://ai.pyda
 |----------|--------|---------|----------|
 | OpenAI | `openai:` | `OPENAI_API_KEY` | Production default, best medical benchmarks |
 | Anthropic | `anthropic:` | `ANTHROPIC_API_KEY` | Alternative cloud provider |
-| Google Gemini | `google:` | `GOOGLE_API_KEY` | Cost-effective, fast |
+| Google | `google:` / `google-gla:` / `google-vertex:` | `GOOGLE_API_KEY` | Cost-effective, fast (AI Studio API) |
 | Ollama | `ollama:` | None (local) | Development, air-gapped environments |
 | Gateway | `gateway/*:` | `PYDANTIC_AI_GATEWAY_API_KEY` | Enterprise proxy, centralized billing |
+
+> **Gateway fallback:** If a provider-specific key (e.g., `OPENAI_API_KEY`) is missing but `PYDANTIC_AI_GATEWAY_API_KEY` is set, requests are automatically routed through the gateway. This means you can use a single gateway key for all providers. Direct keys take priority when present.
+>
+> **Google prefixes:** `google:`, `google-gla:`, and `google-vertex:` are interchangeable — the system routes to Google AI Studio (GLA) when `GOOGLE_API_KEY` is set, or to Vertex AI via the gateway when only `PYDANTIC_AI_GATEWAY_API_KEY` is available.
 
 ### OpenAI Setup
 
@@ -36,10 +40,10 @@ OpenAI is the default provider with the best performance on medical domain tasks
 OPENAI_API_KEY=sk-...
 ```
 
-**Recommended models:**
-- `openai:gpt-5-mini` - Balanced cost/performance (default)
-- `openai:gpt-5-nano` - Fastest, cheapest
-- `openai:gpt-5.2` - Best reasoning capability
+**Supported models:**
+- `openai:gpt-5.4` - Flagship reasoning model (default base and full tiers)
+- `openai:gpt-5-mini` - Cost-effective option (good for base tier overrides)
+- `openai:gpt-5-nano` - Lightest option for high-volume simple tasks
 
 ### Anthropic Setup
 
@@ -48,13 +52,13 @@ OPENAI_API_KEY=sk-...
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-...
-DEFAULT_MODEL=anthropic:claude-sonnet-4-5
+DEFAULT_MODEL=anthropic:claude-sonnet-4-6
 ```
 
-**Recommended models:**
-- `anthropic:claude-sonnet-4-5` - Balanced (recommended)
-- `anthropic:claude-haiku-4-5` - Fast, cheap
-- `anthropic:claude-opus-4-5` - Most capable
+**Supported models:**
+- `anthropic:claude-sonnet-4-6` - Balanced (recommended)
+- `anthropic:claude-haiku-4-5` - Fast, low cost
+- `anthropic:claude-opus-4-6` - Most capable
 
 ### Google Gemini Setup
 
@@ -65,16 +69,19 @@ Google Gemini offers competitive pricing and performance.
 
 ```bash
 GOOGLE_API_KEY=AI...
-DEFAULT_MODEL=google:gemini-3-flash-preview
+DEFAULT_MODEL=google-gla:gemini-3-flash-preview
 ```
 
-**Provider variants:**
-- `google:` or `google-gla:` - Google Generative Language API (direct)
-- `gateway/google:` or `gateway/google-vertex:` - Via Gateway using Vertex AI
+**Provider prefixes** — all three are interchangeable and route automatically:
+- `google:` / `google-gla:` / `google-vertex:` — The system picks the best path based on your keys:
+  - `GOOGLE_API_KEY` set → routes to Google AI Studio (GLA)
+  - Only `PYDANTIC_AI_GATEWAY_API_KEY` set → routes to Vertex AI via gateway
+- `gateway/google:` or `gateway/google-vertex:` — Explicitly routes through the Pydantic AI Gateway (Vertex AI backend).
 
-**Recommended models:**
-- `google:gemini-3-flash-preview` - Fast, cost-effective
-- `google:gemini-2.0-flash` - Stable, production-ready
+**Supported models:**
+- `google-gla:gemini-3-flash-preview` - Fast, cost-effective (default small tier)
+- `google-gla:gemini-3.1-pro-preview` - Full-capability Gemini 3.1 Pro
+- `google-gla:gemini-3.1-flash-lite-preview` - Lightest Gemini option
 
 > **Note:** Models with `-preview` suffix are in preview and may change names when generally available.
 
@@ -139,17 +146,62 @@ DEFAULT_MODEL=gateway/openai:gpt-5-mini
 
 Gateway supports: `gateway/openai:`, `gateway/anthropic:`, `gateway/google:`
 
+## Supported Models
+
+The following models are tested and supported. Model names must be specified exactly as shown — the API name matters and outdated names will fail at runtime.
+
+### OpenAI
+
+| Model | Spec | Notes |
+|-------|------|-------|
+| GPT-5.4 | `openai:gpt-5.4` | Flagship; supports `xhigh` reasoning; **base and full tier default** |
+| GPT-5-mini | `openai:gpt-5-mini` | Fast, economical; good base-tier override |
+| GPT-5-nano | `openai:gpt-5-nano` | Lightest option; high-volume simple tasks |
+
+> **Note:** `openai:gpt-5` is a real model but not on the approved list — use `gpt-5.4` instead.
+
+### Anthropic
+
+| Model | Spec | Notes |
+|-------|------|-------|
+| Claude Sonnet 4.6 | `anthropic:claude-sonnet-4-6` | Balanced (recommended for Anthropic tier) |
+| Claude Haiku 4.5 | `anthropic:claude-haiku-4-5` | Fast, low cost |
+| Claude Opus 4.6 | `anthropic:claude-opus-4-6` | Most capable; use for complex editing |
+
+> **Naming note:** Anthropic API names use hyphens, not dots: `claude-sonnet-4-6` not `claude-sonnet-4.6`.
+
+### Google Gemini (via `google-gla:` or `gateway/google:`)
+
+| Model | Spec | Notes |
+|-------|------|-------|
+| Gemini 3 Flash | `google-gla:gemini-3-flash-preview` | Fast, cost-effective; **small tier default** |
+| Gemini 3.1 Flash Lite | `google-gla:gemini-3.1-flash-lite-preview` | Lightest Gemini option |
+| Gemini 3.1 Pro | `google-gla:gemini-3.1-pro-preview` | Full-capability Gemini; use for complex tasks |
+
+> **Provider note:** All Google prefixes (`google:`, `google-gla:`, `google-vertex:`) are interchangeable — the system routes to AI Studio (GLA) if `GOOGLE_API_KEY` is set, or Vertex AI via gateway if only `PYDANTIC_AI_GATEWAY_API_KEY` is available.
+
+### Ollama (Local / Self-Hosted)
+
+| Model | Spec | Notes |
+|-------|------|-------|
+| Llama 4 Maverick | `ollama:llama4:maverick` | Meta Llama 4 16x17B MoE (pull: `ollama pull llama4:maverick`) |
+| Llama 3.3 | `ollama:llama3.3` | Llama 3.3 70B (pull: `ollama pull llama3.3`) |
+
+Pull any Ollama model with `ollama pull <name>` before use. The library validates availability at startup and will list what's actually available if the model isn't found.
+
 ## Model Tier System
 
 The library uses a three-tier model selection system to balance cost and capability.
 
 ### Tier Overview
 
-| Tier | Environment Variable | Default | Use Case |
-|------|---------------------|---------|----------|
-| `small` | `DEFAULT_MODEL_SMALL` | `openai:gpt-5-nano` | Simple classification, query generation |
-| `base` | `DEFAULT_MODEL` | `openai:gpt-5-mini` | Most agent workflows |
-| `full` | `DEFAULT_MODEL_FULL` | `openai:gpt-5.2` | Complex reasoning, model editing |
+| Tier | Environment Variable | Default | Reasoning Default | Use Case |
+|------|---------------------|---------|-------------------|----------|
+| `small` | `DEFAULT_MODEL_SMALL` | `google-gla:gemini-3-flash-preview` | `low` | Simple classification, query generation |
+| `base` | `DEFAULT_MODEL` | `openai:gpt-5.4` | `none` | Most agent workflows |
+| `full` | `DEFAULT_MODEL_FULL` | `openai:gpt-5.4` | `high` | Complex reasoning, model editing |
+
+> **Note on API keys:** The small-tier default uses Google Gemini and requires `GOOGLE_API_KEY`. If you only have an OpenAI key, set `DEFAULT_MODEL_SMALL=openai:gpt-5-mini` in your `.env`.
 
 ### Programmatic Access
 
@@ -167,15 +219,41 @@ model = settings.get_model("full")   # Complex reasoning
 Override any tier in your `.env`:
 
 ```bash
-# Use Gemini for base tier (cost savings)
-DEFAULT_MODEL=google:gemini-3-flash-preview
+# OpenAI-only setup (no Google key)
+DEFAULT_MODEL_SMALL=openai:gpt-5-mini
 
 # Use Claude for complex tasks
-DEFAULT_MODEL_FULL=anthropic:claude-opus-4-5
+DEFAULT_MODEL_FULL=anthropic:claude-opus-4-6
 
 # Use local model for simple tasks
 DEFAULT_MODEL_SMALL=ollama:llama3
 ```
+
+### Reasoning Level Configuration
+
+Each tier has a configurable reasoning level that controls how much computational effort the model uses. Reasoning improves quality but increases cost and latency.
+
+| Variable | Default | Options |
+|----------|---------|---------|
+| `DEFAULT_REASONING_SMALL` | `low` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
+| `DEFAULT_REASONING_BASE` | `none` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
+| `DEFAULT_REASONING_FULL` | `high` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
+
+```bash
+# Disable reasoning for cost savings on small tasks
+DEFAULT_REASONING_SMALL=none
+
+# Use high reasoning for base tier
+DEFAULT_REASONING_BASE=high
+
+# Downgrade full-tier reasoning to save cost
+DEFAULT_REASONING_FULL=low
+```
+
+Reasoning is applied using provider-native typed settings:
+- **OpenAI** (`gpt-5.4`, `gpt-5-mini`, etc.): `openai_reasoning_effort` — `none` disables reasoning entirely; `xhigh` is supported on gpt-5.4 for maximum effort
+- **Google Gemini**: `google_thinking_config` with `thinking_level` — valid levels are `MINIMAL`, `LOW`, `MEDIUM`, `HIGH` (no higher level exists; `xhigh` maps to `HIGH`). Thinking cannot be fully disabled on Gemini 3 models: Flash maps `none`/`minimal` → `MINIMAL`; Pro maps `none`/`minimal` → `LOW` (the minimum Pro supports)
+- **Anthropic**: `anthropic_thinking` — Opus 4.6+ uses adaptive thinking with `anthropic_effort` (low/medium/high); older models (Sonnet 4.6, Haiku 4.5) use extended thinking with `budget_tokens`. `none` disables thinking on all models
 
 ## Per-Agent Model Overrides
 
@@ -186,7 +264,7 @@ For advanced use cases, you can override the model used by specific agents witho
 Override agents via environment variables:
 
 ```bash
-AGENT_MODEL_OVERRIDES__enrich_classify=anthropic:claude-opus-4-5
+AGENT_MODEL_OVERRIDES__enrich_classify=anthropic:claude-opus-4-6
 AGENT_MODEL_OVERRIDES__edit_instructions=ollama:llama3
 ```
 
@@ -264,21 +342,43 @@ Used by: `findingmodel-ai markdown-to-fm` CLI, `create_model_from_markdown()`
 - **Local development**: Override to Ollama for offline testing
 - **A/B testing**: Compare model performance on specific workflows
 
+### Planned: Per-Agent Reasoning Overrides
+
+A future companion to `AGENT_MODEL_OVERRIDES__*` will allow setting reasoning level per agent:
+
+```bash
+# Not yet implemented — planned
+AGENT_REASONING_OVERRIDES__edit_instructions=high
+AGENT_REASONING_OVERRIDES__anatomic_search=none
+```
+
+This will follow the same nested-delimiter pattern as model overrides. For now, use `DEFAULT_REASONING_SMALL/BASE/FULL` to set tier-wide defaults.
+
 ### Startup Validation
 
-For production applications, validate API keys are configured at startup:
+The CLI validates API keys before running any AI command. If a required key is missing, you'll see a clear error with instructions before any agent runs:
+
+```
+Error: Missing API keys for default models: default_model_small
+(google-gla:gemini-3-flash-preview) requires GOOGLE_API_KEY.
+Set the missing key(s) in .env or your environment,
+or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini).
+```
+
+For programmatic use, call `validate_default_model_keys()` explicitly at application startup:
 
 ```python
 from findingmodel_ai.config import settings
 
-# Raises ConfigurationError if keys missing for default models (requires findingmodel-ai)
 settings.validate_default_model_keys()
 ```
 
-This provides fail-fast behavior with clear error messages:
+Error messages include an override hint:
 ```
 ConfigurationError: Missing API keys for default models:
-default_model (openai:gpt-5-mini): OPENAI_API_KEY
+default_model_small (google-gla:gemini-3-flash-preview) requires GOOGLE_API_KEY.
+Set the missing key(s) in .env or your environment,
+or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini).
 ```
 
 ## Database Configuration
@@ -323,6 +423,29 @@ ANATOMIC_REMOTE_DB_HASH=sha256:def456...
 2. If file exists with URL/hash → verifies hash, re-downloads if mismatch
 3. If file doesn't exist with URL/hash → downloads from URL
 4. If nothing specified → downloads from manifest.json (default)
+
+### Embedding Profile Selection for Index Search
+
+Both index packages can select a specific embedding profile at runtime. This controls:
+
+- which profile-specific DB artifact is selected from manifest (if available)
+- which embedding model/provider is used for query embeddings
+
+```bash
+# findingmodel runtime profile (default: auto)
+FINDINGMODEL_EMBEDDING_PROFILE=auto
+# FINDINGMODEL_EMBEDDING_PROFILE=local
+
+# anatomic-locations runtime profile (default: auto)
+ANATOMIC_EMBEDDING_PROFILE=auto
+# ANATOMIC_EMBEDDING_PROFILE=local
+```
+
+Supported profiles:
+
+- `auto` → `openai` / `text-embedding-3-small` / `512` when an OpenAI key is set; otherwise `fastembed` / `BAAI/bge-small-en-v1.5` / `384`
+- `openai` → `openai` / `text-embedding-3-small` / `512`
+- `local` → `fastembed` / `BAAI/bge-small-en-v1.5` / `384`
 
 For database maintenance and building, see [Database Management Guide](database-management.md).
 
@@ -370,9 +493,12 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `GOOGLE_API_KEY` | One AI key required | - | Google AI Studio API key |
 | `PYDANTIC_AI_GATEWAY_API_KEY` | For gateway/* | - | Pydantic AI Gateway key |
 | `OLLAMA_BASE_URL` | No | `http://localhost:11434/v1` | Ollama server URL |
-| `DEFAULT_MODEL` | No | `openai:gpt-5-mini` | Base tier model |
-| `DEFAULT_MODEL_FULL` | No | `openai:gpt-5.2` | Full tier model |
-| `DEFAULT_MODEL_SMALL` | No | `openai:gpt-5-nano` | Small tier model |
+| `DEFAULT_MODEL` | No | `openai:gpt-5.4` | Base tier model |
+| `DEFAULT_MODEL_FULL` | No | `openai:gpt-5.4` | Full tier model |
+| `DEFAULT_MODEL_SMALL` | No | `google-gla:gemini-3-flash-preview` | Small tier model (requires `GOOGLE_API_KEY` or `PYDANTIC_AI_GATEWAY_API_KEY`) |
+| `DEFAULT_REASONING_SMALL` | No | `low` | Reasoning level for small tier |
+| `DEFAULT_REASONING_BASE` | No | `none` | Reasoning level for base tier |
+| `DEFAULT_REASONING_FULL` | No | `high` | Reasoning level for full tier |
 | `AGENT_MODEL_OVERRIDES__<tag>` | No | - | Override model for specific agent tag (e.g., enrich_classify) |
 | `TAVILY_API_KEY` | For citations | - | Tavily search API key |
 | `TAVILY_SEARCH_DEPTH` | No | `advanced` | Search depth: basic/advanced |
@@ -383,7 +509,12 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `FINDINGMODEL_REMOTE_DB_HASH` | With URL | - | SHA256 hash for index |
 | `ANATOMIC_REMOTE_DB_URL` | With hash | - | Custom anatomic download URL |
 | `ANATOMIC_REMOTE_DB_HASH` | With URL | - | SHA256 hash for anatomic |
+| `FINDINGMODEL_EMBEDDING_PROFILE` | No | `auto` | Runtime embedding profile for findingmodel index (`auto`, `openai`, or `local`) |
+| `ANATOMIC_EMBEDDING_PROFILE` | No | `auto` | Runtime embedding profile for anatomic index (`auto`, `openai`, or `local`) |
 | `ANATOMIC_OPENAI_API_KEY` | No | Falls back to `OPENAI_API_KEY` | OpenAI key for anatomic semantic search |
+| `OIDM_MAINTAIN_EMBEDDING_PROVIDER` | Maintainers | `openai` | Build/publish embedding provider for `oidm-maintain` |
+| `OIDM_MAINTAIN_EMBEDDING_MODEL` | Maintainers | `text-embedding-3-small` | Build/publish embedding model |
+| `OIDM_MAINTAIN_EMBEDDING_DIMENSIONS` | Maintainers | `512` | Build/publish embedding dimensions |
 | `LOGFIRE_TOKEN` | For tracing | - | Logfire.dev write token |
 | `DISABLE_SEND_TO_LOGFIRE` | No | `false` | Disable cloud tracing |
 

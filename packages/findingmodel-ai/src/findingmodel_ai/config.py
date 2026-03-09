@@ -1,6 +1,9 @@
-from typing import Annotated, Literal
+import importlib.resources
+import tomllib
+from typing import Annotated, Any, Literal
 
 import httpx
+import logfire
 from findingmodel.config import ConfigurationError
 from pydantic import Field, PrivateAttr, SecretStr
 from pydantic_ai.models import Model
@@ -9,8 +12,21 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
+def _load_supported_models() -> dict[str, Any]:
+    """Load the supported models reference from package data."""
+    ref = importlib.resources.files("findingmodel_ai") / "data" / "supported_models.toml"
+    return tomllib.loads(ref.read_text(encoding="utf-8"))
+
+
+# Module-level cache — loaded once at import time
+_MODEL_REGISTRY: dict[str, Any] = _load_supported_models()
+SUPPORTED_MODELS: dict[str, Any] = _MODEL_REGISTRY.get("models", {})
+PROVIDER_CONFIGS: dict[str, Any] = _MODEL_REGISTRY.get("providers", {})
+
 # Type definitions for model configuration
 ModelTier = Literal["base", "small", "full"]
+ReasoningLevel = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 
 # Agent tags for per-agent model configuration
 # Pattern: {domain}_{verb} - describes what the agent DOES
@@ -41,20 +57,21 @@ AgentTag = Literal[
 # Pattern validates: provider:model or gateway/provider:model
 # Direct providers:
 #   - openai, anthropic, ollama: standard providers
-#   - google, google-gla: Google Generative Language API (requires GOOGLE_API_KEY)
+#   - google, google-gla, google-vertex: Google Gemini models (routed to GLA or Vertex based on available keys)
 # Gateway providers (via Pydantic AI Gateway):
 #   - gateway/openai, gateway/anthropic: standard gateway routing
-#   - gateway/google, gateway/google-vertex: Google Vertex AI (gateway only supports Vertex)
+#   - gateway/google, gateway/google-vertex: Google Vertex AI via gateway
 # Model names: alphanumeric, hyphens, dots, colons (for versions), underscores
 MODEL_SPEC_PATTERN = (
-    r"^(openai|anthropic|google|google-gla|ollama|gateway/(openai|anthropic|google|google-vertex)):[\w.:-]+$"
+    r"^(openai|anthropic|google|google-gla|google-vertex|ollama"
+    r"|gateway/(openai|anthropic|google|google-vertex)):[\w.:-]+$"
 )
 
 ModelSpec = Annotated[
     str,
     Field(
         pattern=MODEL_SPEC_PATTERN,
-        description="Model spec: 'provider:model' (e.g., 'openai:gpt-5-mini', 'google:gemini-3-flash-preview')",
+        description="Model spec: 'provider:model' (e.g., 'openai:gpt-5.4', 'google-gla:gemini-3-flash-preview')",
     ),
 ]
 
@@ -76,12 +93,19 @@ class FindingModelAIConfig(BaseSettings):
 
     # Model configuration (Pydantic AI string format: "provider:model")
     # See MODEL_SPEC_PATTERN for supported providers
-    default_model: ModelSpec = Field(default="openai:gpt-5-mini")
-    default_model_full: ModelSpec = Field(default="openai:gpt-5.2")
-    default_model_small: ModelSpec = Field(default="openai:gpt-5-nano")
+    default_model: ModelSpec = Field(default="openai:gpt-5.4")
+    default_model_full: ModelSpec = Field(default="openai:gpt-5.4")
+    default_model_small: ModelSpec = Field(default="google-gla:gemini-3-flash-preview")
+
+    # Per-tier reasoning levels — overridable via env (e.g., DEFAULT_REASONING_SMALL=none)
+    default_reasoning_small: ReasoningLevel = Field(default="low")
+    default_reasoning_base: ReasoningLevel = Field(default="none")
+    default_reasoning_full: ReasoningLevel = Field(default="high")
 
     # Per-agent model overrides
     agent_model_overrides: dict[AgentTag, ModelSpec] = Field(default_factory=dict)
+    # TODO: agent_reasoning_overrides: dict[AgentTag, ReasoningLevel] — planned companion
+    #       to allow per-agent reasoning level (e.g., AGENT_REASONING_OVERRIDES__edit_instructions=high)
 
     # Tavily API
     tavily_api_key: SecretStr = Field(default=SecretStr(""))
@@ -102,6 +126,11 @@ class FindingModelAIConfig(BaseSettings):
         if not self.tavily_api_key.get_secret_value():
             raise ConfigurationError("Tavily API key is not set")
         return True
+
+    def _has_key(self, field_name: str) -> bool:
+        """Check if an API key field has a non-empty value."""
+        value: SecretStr | None = getattr(self, field_name, None)
+        return bool(value and value.get_secret_value())
 
     def _get_required_key_field(self, model_string: str) -> str | None:
         """Return the API key field name required for a model string.
@@ -127,6 +156,7 @@ class FindingModelAIConfig(BaseSettings):
             "anthropic": "anthropic_api_key",
             "google": "google_api_key",
             "google-gla": "google_api_key",
+            "google-vertex": "google_api_key",
             "ollama": None,  # No API key required
         }.get(provider_part)
 
@@ -146,25 +176,176 @@ class FindingModelAIConfig(BaseSettings):
             ("default_model_small", self.default_model_small),
         ]
 
+        has_gateway = self._has_key("pydantic_ai_gateway_api_key")
+        gateway_eligible_providers = {"openai", "anthropic", "google", "google-gla", "google-vertex"}
+
         missing: list[tuple[str, str, str]] = []
         for tier_name, model_string in models_to_check:
             key_field = self._get_required_key_field(model_string)
-            if key_field:
-                key_value = getattr(self, key_field).get_secret_value()
-                if not key_value:
-                    missing.append((tier_name, model_string, key_field))
+            if key_field and key_field != "pydantic_ai_gateway_api_key" and not self._has_key(key_field):
+                # Check if gateway fallback covers this provider
+                provider_part = model_string.split(":")[0]
+                if has_gateway and provider_part in gateway_eligible_providers:
+                    continue  # Gateway will handle this
+                missing.append((tier_name, model_string, key_field))
 
         if missing:
-            # Format: "default_model (openai:gpt-5-mini): OPENAI_API_KEY"
-            details = "; ".join(f"{tier} ({model}): {key.upper()}" for tier, model, key in missing)
-            raise ConfigurationError(f"Missing API keys for default models: {details}")
+            details = "; ".join(f"{tier} ({model}) requires {key.upper()}" for tier, model, key in missing)
+            raise ConfigurationError(
+                f"Missing API keys for default models: {details}. "
+                "Set the missing key(s) in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
+                "or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini)."
+            )
+
+    @staticmethod
+    def _canonical_model_spec(model_spec: str) -> str:
+        """Map a model spec to its canonical form for TOML lookup.
+
+        Gateway models use the same reasoning config as their direct counterparts:
+          gateway/openai:gpt-5.4      → openai:gpt-5.4
+          gateway/anthropic:claude-... → anthropic:claude-...
+          gateway/google:gemini-...    → google-gla:gemini-...
+          gateway/google-vertex:...    → google-gla:...
+        """
+        if ":" not in model_spec:
+            return model_spec
+        provider_part, model_name = model_spec.split(":", 1)
+        if provider_part.startswith("gateway/"):
+            backend = provider_part.split("/", 1)[1]
+            # Gateway Google routes through Vertex, but same models as google-gla
+            if backend in ("google", "google-vertex"):
+                return f"google-gla:{model_name}"
+            return f"{backend}:{model_name}"
+        # google: and google-vertex: are aliases for google-gla: (canonical TOML form)
+        if provider_part in ("google", "google-vertex"):
+            return f"google-gla:{model_name}"
+        return model_spec
+
+    @staticmethod
+    def _normalize_reasoning(model_spec: str, reasoning_level: ReasoningLevel) -> ReasoningLevel:
+        """Normalize a reasoning level for a known model using the supported models registry.
+
+        If the model has a normalization rule for this level (e.g., gpt-5.4 maps
+        "minimal" → "low"), apply it. Gateway models resolve to their canonical
+        direct-provider form for lookup. Unknown models pass through unchanged.
+        """
+        canonical = FindingModelAIConfig._canonical_model_spec(model_spec)
+        model_entry = SUPPORTED_MODELS.get(canonical)
+        if model_entry:
+            normalize_map = model_entry.get("normalize", {})
+            if reasoning_level in normalize_map:
+                return normalize_map[reasoning_level]  # type: ignore[return-value]
+        return reasoning_level
+
+    def _build_reasoning_settings(
+        self, provider_part: str, model_name: str, reasoning_level: ReasoningLevel
+    ) -> ModelSettings | None:
+        """Build provider-appropriate ModelSettings for the requested reasoning level.
+
+        Consults supported_models.toml for normalization rules. For known models,
+        reasoning levels are mapped to valid provider values. Unknown models get
+        best-effort provider defaults.
+        """
+        # Normalize using the registry (e.g., "minimal" → "low" for gpt-5.4)
+        model_spec = f"{provider_part}:{model_name}"
+        level = self._normalize_reasoning(model_spec, reasoning_level)
+
+        # Strip gateway/ prefix and normalize google aliases to canonical names
+        provider = provider_part.split("/")[-1]
+        if provider in ("google-gla", "google-vertex"):
+            provider = "google"
+
+        if provider == "openai":
+            if level == "none":
+                return None  # no settings = API default (no reasoning)
+            from pydantic_ai.models.openai import OpenAIResponsesModelSettings
+
+            return OpenAIResponsesModelSettings(openai_reasoning_effort=level)
+
+        if provider == "google":
+            # Google thinking levels are uppercase: MINIMAL, LOW, MEDIUM, HIGH
+            thinking_level = level.upper()
+            from pydantic_ai.models.google import GoogleModelSettings
+
+            return GoogleModelSettings(google_thinking_config={"thinking_level": thinking_level})
+
+        if provider == "anthropic":
+            from pydantic_ai.models.anthropic import AnthropicModelSettings
+
+            if level == "none":
+                return AnthropicModelSettings(anthropic_thinking={"type": "disabled"})
+
+            # Opus 4.6+ uses adaptive thinking (budget_tokens is deprecated)
+            if model_name.startswith("claude-opus-4-6"):
+                effort_map: dict[str, str] = {
+                    "minimal": "low",
+                    "low": "low",
+                    "medium": "medium",
+                    "high": "high",
+                    "xhigh": "high",
+                }
+                return AnthropicModelSettings(
+                    anthropic_thinking={"type": "adaptive"},
+                    anthropic_effort=effort_map.get(level, "medium"),
+                )
+
+            # Older models (sonnet-4-6, haiku-4-5, etc.): extended thinking with budget_tokens
+            anthropic_config = PROVIDER_CONFIGS.get("anthropic", {})
+            budget_map = anthropic_config.get("budget_map", {})
+            if level in budget_map:
+                entry = budget_map[level]
+                budget_tokens = entry["budget_tokens"]
+                max_tokens = entry["max_tokens"]
+            else:
+                budget_tokens, max_tokens = 4096, 16384
+            return AnthropicModelSettings(
+                anthropic_thinking={"type": "enabled", "budget_tokens": budget_tokens},
+                max_tokens=max_tokens,
+            )
+
+        return None  # ollama and unknown providers: no settings
+
+    def _resolve_with_fallback(
+        self,
+        model_name: str,
+        model_settings: ModelSettings | None,
+        *,
+        direct_key: str,
+        key_env_name: str,
+        make_direct: str,
+        make_gateway: str,
+    ) -> Model:
+        """Resolve a model using direct key or gateway fallback.
+
+        Args:
+            model_name: Model name (e.g., "gpt-5.4")
+            model_settings: Reasoning settings to pass through
+            direct_key: Config field name for the direct API key (e.g., "openai_api_key")
+            key_env_name: Human-readable env var name for error messages (e.g., "OPENAI_API_KEY")
+            make_direct: Name of the _make_*_model method for direct access
+            make_gateway: Name of the _make_gateway_*_model method for fallback
+        """
+        if self._has_key(direct_key):
+            return getattr(self, make_direct)(model_name, model_settings)
+        if self._has_key("pydantic_ai_gateway_api_key"):
+            logfire.info("Using gateway fallback for {model_name} (no {key})", model_name=model_name, key=key_env_name)
+            return getattr(self, make_gateway)(model_name, model_settings)
+        raise ConfigurationError(
+            f"{key_env_name} is not configured and no PYDANTIC_AI_GATEWAY_API_KEY for fallback. "
+            "Set one of these in .env or your environment."
+        )
 
     def _create_model_from_string(self, model_string: str, default_tier: ModelTier = "base") -> Model:
         """Create a Pydantic AI model instance from a model string.
 
+        Routes to the best available provider based on configured API keys.
+        For direct providers (openai, anthropic, google*), falls back to the
+        Pydantic AI Gateway if the provider-specific key is missing but
+        PYDANTIC_AI_GATEWAY_API_KEY is set.
+
         Args:
-            model_string: Model specification (e.g., "openai:gpt-5-mini", "anthropic:claude-sonnet-4-5")
-            default_tier: Tier to use for tier-specific settings (e.g., "small" enables minimal reasoning)
+            model_string: Model specification (e.g., "openai:gpt-5.4", "anthropic:claude-sonnet-4-6")
+            default_tier: Tier to use for per-tier reasoning settings resolution
 
         Returns:
             Configured Model instance
@@ -178,31 +359,49 @@ class FindingModelAIConfig(BaseSettings):
         provider_part, model_name = model_string.split(":", 1)
         parts = provider_part.split("/")
 
-        # Small tier uses minimal reasoning for faster/cheaper OpenAI responses
-        # Only gpt-5+ and o1+ models support the reasoning parameter
-        supports_reasoning = model_name.startswith(("gpt-5", "o1"))
-        openai_settings = (
-            ModelSettings(extra_body={"reasoning": {"effort": "minimal"}})
-            if default_tier == "small" and supports_reasoning
-            else None
-        )
+        # Resolve reasoning level for this tier and build provider-appropriate settings
+        reasoning_level: ReasoningLevel = {
+            "small": self.default_reasoning_small,
+            "base": self.default_reasoning_base,
+            "full": self.default_reasoning_full,
+        }[default_tier]
+        model_settings = self._build_reasoning_settings(provider_part, model_name, reasoning_level)
 
         if parts == ["openai"]:
-            return self._make_openai_model(model_name, openai_settings)
+            return self._resolve_with_fallback(
+                model_name,
+                model_settings,
+                direct_key="openai_api_key",
+                key_env_name="OPENAI_API_KEY",
+                make_direct="_make_openai_model",
+                make_gateway="_make_gateway_openai_model",
+            )
         elif parts == ["anthropic"]:
-            return self._make_anthropic_model(model_name)
-        elif parts in [["google"], ["google-gla"]]:
-            # Both 'google:' and 'google-gla:' map to Generative Language API
-            return self._make_google_gla_model(model_name)
+            return self._resolve_with_fallback(
+                model_name,
+                model_settings,
+                direct_key="anthropic_api_key",
+                key_env_name="ANTHROPIC_API_KEY",
+                make_direct="_make_anthropic_model",
+                make_gateway="_make_gateway_anthropic_model",
+            )
+        elif parts[0] in ("google", "google-gla", "google-vertex"):
+            return self._resolve_with_fallback(
+                model_name,
+                model_settings,
+                direct_key="google_api_key",
+                key_env_name="GOOGLE_API_KEY",
+                make_direct="_make_google_gla_model",
+                make_gateway="_make_gateway_google_vertex_model",
+            )
         elif parts == ["ollama"]:
             return self._make_ollama_model(model_name)
         elif parts == ["gateway", "openai"]:
-            return self._make_gateway_openai_model(model_name, openai_settings)
+            return self._make_gateway_openai_model(model_name, model_settings)
         elif parts == ["gateway", "anthropic"]:
-            return self._make_gateway_anthropic_model(model_name)
+            return self._make_gateway_anthropic_model(model_name, model_settings)
         elif parts in [["gateway", "google"], ["gateway", "google-vertex"]]:
-            # Both 'gateway/google:' and 'gateway/google-vertex:' map to Vertex AI
-            return self._make_gateway_google_vertex_model(model_name)
+            return self._make_gateway_google_vertex_model(model_name, model_settings)
         else:
             raise ConfigurationError(f"Unknown provider '{provider_part}'")
 
@@ -238,7 +437,7 @@ class FindingModelAIConfig(BaseSettings):
             model = settings.get_agent_model("enrich_classify", default_tier="base")
 
             # User overrides via environment:
-            # AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-opus-4-5
+            # AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-opus-4-6
         """
         if agent_tag in self.agent_model_overrides:
             model_string = self.agent_model_overrides[agent_tag]
@@ -269,20 +468,28 @@ class FindingModelAIConfig(BaseSettings):
         """Create an OpenAI model with configured API key."""
         api_key = self.openai_api_key.get_secret_value()
         if not api_key:
-            raise ConfigurationError("OPENAI_API_KEY not configured")
+            raise ConfigurationError(
+                "OPENAI_API_KEY is not configured. "
+                "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
+                "or override the model tier (e.g., DEFAULT_MODEL=google-gla:gemini-3-flash-preview)."
+            )
         return OpenAIResponsesModel(model_name, provider=OpenAIProvider(api_key=api_key), settings=settings)
 
-    def _make_anthropic_model(self, model_name: str) -> Model:
+    def _make_anthropic_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
         """Create an Anthropic model with configured API key."""
         from pydantic_ai.models.anthropic import AnthropicModel
         from pydantic_ai.providers.anthropic import AnthropicProvider
 
         api_key = self.anthropic_api_key.get_secret_value()
         if not api_key:
-            raise ConfigurationError("ANTHROPIC_API_KEY not configured")
-        return AnthropicModel(model_name, provider=AnthropicProvider(api_key=api_key))
+            raise ConfigurationError(
+                "ANTHROPIC_API_KEY is not configured. "
+                "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
+                "or override the model tier (e.g., DEFAULT_MODEL=openai:gpt-5.4)."
+            )
+        return AnthropicModel(model_name, provider=AnthropicProvider(api_key=api_key), settings=settings)
 
-    def _make_google_gla_model(self, model_name: str) -> Model:
+    def _make_google_gla_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
         """Create a Google Gemini model via Generative Language API.
 
         Used for direct Google API access (google: or google-gla: prefixes).
@@ -293,8 +500,12 @@ class FindingModelAIConfig(BaseSettings):
 
         api_key = self.google_api_key.get_secret_value()
         if not api_key:
-            raise ConfigurationError("GOOGLE_API_KEY not configured")
-        return GoogleModel(model_name, provider=GoogleProvider(api_key=api_key))
+            raise ConfigurationError(
+                "GOOGLE_API_KEY is not configured. "
+                "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
+                "or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini)."
+            )
+        return GoogleModel(model_name, provider=GoogleProvider(api_key=api_key), settings=settings)
 
     def _make_gateway_openai_model(self, model_name: str, settings: ModelSettings | None) -> OpenAIResponsesModel:
         """Create an OpenAI model via Pydantic AI Gateway."""
@@ -306,7 +517,7 @@ class FindingModelAIConfig(BaseSettings):
         provider = gateway_provider("openai-responses", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
         return OpenAIResponsesModel(model_name, provider=provider, settings=settings)
 
-    def _make_gateway_anthropic_model(self, model_name: str) -> Model:
+    def _make_gateway_anthropic_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
         """Create an Anthropic model via Pydantic AI Gateway."""
         from pydantic_ai.models.anthropic import AnthropicModel
         from pydantic_ai.providers.gateway import gateway_provider
@@ -315,9 +526,9 @@ class FindingModelAIConfig(BaseSettings):
         if not api_key:
             raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
         provider = gateway_provider("anthropic", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
-        return AnthropicModel(model_name, provider=provider)
+        return AnthropicModel(model_name, provider=provider, settings=settings)
 
-    def _make_gateway_google_vertex_model(self, model_name: str) -> Model:
+    def _make_gateway_google_vertex_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
         """Create a Google Gemini model via Pydantic AI Gateway (Vertex AI).
 
         Used for gateway/google: or gateway/google-vertex: prefixes.
@@ -331,7 +542,7 @@ class FindingModelAIConfig(BaseSettings):
         if not api_key:
             raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
         provider = gateway_provider("google-vertex", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
-        return GoogleModel(model_name, provider=provider)
+        return GoogleModel(model_name, provider=provider, settings=settings)
 
     # -------------------------------------------------------------------------
     # Ollama model validation and creation
@@ -437,5 +648,6 @@ __all__ = [
     "AgentTag",
     "FindingModelAIConfig",
     "ModelTier",
+    "ReasoningLevel",
     "settings",
 ]

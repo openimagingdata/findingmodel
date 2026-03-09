@@ -22,18 +22,18 @@ GOOGLE_API_KEY=your_key_here
 TAVILY_API_KEY=your_key_here
 
 # Optional: Override default model
-DEFAULT_MODEL=anthropic:claude-sonnet-4-5
+DEFAULT_MODEL=anthropic:claude-sonnet-4-6
 ```
 
 ### Supported AI Providers
 
 | Provider | Example | API Key |
 |----------|---------|---------|
-| OpenAI | `openai:gpt-5-mini` | `OPENAI_API_KEY` |
-| Anthropic | `anthropic:claude-sonnet-4-5` | `ANTHROPIC_API_KEY` |
-| Google Gemini | `google:gemini-3-flash-preview` | `GOOGLE_API_KEY` |
+| OpenAI | `openai:gpt-5.4` | `OPENAI_API_KEY` |
+| Anthropic | `anthropic:claude-sonnet-4-6` | `ANTHROPIC_API_KEY` |
+| Google (direct) | `google-gla:gemini-3-flash-preview` | `GOOGLE_API_KEY` |
 | Ollama (local) | `ollama:llama3` | None required |
-| Gateway | `gateway/openai:gpt-5-mini` | `PYDANTIC_AI_GATEWAY_API_KEY` |
+| Gateway | `gateway/openai:gpt-5.4` | `PYDANTIC_AI_GATEWAY_API_KEY` |
 
 See [Configuration Guide](../../docs/configuration.md) for model tiers and per-agent overrides.
 

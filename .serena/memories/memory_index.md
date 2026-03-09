@@ -13,7 +13,7 @@ Navigation aid for findingmodel project memories.
 - `evaluator_architecture_2025` – Eval system design
 
 ## AI & Agents
-- `pydantic_ai_best_practices_2025_09` – Agent implementation patterns
+- `pydantic_ai_best_practices` – Agent implementation patterns
 - `pydantic_ai_testing_best_practices` – TestModel/FunctionModel patterns
 - `agent_evaluation_best_practices_2025` – Eval metrics and design
 - `multi_agent_orchestration_system_2025` – Multi-agent workflow patterns

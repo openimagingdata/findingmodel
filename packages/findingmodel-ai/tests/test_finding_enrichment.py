@@ -1415,10 +1415,10 @@ class TestEnrichFindingOrchestration:
             mock_agent.run = AsyncMock(return_value=mock_result)
             mock_create_agent.return_value = mock_agent
 
-            await enrich_finding("test finding", model="anthropic:claude-sonnet-4-5")
+            await enrich_finding("test finding", model="anthropic:claude-sonnet-4-6")
 
             # Verify model was passed to create_enrichment_agent
-            mock_create_agent.assert_called_once_with(model_tier="base", model="anthropic:claude-sonnet-4-5")
+            mock_create_agent.assert_called_once_with(model_tier="base", model="anthropic:claude-sonnet-4-6")
 
 
 # =============================================================================

@@ -2,6 +2,7 @@ import asyncio
 from pathlib import Path
 
 import click
+from findingmodel.config import ConfigurationError
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
 from rich.console import Console
@@ -15,8 +16,17 @@ console = Console()
 
 
 @click.group()
-def cli() -> None:
-    pass
+@click.pass_context
+def cli(ctx: click.Context) -> None:
+    """findingmodel-ai: AI-powered tools for finding model authoring."""
+    # Validate AI model API keys before running AI commands.
+    # The ontology subcommand only needs BIOONTOLOGY_API_KEY, not AI model keys.
+    if ctx.invoked_subcommand not in (None, "ontology"):
+        try:
+            settings.validate_default_model_keys()
+        except ConfigurationError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise SystemExit(1) from None
 
 
 def print_info_truncate_detail(finding_info: FindingInfo) -> None:

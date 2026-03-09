@@ -12,7 +12,7 @@ AI-powered tools for finding model authoring: info generation, model editing, on
 
 See Serena `code_style_conventions` for provider table and model tiers.
 
-- Configure via `DEFAULT_MODEL` env var (e.g., `openai:gpt-4o`)
+- Configure via `DEFAULT_MODEL` env var (e.g., `openai:gpt-5.4`)
 - Per-agent overrides: `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
 - See `docs/configuration.md` for complete reference
 
@@ -65,7 +65,7 @@ OLLAMA_BASE_URL=...
 
 ## Serena References
 
-- `pydantic_ai_best_practices_2025_09` – agent implementation patterns
+- `pydantic_ai_best_practices` – agent implementation patterns
 - `pydantic_ai_testing_best_practices` – testing with TestModel/FunctionModel
 - `ontology_search_architecture` – multi-backend search architecture
 - `anatomic_location_search_implementation` – two-agent discovery workflow

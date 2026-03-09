@@ -4,7 +4,7 @@ Simple script to enrich a finding with metadata.
 
 Usage:
     python scripts/enrich_finding.py "pneumonia"
-    python scripts/enrich_finding.py "pneumonia" --model anthropic:claude-sonnet-4-5
+    python scripts/enrich_finding.py "pneumonia" --model anthropic:claude-sonnet-4-6
     python scripts/enrich_finding.py OIFM_AI_000001
 """
 
@@ -26,7 +26,7 @@ async def main() -> None:
     parser.add_argument("finding", help="Finding name or OIFM ID")
     parser.add_argument(
         "--model",
-        help="AI model string (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5'). If not specified, uses configured default.",
+        help="AI model string (e.g., 'openai:gpt-5.4', 'anthropic:claude-sonnet-4-6'). If not specified, uses configured default.",
     )
     args = parser.parse_args()
 

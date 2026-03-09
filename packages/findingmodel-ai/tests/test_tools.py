@@ -209,9 +209,9 @@ async def test_create_info_from_name_basic_wiring() -> None:
     All comprehensive behavioral testing is in evals/finding_description.py.
     This test only verifies the tool can be called successfully.
     """
-    # Skip if no API key configured
-    if not ai_settings.openai_api_key or not ai_settings.openai_api_key.get_secret_value():
-        pytest.skip("OpenAI API key not configured")
+    # small tier is google-gla:gemini-3-flash-preview — skip if Google key is missing
+    if not ai_settings.google_api_key or not ai_settings.google_api_key.get_secret_value():
+        pytest.skip("GOOGLE_API_KEY not configured (required for small-tier model)")
 
     from findingmodel.finding_info import FindingInfo
     from findingmodel_ai.authoring.description import create_info_from_name
@@ -523,9 +523,9 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
     All comprehensive behavioral testing is in evals/markdown_in.py.
     This test only verifies the tool can be called successfully.
     """
-    # Skip if no API key configured
-    if not ai_settings.openai_api_key or not ai_settings.openai_api_key.get_secret_value():
-        pytest.skip("OpenAI API key not configured")
+    # small tier is google-gla:gemini-3-flash-preview — skip if Google key is missing
+    if not ai_settings.google_api_key or not ai_settings.google_api_key.get_secret_value():
+        pytest.skip("GOOGLE_API_KEY not configured (required for small-tier model)")
 
     from findingmodel.finding_model import FindingModelBase
     from findingmodel_ai.authoring.description import create_info_from_name

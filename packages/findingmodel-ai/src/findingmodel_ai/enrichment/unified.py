@@ -178,7 +178,7 @@ class FindingEnrichmentResult(BaseModel):
     )
 
     model_used: str = Field(
-        description="AI model string used for enrichment (e.g., 'openai:gpt-5-mini', 'anthropic:claude-sonnet-4-5')",
+        description="AI model string used for enrichment (e.g., 'openai:gpt-5.4', 'anthropic:claude-sonnet-4-6')",
     )
 
     model_tier: str = Field(
@@ -575,7 +575,7 @@ def create_enrichment_agent(
 
     Args:
         model_tier: Model tier to use (defaults to "base")
-        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5').
+        model: Optional model string override (e.g., 'openai:gpt-5.4', 'anthropic:claude-sonnet-4-6').
                If None, uses the configured default for the specified tier.
 
     Returns:
@@ -619,7 +619,7 @@ async def enrich_finding_unified(  # noqa: C901
     Args:
         finding_name: Name of the imaging finding (e.g., "pneumonia", "liver lesion")
         description: Optional detailed description for context
-        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5').
+        model: Optional model string override (e.g., 'openai:gpt-5.4', 'anthropic:claude-sonnet-4-6').
                If None, uses the configured default.
 
     Returns:
@@ -866,7 +866,7 @@ async def enrich_finding(  # noqa: C901
 
     Args:
         identifier: Either an OIFM ID (e.g., "OIFM_AI_000001") or finding name (e.g., "pneumonia")
-        model: Optional model string override (e.g., 'openai:gpt-5', 'anthropic:claude-sonnet-4-5').
+        model: Optional model string override (e.g., 'openai:gpt-5.4', 'anthropic:claude-sonnet-4-6').
                If None, uses the configured default.
         model_tier: Model tier for AI agents ("base" for production, "small" for fast tests).
 
