@@ -126,11 +126,16 @@ class TestAnatomicLocationIndexSearch:
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
             # Search for "turbinate" - should find nasal turbinates
             mock_settings = MagicMock()
-            mock_settings.openai_api_key = None
-            mock_settings.openai_embedding_model = "text-embedding-3-small"
-            mock_settings.openai_embedding_dimensions = 512
+            mock_settings.openai_api_key = MagicMock()
+            mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
+            mock_settings.embedding_provider = "openai"
+            mock_settings.embedding_model = "text-embedding-3-small"
+            mock_settings.embedding_dimensions = 512
 
-            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
+            with (
+                patch("anatomic_locations.config.get_settings", return_value=mock_settings),
+                patch("anatomic_locations.index.get_embedding", new=AsyncMock(return_value=None)),
+            ):
                 results = await index.search("turbinate", limit=10)
 
             # Should find at least one result
@@ -160,6 +165,9 @@ class TestAnatomicLocationIndexSearch:
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
             mock_settings.openai_embedding_model = "text-embedding-3-small"
             mock_settings.openai_embedding_dimensions = 512
+            mock_settings.embedding_provider = "openai"
+            mock_settings.embedding_model = "text-embedding-3-small"
+            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
@@ -199,6 +207,9 @@ class TestAnatomicLocationIndexSearch:
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
             mock_settings.openai_embedding_model = "text-embedding-3-small"
             mock_settings.openai_embedding_dimensions = 512
+            mock_settings.embedding_provider = "openai"
+            mock_settings.embedding_model = "text-embedding-3-small"
+            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
@@ -223,18 +234,19 @@ class TestAnatomicLocationIndexSearch:
 
     @pytest.mark.asyncio
     async def test_search_falls_back_to_fts_only(self, prebuilt_db_path: Path) -> None:
-        """When no embedding available, search falls back to FTS-only.
-
-        Validates fallback behavior when semantic search is not available
-        (e.g., no API key configured).
-        """
+        """When embedding generation returns None, search falls back to FTS-only."""
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
             mock_settings = MagicMock()
-            mock_settings.openai_api_key = None
-            mock_settings.openai_embedding_model = "text-embedding-3-small"
-            mock_settings.openai_embedding_dimensions = 512
+            mock_settings.openai_api_key = MagicMock()
+            mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
+            mock_settings.embedding_provider = "openai"
+            mock_settings.embedding_model = "text-embedding-3-small"
+            mock_settings.embedding_dimensions = 512
 
-            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
+            with (
+                patch("anatomic_locations.config.get_settings", return_value=mock_settings),
+                patch("anatomic_locations.index.get_embedding", new=AsyncMock(return_value=None)),
+            ):
                 results = await index.search("nasal structures", limit=5)
 
                 # Should still return FTS results
@@ -386,7 +398,17 @@ class TestAnatomicLocationIndexWeakRefBinding:
             assert all(loc._index is not None for loc in by_code)
 
             # Test search
-            search_results = await index.search("turbinate", limit=5)
+            mock_settings = MagicMock()
+            mock_settings.openai_api_key = MagicMock()
+            mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
+            mock_settings.embedding_provider = "openai"
+            mock_settings.embedding_model = "text-embedding-3-small"
+            mock_settings.embedding_dimensions = 512
+            with (
+                patch("anatomic_locations.config.get_settings", return_value=mock_settings),
+                patch("anatomic_locations.index.get_embedding", new=AsyncMock(return_value=None)),
+            ):
+                search_results = await index.search("turbinate", limit=5)
             assert all(loc._index is not None for loc in search_results)
 
             # Test hierarchy methods
@@ -413,11 +435,16 @@ class TestSearchQualityThresholds:
         """FTS-only path filters results below minimum BM25 score threshold."""
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
             mock_settings = MagicMock()
-            mock_settings.openai_api_key = None
-            mock_settings.openai_embedding_model = "text-embedding-3-small"
-            mock_settings.openai_embedding_dimensions = 512
+            mock_settings.openai_api_key = MagicMock()
+            mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
+            mock_settings.embedding_provider = "openai"
+            mock_settings.embedding_model = "text-embedding-3-small"
+            mock_settings.embedding_dimensions = 512
 
-            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
+            with (
+                patch("anatomic_locations.config.get_settings", return_value=mock_settings),
+                patch("anatomic_locations.index.get_embedding", new=AsyncMock(return_value=None)),
+            ):
                 # Search for a term that doesn't exist — should get few or no results
                 results = await index.search("xyznonexistent", limit=10)
 
@@ -450,11 +477,16 @@ class TestSearchQualityThresholds:
         """Good FTS matches pass the quality threshold and are returned."""
         async with AnatomicLocationIndex(prebuilt_db_path) as index:
             mock_settings = MagicMock()
-            mock_settings.openai_api_key = None
-            mock_settings.openai_embedding_model = "text-embedding-3-small"
-            mock_settings.openai_embedding_dimensions = 512
+            mock_settings.openai_api_key = MagicMock()
+            mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
+            mock_settings.embedding_provider = "openai"
+            mock_settings.embedding_model = "text-embedding-3-small"
+            mock_settings.embedding_dimensions = 512
 
-            with patch("anatomic_locations.config.get_settings", return_value=mock_settings):
+            with (
+                patch("anatomic_locations.config.get_settings", return_value=mock_settings),
+                patch("anatomic_locations.index.get_embedding", new=AsyncMock(return_value=None)),
+            ):
                 # "turbinate" is definitely in the database
                 results = await index.search("turbinate", limit=10)
 

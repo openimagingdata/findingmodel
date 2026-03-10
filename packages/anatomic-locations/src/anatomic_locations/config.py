@@ -17,18 +17,15 @@ class ConfigurationError(RuntimeError):
 
 _RUNTIME_EMBEDDING_PROFILES: Final[dict[str, tuple[str, str, int]]] = {
     "openai": ("openai", "text-embedding-3-small", 512),
-    "local": ("fastembed", "BAAI/bge-small-en-v1.5", 384),
 }
 
 
 def _supported_profile_help(env_prefix: str) -> str:
     openai_provider, openai_model, openai_dims = _RUNTIME_EMBEDDING_PROFILES["openai"]
-    local_provider, local_model, local_dims = _RUNTIME_EMBEDDING_PROFILES["local"]
     return (
         "Supported runtime embedding profiles are: "
-        "auto (default, resolves to openai when OpenAI API key is set, else local), "
-        f"openai ({openai_provider}/{openai_model}/{openai_dims}) and "
-        f"local ({local_provider}/{local_model}/{local_dims}). "
+        "auto (default, resolves to openai) and "
+        f"openai ({openai_provider}/{openai_model}/{openai_dims}). "
         f"Set {env_prefix}_EMBEDDING_PROFILE to one of those values."
     )
 
@@ -43,7 +40,7 @@ class AnatomicLocationSettings(BaseSettings):
     - ANATOMIC_MANIFEST_URL: URL to JSON manifest for database versions
 
     Embedding configuration:
-    - ANATOMIC_EMBEDDING_PROFILE: runtime embedding profile (`auto`, `openai`, or `local`)
+    - ANATOMIC_EMBEDDING_PROFILE: runtime embedding profile (`auto` or `openai`)
     - ANATOMIC_OPENAI_API_KEY or OPENAI_API_KEY: OpenAI API key (for provider=openai)
     """
 
@@ -73,8 +70,7 @@ class AnatomicLocationSettings(BaseSettings):
                 f"Invalid ANATOMIC_EMBEDDING_PROFILE: {self.embedding_profile!r}. {_supported_profile_help('ANATOMIC')}"
             )
         if requested_profile == "auto":
-            openai_key = self.openai_api_key.get_secret_value().strip() if self.openai_api_key else ""
-            self.embedding_profile = "openai" if openai_key else "local"
+            self.embedding_profile = "openai"
         else:
             self.embedding_profile = requested_profile
         return self
@@ -143,12 +139,18 @@ def ensure_anatomic_db() -> Path:
         embedding_dimensions=s.embedding_dimensions,
     )
     detected = read_embedding_profile_from_db(db_path)
-    if detected is not None and detected[0].strip().lower() == "openai":
+    if detected is not None:
+        provider, model, dimensions = detected
+        if provider.strip().lower() != "openai":
+            raise ConfigurationError(
+                "The selected anatomic-locations database is not OpenAI-embedded "
+                f"({provider}/{model}/{dimensions}). anatomic-locations currently supports only OpenAI embeddings."
+            )
         api_key = s.openai_api_key.get_secret_value().strip() if s.openai_api_key else ""
         if not api_key:
             raise ConfigurationError(
                 "The selected anatomic-locations database uses OpenAI embeddings "
-                f"({detected[1]}/{detected[2]}), but OPENAI_API_KEY is not set."
+                f"({model}/{dimensions}), but OPENAI_API_KEY is not set."
             )
     return db_path
 

@@ -615,9 +615,12 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         return [(str(r[0]), 1.0 - float(r[1])) for r in rows if float(r[1]) <= max_distance]
 
     def _require_openai_key_if_needed(self, conn: duckdb.DuckDBPyConnection) -> None:
-        provider, _model, _dimensions = self._get_db_embedding_profile(conn)
+        provider, model, dimensions = self._get_db_embedding_profile(conn)
         if provider.strip().lower() != "openai":
-            return
+            raise RuntimeError(
+                "This anatomic-locations runtime currently supports only OpenAI-embedded databases, "
+                f"but the selected database is {provider}/{model}/{dimensions}."
+            )
         from anatomic_locations.config import get_settings
 
         settings = get_settings()

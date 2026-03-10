@@ -59,14 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### anatomic-locations
 
-#### Added
-
-- Runtime embedding profile setting: `ANATOMIC_EMBEDDING_PROFILE` (`auto`, `openai`, or `local`).
-
 #### Changed
 
-- `auto` profile now uses OpenAI embeddings when an API key is present, otherwise local FastEmbed embeddings.
+- `ANATOMIC_EMBEDDING_PROFILE` now supports `auto/openai` only (`local` profile is not supported for anatomic runtime).
 - Query embedding provider/model/dimensions are now taken from the selected DB file metadata.
+- Non-OpenAI anatomic DB files now fail fast with a clear configuration error.
 - If the selected DB is OpenAI-embedded and no OpenAI key is configured, search now fails immediately with a clear configuration error.
 - Removed obsolete runtime embedding env vars.
 

@@ -21,9 +21,9 @@ class TestAnatomicLocationSettings:
         assert settings.remote_db_hash is None
         assert settings.manifest_url == "https://anatomiclocationsdata.t3.storage.dev/manifest.json"
         assert settings.openai_api_key is None
-        assert settings.embedding_profile == "local"
-        assert settings.openai_embedding_model == "BAAI/bge-small-en-v1.5"
-        assert settings.openai_embedding_dimensions == 384
+        assert settings.embedding_profile == "openai"
+        assert settings.openai_embedding_model == "text-embedding-3-small"
+        assert settings.openai_embedding_dimensions == 512
 
     def test_environment_variable_loading_with_anatomic_prefix(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that environment variables with ANATOMIC_ prefix are loaded correctly."""
@@ -87,26 +87,17 @@ class TestAnatomicLocationSettings:
         settings = AnatomicLocationSettings(_env_file=None)
 
         assert settings.openai_api_key is None
-        assert settings.embedding_profile == "local"
+        assert settings.embedding_profile == "openai"
 
-    def test_embedding_profile_auto_uses_local_when_openai_key_blank(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Auto profile should resolve to local when OPENAI_API_KEY is blank."""
+    def test_embedding_profile_auto_resolves_openai_when_openai_key_blank(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Auto profile should resolve to openai even when OPENAI_API_KEY is blank."""
         monkeypatch.setenv("OPENAI_API_KEY", "   ")
 
         settings = AnatomicLocationSettings(_env_file=None)
 
-        assert settings.embedding_profile == "local"
-
-    def test_embedding_profile_local_selects_fastembed_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """ANATOMIC_EMBEDDING_PROFILE=local should resolve to supported local profile tuple."""
-        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "local")
-
-        settings = AnatomicLocationSettings(_env_file=None)
-
-        assert settings.embedding_profile == "local"
-        assert settings.embedding_provider == "fastembed"
-        assert settings.embedding_model == "BAAI/bge-small-en-v1.5"
-        assert settings.embedding_dimensions == 384
+        assert settings.embedding_profile == "openai"
 
     def test_embedding_profile_auto_with_key_resolves_openai(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Explicit auto profile should resolve to openai when key is available."""
@@ -120,7 +111,7 @@ class TestAnatomicLocationSettings:
 
     def test_invalid_embedding_profile_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Only supported runtime profiles should be accepted."""
-        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "custom")
+        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "local")
 
         with pytest.raises(ValidationError, match="Invalid ANATOMIC_EMBEDDING_PROFILE"):
             AnatomicLocationSettings(_env_file=None)
@@ -208,9 +199,9 @@ class TestEnsureAnatomicDb:
                 manifest_key="anatomic_locations",
                 manifest_url="https://anatomiclocationsdata.t3.storage.dev/manifest.json",  # Default from settings
                 app_name="anatomic-locations",
-                embedding_provider="fastembed",
-                embedding_model="BAAI/bge-small-en-v1.5",
-                embedding_dimensions=384,
+                embedding_provider="openai",
+                embedding_model="text-embedding-3-small",
+                embedding_dimensions=512,
             )
 
             assert result == tmp_path / "anatomic_locations.duckdb"
@@ -242,9 +233,9 @@ class TestEnsureAnatomicDb:
                 manifest_key="anatomic_locations",
                 manifest_url="https://custom.example.com/manifest.json",
                 app_name="anatomic-locations",
-                embedding_provider="fastembed",
-                embedding_model="BAAI/bge-small-en-v1.5",
-                embedding_dimensions=384,
+                embedding_provider="openai",
+                embedding_model="text-embedding-3-small",
+                embedding_dimensions=512,
             )
 
             assert result == tmp_path / "custom.duckdb"
@@ -287,24 +278,24 @@ class TestEnsureAnatomicDb:
             call_kwargs = mock_ensure_db_file.call_args.kwargs
             assert call_kwargs["app_name"] == "anatomic-locations"
 
-    def test_profile_local_resolves_to_supported_embedding_tuple(
+    def test_profile_openai_resolves_to_supported_embedding_tuple(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """ANATOMIC_EMBEDDING_PROFILE=local should drive manifest/query embedding tuple."""
+        """ANATOMIC_EMBEDDING_PROFILE=openai should drive manifest/query embedding tuple."""
         import anatomic_locations.config as config_module
 
         config_module._settings = None
-        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "local")
+        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "openai")
 
         with patch("anatomic_locations.config.ensure_db_file") as mock_ensure_db_file:
-            mock_ensure_db_file.return_value = tmp_path / "anatomic_local.duckdb"
+            mock_ensure_db_file.return_value = tmp_path / "anatomic_openai.duckdb"
             result = ensure_anatomic_db()
 
             call_kwargs = mock_ensure_db_file.call_args.kwargs
-            assert call_kwargs["embedding_provider"] == "fastembed"
-            assert call_kwargs["embedding_model"] == "BAAI/bge-small-en-v1.5"
-            assert call_kwargs["embedding_dimensions"] == 384
-            assert result == tmp_path / "anatomic_local.duckdb"
+            assert call_kwargs["embedding_provider"] == "openai"
+            assert call_kwargs["embedding_model"] == "text-embedding-3-small"
+            assert call_kwargs["embedding_dimensions"] == 512
+            assert result == tmp_path / "anatomic_openai.duckdb"
 
     def test_returns_path_from_ensure_db_file(self, tmp_path: Path) -> None:
         """Test that ensure_anatomic_db() returns the path from ensure_db_file."""
@@ -340,5 +331,23 @@ class TestEnsureAnatomicDb:
             ),
             patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=True),
             pytest.raises(config_module.ConfigurationError, match="uses OpenAI embeddings"),
+        ):
+            ensure_anatomic_db()
+
+    def test_errors_immediately_for_non_openai_profile_db(self, tmp_path: Path) -> None:
+        """Non-OpenAI profile DBs should fail fast for anatomic runtime."""
+        import anatomic_locations.config as config_module
+
+        config_module._settings = None
+        db_path = tmp_path / "anatomic_local.duckdb"
+
+        with (
+            patch("anatomic_locations.config.ensure_db_file", return_value=db_path),
+            patch(
+                "anatomic_locations.config.read_embedding_profile_from_db",
+                return_value=("fastembed", "BAAI/bge-small-en-v1.5", 384),
+            ),
+            patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}, clear=True),
+            pytest.raises(config_module.ConfigurationError, match="currently supports only OpenAI embeddings"),
         ):
             ensure_anatomic_db()
