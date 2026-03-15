@@ -1,7 +1,7 @@
 """Tests for core Pydantic models: FindingModel, Contributor classes."""
 
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import pytest
 from findingmodel.contributor import Organization, Person
@@ -453,8 +453,8 @@ def test_person_save_and_load_jsonl(
 ) -> None:
     # Organizations need to be present for Person.load_jsonl to validate organization_code
     # Re-create them or load them if they were also saved/cleared
-    Organization(**{"name": "Open Health Imaging Foundation", "code": "OHIF"})  # type: ignore
-    Organization(**{"name": "Radiological Society of North America", "code": "RSNA", "url": "https://rsna.org"})  # type: ignore
+    Organization(name="Open Health Imaging Foundation", code="OHIF")  # type: ignore
+    Organization(name="Radiological Society of North America", code="RSNA", url="https://rsna.org")  # type: ignore
     Person(**sample_person_john)  # type: ignore
     Person(**sample_person_jane)  # type: ignore
 

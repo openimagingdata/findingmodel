@@ -39,6 +39,21 @@ extend-select = [
 ]
 fixable = ["ALL"]
 unfixable = []
+ignore = [
+    "BLE001",    # blind except Exception — intentional in eval/error-handling code
+    "S110",      # try-except-pass — intentional silencing in some patterns
+    "RUF069",    # float equality — exact 0.0/1.0 comparisons in tests are fine
+    "ASYNC230",  # async file I/O — not applicable to our sync DuckDB patterns
+    "DTZ005",    # timezone-naive datetime.now() — acceptable for local timestamps
+    "DTZ011",    # timezone-naive datetime.date.today() — acceptable for local dates
+    "TRY004",    # prefer TypeError — too prescriptive for our use cases
+    "PYI034",    # __enter__ return Self — stdlib compat
+    "PYI036",    # __exit__ annotation — stdlib compat
+    "EXE001",    # shebang on non-executable — false positives
+    "PIE810",    # single startswith/endswith — readability preference
+    "PERF102",   # dict .keys() iteration — readability preference
+    "PLC0206",   # dict iteration without .items() — readability preference
+]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**/*.py" = ["ANN401"]  # Allow Any type in test files for mock functions
@@ -48,6 +63,10 @@ unfixable = []
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+# Session-scoped test loop prevents google-genai SDK's async httpx connections from
+# triggering "Event loop is closed" errors during loop teardown between modules.
+# See: https://github.com/googleapis/python-genai/issues/1709
+asyncio_default_test_loop_scope = "session"
 # Note: testpaths not set - use per-package test tasks instead (task test:oidm-common, etc.)
 # This avoids conftest.py collisions when running tests across multiple packages
 markers = [

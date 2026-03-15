@@ -18,13 +18,11 @@ console = Console()
 @click.version_option()
 def main() -> None:
     """OIDM Maintenance Tools - Build and publish databases."""
-    pass
 
 
 @main.group()
 def anatomic() -> None:
     """Anatomic-locations database operations."""
-    pass
 
 
 @anatomic.command(name="build")
@@ -114,7 +112,6 @@ def anatomic_publish(db_path: Path, version: str | None, dry_run: bool) -> None:
 @main.group()
 def findingmodel() -> None:
     """FindingModel database operations."""
-    pass
 
 
 @findingmodel.command(name="build")
@@ -169,7 +166,6 @@ def findingmodel_publish(db_path: Path, version: str | None, dry_run: bool) -> N
 @main.group()
 def embeddings() -> None:
     """Embedding cache operations."""
-    pass
 
 
 @embeddings.command(name="migrate")
@@ -202,7 +198,8 @@ def embeddings_stats() -> None:
         console.print(f"[bold red]✗ Stats failed:[/bold red] {e}")
         raise SystemExit(1) from e
 
-    models = stats["models"] if isinstance(stats.get("models"), dict) else {}
+    raw_models = stats.get("models")
+    models: dict[str, object] = raw_models if isinstance(raw_models, dict) else {}
     console.print(f"[bold green]✓ Cache:[/bold green] {cache_dir}")
     console.print(f"  Total keys: {stats['total_keys']}")
     console.print(f"  Embedding keys: {stats['embedding_keys']}")

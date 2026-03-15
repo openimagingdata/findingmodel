@@ -26,11 +26,11 @@ from anatomic_locations import AnatomicLocationIndex
 
 # Auto-open: no explicit open() or context manager needed for simple queries
 index = AnatomicLocationIndex()
-location = index.get("RID2772")   # by RID
-location = index.get("kidney")    # by description (case-insensitive)
-location = index.get("renal")     # by synonym (case-insensitive)
-print(location.description)       # "kidney"
-print(location.region.value)      # "Abdomen"
+location = index.get("RID2772")  # by RID
+location = index.get("kidney")  # by description (case-insensitive)
+location = index.get("renal")  # by synonym (case-insensitive)
+print(location.description)  # "kidney"
+print(location.region.value)  # "Abdomen"
 ```
 
 ## Configuration

@@ -8,10 +8,10 @@ Run with: task test-full
 
 import httpx
 import pytest
+from findingmodel_ai.config import SUPPORTED_MODELS
+from findingmodel_ai.config import settings as ai_settings
 from pydantic_ai import Agent, models
 from pydantic_ai.models import Model
-
-from findingmodel_ai.config import SUPPORTED_MODELS, settings as ai_settings
 
 # Prevent accidental model requests in unit tests
 models.ALLOW_MODEL_REQUESTS = False
@@ -74,7 +74,6 @@ def _connectivity_params() -> list[pytest.param]:
     return params
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("model_spec", _connectivity_params())
 async def test_model_reachable(model_spec: str) -> None:
     """Verify the model responds to a trivial prompt."""
@@ -91,10 +90,10 @@ async def test_model_reachable(model_spec: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Parametrize from TOML: reasoning tests (one per model × valid level)
+# Parametrize from TOML: reasoning tests (one per model x valid level)
 # ---------------------------------------------------------------------------
 def _reasoning_params() -> list[pytest.param]:
-    """Generate one pytest.param per model × valid reasoning level."""
+    """Generate one pytest.param per model x valid reasoning level."""
     params = []
     for spec, entry in SUPPORTED_MODELS.items():
         provider = entry.get("provider", "unknown")
@@ -110,7 +109,6 @@ def _reasoning_params() -> list[pytest.param]:
     return params
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("model_spec,reasoning_level", _reasoning_params())
 async def test_reasoning_accepted(model_spec: str, reasoning_level: str) -> None:
     """Verify the model accepts the given reasoning configuration."""
@@ -152,7 +150,6 @@ def _tier_params() -> list[pytest.param]:
     return params
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("tier_name", _tier_params())
 async def test_tier_with_reasoning(tier_name: str) -> None:
     """Verify get_model() with configured reasoning works for each tier."""

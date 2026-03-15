@@ -234,7 +234,7 @@ class FindingModelAIConfig(BaseSettings):
         if model_entry:
             normalize_map = model_entry.get("normalize", {})
             if reasoning_level in normalize_map:
-                return normalize_map[reasoning_level]  # type: ignore[return-value]
+                return normalize_map[reasoning_level]  # type: ignore[no-any-return]
         return reasoning_level
 
     def _build_reasoning_settings(
@@ -263,10 +263,10 @@ class FindingModelAIConfig(BaseSettings):
             return OpenAIResponsesModelSettings(openai_reasoning_effort=level)
 
         if provider == "google":
-            # Google thinking levels are uppercase: MINIMAL, LOW, MEDIUM, HIGH
-            thinking_level = level.upper()
+            from google.genai.types import ThinkingLevel
             from pydantic_ai.models.google import GoogleModelSettings
 
+            thinking_level = ThinkingLevel(level.upper())
             return GoogleModelSettings(google_thinking_config={"thinking_level": thinking_level})
 
         if provider == "anthropic":
@@ -277,7 +277,7 @@ class FindingModelAIConfig(BaseSettings):
 
             # Opus 4.6+ uses adaptive thinking (budget_tokens is deprecated)
             if model_name.startswith("claude-opus-4-6"):
-                effort_map: dict[str, str] = {
+                effort_map: dict[str, Literal["low", "medium", "high", "max"]] = {
                     "minimal": "low",
                     "low": "low",
                     "medium": "medium",
@@ -326,10 +326,12 @@ class FindingModelAIConfig(BaseSettings):
             make_gateway: Name of the _make_gateway_*_model method for fallback
         """
         if self._has_key(direct_key):
-            return getattr(self, make_direct)(model_name, model_settings)
+            result: Model = getattr(self, make_direct)(model_name, model_settings)
+            return result
         if self._has_key("pydantic_ai_gateway_api_key"):
             logfire.info("Using gateway fallback for {model_name} (no {key})", model_name=model_name, key=key_env_name)
-            return getattr(self, make_gateway)(model_name, model_settings)
+            result = getattr(self, make_gateway)(model_name, model_settings)
+            return result
         raise ConfigurationError(
             f"{key_env_name} is not configured and no PYDANTIC_AI_GATEWAY_API_KEY for fallback. "
             "Set one of these in .env or your environment."
@@ -555,8 +557,7 @@ class FindingModelAIConfig(BaseSettings):
         but the native Ollama API (e.g., /api/tags) is at the root.
         """
         base = self.ollama_base_url
-        if base.endswith("/v1"):
-            base = base[:-3]
+        base = base.removesuffix("/v1")
         return base.rstrip("/")
 
     def _fetch_ollama_models(self) -> set[str]:

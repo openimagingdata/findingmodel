@@ -63,11 +63,7 @@ Basic finding model structure with name, description, and attributes.
 ```python
 from findingmodel import FindingModelBase
 
-model = FindingModelBase(
-    name="pneumothorax",
-    description="Presence of air in the pleural space",
-    attributes=[...]
-)
+model = FindingModelBase(name="pneumothorax", description="Presence of air in the pleural space", attributes=[...])
 
 # Export to Markdown
 print(model.as_markdown())
@@ -96,9 +92,7 @@ Metadata about a finding including description, synonyms, and optional citations
 from findingmodel import FindingInfo
 
 info = FindingInfo(
-    name="pneumothorax",
-    synonyms=["PTX", "collapsed lung"],
-    description="Presence of air in the pleural space"
+    name="pneumothorax", synonyms=["PTX", "collapsed lung"], description="Presence of air in the pleural space"
 )
 ```
 
@@ -109,6 +103,7 @@ The `Index` class provides async access to the finding model database.
 ```python
 import asyncio
 from findingmodel import Index
+
 
 async def main():
     async with Index() as index:
@@ -128,6 +123,7 @@ async def main():
 
         # List all with pagination
         models, total = await index.all(limit=20, offset=0)
+
 
 asyncio.run(main())
 ```

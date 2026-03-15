@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -301,7 +301,7 @@ def publish_findingmodel_database(  # noqa: C901
 
     # Use today's date as default version
     if version is None:
-        version = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        version = datetime.now(UTC).strftime("%Y-%m-%d")
 
     console.print("\n[bold cyan]Publishing FindingModel Database[/bold cyan]")
     console.print(f"Version: {version}")

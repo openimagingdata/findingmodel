@@ -7,7 +7,7 @@ The agent decides when and how to call tools, rather than pre-fetching results.
 This approach is simpler and lets the model orchestrate the workflow.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import FindingModelIndex
@@ -298,7 +298,7 @@ async def enrich_finding_agentic(identifier: str, model: str | None = None) -> F
         modalities=output.modalities,
         subspecialties=output.subspecialties,
         anatomic_locations=anatomic_locations,
-        enrichment_timestamp=datetime.now(timezone.utc),
+        enrichment_timestamp=datetime.now(UTC),
         model_used=model_used,
         model_tier="base",
     )

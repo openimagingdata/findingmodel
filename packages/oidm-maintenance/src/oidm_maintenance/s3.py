@@ -2,7 +2,7 @@
 
 import json
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -133,7 +133,7 @@ def load_manifest_from_s3(client: S3Client, bucket: str, key: str) -> dict[str, 
             # Return empty manifest structure
             return {
                 "manifest_version": "1.0",
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "databases": {},
             }
         raise
@@ -164,7 +164,7 @@ def backup_manifest(client: S3Client, bucket: str, manifest: dict[str, Any], bac
         # Returns: "https://mybucket.../manifests/archive/manifest_20250111_143022.json"
     """
     # Generate timestamped backup key
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_key = f"{backup_prefix}manifest_{timestamp}.json"
 
     # Create temporary file for backup
@@ -263,7 +263,7 @@ def update_manifest_entry(manifest: dict[str, Any], db_key: str, entry: dict[str
     # Return new manifest with updated timestamp
     return {
         "manifest_version": manifest.get("manifest_version", "1.0"),
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "databases": updated_databases,
     }
 

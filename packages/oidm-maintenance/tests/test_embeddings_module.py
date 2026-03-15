@@ -6,10 +6,11 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from oidm_maintenance.embeddings import importing, migration
 
 
-def test_migrate_default_cache_requires_ready(monkeypatch) -> None:
+def test_migrate_default_cache_requires_ready(monkeypatch: pytest.MonkeyPatch) -> None:
     """Migration wrapper should fail if cache cannot be prepared."""
     fake_cache = MagicMock()
     fake_cache.cache_dir = Path("/tmp/oidm-cache")
@@ -22,7 +23,7 @@ def test_migrate_default_cache_requires_ready(monkeypatch) -> None:
     fake_cache.require_cache_ready.assert_awaited_once_with()
 
 
-def test_get_default_cache_stats_enforces_strict(monkeypatch) -> None:
+def test_get_default_cache_stats_enforces_strict(monkeypatch: pytest.MonkeyPatch) -> None:
     """Stats wrapper should call strict cache stats API."""
     fake_cache = MagicMock()
     fake_cache.cache_dir = Path("/tmp/oidm-cache")
@@ -36,7 +37,7 @@ def test_get_default_cache_stats_enforces_strict(monkeypatch) -> None:
     fake_cache.get_stats.assert_awaited_once_with(strict=True)
 
 
-def test_import_duckdb_into_current_cache_enforces_strict(monkeypatch, tmp_path: Path) -> None:
+def test_import_duckdb_into_current_cache_enforces_strict(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """DuckDB import wrapper should call strict cache import."""
     source = tmp_path / "source.duckdb"
     fake_cache = MagicMock()
@@ -59,7 +60,7 @@ def test_import_duckdb_into_current_cache_enforces_strict(monkeypatch, tmp_path:
     )
 
 
-def test_import_cache_into_current_cache_enforces_strict(monkeypatch, tmp_path: Path) -> None:
+def test_import_cache_into_current_cache_enforces_strict(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Diskcache import wrapper should call strict cache import."""
     source = tmp_path / "source.cache"
     fake_cache = MagicMock()

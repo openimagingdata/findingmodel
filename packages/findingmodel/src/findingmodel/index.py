@@ -1237,15 +1237,16 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             pass
 
         # Fallback: parse vector column dimensions and keep runtime provider/model defaults.
-        row = self._execute_one(
+        col_row = self._execute_one(
             conn,
             (
                 "SELECT data_type FROM information_schema.columns "
                 "WHERE table_name = 'finding_models' AND column_name = 'embedding' LIMIT 1"
             ),
         )
-        if row and isinstance(row.get("data_type"), str):
-            match = re.search(r"FLOAT\[(\d+)\]", row["data_type"].upper())
+        data_type = col_row.get("data_type") if col_row else None
+        if isinstance(data_type, str):
+            match = re.search(r"FLOAT\[(\d+)\]", data_type.upper())
             if match is not None:
                 dimensions = int(match.group(1))
         self._db_embedding_profile = (provider, model, dimensions)

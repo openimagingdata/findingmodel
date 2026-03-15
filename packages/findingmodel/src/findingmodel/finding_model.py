@@ -1,7 +1,8 @@
 import random
 import re
+from collections.abc import Iterable, Sequence
 from enum import Enum
-from typing import Annotated, Any, Iterable, Literal, Sequence
+from typing import Annotated, Any, Literal
 
 from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field, model_validator

@@ -9,13 +9,13 @@ Agent 2: Matching - Analyzes results and selects best primary/alternate location
 """
 
 import json
+from typing import Literal
 
 from anatomic_locations import AnatomicLocationIndex
 from anatomic_locations.models import AnatomicLocation
 from findingmodel.protocols import OntologySearchResult, normalize_concept
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
-from typing_extensions import Literal
 
 from findingmodel_ai import logger
 from findingmodel_ai.config import ModelTier, settings

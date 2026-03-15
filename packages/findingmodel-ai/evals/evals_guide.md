@@ -60,10 +60,7 @@ case = Case(
 **Dataset**: Collection of cases with shared evaluators
 
 ```python
-dataset = Dataset(
-    cases=[case1, case2, case3],
-    evaluators=[IDPreservationEvaluator(), AttributeAdditionEvaluator()]
-)
+dataset = Dataset(cases=[case1, case2, case3], evaluators=[IDPreservationEvaluator(), AttributeAdditionEvaluator()])
 ```
 
 **Evaluator**: Assesses one aspect of agent output, returning a score (0.0-1.0)
@@ -86,18 +83,22 @@ from pydantic import BaseModel
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 
+
 # 1. Define input/output models
 class MyInput(BaseModel):
     query: str
     context: dict
 
+
 class MyExpectedOutput(BaseModel):
     should_succeed: bool
     expected_keywords: list[str]
 
+
 class MyActualOutput(BaseModel):
     result: str
     error: str | None = None
+
 
 # 2. Create evaluator(s)
 class KeywordMatchEvaluator(Evaluator[MyInput, MyActualOutput]):
@@ -107,17 +108,19 @@ class KeywordMatchEvaluator(Evaluator[MyInput, MyActualOutput]):
         matches = sum(1 for kw in keywords if kw in text)
         return matches / len(keywords) if keywords else 1.0
 
+
 # 3. Define cases
 cases = [
     Case(
         name="basic_query",
         inputs=MyInput(query="test", context={}),
-        expected_output=MyExpectedOutput(should_succeed=True, expected_keywords=["result"])
+        expected_output=MyExpectedOutput(should_succeed=True, expected_keywords=["result"]),
     )
 ]
 
 # 4. Create dataset
 dataset = Dataset(cases=cases, evaluators=[KeywordMatchEvaluator()])
+
 
 # 5. Define task function (wraps agent execution)
 async def my_task(input_data: MyInput) -> MyActualOutput:
@@ -126,6 +129,7 @@ async def my_task(input_data: MyInput) -> MyActualOutput:
         return MyActualOutput(result=result.output)
     except Exception as e:
         return MyActualOutput(result="", error=str(e))
+
 
 # 6. Run evaluation
 report = await dataset.evaluate_async(my_task)
@@ -147,21 +151,27 @@ report.print()
 ```python
 from pydantic import BaseModel
 
+
 class AgentInput(BaseModel):
     """Input to the agent being tested."""
+
     # Fields specific to your agent
     query: str
     options: dict = {}
 
+
 class AgentExpectedOutput(BaseModel):
     """What we expect from the agent."""
+
     should_succeed: bool
     expected_attributes: list[str] = []
     expected_keywords: list[str] = []
     minimum_quality_score: float = 0.8
 
+
 class AgentActualOutput(BaseModel):
     """Actual output from the agent."""
+
     # Fields from agent's actual response
     result: YourAgentResult
     error: str | None = None
@@ -174,6 +184,7 @@ Each evaluator should test ONE aspect of agent behavior:
 ```python
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 
+
 class SuccessEvaluator(Evaluator[AgentInput, AgentActualOutput]):
     """Verify agent succeeded when expected (or failed when expected)."""
 
@@ -181,6 +192,7 @@ class SuccessEvaluator(Evaluator[AgentInput, AgentActualOutput]):
         expected = ctx.expected_output.should_succeed
         actual_success = ctx.output.error is None
         return 1.0 if actual_success == expected else 0.0
+
 
 class AttributePresenceEvaluator(Evaluator[AgentInput, AgentActualOutput]):
     """Check that expected attributes are present in result."""
@@ -193,6 +205,7 @@ class AttributePresenceEvaluator(Evaluator[AgentInput, AgentActualOutput]):
         actual_attrs = {attr.name for attr in ctx.output.result.attributes}
         matches = sum(1 for attr in expected_attrs if attr in actual_attrs)
         return matches / len(expected_attrs)  # Partial credit
+
 
 class KeywordEvaluator(Evaluator[AgentInput, AgentActualOutput]):
     """Check for expected keywords in text output."""
@@ -221,15 +234,14 @@ def create_successful_cases() -> list[Case[AgentInput, AgentExpectedOutput]]:
             name="simple_query",
             inputs=AgentInput(query="Add severity attribute"),
             expected_output=AgentExpectedOutput(
-                should_succeed=True,
-                expected_attributes=["severity"],
-                expected_keywords=["added", "severity"]
-            )
+                should_succeed=True, expected_attributes=["severity"], expected_keywords=["added", "severity"]
+            ),
         )
     )
 
     # Add more successful cases...
     return cases
+
 
 def create_rejection_cases() -> list[Case[AgentInput, AgentExpectedOutput]]:
     """Cases where agent should reject the request."""
@@ -240,24 +252,20 @@ def create_rejection_cases() -> list[Case[AgentInput, AgentExpectedOutput]]:
             name="reject_delete",
             inputs=AgentInput(query="Delete the presence attribute"),
             expected_output=AgentExpectedOutput(
-                should_succeed=False,
-                expected_keywords=["reject", "delete", "not allowed"]
-            )
+                should_succeed=False, expected_keywords=["reject", "delete", "not allowed"]
+            ),
         )
     )
 
     return cases
+
 
 def create_edge_cases() -> list[Case[AgentInput, AgentExpectedOutput]]:
     """Edge cases and boundary conditions."""
     cases = []
 
     cases.append(
-        Case(
-            name="empty_query",
-            inputs=AgentInput(query=""),
-            expected_output=AgentExpectedOutput(should_succeed=False)
-        )
+        Case(name="empty_query", inputs=AgentInput(query=""), expected_output=AgentExpectedOutput(should_succeed=False))
     )
 
     # Very long inputs, special characters, etc.
@@ -270,11 +278,7 @@ def create_edge_cases() -> list[Case[AgentInput, AgentExpectedOutput]]:
 from pydantic_evals import Dataset
 
 # Combine all cases
-all_cases = (
-    create_successful_cases() +
-    create_rejection_cases() +
-    create_edge_cases()
-)
+all_cases = create_successful_cases() + create_rejection_cases() + create_edge_cases()
 
 # Create evaluators
 evaluators = [
@@ -285,6 +289,7 @@ evaluators = [
 
 # Build dataset
 dataset = Dataset(cases=all_cases, evaluators=evaluators)
+
 
 # Define task function (executes the agent)
 async def run_agent_task(input_data: AgentInput) -> AgentActualOutput:
@@ -301,6 +306,7 @@ async def run_agent_task(input_data: AgentInput) -> AgentActualOutput:
 
 ```python
 import pytest
+
 
 @pytest.mark.callout  # Requires API access
 @pytest.mark.asyncio
@@ -325,6 +331,7 @@ async def test_agent_evals():
 
 ```python
 from pydantic_ai.models.test import TestModel
+
 
 @pytest.mark.asyncio
 async def test_single_case_mock():
@@ -437,10 +444,14 @@ return score / 10.0
 class BigEvaluator(Evaluator):
     def evaluate(self, ctx):
         score = 0
-        if check_ids(): score += 0.25
-        if check_attrs(): score += 0.25
-        if check_keywords(): score += 0.25
-        if check_structure(): score += 0.25
+        if check_ids():
+            score += 0.25
+        if check_attrs():
+            score += 0.25
+        if check_keywords():
+            score += 0.25
+        if check_structure():
+            score += 0.25
         return score
 ```
 
@@ -448,10 +459,10 @@ class BigEvaluator(Evaluator):
 
 ```python
 evaluators = [
-    IDPreservationEvaluator(),     # 0.0 or 1.0
+    IDPreservationEvaluator(),  # 0.0 or 1.0
     AttributeAdditionEvaluator(),  # 0.0 to 1.0 (partial credit)
-    KeywordMatchEvaluator(),       # 0.0 to 1.0 (partial credit)
-    StructuralValidityEvaluator(), # 0.0 or 1.0
+    KeywordMatchEvaluator(),  # 0.0 to 1.0 (partial credit)
+    StructuralValidityEvaluator(),  # 0.0 or 1.0
 ]
 ```
 
@@ -473,6 +484,7 @@ async def test_quick_validation():
     with agent.override(model=TestModel(...)):
         result = await agent.run("test")
         assert result.is_valid()
+
 
 # Full evaluation - requires API
 @pytest.mark.callout
@@ -497,9 +509,11 @@ Logfire observability is configured automatically in `evals/__init__.py`.
 
 dataset = Dataset(cases=..., evaluators=...)
 
+
 async def run_tool_name_evals():
     report = await dataset.evaluate(task_function)
     return report
+
 
 # All evaluation traces automatically sent to Logfire
 # View execution paths, token usage, durations
@@ -520,8 +534,9 @@ from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic import BaseModel
 from typing import TypeVar, Generic, Callable
 
-InputT = TypeVar('InputT')
-OutputT = TypeVar('OutputT')
+InputT = TypeVar("InputT")
+OutputT = TypeVar("OutputT")
+
 
 class ExactMatchEvaluator(Evaluator[InputT, str], Generic[InputT]):
     """Check if output exactly matches expected output."""
@@ -549,7 +564,7 @@ class KeywordMatchEvaluator(Evaluator[InputT, OutputT], Generic[InputT, OutputT]
         self,
         keyword_field: str,  # Field in expected_output with keywords list
         text_extractor: Callable[[OutputT], str],  # Extract text from output
-        partial_credit: bool = True
+        partial_credit: bool = True,
     ):
         self.keyword_field = keyword_field
         self.text_extractor = text_extractor
@@ -616,9 +631,10 @@ from abc import ABC, abstractmethod
 from pydantic_evals import Case, Dataset
 from typing import Generic, TypeVar
 
-InputT = TypeVar('InputT')
-ExpectedT = TypeVar('ExpectedT')
-ActualT = TypeVar('ActualT')
+InputT = TypeVar("InputT")
+ExpectedT = TypeVar("ExpectedT")
+ActualT = TypeVar("ActualT")
+
 
 class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
     """Base class for creating agent evaluation suites.
@@ -648,11 +664,7 @@ class AgentEvaluationSuite(ABC, Generic[InputT, ExpectedT, ActualT]):
 
     def get_all_cases(self) -> list[Case[InputT, ExpectedT]]:
         """Get all cases combined."""
-        return (
-            self.create_successful_cases() +
-            self.create_failure_cases() +
-            self.create_edge_cases()
-        )
+        return self.create_successful_cases() + self.create_failure_cases() + self.create_edge_cases()
 
     def build_dataset(self, evaluators: list) -> Dataset:
         """Build dataset with all cases and provided evaluators."""

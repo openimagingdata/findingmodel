@@ -26,6 +26,7 @@ class _FakeValidatedModel:
     def model_dump_json(self, **_: Any) -> str:
         return '{\n  "name": "fake"\n}'
 
+
 # ============================================================================
 # Stats Tests
 # ============================================================================
@@ -93,7 +94,9 @@ def test_validate_recursive_directory_and_dedup(tmp_path: Path, monkeypatch: Mon
 
     calls: list[tuple[Path, bool]] = []
 
-    def fake_validate_model_json(json_text: str, is_full_model: bool) -> tuple[_FakeValidatedModel, str, list[str], list[str]]:
+    def fake_validate_model_json(
+        json_text: str, is_full_model: bool
+    ) -> tuple[_FakeValidatedModel, str, list[str], list[str]]:
         payload = json.loads(json_text)
         path_hint = payload.get("name", "unknown")
         calls.append((Path(path_hint), is_full_model))
@@ -121,7 +124,9 @@ def test_validate_routes_to_base_model_when_ids_absent(tmp_path: Path, monkeypat
     for attribute in data.get("attributes", []):
         if isinstance(attribute, dict):
             attribute["oifma_id"] = "OIFMA_TEST_123456"
-            for idx, value in enumerate(attribute.get("values", []) if isinstance(attribute.get("values"), list) else []):
+            for idx, value in enumerate(
+                attribute.get("values", []) if isinstance(attribute.get("values"), list) else []
+            ):
                 if isinstance(value, dict):
                     value["value_code"] = f"OIFMA_TEST_123456.{idx}"
     base_file = tmp_path / "base.fm.json"

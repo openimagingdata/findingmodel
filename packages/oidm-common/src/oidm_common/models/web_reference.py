@@ -44,8 +44,7 @@ class WebReference(BaseModel):
         parsed = urlparse(self.url)
         # Remove 'www.' prefix if present
         domain = parsed.netloc.lower()
-        if domain.startswith("www."):
-            domain = domain[4:]
+        domain = domain.removeprefix("www.")
         return domain
 
     @classmethod

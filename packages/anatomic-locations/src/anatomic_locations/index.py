@@ -190,7 +190,9 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         provider, model, dimensions = self._get_db_embedding_profile(conn)
         api_key = anatomic_settings.openai_api_key.get_secret_value() if anatomic_settings.openai_api_key else ""
         if provider.strip().lower() == "openai" and not api_key.strip():
-            raise RuntimeError("This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set.")
+            raise RuntimeError(
+                "This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
+            )
         embedding = await get_embedding(
             query,
             api_key=api_key,
@@ -626,7 +628,9 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         settings = get_settings()
         api_key = settings.openai_api_key.get_secret_value().strip() if settings.openai_api_key else ""
         if not api_key:
-            raise RuntimeError("This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set.")
+            raise RuntimeError(
+                "This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
+            )
 
     def _get_db_embedding_profile(self, conn: duckdb.DuckDBPyConnection) -> tuple[str, str, int]:
         if self._db_embedding_profile is not None:
@@ -652,15 +656,16 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         except Exception:
             pass
 
-        row = self._execute_one(
+        col_row = self._execute_one(
             conn,
             (
                 "SELECT data_type FROM information_schema.columns "
                 "WHERE table_name = 'anatomic_locations' AND column_name = 'vector' LIMIT 1"
             ),
         )
-        if row and isinstance(row.get("data_type"), str):
-            match = re.search(r"FLOAT\[(\d+)\]", row["data_type"].upper())
+        data_type = col_row.get("data_type") if col_row else None
+        if isinstance(data_type, str):
+            match = re.search(r"FLOAT\[(\d+)\]", data_type.upper())
             if match is not None:
                 dimensions = int(match.group(1))
 

@@ -17,7 +17,6 @@ from anatomic_locations.models import AnatomicLocation
 @click.group()
 def main() -> None:
     """Anatomic location query and statistics tools."""
-    pass
 
 
 def _resolve_location(

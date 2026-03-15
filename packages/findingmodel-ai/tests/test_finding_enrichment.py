@@ -8,7 +8,7 @@ EnrichmentClassification models.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -124,7 +124,7 @@ class TestFindingEnrichmentResult:
             modalities=["CT", "XR"],
             subspecialties=["CH", "OI"],
             anatomic_locations=mock_anatomic_locations[:2],
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
@@ -145,7 +145,7 @@ class TestFindingEnrichmentResult:
         """Test FindingEnrichmentResult with only required fields."""
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Test Finding",
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_ANTHROPIC_MODEL,
             model_tier="small",
         )
@@ -179,7 +179,7 @@ class TestFindingEnrichmentResult:
         with pytest.raises(ValidationError) as exc_info:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="",  # Empty string should fail min_length=1
-                enrichment_timestamp=datetime.now(timezone.utc),
+                enrichment_timestamp=datetime.now(UTC),
                 model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
@@ -199,7 +199,7 @@ class TestFindingEnrichmentResult:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Test Finding",
             etiologies=valid_etiologies,
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
@@ -214,7 +214,7 @@ class TestFindingEnrichmentResult:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="Test Finding",
                 etiologies=invalid_etiologies,
-                enrichment_timestamp=datetime.now(timezone.utc),
+                enrichment_timestamp=datetime.now(UTC),
                 model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
@@ -230,7 +230,7 @@ class TestFindingEnrichmentResult:
         mock_anatomic_locations: list[OntologySearchResult],
     ) -> None:
         """Test model_dump_json() produces valid JSON."""
-        timestamp = datetime(2025, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        timestamp = datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC)
         result = FindingEnrichmentResult(
             finding_name="Pneumonia",
             oifm_id="OIFM_TEST_000002",
@@ -273,7 +273,7 @@ class TestEnumTypes:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Multi-region Finding",
             body_regions=valid_regions,
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
@@ -286,7 +286,7 @@ class TestEnumTypes:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="Test Finding",
                 body_regions=["Chest", "InvalidRegion"],  # type: ignore[list-item]
-                enrichment_timestamp=datetime.now(timezone.utc),
+                enrichment_timestamp=datetime.now(UTC),
                 model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
@@ -301,7 +301,7 @@ class TestEnumTypes:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Multi-modality Finding",
             modalities=valid_modalities,
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
@@ -314,7 +314,7 @@ class TestEnumTypes:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="Test Finding",
                 modalities=["CT", "INVALID"],  # type: ignore[list-item]
-                enrichment_timestamp=datetime.now(timezone.utc),
+                enrichment_timestamp=datetime.now(UTC),
                 model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
@@ -346,7 +346,7 @@ class TestEnumTypes:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Multi-specialty Finding",
             subspecialties=valid_subspecialties,
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
@@ -359,7 +359,7 @@ class TestEnumTypes:
             FindingEnrichmentResult(  # type: ignore[call-arg]
                 finding_name="Test Finding",
                 subspecialties=["CH", "FAKE"],  # type: ignore[list-item]
-                enrichment_timestamp=datetime.now(timezone.utc),
+                enrichment_timestamp=datetime.now(UTC),
                 model_used=TEST_OPENAI_MODEL,
                 model_tier="main",
             )
@@ -540,7 +540,7 @@ class TestModelCompatibility:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Test Finding",
             snomed_codes=mock_snomed_codes,
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
@@ -557,7 +557,7 @@ class TestModelCompatibility:
         result = FindingEnrichmentResult(  # type: ignore[call-arg]
             finding_name="Test Finding",
             anatomic_locations=mock_anatomic_locations,
-            enrichment_timestamp=datetime.now(timezone.utc),
+            enrichment_timestamp=datetime.now(UTC),
             model_used=TEST_OPENAI_MODEL,
             model_tier="main",
         )
@@ -589,7 +589,6 @@ class TestModelCompatibility:
 class TestSearchOntologyCodesForFinding:
     """Tests for search_ontology_codes_for_finding helper function."""
 
-    @pytest.mark.asyncio
     async def test_search_ontology_codes_separates_systems(
         self, mock_snomed_codes: list[IndexCode], mock_radlex_codes: list[IndexCode]
     ) -> None:
@@ -634,7 +633,6 @@ class TestSearchOntologyCodesForFinding:
             assert snomed_codes[0].system == "SNOMEDCT"
             assert radlex_codes[0].system == "RADLEX"
 
-    @pytest.mark.asyncio
     async def test_search_ontology_codes_empty_results(self) -> None:
         """Test search_ontology_codes_for_finding with empty results."""
         from unittest.mock import AsyncMock, patch
@@ -659,7 +657,6 @@ class TestSearchOntologyCodesForFinding:
             assert snomed_codes == []
             assert radlex_codes == []
 
-    @pytest.mark.asyncio
     async def test_search_ontology_codes_filters_anatomical(self) -> None:
         """Test that exclude_anatomical=True is passed to match_ontology_concepts."""
         from unittest.mock import AsyncMock, patch
@@ -688,7 +685,6 @@ class TestSearchOntologyCodesForFinding:
                 model_tier="base",
             )
 
-    @pytest.mark.asyncio
     async def test_search_ontology_codes_includes_exact_and_should(self, mock_snomed_codes: list[IndexCode]) -> None:
         """Test that both exact_matches and should_include are collected."""
         from unittest.mock import AsyncMock, patch
@@ -727,7 +723,6 @@ class TestSearchOntologyCodesForFinding:
             # Should collect both exact and should_include
             assert len(snomed_codes) == 2
 
-    @pytest.mark.asyncio
     async def test_search_ontology_codes_error_handling(self) -> None:
         """Test that exceptions are raised from search_ontology_codes_for_finding."""
         from unittest.mock import AsyncMock, patch
@@ -899,7 +894,6 @@ class TestCreateEnrichmentAgent:
 class TestEnrichmentAgentBehavior:
     """Tests for enrichment agent behavior using TestModel."""
 
-    @pytest.mark.asyncio
     async def test_agent_produces_valid_classification(self, mock_enrichment_context: EnrichmentContext) -> None:
         """Test that agent produces valid EnrichmentClassification output."""
         from unittest.mock import patch
@@ -928,7 +922,6 @@ class TestEnrichmentAgentBehavior:
             assert result.output.body_regions == ["Chest"]
             assert result.output.etiologies == ["inflammatory:infectious"]
 
-    @pytest.mark.asyncio
     async def test_agent_accepts_context_with_existing_model(self, mock_enrichment_context: EnrichmentContext) -> None:
         """Test that agent runs with context containing existing_model."""
         from unittest.mock import patch
@@ -957,7 +950,6 @@ class TestEnrichmentAgentBehavior:
 
             assert result.output is not None
 
-    @pytest.mark.asyncio
     async def test_agent_accepts_context_without_existing_model(self) -> None:
         """Test that agent runs with context without existing_model."""
         from unittest.mock import patch
@@ -990,7 +982,6 @@ class TestEnrichmentAgentBehavior:
 
             assert result.output is not None
 
-    @pytest.mark.asyncio
     async def test_agent_output_has_required_fields(self) -> None:
         """Test that agent output has all required classification fields."""
         from unittest.mock import patch
@@ -1023,7 +1014,6 @@ class TestEnrichmentAgentBehavior:
             assert hasattr(result.output, "subspecialties")
             assert hasattr(result.output, "reasoning")
 
-    @pytest.mark.asyncio
     async def test_agent_allows_empty_classifications(self) -> None:
         """Test that agent accepts empty classification lists."""
         from unittest.mock import patch
@@ -1052,7 +1042,6 @@ class TestEnrichmentAgentBehavior:
             assert result.output.body_regions == []
             assert result.output.etiologies == []
 
-    @pytest.mark.asyncio
     async def test_agent_validates_etiology_values(self) -> None:
         """Test that agent validates etiology values against ETIOLOGIES list."""
         # The validation happens at Pydantic model level, not agent level
@@ -1066,7 +1055,6 @@ class TestEnrichmentAgentBehavior:
                 reasoning="Test",
             )
 
-    @pytest.mark.asyncio
     async def test_context_includes_prefetched_codes(
         self,
         mock_snomed_codes: list[IndexCode],
@@ -1085,7 +1073,6 @@ class TestEnrichmentAgentBehavior:
         assert len(context.snomed_codes) == len(mock_snomed_codes)
         assert len(context.radlex_codes) == len(mock_radlex_codes)
 
-    @pytest.mark.asyncio
     async def test_context_includes_prefetched_anatomic_locations(
         self,
         mock_anatomic_locations: list[OntologySearchResult],
@@ -1110,7 +1097,6 @@ class TestEnrichmentAgentBehavior:
 class TestEnrichFindingOrchestration:
     """Tests for enrich_finding orchestration function."""
 
-    @pytest.mark.asyncio
     async def test_enrich_finding_with_existing_in_index(
         self,
         mock_finding_model: FindingModelFull,
@@ -1179,7 +1165,6 @@ class TestEnrichFindingOrchestration:
             assert result.body_regions == ["Chest"]
             assert result.etiologies == ["inflammatory:infectious"]
 
-    @pytest.mark.asyncio
     async def test_enrich_finding_not_in_index(self) -> None:
         """Test enrich_finding when finding is not in index."""
         from unittest.mock import AsyncMock, MagicMock, patch
@@ -1227,7 +1212,6 @@ class TestEnrichFindingOrchestration:
             assert result.finding_name == "new finding name"
             assert result.oifm_id is None
 
-    @pytest.mark.asyncio
     async def test_enrich_finding_assembles_result_correctly(
         self, mock_snomed_codes: list[IndexCode], mock_anatomic_locations: list[OntologySearchResult]
     ) -> None:
@@ -1285,7 +1269,6 @@ class TestEnrichFindingOrchestration:
             assert result.model_used is not None
             assert result.model_tier == "base"
 
-    @pytest.mark.asyncio
     async def test_enrich_finding_handles_ontology_error(self) -> None:
         """Test that enrich_finding gracefully handles ontology search errors."""
         from unittest.mock import AsyncMock, MagicMock, patch
@@ -1334,7 +1317,6 @@ class TestEnrichFindingOrchestration:
             assert result.radlex_codes == []
             assert result.finding_name == "test finding"
 
-    @pytest.mark.asyncio
     async def test_enrich_finding_handles_anatomic_error(self) -> None:
         """Test that enrich_finding gracefully handles anatomic location errors."""
         from unittest.mock import AsyncMock, MagicMock, patch
@@ -1373,7 +1355,6 @@ class TestEnrichFindingOrchestration:
             assert result.anatomic_locations == []
             assert result.finding_name == "test finding"
 
-    @pytest.mark.asyncio
     async def test_enrich_finding_model_parameter_propagated(self) -> None:
         """Test that model parameter is passed to create_enrichment_agent."""
         from unittest.mock import AsyncMock, MagicMock, patch
@@ -1435,7 +1416,6 @@ class TestFindingEnrichmentIntegration:
     """
 
     @pytest.mark.callout
-    @pytest.mark.asyncio
     async def test_enrich_pneumonia(self) -> None:
         """Test enrichment of simple finding: pneumonia."""
         # Temporarily enable model requests for this test
@@ -1479,7 +1459,6 @@ class TestFindingEnrichmentIntegration:
             models.ALLOW_MODEL_REQUESTS = original
 
     @pytest.mark.callout
-    @pytest.mark.asyncio
     async def test_enrich_unknown_finding(self) -> None:
         """Test enrichment of unknown finding name - should still produce valid result."""
         original = models.ALLOW_MODEL_REQUESTS

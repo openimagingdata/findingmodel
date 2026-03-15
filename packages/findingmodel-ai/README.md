@@ -61,6 +61,7 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 import asyncio
 from findingmodel_ai.authoring import create_info_from_name, add_details_to_info
 
+
 async def main():
     # Generate basic info from a finding name
     info = await create_info_from_name("Pneumothorax")
@@ -73,6 +74,7 @@ async def main():
     print(f"Detail: {enhanced.detail[:200]}...")
     print(f"Citations: {len(enhanced.citations)}")
 
+
 asyncio.run(main())
 ```
 
@@ -81,6 +83,7 @@ asyncio.run(main())
 ```python
 import asyncio
 from findingmodel_ai.authoring import create_model_from_markdown, create_info_from_name
+
 
 async def main():
     info = await create_info_from_name("pneumothorax")
@@ -95,6 +98,7 @@ async def main():
     model = await create_model_from_markdown(info, markdown_text=markdown)
     print(f"Created model with {len(model.attributes)} attributes")
 
+
 asyncio.run(main())
 ```
 
@@ -105,6 +109,7 @@ import asyncio
 from findingmodel import FindingModelFull
 from findingmodel_ai.authoring import edit_model_natural_language, edit_model_markdown
 
+
 async def main():
     # Load existing model
     with open("pneumothorax.fm.json") as f:
@@ -112,14 +117,14 @@ async def main():
 
     # Edit with natural language
     result = await edit_model_natural_language(
-        model=model,
-        command="Add severity attribute with values mild, moderate, severe"
+        model=model, command="Add severity attribute with values mild, moderate, severe"
     )
 
     if result.rejections:
         print(f"Rejected changes: {result.rejections}")
 
     print(f"Updated model has {len(result.model.attributes)} attributes")
+
 
 asyncio.run(main())
 ```
@@ -130,10 +135,10 @@ asyncio.run(main())
 import asyncio
 from findingmodel_ai.search import find_anatomic_locations
 
+
 async def main():
     result = await find_anatomic_locations(
-        finding_name="PCL tear",
-        description="Tear of the posterior cruciate ligament"
+        finding_name="PCL tear", description="Tear of the posterior cruciate ligament"
     )
 
     print(f"Primary: {result.primary_location.concept_text}")
@@ -141,6 +146,7 @@ async def main():
 
     for alt in result.alternate_locations:
         print(f"Alternate: {alt.concept_text}")
+
 
 asyncio.run(main())
 ```
@@ -151,15 +157,16 @@ asyncio.run(main())
 import asyncio
 from findingmodel_ai.search import match_ontology_concepts
 
+
 async def main():
     result = await match_ontology_concepts(
-        finding_name="pneumonia",
-        finding_description="Inflammation of lung parenchyma"
+        finding_name="pneumonia", finding_description="Inflammation of lung parenchyma"
     )
 
     print(f"Exact matches: {len(result.exact_matches)}")
     for concept in result.exact_matches:
         print(f"  - {concept.code}: {concept.text}")
+
 
 asyncio.run(main())
 ```
@@ -170,11 +177,12 @@ asyncio.run(main())
 import asyncio
 from findingmodel_ai.search import find_similar_models
 
+
 async def main():
     analysis = await find_similar_models(
         finding_name="pneumothorax",
         description="Presence of air in the pleural space",
-        synonyms=["PTX", "collapsed lung"]
+        synonyms=["PTX", "collapsed lung"],
     )
 
     print(f"Recommendation: {analysis.recommendation}")
@@ -183,6 +191,7 @@ async def main():
     if analysis.similar_models:
         for model in analysis.similar_models:
             print(f"  Similar: {model.name} ({model.oifm_id})")
+
 
 asyncio.run(main())
 ```

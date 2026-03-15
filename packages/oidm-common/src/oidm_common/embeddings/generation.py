@@ -25,7 +25,7 @@ _UNSET = object()
 _default_cache: EmbeddingCache | None = None
 
 # Module-level client/runtime caches
-_client_cache: dict[str, "AsyncOpenAI"] = {}
+_client_cache: dict[str, AsyncOpenAI] = {}
 _fastembed_model_cache: dict[tuple[str, int | None], object] = {}
 _local_semaphore_cache: dict[int, asyncio.Semaphore] = {}
 
@@ -126,13 +126,13 @@ def _to_float32(embedding: list[float]) -> list[float]:
 def _to_float32_from_iterable(values: object) -> list[float]:
     """Convert iterable values (numpy, list, etc.) to float32 list."""
     try:
-        raw_values = values.tolist()  # numpy arrays
+        raw_values = values.tolist()  # type: ignore[attr-defined]  # numpy arrays
     except AttributeError:
-        raw_values = list(values)
+        raw_values = list(values)  # type: ignore[call-overload]
     return _to_float32([float(value) for value in raw_values])
 
 
-def _get_or_create_client(api_key: str) -> "AsyncOpenAI | None":
+def _get_or_create_client(api_key: str) -> AsyncOpenAI | None:
     """Get or create an AsyncOpenAI client, caching by API key.
 
     Returns None if openai is not installed (graceful degradation).
@@ -187,7 +187,7 @@ def _get_or_create_fastembed_model(model: str, threads: int | None) -> object | 
         return None
 
     _fastembed_model_cache[key] = runtime
-    return runtime
+    return runtime  # type: ignore[no-any-return]
 
 
 def _local_semaphore(limit: int) -> asyncio.Semaphore:
@@ -215,11 +215,11 @@ def _fastembed_generate_batch_sync(
 
     try:
         if mode == "query":
-            vectors = list(runtime.query_embed(texts, parallel=parallel))
+            vectors = list(runtime.query_embed(texts, parallel=parallel))  # type: ignore[attr-defined]
         elif hasattr(runtime, "passage_embed"):
             vectors = list(runtime.passage_embed(texts, parallel=parallel))
         else:
-            vectors = list(runtime.embed(texts, parallel=parallel))
+            vectors = list(runtime.embed(texts, parallel=parallel))  # type: ignore[attr-defined]
     except Exception as e:
         logger.warning(f"fastembed embedding generation failed: {e}")
         return [None] * len(texts)
@@ -406,7 +406,7 @@ async def get_embeddings_batch(
 
 async def generate_embedding(
     text: str,
-    client: "AsyncOpenAI",
+    client: AsyncOpenAI,
     model: str,
     dimensions: int,
 ) -> list[float] | None:
@@ -432,7 +432,7 @@ async def generate_embedding(
 
 async def generate_embeddings_batch(
     texts: list[str],
-    client: "AsyncOpenAI",
+    client: AsyncOpenAI,
     model: str,
     dimensions: int,
     *,
@@ -464,7 +464,7 @@ async def generate_embeddings_batch(
     return results
 
 
-def create_openai_client(api_key: str) -> "AsyncOpenAI":
+def create_openai_client(api_key: str) -> AsyncOpenAI:
     """Create an AsyncOpenAI client for embedding generation."""
     try:
         from openai import AsyncOpenAI

@@ -3,10 +3,9 @@ User and organization classes to indicate contributors to a finding model.
 """
 
 from pathlib import Path
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Self
 
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, model_validator
-from typing_extensions import Self
 
 OrganizationCodeField = Annotated[
     str, Field(description="Short (3-4 letter) code for the organization", pattern=r"^[A-Z]{3,4}$")

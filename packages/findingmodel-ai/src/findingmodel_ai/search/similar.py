@@ -10,12 +10,12 @@ Agent 2: Analysis - Analyzes results and makes similarity recommendations
 
 import json
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, NotRequired
 
 from findingmodel.index import FindingModelIndex as Index
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from findingmodel_ai import logger
 from findingmodel_ai._internal.common import get_markdown_text_from_path_or_text  # noqa: F401

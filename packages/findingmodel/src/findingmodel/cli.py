@@ -92,14 +92,18 @@ def _validate_model_json(
         extra_errors = [err for err in errors if err.get("type") == "extra_forbidden"]
         non_extra_errors = [err for err in errors if err.get("type") != "extra_forbidden"]
         if non_extra_errors:
-            return None, model_kind, [], [
-                f"{_format_error_location(tuple(err.get('loc', ()) or ()))}: {err.get('msg', 'Validation error')}"
-                for err in non_extra_errors
-            ]
+            return (
+                None,
+                model_kind,
+                [],
+                [
+                    f"{_format_error_location(tuple(err.get('loc', ()) or ()))}: {err.get('msg', 'Validation error')}"
+                    for err in non_extra_errors
+                ],
+            )
 
         warnings = [
-            f"{_format_error_location(tuple(err.get('loc', ()) or ()))}: unknown field ignored"
-            for err in extra_errors
+            f"{_format_error_location(tuple(err.get('loc', ()) or ()))}: unknown field ignored" for err in extra_errors
         ]
         validated = model_cls.model_validate_json(json_text)
         return validated, model_kind, warnings, []

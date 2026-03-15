@@ -12,7 +12,7 @@ from oidm_common.embeddings import EmbeddingCache as EmbeddingCache
 from oidm_common.models import IndexCode as IndexCode
 from oidm_common.models import WebReference as WebReference
 
-import findingmodel.tools as tools
+from findingmodel import tools
 
 from .config import get_settings as get_settings
 from .create_stub import create_model_stub_from_info as create_model_stub_from_info

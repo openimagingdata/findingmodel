@@ -1078,7 +1078,7 @@ class TestFastEmbedCachePathResolution:
 class TestEmbeddingGenerationIntegration:
     """Integration tests for embedding generation with real OpenAI API calls."""
 
-    async def test_get_embedding_returns_vector(self, test_settings: "TestSettings") -> None:
+    async def test_get_embedding_returns_vector(self, test_settings: TestSettings) -> None:
         """Test that get_embedding returns a valid embedding vector."""
         from oidm_common.embeddings import get_embedding
 
@@ -1096,7 +1096,7 @@ class TestEmbeddingGenerationIntegration:
         assert result is not None
         assert len(result) == 512
 
-    async def test_get_embeddings_batch_returns_vectors(self, test_settings: "TestSettings") -> None:
+    async def test_get_embeddings_batch_returns_vectors(self, test_settings: TestSettings) -> None:
         """Test that get_embeddings_batch returns valid embedding vectors."""
         from oidm_common.embeddings import get_embeddings_batch
 

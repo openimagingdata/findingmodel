@@ -237,11 +237,7 @@ class TestEnsureDbFileProfileSelection:
                     "embedding_dimensions": 384,
                 },
             },
-            "profile_aliases": {
-                "finding_models": {
-                    "fastembed:BAAI/bge-small-en-v1.5:384": "finding_models__local"
-                }
-            },
+            "profile_aliases": {"finding_models": {"fastembed:BAAI/bge-small-en-v1.5:384": "finding_models__local"}},
         }
 
         result = ensure_db_file(
@@ -422,5 +418,7 @@ class TestEnsureDbFileProfileSelection:
         )
 
         assert result == detected_target
-        mock_download.assert_called_once_with(requested_target, "https://example.com/finding_models__openai.duckdb", "sha256:abc123")
+        mock_download.assert_called_once_with(
+            requested_target, "https://example.com/finding_models__openai.duckdb", "sha256:abc123"
+        )
         requested_target.replace.assert_called_once_with(detected_target)

@@ -1,6 +1,6 @@
 """Publish anatomic-locations database to S3/Tigris."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -117,7 +117,7 @@ def publish_anatomic_database(
 
     # Default version to current date
     if version is None:
-        version = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        version = datetime.now(UTC).strftime("%Y-%m-%d")
 
     # Step 1: Verify bucket access (validates credentials early)
     console.print("[bold]Step 1:[/bold] Verifying bucket access...")

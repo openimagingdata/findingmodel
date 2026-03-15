@@ -8,8 +8,8 @@ This module defines the core data structures used throughout the finding enrichm
 """
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Annotated
+from datetime import UTC, datetime
+from typing import Annotated, Literal
 
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import FindingModelIndex
@@ -17,7 +17,6 @@ from findingmodel.protocols import OntologySearchResult
 from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field, field_validator
 from pydantic_ai import Agent
-from typing_extensions import Literal
 
 from findingmodel_ai import logger
 from findingmodel_ai.config import ModelTier, settings
@@ -1048,7 +1047,7 @@ async def enrich_finding(  # noqa: C901
         modalities=classification.modalities,
         subspecialties=classification.subspecialties,
         anatomic_locations=anatomic_locations,
-        enrichment_timestamp=datetime.now(timezone.utc),
+        enrichment_timestamp=datetime.now(UTC),
         model_used=model_used,
         model_tier=model_tier,
     )

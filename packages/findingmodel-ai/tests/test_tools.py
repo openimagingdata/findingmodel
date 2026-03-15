@@ -80,7 +80,6 @@ class _StubFindingInfoAgent:
         return SimpleNamespace(output=self._output)
 
 
-@pytest.mark.asyncio
 async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.MonkeyPatch) -> None:
     output = FindingInfo(
         name="pulmonary opacity",
@@ -122,7 +121,6 @@ async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.Mon
     assert stub_agent.prompts, "Agent should receive the rendered prompt"
 
 
-@pytest.mark.asyncio
 async def test_create_info_from_name_preserves_name_without_logging(monkeypatch: pytest.MonkeyPatch) -> None:
     output = FindingInfo(
         name="pneumothorax",
@@ -202,7 +200,6 @@ def test_add_standard_codes_to_model_no_duplicates_new_api(full_model: FindingMo
 
 # Integration tests requiring external API access
 @pytest.mark.callout
-@pytest.mark.asyncio
 async def test_create_info_from_name_basic_wiring() -> None:
     """Sanity check: Verify basic wiring with real API.
 
@@ -247,7 +244,6 @@ def _create_stub_result(output: str, messages: list[str]) -> SimpleNamespace:
     return SimpleNamespace(output=output, all_messages=lambda: mock_messages)
 
 
-@pytest.mark.asyncio
 async def test_add_details_to_info_with_test_model(monkeypatch: pytest.MonkeyPatch) -> None:
     """Unit test: Verify citation extraction and field preservation without API calls.
 
@@ -322,7 +318,6 @@ async def test_add_details_to_info_with_test_model(monkeypatch: pytest.MonkeyPat
     assert mock_run.called
 
 
-@pytest.mark.asyncio
 async def test_add_details_to_info_empty_output_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
     """Unit test: Verify function returns None when agent returns empty output.
 
@@ -358,7 +353,6 @@ async def test_add_details_to_info_empty_output_returns_none(monkeypatch: pytest
     assert result is None
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("search_depth", ["basic", "advanced"])
 async def test_add_details_to_info_search_depth_parameter(search_depth: str, monkeypatch: pytest.MonkeyPatch) -> None:
     """Unit test: Verify search_depth parameter is passed to Tavily search.
@@ -411,7 +405,6 @@ async def test_add_details_to_info_search_depth_parameter(search_depth: str, mon
 
 
 @pytest.mark.callout
-@pytest.mark.asyncio
 async def test_add_details_to_info_basic_wiring() -> None:
     """Sanity check: Verify basic wiring with real API.
 
@@ -446,7 +439,6 @@ async def test_add_details_to_info_basic_wiring() -> None:
         models.ALLOW_MODEL_REQUESTS = original
 
 
-@pytest.mark.asyncio
 async def test_create_model_from_markdown_with_test_model() -> None:
     """Unit test: Verify agent structure without API calls.
 
@@ -516,7 +508,6 @@ async def test_create_model_from_markdown_with_test_model() -> None:
 
 
 @pytest.mark.callout
-@pytest.mark.asyncio
 async def test_create_model_from_markdown_basic_wiring() -> None:
     """Sanity check: Verify basic wiring with real API.
 
@@ -563,7 +554,6 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
 # Comprehensive behavioral testing in evals/similar_models.py
 # This sanity check verifies basic wiring only
 @pytest.mark.callout
-@pytest.mark.asyncio
 async def test_find_similar_models_basic_wiring() -> None:
     """Sanity check: Verify basic wiring with real API.
 

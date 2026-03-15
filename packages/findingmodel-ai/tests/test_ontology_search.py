@@ -56,7 +56,6 @@ def test_bioontology_implements_protocol() -> None:
 
 
 @pytest.mark.callout
-@pytest.mark.asyncio
 async def test_protocol_context_managers() -> None:
     """Test that BioOntology client works as async context manager."""
     # Skip if no API key (even when running callouts, key may not be available)
@@ -172,7 +171,6 @@ def test_query_terms_deduplication() -> None:
     assert "thromboembolism" in unique_terms
 
 
-@pytest.mark.asyncio
 async def test_generate_finding_query_terms_single_word() -> None:
     """Test query generation for single word."""
     # Mock the query generator agent to avoid API calls
@@ -189,7 +187,6 @@ async def test_generate_finding_query_terms_single_word() -> None:
         assert "lung infection" in result
 
 
-@pytest.mark.asyncio
 async def test_generate_finding_query_terms_with_description() -> None:
     """Test query generation with description."""
     # Mock the query generator agent
@@ -230,7 +227,6 @@ def test_create_query_generator_agent() -> None:
 # ==============================================================================
 
 
-@pytest.mark.asyncio
 async def test_execute_ontology_search() -> None:
     """Test executing search with filtering using BioOntology API."""
     # Mock the BioOntologySearchClient and settings
@@ -273,7 +269,6 @@ async def test_execute_ontology_search() -> None:
         assert results[0].concept_text == "pneumonia"
 
 
-@pytest.mark.asyncio
 async def test_execute_ontology_search_with_custom_ontologies() -> None:
     """Test execute_ontology_search with custom ontologies parameter."""
     # Mock the BioOntologySearchClient and settings
@@ -317,7 +312,6 @@ async def test_execute_ontology_search_with_custom_ontologies() -> None:
         assert results[1].concept_id == "GAMUTS-456"
 
 
-@pytest.mark.asyncio
 async def test_execute_ontology_search_with_none_ontologies() -> None:
     """Test execute_ontology_search with ontologies=None (uses defaults)."""
     # Mock the BioOntologySearchClient and settings
@@ -354,7 +348,6 @@ async def test_execute_ontology_search_with_none_ontologies() -> None:
         assert results[0].concept_id == "RID5350"
 
 
-@pytest.mark.asyncio
 async def test_execute_ontology_search_missing_api_key() -> None:
     """Test that execute_ontology_search raises ValueError when BioOntology API key is not configured."""
     with patch("findingmodel_ai.search.ontology.settings") as mock_settings:
@@ -441,7 +434,6 @@ def test_categorization_agent_creation() -> None:
         assert agent is not None
 
 
-@pytest.mark.asyncio
 async def test_categorization_with_test_model() -> None:
     """Test categorization using TestModel."""
     from findingmodel_ai.config import FindingModelAIConfig
@@ -484,7 +476,6 @@ async def test_categorization_with_test_model() -> None:
 # ==============================================================================
 
 
-@pytest.mark.asyncio
 async def test_match_ontology_concepts_integration() -> None:
     """Test the complete workflow using BioOntology API."""
     # Create a mock client
@@ -534,7 +525,6 @@ async def test_match_ontology_concepts_integration() -> None:
         assert len(result.exact_matches) == 1
 
 
-@pytest.mark.asyncio
 async def test_match_ontology_concepts_with_custom_ontologies() -> None:
     """Test match_ontology_concepts with custom ontologies parameter."""
     # Create a mock client
@@ -596,7 +586,6 @@ async def test_match_ontology_concepts_with_custom_ontologies() -> None:
         assert result.should_include[0].concept_id == "LOINC-456"
 
 
-@pytest.mark.asyncio
 async def test_match_ontology_concepts_with_none_ontologies() -> None:
     """Test match_ontology_concepts with ontologies=None (uses defaults)."""
     # Create a mock client
@@ -656,7 +645,6 @@ async def test_match_ontology_concepts_with_none_ontologies() -> None:
         assert result.exact_matches[0].concept_id == "RID5350"
 
 
-@pytest.mark.asyncio
 async def test_match_ontology_concepts_missing_api_key() -> None:
     """Test that match_ontology_concepts raises ValueError when BioOntology API key is not configured."""
     with (
@@ -680,7 +668,6 @@ async def test_match_ontology_concepts_missing_api_key() -> None:
 
 
 @pytest.mark.callout
-@pytest.mark.asyncio
 async def test_match_ontology_concepts_basic_wiring() -> None:
     """Sanity check: Verify basic wiring with real API.
 

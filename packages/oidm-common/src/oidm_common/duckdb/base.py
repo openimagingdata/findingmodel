@@ -11,7 +11,7 @@ import duckdb
 from oidm_common.duckdb.connection import setup_duckdb_connection
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    from typing import Self
 
 
 class ReadOnlyDuckDBIndex:

@@ -47,7 +47,7 @@ def create_mock_edit_result(
     model: FindingModelFull,
     changes: list[str] | None = None,
     rejections: list[str] | None = None,
-) -> "model_editor.EditResult":
+) -> model_editor.EditResult:
     """Create a mock EditResult for testing without API calls.
 
     This utility standardizes the creation of mock EditResult objects

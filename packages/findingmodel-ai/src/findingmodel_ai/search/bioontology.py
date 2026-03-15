@@ -10,7 +10,7 @@ Protocol and result classes are imported from findingmodel.protocols to avoid ci
 """
 
 import asyncio
-from typing import Any, ClassVar, Optional, cast
+from typing import Any, ClassVar, cast
 
 import httpx
 from findingmodel.protocols import OntologySearchResult
@@ -28,7 +28,7 @@ class BioOntologySearchResult(BaseModel):
     ontology: str = Field(description="Source ontology (e.g., SNOMEDCT, RADLEX)")
     pref_label: str = Field(description="Preferred label for the concept")
     synonyms: list[str] = Field(default_factory=list, description="Alternative labels/synonyms")
-    definition: Optional[str] = Field(default=None, description="Definition of the concept")
+    definition: str | None = Field(default=None, description="Definition of the concept")
     semantic_types: list[str] = Field(default_factory=list, description="UMLS semantic type codes")
     ui_link: str = Field(description="BioPortal UI link for the concept")
 
@@ -45,7 +45,7 @@ class BioOntologySearchResult(BaseModel):
 
         # Handle definition which can sometimes be a list
         definition_raw = item.get("definition")
-        definition: Optional[str] = None
+        definition: str | None = None
         if isinstance(definition_raw, list):
             definition = str(definition_raw[0]) if definition_raw else None
         elif isinstance(definition_raw, str):
@@ -114,7 +114,7 @@ class BioOntologySearchClient:
     DEFAULT_INCLUDE_FIELDS: ClassVar[str] = "prefLabel,synonym,definition,semanticType"
     API_BASE_URL: ClassVar[str] = "https://data.bioontology.org"
 
-    def __init__(self, api_key: Optional[str] = None, client: Optional[httpx.AsyncClient] = None) -> None:
+    def __init__(self, api_key: str | None = None, client: httpx.AsyncClient | None = None) -> None:
         """
         Initialize the BioOntology search client.
 
@@ -122,7 +122,7 @@ class BioOntologySearchClient:
             api_key: BioOntology API key. If not provided, will try to get from settings.
             client: Optional pre-configured httpx.AsyncClient for connection pooling.
         """
-        self.api_key: Optional[str] = None
+        self.api_key: str | None = None
         self._client = client
         self._owns_client = client is None  # Track if we created the client
 
@@ -159,12 +159,12 @@ class BioOntologySearchClient:
     async def search_bioontology(
         self,
         query: str,
-        ontologies: Optional[list[str]] = None,
+        ontologies: list[str] | None = None,
         page_size: int = 50,
         page: int = 1,
-        include_fields: Optional[str] = None,
+        include_fields: str | None = None,
         require_exact_match: bool = False,
-        semantic_types: Optional[list[str]] = None,
+        semantic_types: list[str] | None = None,
     ) -> BioOntologySearchResults:
         """
         Search for concepts across specified ontologies.
@@ -244,11 +244,11 @@ class BioOntologySearchClient:
     async def search_all_pages(
         self,
         query: str,
-        ontologies: Optional[list[str]] = None,
+        ontologies: list[str] | None = None,
         max_results: int = 100,
-        include_fields: Optional[str] = None,
+        include_fields: str | None = None,
         require_exact_match: bool = False,
-        semantic_types: Optional[list[str]] = None,
+        semantic_types: list[str] | None = None,
     ) -> list[BioOntologySearchResult]:
         """
         Search and retrieve all results up to max_results, handling pagination automatically.
@@ -296,7 +296,7 @@ class BioOntologySearchClient:
     async def search_as_ontology_results(
         self,
         query: str,
-        ontologies: Optional[list[str]] = None,
+        ontologies: list[str] | None = None,
         max_results: int = 50,
         **kwargs: Any,  # noqa: ANN401
     ) -> list[OntologySearchResult]:

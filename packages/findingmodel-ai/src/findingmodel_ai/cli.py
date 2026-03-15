@@ -178,7 +178,7 @@ def ontology_search(
     """Search medical ontologies for QUERY via BioOntology.org."""
     from rich.table import Table
 
-    from findingmodel_ai.search.bioontology import BioOntologySearchClient
+    from findingmodel_ai.search.bioontology import BioOntologySearchClient, BioOntologySearchResult
 
     if not settings.bioontology_api_key:
         console.print("[red]Error:[/red] BIOONTOLOGY_API_KEY is not set. Add it to .env or the environment.")
@@ -187,7 +187,7 @@ def ontology_search(
     ontologies = list(ontology) or None  # None → client uses its defaults
     semantic_types = list(semantic_type) or None  # None → no semantic type filter
 
-    async def _run() -> list:
+    async def _run() -> list[BioOntologySearchResult]:
         with console.status(f"[bold green]Searching BioOntology for {query!r}..."):
             async with BioOntologySearchClient() as client:
                 return await client.search_all_pages(

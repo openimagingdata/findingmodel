@@ -270,7 +270,10 @@ class TestEnsureIndexDb:
 
         with (
             patch("findingmodel.config.oidm_ensure_db_file", return_value=db_path),
-            patch("findingmodel.config.read_embedding_profile_from_db", return_value=("openai", "text-embedding-3-small", 512)),
+            patch(
+                "findingmodel.config.read_embedding_profile_from_db",
+                return_value=("openai", "text-embedding-3-small", 512),
+            ),
             patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=True),
             pytest.raises(config_module.ConfigurationError, match="uses OpenAI embeddings"),
         ):

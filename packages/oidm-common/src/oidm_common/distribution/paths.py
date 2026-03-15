@@ -23,8 +23,6 @@ _OPENAI_BASE_COMPAT_DESCRIPTOR = build_profile_descriptor(
 class DistributionError(RuntimeError):
     """Error during database distribution operations."""
 
-    pass
-
 
 def _validate_databases(manifest: dict[str, Any]) -> dict[str, Any]:
     databases = manifest.get("databases")
