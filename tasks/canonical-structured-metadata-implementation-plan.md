@@ -172,7 +172,7 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 **Scope**
 - Add the new queryable columns to the maintainer build and read side.
 - Extend `IndexEntry` and hydration so the structured fields are available from the index.
-- Extend search text and embedding text with human-readable structured labels.
+- Keep facets as structured columns only; do not duplicate them into FTS/search_text or embedding_text.
 
 **Primary ownership**
 - Lane B
@@ -185,11 +185,11 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - exact schema/DDL assertions
 - build round-trip tests
 - hydration tests for populated and null facet columns
-- search text / embedding text unit tests
 
 **Acceptance Gate**
 - Database build and read-side hydration fully support the canonical fields.
 - `index_code_keys` are normalized consistently as `system:code`.
+- FTS/search text and embedding text remain focused on free-text clinical content rather than duplicated facet values.
 
 **Docs Gate**
 - Update any DuckDB/build docs that describe the old schema shape.
@@ -248,30 +248,45 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 **Docs Gate**
 - Update retrieval docs if `related_models(...)` is public.
 
-## Slice 6: Define New Enrichment Result and Review Types
+## Slice 6: Define New Enrichment Result and Review Types ✓
+
+**Status:** Complete
 
 **Scope**
 - Define `EnrichModelResult`, `EnrichModelReview`, and any helper types needed for typed candidate gathering and review output.
 - Keep the review artifact JSON-serializable and explicitly separate from canonical model JSON.
-- Move any remaining duplicated facet literals/taxonomies out of `findingmodel-ai` and onto the shared core types.
+- All new types go in a new `types.py` module, importing canonical facet types from `findingmodel`.
+
+**Explicitly out of scope**
+- Do NOT modify `unified.py`, `agentic.py`, or their tests. The old enrichment modules are being replaced wholesale (Slice 7), not migrated. Retrofitting canonical types into dead-end code has no value.
+- The duplicated facet literals in the old modules will disappear when those modules are removed in Slice 9.
 
 **Primary ownership**
 - Lane C
 
-**Files likely in scope**
-- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/__init__.py`
-- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/unified.py` or replacement module(s)
+**Files changed**
+- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/types.py` (new) — 8 types: FieldConfidence, OntologyCandidateRelationship, OntologyCandidate, OntologyCandidateReport, AnatomicCandidate, EnrichModelReview, EnrichModelResult
+- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/__init__.py` — added exports for new types
+- `packages/findingmodel-ai/tests/test_enrichment_types.py` (new) — 9 tests
+
+**Design decisions**
+- `AnatomicCandidate.location` uses `IndexCode` to avoid duplicating system/code/display fields
+- `EnrichModelResult.model` is `FindingModelFull` (not a union) — enrichment operates on registered models
+- `model_tier` uses `Literal["base", "small", "full"]` to keep types.py dependency-free from config
+- No raw search results stored — Logfire instrumentation handles traceability
 
 **Tests**
-- result/review model validation
-- serialization tests
-- tests asserting review-only data does not leak into canonical model JSON
+- ✓ Type validation (required fields, defaults, enum values)
+- ✓ Serialization round-trip (JSON lossless)
+- ✓ Separation invariant (review data excluded from model dump, model data excluded from review dump)
 
 **Acceptance Gate**
-- The new enrichment type surface is defined and stable enough for the pipeline rewrite.
+- ✓ Type surface defined and stable for the pipeline rewrite
+- ✓ Review-only data does not leak into canonical model JSON
 
 **Docs Gate**
-- Update the design doc only if a new type relationship needs to be codified.
+- ✓ No design doc update needed — types match existing design doc spec
+- ✓ Implementation plan updated
 
 ## Slice 7: Implement `enrich_model(...)`
 
