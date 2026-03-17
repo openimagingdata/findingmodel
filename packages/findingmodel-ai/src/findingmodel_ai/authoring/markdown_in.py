@@ -19,7 +19,11 @@ async def create_model_from_markdown(
     model_tier: ModelTier = "base",
 ) -> FindingModelBase:
     """
-    Create a finding model from a markdown file or text using the OpenAI API.
+    Create a finding model from a markdown outline or free-form text using the OpenAI API.
+
+    This is an AI-assisted outline importer for authoring convenience. It is not intended
+    to guarantee faithful reconstruction of a previously exported finding model Markdown view.
+
     :param finding_info: The finding information or name to use for the model.
     :param markdown_path: The path to the markdown file containing the outline.
     :param markdown_text: The markdown text containing the outline.

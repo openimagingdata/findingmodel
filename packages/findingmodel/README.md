@@ -54,6 +54,8 @@ findingmodel validate ./defs --reformat
 findingmodel fm-to-markdown model.json
 ```
 
+Markdown export is a presentation view over canonical finding model JSON. It is intended for reading, review, and lightweight sharing, not as the source-of-truth storage format.
+
 ## Models
 
 ### FindingModelBase
@@ -72,7 +74,7 @@ model = FindingModelBase(
     attributes=[...],
 )
 
-# Export to Markdown
+# Export to Markdown for human-readable review
 print(model.as_markdown())
 ```
 

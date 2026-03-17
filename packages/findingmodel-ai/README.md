@@ -46,7 +46,7 @@ findingmodel-ai make-info "pneumothorax"
 # Create a basic model template
 findingmodel-ai make-stub-model "pneumothorax"
 
-# Convert Markdown to finding model
+# Convert a Markdown outline to a finding model
 findingmodel-ai markdown-to-fm outline.md
 
 # Search BioOntology.org for ontology concepts
@@ -80,6 +80,8 @@ asyncio.run(main())
 
 ### Creating Models from Markdown
 
+`create_model_from_markdown()` is an AI-assisted outline importer. It is useful for turning human-authored notes into an initial model, but it is not intended to guarantee faithful reconstruction of a previously exported Markdown document.
+
 ```python
 import asyncio
 from findingmodel_ai.authoring import create_model_from_markdown, create_info_from_name
@@ -103,6 +105,8 @@ asyncio.run(main())
 ```
 
 ### AI-Powered Model Editing
+
+`edit_model_markdown()` is convenience tooling for lightweight human or LLM-assisted editing. The canonical representation remains the JSON model, not the Markdown text.
 
 ```python
 import asyncio

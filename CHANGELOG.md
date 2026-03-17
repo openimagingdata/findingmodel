@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Default models updated — base/full: `openai:gpt-5.4`, small: `google-gla:gemini-3-flash-preview` (was `openai:gpt-5-nano`). If you only have an OpenAI key, set `DEFAULT_MODEL_SMALL=openai:gpt-5-mini`.
 - CLI validates API keys for all default model tiers at startup, with actionable error messages.
 - **Minimum pydantic-ai version** bumped from `>=0.3.2` to `>=1.0.0` (required for `FallbackModel` and per-model settings).
+- Markdown authoring/import workflows are now documented as convenience tools rather than a canonical round-trip file format.
 
 #### Fixed
 
@@ -60,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Query embedding provider/model/dimensions are now taken from the selected DB file metadata.
 - If the selected DB is OpenAI-embedded and no OpenAI key is configured, search now fails immediately with a clear configuration error.
 - Removed obsolete runtime embedding env vars and obsolete DB alias env vars.
+- Markdown export is now documented as a human-readable presentation view over canonical finding model JSON.
 
 ### anatomic-locations
 
