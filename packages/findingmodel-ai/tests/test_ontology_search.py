@@ -208,11 +208,11 @@ def test_create_query_generator_agent() -> None:
     """Test that the query generator agent is created correctly."""
     from findingmodel_ai.config import FindingModelAIConfig
 
-    with patch.object(FindingModelAIConfig, "get_model", return_value="test") as mock_get_model:
+    with patch.object(FindingModelAIConfig, "get_agent_model", return_value="test") as mock_get_agent_model:
         agent = create_query_generator_agent()
 
-        # Should get the default model tier
-        mock_get_model.assert_called_once()
+        # Should get a model via get_agent_model
+        mock_get_agent_model.assert_called_once()
 
         # Check agent configuration - output should be list[str]
         # Note: _output_type is the actual type annotation list[str], not just list
@@ -424,11 +424,11 @@ def test_categorization_agent_creation() -> None:
     """Test that agent is created properly."""
     from findingmodel_ai.config import FindingModelAIConfig
 
-    with patch.object(FindingModelAIConfig, "get_model", return_value="test") as mock_get_model:
+    with patch.object(FindingModelAIConfig, "get_agent_model", return_value="test") as mock_get_agent_model:
         agent = create_categorization_agent()
 
-        # Should get the default model tier
-        mock_get_model.assert_called_once()
+        # Should get a model via get_agent_model
+        mock_get_agent_model.assert_called_once()
 
         # Agent should exist
         assert agent is not None
@@ -446,8 +446,8 @@ async def test_categorization_with_test_model() -> None:
         rationale="Test categorization",
     )
 
-    # Create agent and override with TestModel (need to mock get_model to avoid API key check)
-    with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
+    # Create agent and override with TestModel (need to mock get_agent_model to avoid API key check)
+    with patch.object(FindingModelAIConfig, "get_agent_model", return_value="test"):
         agent = create_categorization_agent()
 
     # TestModel requires custom_output_args to be a dict, not a Pydantic model

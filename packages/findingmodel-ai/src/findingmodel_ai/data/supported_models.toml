@@ -9,6 +9,7 @@
 # Structure:
 #   [providers.<name>]       — provider-level reasoning config
 #   [models.<spec>]          — per-model reasoning support and normalization
+#   [agents.<tag>]           — per-agent model fallback chain + reasoning defaults
 #
 # Model spec format: "provider:model-name" (e.g., "openai:gpt-5.4")
 
@@ -172,3 +173,142 @@ provider = "ollama"
 
 [models."ollama:qwen3.5:9B"]
 provider = "ollama"
+
+
+# =============================================================================
+# Per-agent model defaults (from March 2026 performance audit)
+#
+# Each agent declares an ordered fallback chain of (model, reasoning) pairs.
+# At runtime, unavailable providers are filtered out and remaining models are
+# wrapped in pydantic-ai's FallbackModel. If only one remains, it's used directly.
+#
+# Format:
+#   models = [ { model = "provider:name", reasoning = "level" }, ... ]
+#   tier_fallback = "small" | "base" | "full"   # last resort if all models unavailable
+#
+# Ordering: fastest/best for this task first, then alternatives by provider.
+# Each chain should cover all three providers (OpenAI, Google, Anthropic) so
+# the system works with any single API key configured.
+# =============================================================================
+
+# --- Simple generative: gpt-5-nano fastest + most consistent latency ---
+
+[agents.ontology_search]
+tier_fallback = "small"
+models = [
+    { model = "openai:gpt-5-nano", reasoning = "low" },
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+]
+
+[agents.describe_finding]
+tier_fallback = "small"
+models = [
+    { model = "openai:gpt-5-nano", reasoning = "low" },
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+]
+
+# --- Structured generation: gemini-flash/minimal fastest for region+terms ---
+
+[agents.anatomic_search]
+tier_fallback = "small"
+models = [
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
+    { model = "openai:gpt-5-nano", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+]
+
+[agents.similar_term_gen]
+tier_fallback = "small"
+models = [
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
+    { model = "openai:gpt-5-nano", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+]
+
+# --- Medical classification: gemini-3.1-pro eliminates tail latency on edge cases ---
+
+[agents.ontology_match]
+tier_fallback = "base"
+models = [
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
+    { model = "openai:gpt-5-mini", reasoning = "medium" },
+    { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
+]
+
+[agents.anatomic_select]
+tier_fallback = "base"
+models = [
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "medium" },
+    { model = "openai:gpt-5-mini", reasoning = "medium" },
+    { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
+]
+
+# --- Simple classification: budget model fastest ---
+
+[agents.similar_assess]
+tier_fallback = "base"
+models = [
+    { model = "google-gla:gemini-3.1-flash-lite-preview", reasoning = "medium" },
+    { model = "openai:gpt-5-mini", reasoning = "medium" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+]
+
+# --- Tool-using search: needs strategy planning ---
+
+[agents.similar_search]
+tier_fallback = "base"
+models = [
+    { model = "openai:gpt-5.4", reasoning = "low" },
+    { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
+]
+
+# --- Complex structured output: quality over speed ---
+
+[agents.edit_instructions]
+tier_fallback = "base"
+models = [
+    { model = "openai:gpt-5.4", reasoning = "low" },
+    { model = "anthropic:claude-opus-4-6", reasoning = "medium" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
+]
+
+[agents.edit_markdown]
+tier_fallback = "base"
+models = [
+    { model = "openai:gpt-5.4", reasoning = "low" },
+    { model = "anthropic:claude-opus-4-6", reasoning = "medium" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
+]
+
+[agents.import_markdown]
+tier_fallback = "base"
+models = [
+    { model = "anthropic:claude-opus-4-6", reasoning = "medium" },
+    { model = "openai:gpt-5.4", reasoning = "low" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "medium" },
+]
+
+# --- Tool-using detail search ---
+
+[agents.describe_details]
+tier_fallback = "small"
+models = [
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
+    { model = "openai:gpt-5-mini", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+]
+
+# --- Enrichment: not yet tuned (being overhauled separately) ---
+# These use tier_fallback only — no per-agent chain.
+
+[agents.enrich_classify]
+tier_fallback = "base"
+
+[agents.enrich_unified]
+tier_fallback = "base"
+
+[agents.enrich_research]
+tier_fallback = "base"

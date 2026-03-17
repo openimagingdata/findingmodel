@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - **`findingmodel-ai ontology search QUERY`**: Search medical ontologies (SNOMED CT, RADLEX, LOINC) via BioOntology.org. Options: `--ontology`, `--semantic-type`, `--exact`, `--max-results`. Requires `BIOONTOLOGY_API_KEY`.
+- **Per-agent model defaults with fallback chains**: Each agent now has an optimized primary model + reasoning level configured in `supported_models.toml`, with automatic cross-provider fallback via pydantic-ai's `FallbackModel`. Defaults are based on the March 2026 performance audit (439 test runs). The system works with any single provider API key configured.
+- **Per-agent reasoning overrides**: Set reasoning level per agent via `AGENT_REASONING_OVERRIDES__<tag>=level` (e.g., `AGENT_REASONING_OVERRIDES__anatomic_select=medium`).
+- **`similar_term_gen` agent tag**: The term generation agent in similar model search now has its own tag, separate from `similar_search`, enabling independent model configuration.
 - **Per-tier reasoning levels**: Configurable via `DEFAULT_REASONING_SMALL` / `_BASE` / `_FULL` (defaults: `low`/`none`/`high`). Levels are normalized per-provider automatically (e.g., `xhigh` maps to `HIGH` on Gemini, which has no `xhigh`).
 - **Gateway fallback**: When a provider-specific API key is missing but `PYDANTIC_AI_GATEWAY_API_KEY` is set, requests route through the Pydantic AI Gateway automatically. A single gateway key can serve all cloud providers.
 - **Unified Google prefixes**: `google:`, `google-gla:`, and `google-vertex:` are interchangeable — routes to AI Studio (GLA) when `GOOGLE_API_KEY` is set, or Vertex AI via gateway otherwise.
@@ -21,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking:** Default models updated — base/full: `openai:gpt-5.4`, small: `google-gla:gemini-3-flash-preview` (was `openai:gpt-5-nano`). If you only have an OpenAI key, set `DEFAULT_MODEL_SMALL=openai:gpt-5-mini`.
 - CLI validates API keys for all default model tiers at startup, with actionable error messages.
+- **Minimum pydantic-ai version** bumped from `>=0.3.2` to `>=1.0.0` (required for `FallbackModel` and per-model settings).
 
 #### Fixed
 

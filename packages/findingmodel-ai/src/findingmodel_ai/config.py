@@ -1,5 +1,6 @@
 import importlib.resources
 import tomllib
+from dataclasses import dataclass
 from typing import Annotated, Any, Literal
 
 import httpx
@@ -23,6 +24,7 @@ def _load_supported_models() -> dict[str, Any]:
 _MODEL_REGISTRY: dict[str, Any] = _load_supported_models()
 SUPPORTED_MODELS: dict[str, Any] = _MODEL_REGISTRY.get("models", {})
 PROVIDER_CONFIGS: dict[str, Any] = _MODEL_REGISTRY.get("providers", {})
+_AGENT_REGISTRY: dict[str, Any] = _MODEL_REGISTRY.get("agents", {})
 
 # Type definitions for model configuration
 ModelTier = Literal["base", "small", "full"]
@@ -39,7 +41,8 @@ AgentTag = Literal[
     "anatomic_search",  # Searches for anatomic locations
     "anatomic_select",  # Selects from location candidates
     # Similar models domain
-    "similar_search",  # Searches for similar findings (covers 2 agents)
+    "similar_term_gen",  # Generates search terms for similar finding discovery
+    "similar_search",  # Searches for similar findings (tool-using search agent)
     "similar_assess",  # Assesses similarity results
     # Ontology domain
     "ontology_match",  # Matches to ontology concepts
@@ -76,6 +79,14 @@ ModelSpec = Annotated[
 ]
 
 
+@dataclass
+class ResolvedModelConfig:
+    """A resolved model + reasoning pair in a fallback chain."""
+
+    model_string: str
+    reasoning: ReasoningLevel
+
+
 class FindingModelAIConfig(BaseSettings):
     # API Keys
     openai_api_key: SecretStr = Field(default=SecretStr(""))
@@ -104,8 +115,7 @@ class FindingModelAIConfig(BaseSettings):
 
     # Per-agent model overrides
     agent_model_overrides: dict[AgentTag, ModelSpec] = Field(default_factory=dict)
-    # TODO: agent_reasoning_overrides: dict[AgentTag, ReasoningLevel] — planned companion
-    #       to allow per-agent reasoning level (e.g., AGENT_REASONING_OVERRIDES__edit_instructions=high)
+    agent_reasoning_overrides: dict[AgentTag, ReasoningLevel] = Field(default_factory=dict)
 
     # Tavily API
     tavily_api_key: SecretStr = Field(default=SecretStr(""))
@@ -159,6 +169,81 @@ class FindingModelAIConfig(BaseSettings):
             "google-vertex": "google_api_key",
             "ollama": None,  # No API key required
         }.get(provider_part)
+
+    def _tier_model_string(self, tier: ModelTier) -> str:
+        """Return the model string for a given tier."""
+        return {"base": self.default_model, "full": self.default_model_full, "small": self.default_model_small}[tier]
+
+    def _tier_reasoning(self, tier: ModelTier) -> ReasoningLevel:
+        """Return the reasoning level for a given tier."""
+        return {
+            "small": self.default_reasoning_small,
+            "base": self.default_reasoning_base,
+            "full": self.default_reasoning_full,
+        }[tier]
+
+    def _can_use_model(self, model_string: str) -> bool:
+        """Check if we can use this model (API key or gateway available)."""
+        key_field = self._get_required_key_field(model_string)
+        if key_field is None:
+            return True  # Ollama, no key needed
+        if self._has_key(key_field):
+            return True
+        provider_part = model_string.split(":")[0]
+        gateway_eligible = {"openai", "anthropic", "google", "google-gla", "google-vertex"}
+        return self._has_key("pydantic_ai_gateway_api_key") and provider_part in gateway_eligible
+
+    def resolve_agent_config(self, agent_tag: AgentTag, default_tier: ModelTier = "base") -> list[ResolvedModelConfig]:
+        """Resolve the ordered list of (model, reasoning) for an agent.
+
+        Single source of truth used by get_agent_model(), get_effective_model_string(),
+        and get_effective_reasoning_level().
+
+        Resolution order:
+        1. Env overrides (AGENT_MODEL_OVERRIDES / AGENT_REASONING_OVERRIDES) → single model, no chain
+        2. Per-agent TOML models list → filter to available providers, keep order
+        3. Tier default → single model fallback
+
+        Returns at least one entry. First entry is the primary model.
+        """
+        agent_entry = _AGENT_REGISTRY.get(agent_tag, {})
+        tier: ModelTier = agent_entry.get("tier_fallback", default_tier)
+
+        # 1. Env override (highest priority — single model, no chain)
+        if agent_tag in self.agent_model_overrides:
+            model_string = self.agent_model_overrides[agent_tag]
+            reasoning = self.agent_reasoning_overrides.get(agent_tag) or self._tier_reasoning(tier)
+            reasoning = self._normalize_reasoning(model_string, reasoning)
+            return [ResolvedModelConfig(model_string, reasoning)]
+
+        # 2. Per-agent TOML chain — filter to available providers
+        models_list: list[dict[str, str]] = agent_entry.get("models", [])
+        available: list[ResolvedModelConfig] = []
+        for entry in models_list:
+            model_string = entry["model"]
+            if self._can_use_model(model_string):
+                # Env reasoning override applies to ALL models in chain
+                toml_reasoning: ReasoningLevel | None = entry.get("reasoning")  # type: ignore[assignment]
+                reasoning = (
+                    self.agent_reasoning_overrides.get(agent_tag) or toml_reasoning or self._tier_reasoning(tier)
+                )
+                reasoning = self._normalize_reasoning(model_string, reasoning)
+                available.append(ResolvedModelConfig(model_string, reasoning))
+
+        if available:
+            return available
+
+        # 3. Tier fallback (all TOML models unavailable or no models list)
+        if models_list:
+            logfire.info(
+                "Agent {tag}: no preferred models available, using tier {tier} fallback",
+                tag=agent_tag,
+                tier=tier,
+            )
+        model_string = self._tier_model_string(tier)
+        reasoning = self.agent_reasoning_overrides.get(agent_tag) or self._tier_reasoning(tier)
+        reasoning = self._normalize_reasoning(model_string, reasoning)
+        return [ResolvedModelConfig(model_string, reasoning)]
 
     def validate_default_model_keys(self) -> None:
         """Validate that API keys are configured for all default models.
@@ -314,6 +399,7 @@ class FindingModelAIConfig(BaseSettings):
         key_env_name: str,
         make_direct: str,
         make_gateway: str,
+        disable_retries: bool = False,
     ) -> Model:
         """Resolve a model using direct key or gateway fallback.
 
@@ -324,13 +410,14 @@ class FindingModelAIConfig(BaseSettings):
             key_env_name: Human-readable env var name for error messages (e.g., "OPENAI_API_KEY")
             make_direct: Name of the _make_*_model method for direct access
             make_gateway: Name of the _make_gateway_*_model method for fallback
+            disable_retries: If True, disable SDK-level retries (use for non-last models in FallbackModel chains)
         """
         if self._has_key(direct_key):
-            result: Model = getattr(self, make_direct)(model_name, model_settings)
+            result: Model = getattr(self, make_direct)(model_name, model_settings, disable_retries=disable_retries)
             return result
         if self._has_key("pydantic_ai_gateway_api_key"):
             logfire.info("Using gateway fallback for {model_name} (no {key})", model_name=model_name, key=key_env_name)
-            result = getattr(self, make_gateway)(model_name, model_settings)
+            result = getattr(self, make_gateway)(model_name, model_settings, disable_retries=disable_retries)
             return result
         raise ConfigurationError(
             f"{key_env_name} is not configured and no PYDANTIC_AI_GATEWAY_API_KEY for fallback. "
@@ -408,9 +495,12 @@ class FindingModelAIConfig(BaseSettings):
             raise ConfigurationError(f"Unknown provider '{provider_part}'")
 
     def get_effective_model_string(self, agent_tag: AgentTag, default_tier: ModelTier = "base") -> str:
-        """Return the model string that would be used for an agent.
+        """Return the primary model string for an agent (first in fallback chain).
 
         Useful for metadata/logging when you need the string, not the Model object.
+
+        Note: With FallbackModel, the actual model used at runtime may differ if
+        the primary fails. See ModelResponse.model_name for the actual model.
 
         Args:
             agent_tag: Agent identifier
@@ -419,21 +509,39 @@ class FindingModelAIConfig(BaseSettings):
         Returns:
             Model specification string (e.g., "openai:gpt-5-mini")
         """
-        if agent_tag in self.agent_model_overrides:
-            return self.agent_model_overrides[agent_tag]
-        return {"base": self.default_model, "full": self.default_model_full, "small": self.default_model_small}[
-            default_tier
-        ]
+        chain = self.resolve_agent_config(agent_tag, default_tier)
+        return chain[0].model_string
 
-    def get_agent_model(self, agent_tag: AgentTag, *, default_tier: ModelTier = "base") -> Model:
-        """Get model for a named agent, with optional per-agent override.
+    def get_effective_reasoning_level(self, agent_tag: AgentTag, default_tier: ModelTier = "base") -> ReasoningLevel:
+        """Return the reasoning level for an agent's primary model.
 
         Args:
-            agent_tag: Agent identifier (e.g., "enrich_classify", "edit_instructions")
+            agent_tag: Agent identifier
             default_tier: Tier to use if no override configured
 
         Returns:
-            Configured Model instance
+            Resolved reasoning level for the primary model in the chain
+        """
+        chain = self.resolve_agent_config(agent_tag, default_tier)
+        return chain[0].reasoning
+
+    def get_agent_model(self, agent_tag: AgentTag, *, default_tier: ModelTier = "base") -> Model:
+        """Get model for a named agent, with fallback chain from TOML config.
+
+        Resolution order:
+        1. Env override (AGENT_MODEL_OVERRIDES) → single model
+        2. Per-agent TOML defaults → FallbackModel with available providers
+        3. Tier default → single model
+
+        Returns a FallbackModel when multiple models are available in the chain,
+        or a direct model when only one is available.
+
+        Args:
+            agent_tag: Agent identifier (e.g., "enrich_classify", "edit_instructions")
+            default_tier: Tier to use if no TOML agent config is found
+
+        Returns:
+            Configured Model instance (direct or FallbackModel)
 
         Example:
             model = settings.get_agent_model("enrich_classify", default_tier="base")
@@ -441,10 +549,87 @@ class FindingModelAIConfig(BaseSettings):
             # User overrides via environment:
             # AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-opus-4-6
         """
-        if agent_tag in self.agent_model_overrides:
-            model_string = self.agent_model_overrides[agent_tag]
-            return self._create_model_from_string(model_string, default_tier)
-        return self.get_model(default_tier)
+        chain = self.resolve_agent_config(agent_tag, default_tier)
+
+        # Build Model instances — disable SDK retries on non-last models for fast fallback
+        models: list[Model] = []
+        for i, c in enumerate(chain):
+            is_last = i == len(chain) - 1
+            models.append(self._create_model_from_resolved(c.model_string, c.reasoning, disable_retries=not is_last))
+
+        if len(models) == 1:
+            return models[0]
+
+        from pydantic_ai.models.fallback import FallbackModel
+
+        return FallbackModel(models[0], *models[1:])
+
+    def _create_model_from_resolved(
+        self, model_string: str, reasoning: ReasoningLevel, *, disable_retries: bool = False
+    ) -> Model:
+        """Create a Model from an already-resolved model string + reasoning level.
+
+        Unlike _create_model_from_string(), this takes an already-resolved reasoning
+        level directly (not a tier), and supports disable_retries for FallbackModel chains.
+
+        Args:
+            model_string: Model specification (e.g., "openai:gpt-5.4")
+            reasoning: Already-resolved and normalized reasoning level
+            disable_retries: If True, disable SDK-level retries (for non-last models in FallbackModel)
+
+        Returns:
+            Configured Model instance
+
+        Raises:
+            ConfigurationError: If model string is invalid or provider unknown
+        """
+        if ":" not in model_string:
+            raise ConfigurationError(f"Invalid model format '{model_string}'. Expected 'provider:model_name'")
+
+        provider_part, model_name = model_string.split(":", 1)
+        parts = provider_part.split("/")
+        model_settings = self._build_reasoning_settings(provider_part, model_name, reasoning)
+
+        if parts == ["openai"]:
+            return self._resolve_with_fallback(
+                model_name,
+                model_settings,
+                direct_key="openai_api_key",
+                key_env_name="OPENAI_API_KEY",
+                make_direct="_make_openai_model",
+                make_gateway="_make_gateway_openai_model",
+                disable_retries=disable_retries,
+            )
+        elif parts == ["anthropic"]:
+            return self._resolve_with_fallback(
+                model_name,
+                model_settings,
+                direct_key="anthropic_api_key",
+                key_env_name="ANTHROPIC_API_KEY",
+                make_direct="_make_anthropic_model",
+                make_gateway="_make_gateway_anthropic_model",
+                disable_retries=disable_retries,
+            )
+        elif parts[0] in ("google", "google-gla", "google-vertex"):
+            return self._resolve_with_fallback(
+                model_name,
+                model_settings,
+                direct_key="google_api_key",
+                key_env_name="GOOGLE_API_KEY",
+                make_direct="_make_google_gla_model",
+                make_gateway="_make_gateway_google_vertex_model",
+                disable_retries=disable_retries,
+            )
+        elif parts == ["ollama"]:
+            return self._make_ollama_model(model_name)
+        elif parts == ["gateway", "openai"]:
+            return self._make_gateway_openai_model(model_name, model_settings, disable_retries=disable_retries)
+        elif parts == ["gateway", "anthropic"]:
+            return self._make_gateway_anthropic_model(model_name, model_settings, disable_retries=disable_retries)
+        elif parts in [["gateway", "google"], ["gateway", "google-vertex"]]:
+            return self._make_gateway_google_vertex_model(model_name, model_settings)
+        else:
+            raise ConfigurationError(f"Unknown provider '{provider_part}'")
 
     def get_model(self, model_tier: ModelTier = "base") -> Model:
         """Get a Pydantic AI model instance for the requested tier.
@@ -466,8 +651,16 @@ class FindingModelAIConfig(BaseSettings):
 
         return self._create_model_from_string(model_string, model_tier)
 
-    def _make_openai_model(self, model_name: str, settings: ModelSettings | None) -> OpenAIResponsesModel:
-        """Create an OpenAI model with configured API key."""
+    def _make_openai_model(
+        self, model_name: str, settings: ModelSettings | None, *, disable_retries: bool = False
+    ) -> OpenAIResponsesModel:
+        """Create an OpenAI model with configured API key.
+
+        Args:
+            disable_retries: If True, create client with max_retries=0 (use for non-last models in FallbackModel chains)
+        """
+        from openai import AsyncOpenAI
+
         api_key = self.openai_api_key.get_secret_value()
         if not api_key:
             raise ConfigurationError(
@@ -475,10 +668,22 @@ class FindingModelAIConfig(BaseSettings):
                 "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
                 "or override the model tier (e.g., DEFAULT_MODEL=google-gla:gemini-3-flash-preview)."
             )
+        if disable_retries:
+            openai_client = AsyncOpenAI(api_key=api_key, max_retries=0)
+            return OpenAIResponsesModel(
+                model_name, provider=OpenAIProvider(openai_client=openai_client), settings=settings
+            )
         return OpenAIResponsesModel(model_name, provider=OpenAIProvider(api_key=api_key), settings=settings)
 
-    def _make_anthropic_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
-        """Create an Anthropic model with configured API key."""
+    def _make_anthropic_model(
+        self, model_name: str, settings: ModelSettings | None = None, *, disable_retries: bool = False
+    ) -> Model:
+        """Create an Anthropic model with configured API key.
+
+        Args:
+            disable_retries: If True, create client with max_retries=0 (use for non-last models in FallbackModel chains)
+        """
+        from anthropic import AsyncAnthropic
         from pydantic_ai.models.anthropic import AnthropicModel
         from pydantic_ai.providers.anthropic import AnthropicProvider
 
@@ -489,13 +694,24 @@ class FindingModelAIConfig(BaseSettings):
                 "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
                 "or override the model tier (e.g., DEFAULT_MODEL=openai:gpt-5.4)."
             )
+        if disable_retries:
+            anthropic_client = AsyncAnthropic(api_key=api_key, max_retries=0)
+            return AnthropicModel(
+                model_name, provider=AnthropicProvider(anthropic_client=anthropic_client), settings=settings
+            )
         return AnthropicModel(model_name, provider=AnthropicProvider(api_key=api_key), settings=settings)
 
-    def _make_google_gla_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
+    def _make_google_gla_model(
+        self, model_name: str, settings: ModelSettings | None = None, *, disable_retries: bool = False
+    ) -> Model:
         """Create a Google Gemini model via Generative Language API.
 
         Used for direct Google API access (google: or google-gla: prefixes).
         Requires GOOGLE_API_KEY from aistudio.google.com.
+
+        Note: disable_retries is accepted for API compatibility but not applied —
+        Google's GenAI SDK does not expose max_retries in the same way as OpenAI/Anthropic.
+        Google models in non-final fallback chain positions may retry internally.
         """
         from pydantic_ai.models.google import GoogleModel
         from pydantic_ai.providers.google import GoogleProvider
@@ -509,33 +725,64 @@ class FindingModelAIConfig(BaseSettings):
             )
         return GoogleModel(model_name, provider=GoogleProvider(api_key=api_key), settings=settings)
 
-    def _make_gateway_openai_model(self, model_name: str, settings: ModelSettings | None) -> OpenAIResponsesModel:
-        """Create an OpenAI model via Pydantic AI Gateway."""
+    def _make_gateway_openai_model(
+        self, model_name: str, settings: ModelSettings | None, *, disable_retries: bool = False
+    ) -> OpenAIResponsesModel:
+        """Create an OpenAI model via Pydantic AI Gateway.
+
+        Args:
+            disable_retries: If True, create client with max_retries=0 (use for non-last models in FallbackModel chains)
+        """
+        from openai import AsyncOpenAI
         from pydantic_ai.providers.gateway import gateway_provider
 
         api_key = self.pydantic_ai_gateway_api_key.get_secret_value()
         if not api_key:
             raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
         provider = gateway_provider("openai-responses", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
+        if disable_retries:
+            # gateway_provider returns an OpenAIProvider-compatible object; wrap with a no-retry client
+            gateway_base_url = self.pydantic_ai_gateway_base_url
+            openai_client = AsyncOpenAI(api_key=api_key, base_url=gateway_base_url, max_retries=0)
+            direct_provider = OpenAIProvider(openai_client=openai_client)
+            return OpenAIResponsesModel(model_name, provider=direct_provider, settings=settings)
         return OpenAIResponsesModel(model_name, provider=provider, settings=settings)
 
-    def _make_gateway_anthropic_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
-        """Create an Anthropic model via Pydantic AI Gateway."""
+    def _make_gateway_anthropic_model(
+        self, model_name: str, settings: ModelSettings | None = None, *, disable_retries: bool = False
+    ) -> Model:
+        """Create an Anthropic model via Pydantic AI Gateway.
+
+        Args:
+            disable_retries: If True, create client with max_retries=0 (use for non-last models in FallbackModel chains)
+        """
+        from anthropic import AsyncAnthropic
         from pydantic_ai.models.anthropic import AnthropicModel
+        from pydantic_ai.providers.anthropic import AnthropicProvider
         from pydantic_ai.providers.gateway import gateway_provider
 
         api_key = self.pydantic_ai_gateway_api_key.get_secret_value()
         if not api_key:
             raise ConfigurationError("PYDANTIC_AI_GATEWAY_API_KEY not configured")
+        if disable_retries:
+            gateway_base_url = self.pydantic_ai_gateway_base_url
+            anthropic_client = AsyncAnthropic(api_key=api_key, base_url=gateway_base_url, max_retries=0)
+            direct_provider = AnthropicProvider(anthropic_client=anthropic_client)
+            return AnthropicModel(model_name, provider=direct_provider, settings=settings)
         provider = gateway_provider("anthropic", api_key=api_key, base_url=self.pydantic_ai_gateway_base_url)
         return AnthropicModel(model_name, provider=provider, settings=settings)
 
-    def _make_gateway_google_vertex_model(self, model_name: str, settings: ModelSettings | None = None) -> Model:
+    def _make_gateway_google_vertex_model(
+        self, model_name: str, settings: ModelSettings | None = None, *, disable_retries: bool = False
+    ) -> Model:
         """Create a Google Gemini model via Pydantic AI Gateway (Vertex AI).
 
         Used for gateway/google: or gateway/google-vertex: prefixes.
         Gateway only supports Google via Vertex AI backend.
         Requires PYDANTIC_AI_GATEWAY_API_KEY.
+
+        Note: disable_retries is accepted for API compatibility but not applied —
+        Google's GenAI SDK does not expose max_retries in the same way as OpenAI/Anthropic.
         """
         from pydantic_ai.models.google import GoogleModel
         from pydantic_ai.providers.gateway import gateway_provider
@@ -650,5 +897,6 @@ __all__ = [
     "FindingModelAIConfig",
     "ModelTier",
     "ReasoningLevel",
+    "ResolvedModelConfig",
     "settings",
 ]

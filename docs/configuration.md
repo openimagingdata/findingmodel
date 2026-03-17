@@ -255,104 +255,85 @@ Reasoning is applied using provider-native typed settings:
 - **Google Gemini**: `google_thinking_config` with `thinking_level` — valid levels are `MINIMAL`, `LOW`, `MEDIUM`, `HIGH` (no higher level exists; `xhigh` maps to `HIGH`). Thinking cannot be fully disabled on Gemini 3 models: Flash maps `none`/`minimal` → `MINIMAL`; Pro maps `none`/`minimal` → `LOW` (the minimum Pro supports)
 - **Anthropic**: `anthropic_thinking` — Opus 4.6+ uses adaptive thinking with `anthropic_effort` (low/medium/high); older models (Sonnet 4.6, Haiku 4.5) use extended thinking with `budget_tokens`. `none` disables thinking on all models
 
-## Per-Agent Model Overrides
+## Per-Agent Model Configuration
 
-For advanced use cases, you can override the model used by specific agents without modifying code.
+Each agent has an optimized default model and reasoning level configured in `supported_models.toml`, with an ordered fallback chain across providers. The system automatically selects the best available model based on which API keys are configured.
 
-### Configuration
+### How Resolution Works
 
-Override agents via environment variables:
+When an agent requests a model, the resolver follows this priority:
 
-```bash
-AGENT_MODEL_OVERRIDES__enrich_classify=anthropic:claude-opus-4-6
-AGENT_MODEL_OVERRIDES__edit_instructions=ollama:llama3
-```
+1. **Env override** (`AGENT_MODEL_OVERRIDES__<tag>`) — highest priority, single model
+2. **Per-agent TOML defaults** — ordered fallback chain filtered to available providers, wrapped in `FallbackModel` for automatic failover on API errors
+3. **Tier default** — last resort if no TOML models are available
 
-The agent checks for an override first, then falls back to its default tier.
+Each model in the chain carries its own reasoning level, normalized for that specific model's capabilities.
 
-### Agent Tags by Workflow
+### Per-Agent Defaults (from March 2026 audit)
 
-#### Finding Enrichment
+Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each entry lists models ordered by latency/quality preference, covering all three major providers.
 
-Used by: `enrich_finding()`, `findingmodel-ai make-stub-model` CLI
+#### Simple Generative Tasks
 
-| Tag | What It Does | Default |
-|-----|--------------|---------|
-| `enrich_classify` | Classifies finding category, modality, anatomy from search results | base |
-| `enrich_unified` | Runs the full unified enrichment pipeline | base |
-| `enrich_research` | Agentic enrichment that searches web before classifying | base |
+| Tag | Primary Model | Reasoning | Fallbacks |
+|-----|--------------|-----------|-----------|
+| `ontology_search` | `openai:gpt-5-nano` | low | gemini-3-flash, haiku |
+| `describe_finding` | `openai:gpt-5-nano` | low | gemini-3-flash, haiku |
+| `anatomic_search` | `gemini-3-flash-preview` | minimal | gpt-5-nano, haiku |
+| `similar_term_gen` | `gemini-3-flash-preview` | minimal | gpt-5-nano, haiku |
 
-#### Model Editing
+#### Medical Classification
 
-Used by: `edit_model_natural_language()`, `edit_model_markdown()`
+| Tag | Primary Model | Reasoning | Fallbacks |
+|-----|--------------|-----------|-----------|
+| `ontology_match` | `gemini-3.1-pro-preview` | low | gpt-5-mini/medium, sonnet |
+| `anatomic_select` | `gemini-3.1-pro-preview` | medium | gpt-5-mini/medium, sonnet |
+| `similar_assess` | `gemini-3.1-flash-lite` | medium | gpt-5-mini/medium, haiku |
 
-| Tag | What It Does | Default |
-|-----|--------------|---------|
-| `edit_instructions` | Applies natural language edit instructions to a finding model | base |
-| `edit_markdown` | Applies edits from a modified markdown representation | base |
+#### Complex Structured Output
 
-#### Finding Description
+| Tag | Primary Model | Reasoning | Fallbacks |
+|-----|--------------|-----------|-----------|
+| `edit_instructions` | `openai:gpt-5.4` | low | opus/medium, gemini-3.1-pro |
+| `edit_markdown` | `openai:gpt-5.4` | low | opus/medium, gemini-3.1-pro |
+| `import_markdown` | `claude-opus-4-6` | medium | gpt-5.4/low, gemini-3.1-pro |
 
-Used by: `findingmodel-ai make-info` CLI, `create_info_from_name()`, `add_details_to_info()`
+#### Other Agents
 
-| Tag | What It Does | Default |
-|-----|--------------|---------|
-| `describe_finding` | Generates initial FindingInfo from a finding name | caller-specified |
-| `describe_details` | Adds citations and detailed descriptions via web search | small |
+| Tag | Primary Model | Reasoning | Fallbacks |
+|-----|--------------|-----------|-----------|
+| `similar_search` | `openai:gpt-5.4` | low | sonnet, gemini-3.1-pro |
+| `describe_details` | `gemini-3-flash-preview` | low | gpt-5-mini, haiku |
+| `enrich_classify` | (tier fallback: base) | — | — |
+| `enrich_unified` | (tier fallback: base) | — | — |
+| `enrich_research` | (tier fallback: base) | — | — |
 
-#### Similar Finding Search
+### Environment Variable Overrides
 
-Used by: `find_similar_models()`
-
-| Tag | What It Does | Default |
-|-----|--------------|---------|
-| `similar_search` | Plans search strategy and generates search terms (2 agents share this tag) | base or small |
-| `similar_assess` | Analyzes and ranks similar finding results | base |
-
-#### Anatomic Location
-
-Used by: anatomic location search during enrichment
-
-| Tag | What It Does | Default |
-|-----|--------------|---------|
-| `anatomic_search` | Generates query terms for anatomic location lookup | small |
-| `anatomic_select` | Selects best anatomic locations from search candidates | small |
-
-#### Ontology Matching
-
-Used by: ontology concept matching during enrichment
-
-| Tag | What It Does | Default |
-|-----|--------------|---------|
-| `ontology_match` | Scores and categorizes ontology concept candidates | base |
-| `ontology_search` | Generates query terms for ontology search | small |
-
-#### Markdown Import
-
-Used by: `findingmodel-ai markdown-to-fm` CLI, `create_model_from_markdown()`
-
-| Tag | What It Does | Default |
-|-----|--------------|---------|
-| `import_markdown` | Converts markdown outline to structured FindingModel | base |
-
-### When to Use
-
-- **Cost optimization**: Use cheaper models for high-volume agents (e.g., `anatomic_search`)
-- **Quality boost**: Use Claude Opus for complex editing tasks
-- **Local development**: Override to Ollama for offline testing
-- **A/B testing**: Compare model performance on specific workflows
-
-### Planned: Per-Agent Reasoning Overrides
-
-A future companion to `AGENT_MODEL_OVERRIDES__*` will allow setting reasoning level per agent:
+Override model and/or reasoning for specific agents:
 
 ```bash
-# Not yet implemented — planned
-AGENT_REASONING_OVERRIDES__edit_instructions=high
-AGENT_REASONING_OVERRIDES__anatomic_search=none
+# Override model (bypasses TOML chain — single model, no fallback)
+AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-opus-4-6
+
+# Override reasoning level (applies to all models in chain)
+AGENT_REASONING_OVERRIDES__anatomic_select=high
+
+# Both can be combined
+AGENT_MODEL_OVERRIDES__ontology_match=openai:gpt-5.4
+AGENT_REASONING_OVERRIDES__ontology_match=medium
 ```
 
-This will follow the same nested-delimiter pattern as model overrides. For now, use `DEFAULT_REASONING_SMALL/BASE/FULL` to set tier-wide defaults.
+### Provider Availability & Fallback
+
+The system works with **any single provider configured**. If you only have `OPENAI_API_KEY`, agents that prefer Google or Anthropic models will automatically use their OpenAI fallback. With all three keys, agents get full `FallbackModel` protection — if one provider has an API error, the request automatically retries on the next provider.
+
+### When to Use Overrides
+
+- **Local development**: `AGENT_MODEL_OVERRIDES__edit_instructions=ollama:llama3`
+- **A/B testing**: Override one agent to compare providers
+- **Cost control**: Force cheaper models for high-volume agents
+- **Debugging**: Override to a specific model to reproduce issues
 
 ### Startup Validation
 
@@ -500,6 +481,7 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `DEFAULT_REASONING_BASE` | No | `none` | Reasoning level for base tier |
 | `DEFAULT_REASONING_FULL` | No | `high` | Reasoning level for full tier |
 | `AGENT_MODEL_OVERRIDES__<tag>` | No | - | Override model for specific agent tag (e.g., enrich_classify) |
+| `AGENT_REASONING_OVERRIDES__<tag>` | No | - | Override reasoning level for specific agent tag |
 | `TAVILY_API_KEY` | For citations | - | Tavily search API key |
 | `TAVILY_SEARCH_DEPTH` | No | `advanced` | Search depth: basic/advanced |
 | `BIOONTOLOGY_API_KEY` | For BioOntology | - | BioPortal API key |

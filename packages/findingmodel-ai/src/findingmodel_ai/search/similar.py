@@ -129,7 +129,7 @@ def create_term_generation_agent(model_tier: ModelTier = "small") -> Agent[None,
         model_tier: Model tier to use (defaults to "small")
     """
     return Agent[None, SearchTerms](
-        model=settings.get_agent_model("similar_search", default_tier=model_tier),
+        model=settings.get_agent_model("similar_term_gen", default_tier=model_tier),
         output_type=SearchTerms,
         system_prompt="""You are a medical terminology specialist. Your job is to generate 3-5 effective search terms
 for finding existing medical imaging finding definitions that might be similar to a proposed new finding.

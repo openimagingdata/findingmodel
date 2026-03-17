@@ -489,10 +489,10 @@ async def test_create_model_from_markdown_with_test_model() -> None:
         ],
     )
 
-    # Mock settings.get_model to return a TestModel
-    # Since get_model now returns a string, we patch at the class level
-    with patch.object(FindingModelAIConfig, "get_model") as mock_get_model:
-        mock_get_model.return_value = TestModel(custom_output_args=test_output.model_dump())
+    # Mock settings.get_agent_model to return a TestModel
+    # Since get_agent_model now uses per-agent TOML config, we patch at the class level
+    with patch.object(FindingModelAIConfig, "get_agent_model") as mock_get_agent_model:
+        mock_get_agent_model.return_value = TestModel(custom_output_args=test_output.model_dump())
 
         # This verifies the agent structure, not LLM behavior
         result = await create_model_from_markdown(

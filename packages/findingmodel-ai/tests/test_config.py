@@ -461,3 +461,205 @@ def test_validate_default_model_keys_fails_without_gateway(monkeypatch: pytest.M
     config = FindingModelAIConfig()
     with pytest.raises(ConfigurationError, match="PYDANTIC_AI_GATEWAY_API_KEY"):
         config.validate_default_model_keys()
+
+
+# ---------------------------------------------------------------------------
+# resolve_agent_config — TOML chain resolution
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_agent_config_returns_toml_chain() -> None:
+    """With all 3 provider keys set, ontology_search returns 3 entries matching TOML order."""
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    chain = config.resolve_agent_config("ontology_search")
+    assert len(chain) == 3
+    assert chain[0].model_string == "openai:gpt-5-nano"
+    assert chain[1].model_string == "google-gla:gemini-3-flash-preview"
+    assert chain[2].model_string == "anthropic:claude-haiku-4-5"
+
+
+def test_resolve_agent_config_filters_unavailable_providers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without Google key, ontology_match chain contains only OpenAI and Anthropic entries."""
+    monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("PYDANTIC_AI_GATEWAY_API_KEY", "")
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    chain = config.resolve_agent_config("ontology_match")
+    model_strings = [c.model_string for c in chain]
+    assert "google-gla:gemini-3.1-pro-preview" not in model_strings
+    assert "openai:gpt-5-mini" in model_strings
+    assert "anthropic:claude-sonnet-4-6" in model_strings
+    assert len(chain) == 2
+
+
+def test_resolve_agent_config_all_unavailable_falls_to_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With no provider or gateway keys, resolve falls back to the tier default model."""
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    monkeypatch.setenv("PYDANTIC_AI_GATEWAY_API_KEY", "")
+    config = FindingModelAIConfig()
+    # ontology_search has tier_fallback = "small" → default_model_small
+    chain = config.resolve_agent_config("ontology_search")
+    assert len(chain) == 1
+    assert chain[0].model_string == config.default_model_small
+
+
+def test_resolve_agent_config_env_override_single_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AGENT_MODEL_OVERRIDES__anatomic_select returns a single-entry chain with the override model."""
+    monkeypatch.setenv("AGENT_MODEL_OVERRIDES__anatomic_select", "openai:gpt-5.4")
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    chain = config.resolve_agent_config("anatomic_select")
+    assert len(chain) == 1
+    assert chain[0].model_string == "openai:gpt-5.4"
+
+
+def test_resolve_agent_config_reasoning_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AGENT_REASONING_OVERRIDES__ontology_search=high applies high reasoning to all chain entries."""
+    monkeypatch.setenv("AGENT_REASONING_OVERRIDES__ontology_search", "high")
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    chain = config.resolve_agent_config("ontology_search")
+    assert len(chain) == 3
+    # Each entry should have "high" reasoning (after per-model normalization — "high" is valid for all three)
+    for entry in chain:
+        assert entry.reasoning == "high"
+
+
+def test_resolve_agent_config_reasoning_per_model_normalization() -> None:
+    """Reasoning levels are normalized per model: 'minimal' normalizes differently for gpt-5-nano vs gemini-3-flash."""
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    # similar_term_gen uses reasoning = "minimal" for both gpt-5-nano and gemini-3-flash-preview
+    # gpt-5-nano: minimal → low (per TOML normalize)
+    # gemini-3-flash-preview: minimal → minimal (valid for flash, no normalization needed)
+    chain = config.resolve_agent_config("similar_term_gen")
+    assert len(chain) == 3
+    nano_entry = next(c for c in chain if c.model_string == "openai:gpt-5-nano")
+    flash_entry = next(c for c in chain if c.model_string == "google-gla:gemini-3-flash-preview")
+    assert nano_entry.reasoning == "low"  # minimal → low for gpt-5-nano
+    assert flash_entry.reasoning == "minimal"  # minimal stays minimal for gemini-flash
+
+
+# ---------------------------------------------------------------------------
+# get_agent_model — FallbackModel vs single model
+# ---------------------------------------------------------------------------
+
+
+def test_get_agent_model_builds_fallback_model() -> None:
+    """With all 3 provider keys, get_agent_model returns a FallbackModel instance."""
+    from pydantic_ai.models.fallback import FallbackModel
+
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    model = config.get_agent_model("ontology_search")
+    assert isinstance(model, FallbackModel)
+
+
+def test_get_agent_model_single_available_no_wrapper(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With only OpenAI key, get_agent_model returns an OpenAIResponsesModel directly."""
+    from pydantic_ai.models.fallback import FallbackModel
+    from pydantic_ai.models.openai import OpenAIResponsesModel
+
+    monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    monkeypatch.setenv("PYDANTIC_AI_GATEWAY_API_KEY", "")
+    config = FindingModelAIConfig(openai_api_key="test-openai-key")
+    model = config.get_agent_model("ontology_search")
+    assert isinstance(model, OpenAIResponsesModel)
+    assert not isinstance(model, FallbackModel)
+
+
+# ---------------------------------------------------------------------------
+# get_effective_model_string / get_effective_reasoning_level
+# ---------------------------------------------------------------------------
+
+
+def test_get_effective_model_string_returns_primary() -> None:
+    """get_effective_model_string returns the first model in the chain."""
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    # ontology_search: first model is openai:gpt-5-nano
+    result = config.get_effective_model_string("ontology_search")
+    assert result == "openai:gpt-5-nano"
+
+
+def test_get_effective_reasoning_level_returns_primary() -> None:
+    """get_effective_reasoning_level returns the reasoning of the first model in the chain."""
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    # ontology_search: first model is openai:gpt-5-nano with reasoning = "low"
+    result = config.get_effective_reasoning_level("ontology_search")
+    assert result == "low"
+
+
+# ---------------------------------------------------------------------------
+# AgentTag validity — similar_term_gen
+# ---------------------------------------------------------------------------
+
+
+def test_similar_term_gen_tag_exists() -> None:
+    """'similar_term_gen' is a valid AgentTag and can be resolved without error."""
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    chain = config.resolve_agent_config("similar_term_gen")
+    assert len(chain) >= 1
+    assert all(c.model_string for c in chain)
+
+
+# ---------------------------------------------------------------------------
+# Enrichment agents — tier fallback (no models list in TOML)
+# ---------------------------------------------------------------------------
+
+
+def test_enrichment_agents_use_tier_fallback() -> None:
+    """enrich_classify has no models list in TOML, so resolve returns the tier default."""
+    config = FindingModelAIConfig(
+        openai_api_key="test-openai-key",
+        google_api_key="test-google-key",
+        anthropic_api_key="test-anthropic-key",
+    )
+    # enrich_classify has tier_fallback = "base" and no models list
+    chain = config.resolve_agent_config("enrich_classify")
+    assert len(chain) == 1
+    assert chain[0].model_string == config.default_model
+
+
+# ---------------------------------------------------------------------------
+# _can_use_model — gateway key counts as available
+# ---------------------------------------------------------------------------
+
+
+def test_can_use_model_with_gateway(monkeypatch: pytest.MonkeyPatch) -> None:
+    """_can_use_model returns True for an OpenAI model when only gateway key is set."""
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    config = FindingModelAIConfig(pydantic_ai_gateway_api_key="test-gateway-key")
+    assert config._can_use_model("openai:gpt-5.4") is True
