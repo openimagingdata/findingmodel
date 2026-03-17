@@ -1,0 +1,652 @@
+[
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 3464.388875057921,
+    "exact": 5,
+    "include": 4,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 1793.3711250079796,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "pneumothorax",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 882.4949170229957,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 3487.2391250682995,
+    "exact": 2,
+    "include": 2,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 1980.425792047754,
+    "primary": "liver"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "hepatic steatosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 1512.1103330748156,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 2668.803457985632,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 2195.3612089855596,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "meniscal tear",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 975.9428329998627,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 3281.254666042514,
+    "exact": 3,
+    "include": 4,
+    "marginal": 6
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 2375.929542002268,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "subsegmental pulmonary embolism",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 976.8090000143275,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 2553.084332961589,
+    "exact": 0,
+    "include": 3,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 5714.191999984905,
+    "primary": "bone"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "enostosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "low",
+    "latency_ms": 1271.7491660732776,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2462.1477080509067,
+    "exact": 5,
+    "include": 4,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2210.5866669444367,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "pneumothorax",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2657.2918329620734,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2580.4764580680057,
+    "exact": 2,
+    "include": 2,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2026.4277500100434,
+    "primary": "liver"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "hepatic steatosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 988.7354159727693,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 3106.5122499130666,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2128.7941249320284,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "meniscal tear",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 1006.6656250273809,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2269.5065839216113,
+    "exact": 3,
+    "include": 4,
+    "marginal": 6
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2060.2249169023708,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "subsegmental pulmonary embolism",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 983.0281670438126,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 2764.8825000505894,
+    "exact": 0,
+    "include": 3,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 7608.067499939352,
+    "primary": "bone"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "enostosis",
+    "model": "anthropic:claude-haiku-4-5",
+    "reasoning": "medium",
+    "latency_ms": 1102.6429999619722,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 2211.116165970452,
+    "exact": 5,
+    "include": 5,
+    "marginal": 1
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 1950.0702919904143,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 2226.7362910788506,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 1956.3692500814795,
+    "exact": 2,
+    "include": 2,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 1947.1605829894543,
+    "primary": "liver"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 853.6952919093892,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 4024.41800001543,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 2443.2601660955697,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 968.3177500264719,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 2215.523749939166,
+    "exact": 3,
+    "include": 4,
+    "marginal": 3
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 1909.3161670025438,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 1610.5905410367996,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 1941.044875071384,
+    "exact": 0,
+    "include": 3,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 8829.907167004421,
+    "primary": "bone"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3-flash-preview",
+    "reasoning": "low",
+    "latency_ms": 1080.5949589703232,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 8011.823832988739,
+    "exact": 5,
+    "include": 5,
+    "marginal": 1
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 1764.2516249325126,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 954.945084056817,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2012.7728750230744,
+    "exact": 2,
+    "include": 2,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2042.0319170225412,
+    "primary": "liver"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 1078.440707991831,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2619.3373339483514,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2086.964250076562,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2805.3734169807285,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2158.9726249221712,
+    "exact": 3,
+    "include": 1,
+    "marginal": 4
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2407.7812500763685,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 911.9795840233564,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 2066.41074991785,
+    "exact": 0,
+    "include": 3,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 9000.997500028461,
+    "primary": "bone"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "low",
+    "latency_ms": 936.8016250664368,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 2329.2312920093536,
+    "exact": 5,
+    "include": 5,
+    "marginal": 1
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 1862.603500019759,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "pneumothorax",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 960.5307079618797,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 2317.4632920417935,
+    "exact": 2,
+    "include": 2,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 1836.155583965592,
+    "primary": "liver"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "hepatic steatosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 985.9408340416849,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 2974.487792002037,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 2562.472124933265,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "meniscal tear",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 916.6215830482543,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 2669.196250033565,
+    "exact": 3,
+    "include": 4,
+    "marginal": 6
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 2144.1105409758165,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "subsegmental pulmonary embolism",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 1424.013042007573,
+    "rec": "create_new"
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 4194.56450000871,
+    "exact": 0,
+    "include": 3,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 600068.6640419299,
+    "error": ""
+  },
+  {
+    "agent": "similar_analysis",
+    "input": "enostosis",
+    "model": "google-gla:gemini-3.1-flash-lite-preview",
+    "reasoning": "medium",
+    "latency_ms": 974.9502500053495,
+    "rec": "create_new"
+  }
+]
