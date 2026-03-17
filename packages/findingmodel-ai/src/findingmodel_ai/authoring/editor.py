@@ -2,13 +2,14 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast
 
+from findingmodel import Index
+from findingmodel.facets import format_age_profile, format_time_course
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from pydantic import BaseModel, Field
 from pydantic_ai import ModelRetry, RunContext
 from pydantic_ai.agent import Agent
 
-from findingmodel import Index
 from findingmodel_ai.config import ModelTier, settings
 
 # Module-level Index instance with lazy initialization
@@ -191,6 +192,30 @@ async def edit_model_natural_language(
         return EditResult(model=model, rejections=["Agent run failed; no changes applied."], changes=[])
 
 
+def _render_structured_metadata_lines(model: FindingModelFull) -> list[str]:
+    """Render structured metadata fields as plain label: value lines."""
+    lines: list[str] = []
+    if model.entity_type:
+        lines.append(f"Entity Type: {model.entity_type.value}")
+    if model.body_regions:
+        lines.append(f"Body Regions: {', '.join(r.value for r in model.body_regions)}")
+    if model.applicable_modalities:
+        lines.append(f"Modalities: {', '.join(m.value for m in model.applicable_modalities)}")
+    if model.subspecialties:
+        lines.append(f"Subspecialties: {', '.join(s.value for s in model.subspecialties)}")
+    if model.etiologies:
+        lines.append(f"Etiologies: {', '.join(e.value for e in model.etiologies)}")
+    if model.expected_time_course:
+        tc_str = format_time_course(model.expected_time_course)
+        if tc_str:
+            lines.append(f"Time Course: {tc_str}")
+    if model.age_profile:
+        lines.append(f"Age Profile: {format_age_profile(model.age_profile)}")
+    if model.sex_specificity:
+        lines.append(f"Sex Specificity: {model.sex_specificity.value}")
+    return lines
+
+
 def _render_top_metadata_lines(model: FindingModelFull) -> list[str]:
     """Render the top metadata section of the editable Markdown.
 
@@ -212,6 +237,11 @@ def _render_top_metadata_lines(model: FindingModelFull) -> list[str]:
     if model.tags:
         lines.append(f"Tags: {', '.join(model.tags)}")
     if model.synonyms or model.tags:
+        lines.append("")
+    # Structured metadata fields
+    metadata_lines = _render_structured_metadata_lines(model)
+    if metadata_lines:
+        lines.extend(metadata_lines)
         lines.append("")
     lines.append("## Attributes")
     lines.append("")
@@ -260,7 +290,10 @@ def _render_attribute_lines(attr: object) -> list[str]:
 
 
 def export_model_for_editing(model: FindingModelFull, *, attributes_only: bool = False) -> str:
-    """Export a model to a human-editable Markdown format used for round-trip editing in tests.
+    """Export a model to a human-editable Markdown convenience format.
+
+    This output is intended for lightweight review and editing workflows. The canonical
+    representation remains the FindingModel JSON, not this Markdown text.
 
     - When attributes_only is True, omit the top metadata and the "## Attributes" header.
     - Attribute names are not capitalized; value descriptions add a colon only when present.
@@ -285,8 +318,9 @@ async def edit_model_markdown(
     """Edit a FindingModelFull given an edited text string via an LLM agent.
 
     The agent is instructed to apply only safe changes, tolerate loosely formatted Markdown-like input,
-    preserve IDs, and output a complete model JSON. Rejections are summarized by a secondary LLM call
-    (when enabled) comparing original vs updated with the request.
+    preserve IDs, and output a complete model JSON. This is convenience tooling for incremental editing,
+    not a canonical Markdown round-trip API. Rejections are summarized by a secondary LLM call (when
+    enabled) comparing original vs updated with the request.
     """
     agent = agent or create_markdown_edit_agent()
 

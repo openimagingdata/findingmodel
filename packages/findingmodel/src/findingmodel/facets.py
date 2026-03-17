@@ -315,3 +315,42 @@ def _normalize_modality_list(v: object) -> object:
 NormalizedBodyRegionList = Annotated[list[BodyRegion], BeforeValidator(_normalize_body_region_list)]
 NormalizedEtiologyList = Annotated[list[EtiologyCode], BeforeValidator(_normalize_etiology_list)]
 NormalizedModalityList = Annotated[list[Modality], BeforeValidator(_normalize_modality_list)]
+
+
+def _normalize_age_profile_input(v: object) -> object:
+    """BeforeValidator that normalizes a plain string age label to an AgeProfile dict."""
+    if isinstance(v, str):
+        try:
+            return normalize_age_label(v).model_dump()
+        except ValueError:
+            return v  # let Pydantic's own validation produce the error
+    return v
+
+
+NormalizedAgeProfile = Annotated[AgeProfile, BeforeValidator(_normalize_age_profile_input)]
+
+
+# ============================================================================
+# Formatting Helpers
+# ============================================================================
+
+
+def format_age_profile(ap: AgeProfile) -> str:
+    """Format AgeProfile as a human-readable string for markdown rendering."""
+    if ap.applicability == "all_ages":
+        base = "all ages"
+    else:
+        base = "applicable: " + ", ".join(s.value for s in ap.applicability)
+    if ap.more_common_in:
+        base += "; more common in: " + ", ".join(s.value for s in ap.more_common_in)
+    return base
+
+
+def format_time_course(tc: ExpectedTimeCourse) -> str:
+    """Format ExpectedTimeCourse as a human-readable string for markdown rendering."""
+    parts: list[str] = []
+    if tc.duration:
+        parts.append(f"duration: {tc.duration.value}")
+    if tc.modifiers:
+        parts.append("modifiers: " + ", ".join(m.value for m in tc.modifiers))
+    return "; ".join(parts)

@@ -19,6 +19,38 @@ UNIFIED_MARKDOWN_TEMPLATE_TEXT = """
 
 **Codes:** {{ index_codes_str }}
 {% endif %}
+{% if entity_type %}
+
+**Entity Type:** {{ entity_type }}
+{% endif %}
+{% if body_regions %}
+
+**Body Regions:** {{ body_regions | join(", ") }}
+{% endif %}
+{% if applicable_modalities %}
+
+**Modalities:** {{ applicable_modalities | join(", ") }}
+{% endif %}
+{% if subspecialties %}
+
+**Subspecialties:** {{ subspecialties | join(", ") }}
+{% endif %}
+{% if etiologies %}
+
+**Etiologies:** {{ etiologies | join(", ") }}
+{% endif %}
+{% if time_course_str %}
+
+**Time Course:** {{ time_course_str }}
+{% endif %}
+{% if age_profile_str %}
+
+**Age Profile:** {{ age_profile_str }}
+{% endif %}
+{% if sex_specificity %}
+
+**Sex Specificity:** {{ sex_specificity }}
+{% endif %}
 
 ## Attributes
 

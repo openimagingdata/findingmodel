@@ -965,3 +965,89 @@ def test_json_load_normalizes_legacy_values() -> None:
     assert model.body_regions == [BodyRegion.HEAD, BodyRegion.UPPER_EXTREMITY]
     assert model.applicable_modalities == [Modality.XR]
     assert model.etiologies == [EtiologyCode.TRAUMATIC_ACUTE]
+
+
+# ============================================================================
+# NormalizedAgeProfile on Model Load
+# ============================================================================
+
+
+def test_age_profile_from_legacy_string_on_model_load() -> None:
+    """A plain string like 'pediatric' should auto-normalize to AgeProfile on load."""
+    data = {
+        "name": "Test Finding",
+        "description": "Test finding for age normalization.",
+        "age_profile": "pediatric",
+        "attributes": [{"name": "Presence", "type": "choice", "values": [{"name": "Present"}, {"name": "Absent"}]}],
+    }
+    model = FindingModelBase.model_validate_json(json.dumps(data))
+    assert model.age_profile is not None
+    assert isinstance(model.age_profile.applicability, list)
+    assert AgeStage.CHILD in model.age_profile.applicability
+    assert AgeStage.ADOLESCENT in model.age_profile.applicability
+
+
+def test_age_profile_from_legacy_string_all_ages() -> None:
+    data = {
+        "name": "Test Finding",
+        "description": "Test finding for all ages.",
+        "age_profile": "any age",
+        "attributes": [{"name": "Presence", "type": "choice", "values": [{"name": "Present"}, {"name": "Absent"}]}],
+    }
+    model = FindingModelBase.model_validate_json(json.dumps(data))
+    assert model.age_profile is not None
+    assert model.age_profile.applicability == "all_ages"
+
+
+# ============================================================================
+# Formatting Helpers
+# ============================================================================
+
+
+def test_format_age_profile_all_ages() -> None:
+    from findingmodel.facets import format_age_profile
+
+    ap = AgeProfile(applicability="all_ages")
+    assert format_age_profile(ap) == "all ages"
+
+
+def test_format_age_profile_with_stages() -> None:
+    from findingmodel.facets import format_age_profile
+
+    ap = AgeProfile(applicability=[AgeStage.ADULT, AgeStage.MIDDLE_AGED])
+    assert format_age_profile(ap) == "applicable: adult, middle_aged"
+
+
+def test_format_age_profile_with_more_common_in() -> None:
+    from findingmodel.facets import format_age_profile
+
+    ap = AgeProfile(applicability=[AgeStage.ADULT, AgeStage.MIDDLE_AGED, AgeStage.AGED], more_common_in=[AgeStage.AGED])
+    assert format_age_profile(ap) == "applicable: adult, middle_aged, aged; more common in: aged"
+
+
+def test_format_time_course_duration_only() -> None:
+    from findingmodel.facets import format_time_course
+
+    tc = ExpectedTimeCourse(duration=ExpectedDuration.WEEKS)
+    assert format_time_course(tc) == "duration: weeks"
+
+
+def test_format_time_course_modifiers_only() -> None:
+    from findingmodel.facets import format_time_course
+
+    tc = ExpectedTimeCourse(modifiers=[TimeCourseModifier.RESOLVING, TimeCourseModifier.EVOLVING])
+    assert format_time_course(tc) == "modifiers: resolving, evolving"
+
+
+def test_format_time_course_both() -> None:
+    from findingmodel.facets import format_time_course
+
+    tc = ExpectedTimeCourse(duration=ExpectedDuration.DAYS, modifiers=[TimeCourseModifier.RESOLVING])
+    assert format_time_course(tc) == "duration: days; modifiers: resolving"
+
+
+def test_format_time_course_empty() -> None:
+    from findingmodel.facets import format_time_course
+
+    tc = ExpectedTimeCourse()
+    assert format_time_course(tc) == ""

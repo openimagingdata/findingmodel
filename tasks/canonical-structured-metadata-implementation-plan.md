@@ -123,31 +123,49 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - ✓ Design doc updated for ExpectedDuration/TimeCourseModifier revision.
 - ✓ `packages/findingmodel/README.md` updated with structured metadata field table and examples.
 
-## Slice 2: Round-Trip and Authoring Surface
+## Slice 2: Minimal Markdown Output and Authoring Surface ✓
+
+**Status:** Complete
 
 **Scope**
-- Update markdown export/import, editor flows, and stub generation for the new fields.
-- Add one explicit normalization table for legacy age labels and wire it into the round-trip path.
+- Add structured metadata to one-way Markdown rendering and the existing authoring export surface.
+- Keep Markdown tooling usable without treating Markdown as a canonical round-trip contract.
 
 **Primary ownership**
 - Lane A
 
-**Files likely in scope**
-- `packages/findingmodel/src/findingmodel/fm_md_template.py`
-- `packages/findingmodel/src/findingmodel/create_stub.py`
-- `packages/findingmodel-ai/src/findingmodel_ai/authoring/editor.py`
-- `packages/findingmodel-ai/src/findingmodel_ai/authoring/markdown_in.py`
+**Files changed**
+- `packages/findingmodel/src/findingmodel/facets.py` — added NormalizedAgeProfile, format_age_profile(), format_time_course()
+- `packages/findingmodel/src/findingmodel/fm_md_template.py` — 8 conditional Jinja blocks for metadata fields
+- `packages/findingmodel/src/findingmodel/finding_model.py` — age_profile uses NormalizedAgeProfile; both as_markdown() pass metadata to template
+- `packages/findingmodel-ai/src/findingmodel_ai/authoring/editor.py` — _render_structured_metadata_lines() for editor export
+- `packages/findingmodel/tests/test_facets.py` — 10 new tests (formatting helpers, NormalizedAgeProfile)
+- `packages/findingmodel/tests/test_models.py` — markdown rendering tests, canary round-trip test
+- `packages/findingmodel-ai/tests/test_model_editor.py` — editor export with metadata test
+
+**Scope decisions**
+- Follow-up overhaul tracked separately in `tasks/markdown-output-overhaul-plan.md`.
+- `create_stub.py` — no changes. Stubs are intentionally minimal; metadata is added via enrichment.
+- `markdown_in.py` remains an AI-assisted outline importer, not a faithful importer for exported Markdown.
+- `edit_model_markdown()` remains convenience tooling for human/LLM edits, not a canonical interchange path.
+- Markdown field ordering: entity type → body regions → modalities → subspecialties → etiologies → time course → age profile → sex specificity
 
 **Tests**
-- markdown render tests
-- markdown/editor round-trip tests
-- canary round-trip test on an existing `.fm.json` fixture with newly added fields
+- formatting helpers for AgeProfile and ExpectedTimeCourse
+- NormalizedAgeProfile on model load (legacy string → AgeProfile)
+- markdown rendering with all 8 metadata fields (Base and Full models)
+- editor export with metadata fields
+- canary content test: JSON → model → markdown renders the expected metadata labels and values
 
 **Acceptance Gate**
-- A model with canonical metadata can survive JSON -> markdown -> model and editor round-trips without loss of structured fields.
+- ✓ Model → markdown renders all metadata fields correctly
+- ✓ Editor export includes metadata lines
+- Markdown output is explicitly treated as presentation / convenience authoring text, not canonical serialized state
 
 **Docs Gate**
-- Update user-facing markdown/editing docs if the rendered format changes materially.
+- ✓ README updated with structured metadata field table (done in Slice 1)
+- ✓ Markdown docs/configuration updated to describe these APIs as presentation / convenience tooling
+- ✓ Implementation plan updated with scope decisions and follow-up overhaul pointer
 
 ## Slice 3: Extend DuckDB Build, Storage, and Hydration
 

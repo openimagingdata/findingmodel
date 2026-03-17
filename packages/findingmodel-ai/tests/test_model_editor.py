@@ -1,13 +1,12 @@
 from collections.abc import Iterator
 
 import pytest
+from findingmodel import Index
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel_ai.authoring import editor as model_editor
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
-
-from findingmodel import Index
 
 
 @pytest.fixture(autouse=True)
@@ -120,6 +119,37 @@ def test_export_model_for_editing_attributes_only(real_model: FindingModelFull) 
     assert "## Attributes" not in md
 
     # Starts directly with an attribute header
+    assert "### presence" in md
+
+
+def test_export_model_for_editing_with_metadata(real_model: FindingModelFull) -> None:
+    """Model with structured metadata should include metadata lines in exported markdown."""
+    from findingmodel.facets import (
+        BodyRegion,
+        EntityType,
+        ExpectedDuration,
+        ExpectedTimeCourse,
+        Modality,
+        SexSpecificity,
+    )
+
+    enriched = real_model.model_copy(
+        update={
+            "body_regions": [BodyRegion.CHEST],
+            "entity_type": EntityType.FINDING,
+            "applicable_modalities": [Modality.CT],
+            "sex_specificity": SexSpecificity.SEX_NEUTRAL,
+            "expected_time_course": ExpectedTimeCourse(duration=ExpectedDuration.WEEKS),
+        }
+    )
+    md = model_editor.export_model_for_editing(enriched)
+    assert "Entity Type: finding" in md
+    assert "Body Regions: chest" in md
+    assert "Modalities: CT" in md
+    assert "Sex Specificity: sex-neutral" in md
+    assert "Time Course: duration: weeks" in md
+    # Still has the normal structure
+    assert "## Attributes" in md
     assert "### presence" in md
 
 

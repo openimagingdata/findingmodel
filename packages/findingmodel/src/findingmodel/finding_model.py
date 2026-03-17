@@ -10,14 +10,16 @@ from pydantic import BaseModel, Field, model_validator
 from findingmodel.contributor import Organization, Person
 
 from .facets import (
-    AgeProfile,
     EntityType,
     ExpectedTimeCourse,
+    NormalizedAgeProfile,
     NormalizedBodyRegionList,
     NormalizedEtiologyList,
     NormalizedModalityList,
     SexSpecificity,
     Subspecialty,
+    format_age_profile,
+    format_time_course,
 )
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
 
@@ -325,7 +327,7 @@ class FindingModelBase(BaseModel):
     entity_type: EntityType | None = None
     applicable_modalities: NormalizedModalityList | None = None
     expected_time_course: ExpectedTimeCourse | None = None
-    age_profile: AgeProfile | None = None
+    age_profile: NormalizedAgeProfile | None = None
     sex_specificity: SexSpecificity | None = None
     attributes: Annotated[
         Sequence[Attribute],
@@ -333,7 +335,7 @@ class FindingModelBase(BaseModel):
     ]
 
     def as_markdown(self) -> str:
-        return UNIFIED_MARKDOWN_TEMPLATE.render(
+        result = UNIFIED_MARKDOWN_TEMPLATE.render(
             oifm_id=None,
             show_ids=False,
             name=self.name,
@@ -342,7 +344,17 @@ class FindingModelBase(BaseModel):
             description=self.description,
             attributes=self.attributes,
             index_code_str=None,
-        )
+            entity_type=self.entity_type.value if self.entity_type else None,
+            body_regions=[r.value for r in self.body_regions] if self.body_regions else None,
+            applicable_modalities=[m.value for m in self.applicable_modalities] if self.applicable_modalities else None,
+            subspecialties=[s.value for s in self.subspecialties] if self.subspecialties else None,
+            etiologies=[e.value for e in self.etiologies] if self.etiologies else None,
+            time_course_str=format_time_course(self.expected_time_course) if self.expected_time_course else None,
+            age_profile_str=format_age_profile(self.age_profile) if self.age_profile else None,
+            sex_specificity=self.sex_specificity.value if self.sex_specificity else None,
+        ).strip()
+        result = re.sub(r"\n{3,}", "\n\n", result)
+        return result
 
 
 OifmIdStr = Annotated[
@@ -373,7 +385,7 @@ class FindingModelFull(BaseModel):
     entity_type: EntityType | None = None
     applicable_modalities: NormalizedModalityList | None = None
     expected_time_course: ExpectedTimeCourse | None = None
-    age_profile: AgeProfile | None = None
+    age_profile: NormalizedAgeProfile | None = None
     sex_specificity: SexSpecificity | None = None
     anatomic_locations: IndexCodeList | None = None
     contributors: list[Contributor] | None = Field(
@@ -418,6 +430,14 @@ class FindingModelFull(BaseModel):
             description=self.description,
             attributes=self.attributes,
             index_codes_str=self.index_codes_str,
+            entity_type=self.entity_type.value if self.entity_type else None,
+            body_regions=[r.value for r in self.body_regions] if self.body_regions else None,
+            applicable_modalities=[m.value for m in self.applicable_modalities] if self.applicable_modalities else None,
+            subspecialties=[s.value for s in self.subspecialties] if self.subspecialties else None,
+            etiologies=[e.value for e in self.etiologies] if self.etiologies else None,
+            time_course_str=format_time_course(self.expected_time_course) if self.expected_time_course else None,
+            age_profile_str=format_age_profile(self.age_profile) if self.age_profile else None,
+            sex_specificity=self.sex_specificity.value if self.sex_specificity else None,
             footer=footer,
         ).strip()
         result = re.sub(r"\n{3,}", "\n\n", result)

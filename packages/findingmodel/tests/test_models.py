@@ -264,6 +264,180 @@ def test_real_model_markdown_with_codes(tn_fm_json: str, tn_markdown: str) -> No
         assert generated_line.strip() == expected_line.strip()
 
 
+def test_base_model_markdown_with_metadata() -> None:
+    from findingmodel.facets import (
+        AgeProfile,
+        BodyRegion,
+        EntityType,
+        EtiologyCode,
+        ExpectedDuration,
+        ExpectedTimeCourse,
+        Modality,
+        SexSpecificity,
+        Subspecialty,
+        TimeCourseModifier,
+    )
+
+    model = FindingModelBase(
+        name="pulmonary embolism",
+        description="Blood clot in the pulmonary arteries.",
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT, Modality.MR],
+        subspecialties=[Subspecialty.CH],
+        etiologies=[EtiologyCode.VASCULAR_THROMBOTIC],
+        expected_time_course=ExpectedTimeCourse(
+            duration=ExpectedDuration.WEEKS, modifiers=[TimeCourseModifier.RESOLVING]
+        ),
+        age_profile=AgeProfile(applicability="all_ages"),
+        sex_specificity=SexSpecificity.SEX_NEUTRAL,
+        attributes=[
+            ChoiceAttribute(name="Presence", values=[ChoiceValue(name="Present"), ChoiceValue(name="Absent")]),
+        ],
+    )
+    md = model.as_markdown()
+    assert "**Entity Type:** finding" in md
+    assert "**Body Regions:** chest" in md
+    assert "**Modalities:** CT, MR" in md
+    assert "**Subspecialties:** CH" in md
+    assert "**Etiologies:** vascular:thrombotic" in md
+    assert "**Time Course:** duration: weeks; modifiers: resolving" in md
+    assert "**Age Profile:** all ages" in md
+    assert "**Sex Specificity:** sex-neutral" in md
+
+
+def test_full_model_markdown_with_metadata() -> None:
+    from findingmodel.facets import (
+        BodyRegion,
+        EntityType,
+        ExpectedDuration,
+        ExpectedTimeCourse,
+        Modality,
+        SexSpecificity,
+    )
+    from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded
+
+    model = FindingModelFull(
+        oifm_id="OIFM_TEST_000001",
+        name="pneumothorax",
+        description="Air in the pleural space.",
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.XR, Modality.CT],
+        sex_specificity=SexSpecificity.SEX_NEUTRAL,
+        expected_time_course=ExpectedTimeCourse(duration=ExpectedDuration.DAYS),
+        attributes=[
+            ChoiceAttributeIded(
+                oifma_id="OIFMA_TEST_000001",
+                name="Presence",
+                values=[
+                    ChoiceValueIded(value_code="OIFMA_TEST_000001.0", name="Present"),
+                    ChoiceValueIded(value_code="OIFMA_TEST_000001.1", name="Absent"),
+                ],
+            ),
+        ],
+    )
+    md = model.as_markdown()
+    assert "**Entity Type:** finding" in md
+    assert "**Body Regions:** chest" in md
+    assert "**Modalities:** XR, CT" in md
+    assert "**Sex Specificity:** sex-neutral" in md
+    assert "**Time Course:** duration: days" in md
+    # Fields not set should not appear
+    assert "**Subspecialties:**" not in md
+    assert "**Etiologies:**" not in md
+    assert "**Age Profile:**" not in md
+
+
+def test_canary_roundtrip_metadata_survives() -> None:
+    """Canary test: model with metadata survives JSON -> model -> markdown -> JSON -> model round-trip."""
+    from findingmodel.facets import (
+        AgeProfile,
+        AgeStage,
+        BodyRegion,
+        EntityType,
+        EtiologyCode,
+        ExpectedDuration,
+        ExpectedTimeCourse,
+        Modality,
+        SexSpecificity,
+        Subspecialty,
+        TimeCourseModifier,
+    )
+    from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded
+
+    original = FindingModelFull(
+        oifm_id="OIFM_TEST_000001",
+        name="pulmonary embolism",
+        description="Blood clot in the pulmonary arteries.",
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT, Modality.MR],
+        subspecialties=[Subspecialty.CH],
+        etiologies=[EtiologyCode.VASCULAR_THROMBOTIC],
+        expected_time_course=ExpectedTimeCourse(
+            duration=ExpectedDuration.WEEKS, modifiers=[TimeCourseModifier.RESOLVING]
+        ),
+        age_profile=AgeProfile(
+            applicability=[AgeStage.ADULT, AgeStage.MIDDLE_AGED, AgeStage.AGED],
+            more_common_in=[AgeStage.AGED],
+        ),
+        sex_specificity=SexSpecificity.SEX_NEUTRAL,
+        attributes=[
+            ChoiceAttributeIded(
+                oifma_id="OIFMA_TEST_000001",
+                name="Presence",
+                values=[
+                    ChoiceValueIded(value_code="OIFMA_TEST_000001.0", name="Present"),
+                    ChoiceValueIded(value_code="OIFMA_TEST_000001.1", name="Absent"),
+                ],
+            ),
+        ],
+    )
+
+    # Step 1: Serialize to JSON and reload
+    json_str = original.model_dump_json()
+    reloaded = FindingModelFull.model_validate_json(json_str)
+
+    # Step 2: Verify metadata survived JSON round-trip
+    assert reloaded.body_regions == [BodyRegion.CHEST]
+    assert reloaded.entity_type == EntityType.FINDING
+    assert reloaded.applicable_modalities == [Modality.CT, Modality.MR]
+    assert reloaded.subspecialties == [Subspecialty.CH]
+    assert reloaded.etiologies == [EtiologyCode.VASCULAR_THROMBOTIC]
+    assert reloaded.expected_time_course is not None
+    assert reloaded.expected_time_course.duration == ExpectedDuration.WEEKS
+    assert reloaded.expected_time_course.modifiers == [TimeCourseModifier.RESOLVING]
+    assert reloaded.age_profile is not None
+    assert isinstance(reloaded.age_profile.applicability, list)
+    assert AgeStage.AGED in reloaded.age_profile.applicability
+    assert reloaded.age_profile.more_common_in == [AgeStage.AGED]
+    assert reloaded.sex_specificity == SexSpecificity.SEX_NEUTRAL
+
+    # Step 3: Render to markdown and verify metadata lines present
+    md = reloaded.as_markdown()
+    assert "**Entity Type:** finding" in md
+    assert "**Body Regions:** chest" in md
+    assert "**Modalities:** CT, MR" in md
+    assert "**Subspecialties:** CH" in md
+    assert "**Etiologies:** vascular:thrombotic" in md
+    assert "**Time Course:** duration: weeks; modifiers: resolving" in md
+    assert "**Age Profile:** applicable: adult, middle_aged, aged; more common in: aged" in md
+    assert "**Sex Specificity:** sex-neutral" in md
+
+    # Step 4: Serialize again and verify final JSON matches original
+    final_json = reloaded.model_dump_json()
+    final = FindingModelFull.model_validate_json(final_json)
+    assert final.body_regions == original.body_regions
+    assert final.entity_type == original.entity_type
+    assert final.applicable_modalities == original.applicable_modalities
+    assert final.subspecialties == original.subspecialties
+    assert final.etiologies == original.etiologies
+    assert final.expected_time_course == original.expected_time_course
+    assert final.age_profile == original.age_profile
+    assert final.sex_specificity == original.sex_specificity
+
+
 # ============================================================================
 # Contributor Tests
 # ============================================================================
