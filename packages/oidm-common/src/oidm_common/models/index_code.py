@@ -2,9 +2,14 @@ from pydantic import BaseModel, Field
 
 
 class IndexCode(BaseModel):
-    """Code representing an entry in a standard ontology, e.g., SNOMED or RadLex, which can be applied
-    to a finding or attribute. This is used to standardize the representation of findings and attributes
-    across different systems and to facilitate interoperability between different systems.
+    """Simple ontology identifier: system, code, and optional display name.
+
+    IndexCode is a plain identifier object — it carries no relationship semantics (e.g., broader,
+    narrower, related). When used on canonical FindingModel.index_codes, each code must be an exact
+    match or clinically substitutable near-equivalent for the full model concept. Merely related,
+    broader, narrower, or temporally qualified codes belong in the enrichment review artifact, not
+    on the canonical model. If relationship-bearing ontology links are needed in the future, use a
+    separate typed wrapper rather than overloading IndexCode.
     """
 
     system: str = Field(description="The system that the code is from, e.g., SNOMED or RadLex.", min_length=3)

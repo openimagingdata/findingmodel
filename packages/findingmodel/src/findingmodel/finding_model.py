@@ -9,6 +9,16 @@ from pydantic import BaseModel, Field, model_validator
 
 from findingmodel.contributor import Organization, Person
 
+from .facets import (
+    AgeProfile,
+    EntityType,
+    ExpectedTimeCourse,
+    NormalizedBodyRegionList,
+    NormalizedEtiologyList,
+    NormalizedModalityList,
+    SexSpecificity,
+    Subspecialty,
+)
 from .fm_md_template import UNIFIED_MARKDOWN_TEMPLATE
 
 # TODO: Move random digits and ID generation to common.py
@@ -309,6 +319,14 @@ class FindingModelBase(BaseModel):
     description: DescriptionString
     synonyms: SynonymSequence = None
     tags: TagSequence = None
+    body_regions: NormalizedBodyRegionList | None = None
+    subspecialties: list[Subspecialty] | None = None
+    etiologies: NormalizedEtiologyList | None = None
+    entity_type: EntityType | None = None
+    applicable_modalities: NormalizedModalityList | None = None
+    expected_time_course: ExpectedTimeCourse | None = None
+    age_profile: AgeProfile | None = None
+    sex_specificity: SexSpecificity | None = None
     attributes: Annotated[
         Sequence[Attribute],
         Field(min_length=1, description=ATTRIBUTES_FIELD_DESCRIPTION),
@@ -349,6 +367,14 @@ class FindingModelFull(BaseModel):
     description: DescriptionString
     synonyms: SynonymSequence = None
     tags: TagSequence = None
+    body_regions: NormalizedBodyRegionList | None = None
+    subspecialties: list[Subspecialty] | None = None
+    etiologies: NormalizedEtiologyList | None = None
+    entity_type: EntityType | None = None
+    applicable_modalities: NormalizedModalityList | None = None
+    expected_time_course: ExpectedTimeCourse | None = None
+    age_profile: AgeProfile | None = None
+    sex_specificity: SexSpecificity | None = None
     anatomic_locations: IndexCodeList | None = None
     contributors: list[Contributor] | None = Field(
         default=None, description="The contributing users and organizations to the finding model"
@@ -357,6 +383,8 @@ class FindingModelFull(BaseModel):
         Sequence[AttributeIded],
         Field(min_length=1, description=ATTRIBUTES_FIELD_DESCRIPTION),
     ]
+    # Canonical index_codes: exact matches or clinically substitutable near-equivalents only.
+    # Non-exact ontology candidates belong in the enrichment review artifact.
     index_codes: IndexCodeList | None = None
 
     def as_markdown(self, hide_ids: bool = False) -> str:

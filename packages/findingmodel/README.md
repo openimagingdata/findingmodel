@@ -58,12 +58,19 @@ findingmodel fm-to-markdown model.json
 
 ### FindingModelBase
 
-Basic finding model structure with name, description, and attributes.
+Basic finding model structure with name, description, attributes, and optional structured metadata.
 
 ```python
-from findingmodel import FindingModelBase
+from findingmodel import FindingModelBase, BodyRegion, EntityType, ExpectedDuration, ExpectedTimeCourse
 
-model = FindingModelBase(name="pneumothorax", description="Presence of air in the pleural space", attributes=[...])
+model = FindingModelBase(
+    name="pneumothorax",
+    description="Presence of air in the pleural space",
+    body_regions=[BodyRegion.CHEST],
+    entity_type=EntityType.FINDING,
+    expected_time_course=ExpectedTimeCourse(duration=ExpectedDuration.DAYS),
+    attributes=[...],
+)
 
 # Export to Markdown
 print(model.as_markdown())
@@ -71,18 +78,37 @@ print(model.as_markdown())
 
 ### FindingModelFull
 
-Extended model with OIFM IDs, index codes, and contributor information.
+Extended model with OIFM IDs, index codes, contributor information, and structured metadata.
 
 ```python
 from findingmodel import FindingModelFull
 
-# Load from JSON
+# Load from JSON — legacy values auto-normalize (e.g., "Chest" → "chest", "CR" → "XR")
 model = FindingModelFull.model_validate_json(json_content)
 
 print(f"Model ID: {model.oifm_id}")
+print(f"Body regions: {model.body_regions}")
+print(f"Entity type: {model.entity_type}")
 for attr in model.attributes:
     print(f"  {attr.name}: {attr.oifma_id}")
 ```
+
+### Structured Metadata Types
+
+Optional canonical metadata fields available on both `FindingModelBase` and `FindingModelFull`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `body_regions` | `list[BodyRegion]` | Broad anatomic regions (head, chest, abdomen, etc.) |
+| `subspecialties` | `list[Subspecialty]` | Radiology subspecialties (NR, CH, MK, etc.) |
+| `etiologies` | `list[EtiologyCode]` | Etiology categories (inflammatory, neoplastic:malignant, etc.) |
+| `entity_type` | `EntityType` | What the model represents (finding, diagnosis, measurement, etc.) |
+| `applicable_modalities` | `list[Modality]` | Imaging modalities (CT, MR, XR, etc.) |
+| `expected_time_course` | `ExpectedTimeCourse` | Duration and behavioral modifiers |
+| `age_profile` | `AgeProfile` | Age applicability and prevalence |
+| `sex_specificity` | `SexSpecificity` | Sex-specific or sex-neutral |
+
+All fields are optional and default to `None`. Legacy values normalize automatically on load.
 
 ### FindingInfo
 

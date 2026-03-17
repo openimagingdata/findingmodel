@@ -5,6 +5,7 @@
 - Proposed
 - Supersedes the old enrichment implementation plan now archived at `docs/archive/finding-enrichment-implementation-plan.md`
 - Supersedes the older enrichment PRD now archived at `docs/archive/finding-enrichment-prd.md`
+- Implementation tracking lives in `tasks/canonical-structured-metadata-implementation-plan.md`
 
 ## Summary
 
@@ -47,15 +48,15 @@ Canonical facet values:
 - `BodyRegion = {head, neck, chest, breast, abdomen, pelvis, spine, upper_extremity, lower_extremity, whole_body}`
 - `Subspecialty = {AB, BR, CA, CH, ER, GI, GU, HN, IR, MI, MK, NR, OB, OI, PD, VI}`
 - `Modality = {XR, CT, MR, US, PET, NM, MG, RF, DSA}`, with `CR` and `DX` normalized to `XR`
-- `EntityType = {finding, diagnosis, grouping, measurement, assessment, recommendation}`
+- `EntityType = {finding, diagnosis, grouping, measurement, assessment, recommendation, technique_issue}`
 - `SexSpecificity = {male-specific, female-specific, sex-neutral}`
 - `AgeStage = {newborn, infant, preschool_child, child, adolescent, young_adult, adult, middle_aged, aged}`
 - `AgeApplicability = "all_ages" | list[AgeStage]`
 - `AgeProfile = {applicability: AgeApplicability, more_common_in: list[AgeStage] | None}`
 - The age stages are disjoint, MeSH-derived bins chosen for faceting rather than raw overlapping MeSH descriptors
-- `ExpectedTimeCourse = {duration: TimeCourseDuration | None, modifiers: list[TimeCourseModifier]}`
-- `TimeCourseDuration = {rapid, short_term, intermediate, long_term, permanent}`
-- `TimeCourseModifier = {resolving, evolving, progressive, stable, intermittent, waxing_waning, relapsing}`
+- `ExpectedTimeCourse = {duration: ExpectedDuration | None, modifiers: list[TimeCourseModifier]}`
+- `ExpectedDuration = {hours, days, weeks, months, years, permanent}` — upper bound on how long the finding typically remains visible on imaging
+- `TimeCourseModifier = {progressive, stable, evolving, resolving, intermittent, fluctuating, recurrent}`
 - `EtiologyCode = {inflammatory, inflammatory:infectious, neoplastic:benign, neoplastic:malignant, neoplastic:metastatic, neoplastic:potential, traumatic:acute, traumatic:sequela, vascular:ischemic, vascular:hemorrhagic, vascular:thrombotic, vascular:aneurysmal, degenerative, metabolic, congenital, developmental, autoimmune, toxic, mechanical, iatrogenic:post-operative, iatrogenic:post-radiation, iatrogenic:device, iatrogenic:medication-related, idiopathic, normal-variant}`
 
 Keep these existing fields as the canonical standardized-code layer:
@@ -64,6 +65,20 @@ Keep these existing fields as the canonical standardized-code layer:
 - `index_codes`
 
 Broad anatomy belongs in `body_regions`. Precise anatomy belongs in ontology-backed `anatomic_locations`.
+
+`IndexCode` semantics:
+
+- `IndexCode` remains a simple ontology identifier object: `system`, `code`, and optional `display`
+- relationship semantics do not live on `IndexCode` itself
+- on canonical `FindingModel.index_codes`, each code must be an exact match or a clinically substitutable near-equivalent for the full model concept
+- do not store merely related, broader, narrower, complication-specific, severity-specific, or temporally qualified codes in canonical `index_codes` unless the model itself is defined at that narrower level
+- non-exact ontology candidates belong in the separate enrichment review artifact, where they can be categorized explicitly
+- if the project later needs canonical storage of non-exact code relationships, add a separate typed wrapper rather than overloading `IndexCode`
+
+Normalization rule for legacy body-region values:
+
+- existing title-cased legacy values normalize to the lowercase canonical equivalent
+- `ALL` remains a special legacy alias that normalizes to `whole_body`
 
 Do not store ontology candidate buckets, raw search results, prompt traces, or model reasoning on `FindingModel`.
 
@@ -84,6 +99,15 @@ async def enrich_model(
 - `model`: the updated model with canonical structured metadata filled in
 - `review`: a separate QA artifact with raw candidates, normalization notes, timings, and review-oriented reasoning
 
+`review` contract in v1:
+
+- Define a typed `EnrichModelReview` Pydantic model in `findingmodel-ai`
+- Make it fully JSON-serializable so CLI/backfill workflows can persist it without ad hoc shaping
+- Return it from `enrich_model(...)` directly; file writing stays outside the core function
+- Canonical CLI/backfill writes review JSON to a separate artifact location, not into `.fm.json`
+- Default bulk-backfill layout should be deterministic by model identity, e.g. `<artifact_root>/<oifm_id>.enrich-review.json`
+- The plan must update all current scripts that assume a sidecar enrichment blob or custom output JSON shape
+
 Design rules:
 
 - Build this tool fresh around the canonical model update path.
@@ -99,18 +123,31 @@ Keep `search(query: str, ...)` query-driven.
 
 Add a separate `browse(...)` API for filter-only browsing.
 
+`browse(...)` should return `tuple[list[IndexEntry], int]`, matching the current pagination pattern of `all(...)`.
+
+`browse(...)` is the replacement for all current empty-query/tag-only lookup patterns. As part of the rewrite, update:
+
+- `FindingModelIndex`
+- exported `Index` protocol surface
+- CLI and MCP server call sites
+- tests that currently exercise filter-only search via `search("", tags=...)`
+- AI search consumers that need filtered candidate gathering
+
 Both `search(...)` and `browse(...)` support filters for:
 
 - `body_regions`
 - `subspecialties`
 - `etiologies`
-- `entity_types`
+- `entity_type`
 - `applicable_modalities`
 - `age_applicability`
 - `age_more_common_in`
 - `sex_specificity`
 - `time_course_durations`
+- `time_course_modifiers`
 - `tags`
+
+Also extend `search_batch(...)` with the same facet filter surface where batch candidate generation still needs it; do not leave `find_similar_models()` or anatomic/ontology helpers stranded on a narrower search API.
 
 Filter semantics:
 
@@ -122,6 +159,8 @@ DuckDB mirrors the canonical model fields into queryable columns:
 
 - scalar columns: `entity_type VARCHAR`, `expected_time_course_duration VARCHAR`, `sex_specificity VARCHAR`, `age_applicability_scope VARCHAR`
 - list columns: `body_regions VARCHAR[]`, `subspecialties VARCHAR[]`, `etiologies VARCHAR[]`, `applicable_modalities VARCHAR[]`, `age_applicability_stages VARCHAR[]`, `age_more_common_in VARCHAR[]`, `expected_time_course_modifiers VARCHAR[]`, `anatomic_location_ids VARCHAR[]`, `index_code_keys VARCHAR[]`
+
+`index_code_keys` uses the normalized compound form `"{system}:{code}"` for deterministic build/query behavior.
 
 `search(...)` pushes facet filters into FTS/vector candidate generation before ranking.
 
@@ -150,8 +189,19 @@ Release rules:
 - minimum score `3`
 - default return count `10`
 - weights are provisional and must be tuned against a gold case set before release
+- bootstrap that gold case set from the existing `packages/findingmodel-ai/evals/similar_models.py` cases, then promote the retained subset into a dedicated related-model fixture/eval asset owned by this rewrite
 
 Rewrite `find_similar_models()` in `findingmodel-ai` to use `search(...)`, `browse(...)`, and `related_models()` for candidate gathering, leaving the LLM only to make the final "edit existing vs create new" judgment.
+
+Design note for `find_similar_models()`:
+
+- when the caller has an existing canonical model ID, use `related_models(model_id, ...)` as one candidate source
+- when the caller only has a proposed new finding name/description/synonyms, keep a narrow typed planning step that emits:
+  - alternate search terms
+  - optional high-confidence facet hypotheses (for example `body_regions`, `applicable_modalities`, `entity_type`)
+- use those facet hypotheses to add filtered candidate-gathering passes via `search(...)` and/or `browse(...)`, but do not rely on them as the only gate
+- always preserve an unfiltered text-search path so incorrect facet guesses do not collapse recall
+- deterministic code merges and scores the union of exact-match checks, text-search candidates, facet-filtered candidates, and `related_models(...)` candidates before the final LLM judgment
 
 ## Implementation Phases
 
@@ -160,6 +210,10 @@ Rewrite `find_similar_models()` in `findingmodel-ai` to use `search(...)`, `brow
 - Write this plan into `docs/canonical-structured-metadata-and-enrichment-rewrite.md`
 - Archive the old plan under `docs/archive/`
 - Mark the older facets/enrichment planning docs as superseded where relevant
+- Record the implementation inventory for all affected public surfaces before coding:
+  - `findingmodel` Index/CLI/MCP/README
+  - `findingmodel-ai` enrichment exports, search exports, scripts, evals, and README
+  - test files that currently assume filter-only `search(...)` or old enrichment result types
 - Update package README docs and `CHANGELOG.md` as later phases land
 
 ### Phase 2: Add the canonical schema
@@ -175,10 +229,10 @@ Rewrite `find_similar_models()` in `findingmodel-ai` to use `search(...)`, `brow
   - `post-traumatic -> traumatic:sequela`
   - `iatrogenic:device-related -> iatrogenic:device`
   - `CR -> XR`
-- `DX -> XR`
+  - `DX -> XR`
 - Normalize legacy age labels into the new structure:
   - `any age -> {"applicability": "all_ages"}`
-  - overlapping or free-text age bins map to the nearest canonical `AgeStage` values
+  - overlapping or free-text age bins map through one explicit normalization table checked into the repo and covered by tests
   - "more common in" and "can occur in" signals are stored separately
 
 ### Phase 3: Build the new enrichment tool
@@ -188,6 +242,11 @@ Rewrite `find_similar_models()` in `findingmodel-ai` to use `search(...)`, `brow
 - Keep evidence gathering deterministic and coded
 - Keep the classifier narrow, typed, and model-oriented
 - Write review artifacts separately from canonical model JSON
+- Replace the current exported enrichment entrypoints in one coordinated pass:
+  - `findingmodel_ai.enrichment.enrich_finding`
+  - `findingmodel_ai.enrichment.enrich_finding_unified`
+  - `findingmodel_ai.enrichment.enrich_finding_agentic`
+  - scripts and tests that currently depend on `FindingEnrichmentResult`
 
 ### Phase 4: Rebuild indexing and retrieval around the canonical fields
 
@@ -202,6 +261,7 @@ Rewrite `find_similar_models()` in `findingmodel-ai` to use `search(...)`, `brow
 - Add `related_models(...)`
 - Rework `find_similar_models()` onto the new deterministic candidate pipeline
 - Add one canonical CLI for single-model enrichment and bulk backfill
+- Define the review-artifact write location and overwrite/resume behavior for that CLI before implementation starts
 - Remove the old ad hoc enrichment scripts and codepaths
 
 ### Phase 6: Backfill, validate, and clean up
@@ -219,6 +279,8 @@ Rewrite `find_similar_models()` in `findingmodel-ai` to use `search(...)`, `brow
 - Test enrichment mapping and QA artifact generation with `FunctionModel` and `TestModel`, plus callout integration coverage
 - Test exact DuckDB DDL and hydration for the new columns
 - Test `browse(...)` and facet-aware `search(...)` semantics, including SQL prefiltering behavior
+- Replace current empty-query tag-filter search tests with explicit `browse(...)` coverage rather than silently preserving the old overload
+- Test CLI/MCP/public API migration points so there is no orphaned caller still expecting the retired enrichment or filter-only search behavior
 - Test related-model scoring against a gold case set before release
 - Test backfill atomic writes and a full-corpus rebuild path
 
