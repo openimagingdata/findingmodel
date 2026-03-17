@@ -1,6 +1,6 @@
 # Canonical Structured Metadata Implementation Plan
 
-**Status:** In progress — Slice 1 complete, pending commit
+**Status:** In progress — Slice 1, Slice 2, and Slice 3 complete, pending commit
 
 **Design Spec:** [../docs/canonical-structured-metadata-and-enrichment-rewrite.md](../docs/canonical-structured-metadata-and-enrichment-rewrite.md)
 
@@ -167,7 +167,9 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - ✓ Markdown docs/configuration updated to describe these APIs as presentation / convenience tooling
 - ✓ Implementation plan updated with scope decisions and follow-up overhaul pointer
 
-## Slice 3: Extend DuckDB Build, Storage, and Hydration
+## Slice 3: Extend DuckDB Build, Storage, and Hydration ✓
+
+**Status:** Complete
 
 **Scope**
 - Add the new queryable columns to the maintainer build and read side.
@@ -177,6 +179,13 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 **Primary ownership**
 - Lane B
 
+**Files changed**
+- `packages/oidm-maintenance/src/oidm_maintenance/findingmodel/build.py` — added structured metadata DuckDB columns, build-side value extraction, and normalized `index_code_keys`
+- `packages/findingmodel/src/findingmodel/index.py` — extended `IndexEntry` and hydration for canonical facet fields, `ExpectedTimeCourse`, `AgeProfile`, `anatomic_location_ids`, and `index_code_keys`
+- `packages/oidm-maintenance/tests/test_findingmodel_build.py` — schema, populated/null hydration, and “not in search/embedding text” coverage
+- `packages/findingmodel/tests/data/test_index.duckdb` — regenerated committed fixture with the updated schema
+- `docs/canonical-structured-metadata-and-enrichment-rewrite.md` — updated to keep facets structured rather than duplicated into retrieval text
+
 **Files likely in scope**
 - `packages/oidm-maintenance/src/oidm_maintenance/findingmodel/build.py`
 - `packages/findingmodel/src/findingmodel/index.py`
@@ -185,14 +194,16 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - exact schema/DDL assertions
 - build round-trip tests
 - hydration tests for populated and null facet columns
+- `packages/oidm-maintenance/tests/test_findingmodel_build.py`
+- `packages/findingmodel/tests/test_findingmodel_index.py`
 
 **Acceptance Gate**
-- Database build and read-side hydration fully support the canonical fields.
-- `index_code_keys` are normalized consistently as `system:code`.
-- FTS/search text and embedding text remain focused on free-text clinical content rather than duplicated facet values.
+- ✓ Database build and read-side hydration fully support the canonical fields.
+- ✓ `index_code_keys` are normalized consistently as `system:code`.
+- ✓ FTS/search text and embedding text remain focused on free-text clinical content rather than duplicated facet values.
 
 **Docs Gate**
-- Update any DuckDB/build docs that describe the old schema shape.
+- ✓ Design doc updated to reflect the “structured columns only” retrieval decision.
 
 ## Slice 4: Add `browse(...)` and Facet-Aware Search APIs
 

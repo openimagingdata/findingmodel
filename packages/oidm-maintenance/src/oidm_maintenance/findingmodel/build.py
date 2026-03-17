@@ -16,6 +16,7 @@ from findingmodel.contributor import Organization, Person
 from findingmodel.finding_model import FindingModelFull
 from oidm_common.duckdb import create_fts_index, create_hnsw_index, setup_duckdb_connection
 from oidm_common.embeddings import get_embeddings_batch
+from oidm_common.models import IndexCode
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -34,6 +35,19 @@ _SCHEMA_STATEMENTS: tuple[str, ...] = (
         filename VARCHAR NOT NULL UNIQUE,
         file_hash_sha256 VARCHAR NOT NULL,
         description TEXT,
+        body_regions VARCHAR[],
+        subspecialties VARCHAR[],
+        etiologies VARCHAR[],
+        entity_type VARCHAR,
+        applicable_modalities VARCHAR[],
+        expected_time_course_duration VARCHAR,
+        expected_time_course_modifiers VARCHAR[],
+        age_applicability_scope VARCHAR,
+        age_applicability_stages VARCHAR[],
+        age_more_common_in VARCHAR[],
+        sex_specificity VARCHAR,
+        anatomic_location_ids VARCHAR[],
+        index_code_keys VARCHAR[],
         search_text TEXT NOT NULL,
         embedding FLOAT[512] NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -362,6 +376,9 @@ def _insert_models(
     json_rows: list[tuple[str, str]] = []
 
     for (model, file_path, file_hash, search_text, json_text), embedding in zip(models_data, embeddings, strict=True):
+        expected_time_course_duration, expected_time_course_modifiers = _time_course_columns(model)
+        age_applicability_scope, age_applicability_stages, age_more_common_in = _age_profile_columns(model)
+
         # Main model row
         model_rows.append((
             model.oifm_id,
@@ -370,6 +387,19 @@ def _insert_models(
             file_path.name,
             file_hash,
             model.description,
+            _enum_values(model.body_regions),
+            _enum_values(model.subspecialties),
+            _enum_values(model.etiologies),
+            model.entity_type.value if model.entity_type else None,
+            _enum_values(model.applicable_modalities),
+            expected_time_course_duration,
+            expected_time_course_modifiers,
+            age_applicability_scope,
+            age_applicability_stages,
+            age_more_common_in,
+            model.sex_specificity.value if model.sex_specificity else None,
+            _index_code_keys(model.anatomic_locations),
+            _index_code_keys(model.index_codes),
             search_text,
             embedding,
         ))
@@ -478,9 +508,22 @@ def _insert_batch(
                 filename,
                 file_hash_sha256,
                 description,
+                body_regions,
+                subspecialties,
+                etiologies,
+                entity_type,
+                applicable_modalities,
+                expected_time_course_duration,
+                expected_time_course_modifiers,
+                age_applicability_scope,
+                age_applicability_stages,
+                age_more_common_in,
+                sex_specificity,
+                anatomic_location_ids,
+                index_code_keys,
                 search_text,
                 embedding
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             model_rows,
         )
@@ -570,7 +613,8 @@ def _build_search_text(model: FindingModelFull) -> str:
         model: The finding model
 
     Returns:
-        Combined search text from name, description, synonyms, tags, and attributes
+        Combined search text from free-text clinical content only:
+        name, description, synonyms, tags, and attribute names.
     """
     parts: list[str] = [model.name]
     if model.description:
@@ -590,7 +634,7 @@ def _build_embedding_text(model: FindingModelFull) -> str:
         model: The finding model
 
     Returns:
-        Formatted text for embedding with structured context
+        Formatted text for embedding with free-text clinical context.
     """
     parts: list[str] = [model.name]
     if model.description:
@@ -604,6 +648,50 @@ def _build_embedding_text(model: FindingModelFull) -> str:
     ]
     parts.extend(attribute_lines)
     return "\n".join(part for part in parts if part)
+
+
+def _enum_values(items: Sequence[object] | None) -> list[str] | None:
+    if not items:
+        return None
+    return [str(getattr(item, "value", item)) for item in items]
+
+
+def _dedupe_preserve_order(items: Sequence[str]) -> list[str]:
+    return list(dict.fromkeys(items))
+
+
+def _normalized_code_key(system: str, code: str) -> str:
+    return f"{system.strip()}:{code.strip()}"
+
+
+def _index_code_keys(codes: Sequence[IndexCode] | None) -> list[str] | None:
+    if not codes:
+        return None
+    keys = [_normalized_code_key(str(code.system), str(code.code)) for code in codes]
+    return _dedupe_preserve_order(keys)
+
+
+def _time_course_columns(model: FindingModelFull) -> tuple[str | None, list[str] | None]:
+    if model.expected_time_course is None:
+        return None, None
+    duration = model.expected_time_course.duration.value if model.expected_time_course.duration else None
+    modifiers = [modifier.value for modifier in model.expected_time_course.modifiers]
+    return duration, modifiers or None
+
+
+def _age_profile_columns(model: FindingModelFull) -> tuple[str | None, list[str] | None, list[str] | None]:
+    if model.age_profile is None:
+        return None, None, None
+
+    if model.age_profile.applicability == "all_ages":
+        scope = "all_ages"
+        applicability_stages = None
+    else:
+        scope = "stages"
+        applicability_stages = [stage.value for stage in model.age_profile.applicability]
+
+    more_common_in = [stage.value for stage in (model.age_profile.more_common_in or [])] or None
+    return scope, applicability_stages, more_common_in
 
 
 def _verify_database(conn: duckdb.DuckDBPyConnection) -> dict[str, int]:

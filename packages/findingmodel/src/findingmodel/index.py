@@ -5,8 +5,9 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
 import duckdb
 from asyncer import asyncify
@@ -18,9 +19,23 @@ from findingmodel import logger
 from findingmodel.common import normalize_name
 from findingmodel.config import ConfigurationError, get_settings
 from findingmodel.contributor import Organization, Person
+from findingmodel.facets import (
+    AgeProfile,
+    AgeStage,
+    BodyRegion,
+    EntityType,
+    EtiologyCode,
+    ExpectedDuration,
+    ExpectedTimeCourse,
+    Modality,
+    SexSpecificity,
+    Subspecialty,
+    TimeCourseModifier,
+)
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
 
 PLACEHOLDER_ATTRIBUTE_ID: str = "OIFMA_XXXX_000000"
+TEnum = TypeVar("TEnum", bound=Enum)
 
 
 class AttributeInfo(BaseModel):
@@ -43,6 +58,16 @@ class IndexEntry(BaseModel):
     synonyms: list[str] | None = None
     tags: list[str] | None = None
     contributors: list[str] | None = None
+    body_regions: list[BodyRegion] | None = None
+    subspecialties: list[Subspecialty] | None = None
+    etiologies: list[EtiologyCode] | None = None
+    entity_type: EntityType | None = None
+    applicable_modalities: list[Modality] | None = None
+    expected_time_course: ExpectedTimeCourse | None = None
+    age_profile: AgeProfile | None = None
+    sex_specificity: SexSpecificity | None = None
+    anatomic_location_ids: list[str] | None = None
+    index_code_keys: list[str] | None = None
     attributes: list[AttributeInfo] | None = Field(default=None, min_length=1)
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -374,7 +399,28 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         # Get paginated results (uses WHERE + ORDER + pagination params)
         results = conn.execute(
             f"""
-            SELECT oifm_id, name, slug_name, filename, file_hash_sha256, description, created_at, updated_at
+            SELECT
+                oifm_id,
+                name,
+                slug_name,
+                filename,
+                file_hash_sha256,
+                description,
+                body_regions,
+                subspecialties,
+                etiologies,
+                entity_type,
+                applicable_modalities,
+                expected_time_course_duration,
+                expected_time_course_modifiers,
+                age_applicability_scope,
+                age_applicability_stages,
+                age_more_common_in,
+                sex_specificity,
+                anatomic_location_ids,
+                index_code_keys,
+                created_at,
+                updated_at
             FROM finding_models
             {where_sql}
             ORDER BY {order_clause}
@@ -392,8 +438,18 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
                 filename=row[3],
                 file_hash_sha256=row[4],
                 description=row[5],
-                created_at=row[6],
-                updated_at=row[7],
+                body_regions=_enum_list(row[6], BodyRegion),
+                subspecialties=_enum_list(row[7], Subspecialty),
+                etiologies=_enum_list(row[8], EtiologyCode),
+                entity_type=_enum_value(row[9], EntityType),
+                applicable_modalities=_enum_list(row[10], Modality),
+                expected_time_course=_expected_time_course_from_columns(row[11], row[12]),
+                age_profile=_age_profile_from_columns(row[13], row[14], row[15]),
+                sex_specificity=_enum_value(row[16], SexSpecificity),
+                anatomic_location_ids=_string_list(row[17]),
+                index_code_keys=_string_list(row[18]),
+                created_at=row[19],
+                updated_at=row[20],
                 attributes=None,  # Not fetched for list operations
             )
             for row in results
@@ -912,7 +968,28 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         row = self._execute_one(
             conn,
             """
-            SELECT oifm_id, name, slug_name, filename, file_hash_sha256, description, created_at, updated_at
+            SELECT
+                oifm_id,
+                name,
+                slug_name,
+                filename,
+                file_hash_sha256,
+                description,
+                body_regions,
+                subspecialties,
+                etiologies,
+                entity_type,
+                applicable_modalities,
+                expected_time_course_duration,
+                expected_time_course_modifiers,
+                age_applicability_scope,
+                age_applicability_stages,
+                age_more_common_in,
+                sex_specificity,
+                anatomic_location_ids,
+                index_code_keys,
+                created_at,
+                updated_at
             FROM finding_models
             WHERE oifm_id = ?
             """,
@@ -950,12 +1027,26 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             filename=str(row["filename"]),
             file_hash_sha256=str(row["file_hash_sha256"]),
             description=str(row["description"]) if row["description"] else None,
-            created_at=row["created_at"],  # type: ignore[arg-type]
-            updated_at=row["updated_at"],  # type: ignore[arg-type]
             synonyms=synonyms or None,
             tags=tags or None,
             contributors=contributors or None,
+            body_regions=_enum_list(row["body_regions"], BodyRegion),
+            subspecialties=_enum_list(row["subspecialties"], Subspecialty),
+            etiologies=_enum_list(row["etiologies"], EtiologyCode),
+            entity_type=_enum_value(row["entity_type"], EntityType),
+            applicable_modalities=_enum_list(row["applicable_modalities"], Modality),
+            expected_time_course=_expected_time_course_from_columns(
+                row["expected_time_course_duration"], row["expected_time_course_modifiers"]
+            ),
+            age_profile=_age_profile_from_columns(
+                row["age_applicability_scope"], row["age_applicability_stages"], row["age_more_common_in"]
+            ),
+            sex_specificity=_enum_value(row["sex_specificity"], SexSpecificity),
+            anatomic_location_ids=_string_list(row["anatomic_location_ids"]),
+            index_code_keys=_string_list(row["index_code_keys"]),
             attributes=attributes or None,
+            created_at=row["created_at"],  # type: ignore[arg-type]
+            updated_at=row["updated_at"],  # type: ignore[arg-type]
         )
 
     def _collect_contributors(self, conn: duckdb.DuckDBPyConnection, oifm_id: str) -> list[str]:
@@ -1269,6 +1360,50 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
 
 # Alias for backward compatibility
 Index = FindingModelIndex
+
+
+def _enum_value(value: object | None, enum_cls: type[TEnum]) -> TEnum | None:
+    if value is None:
+        return None
+    return enum_cls(str(value))
+
+
+def _enum_list(values: object, enum_cls: type[TEnum]) -> list[TEnum] | None:
+    if not values or not isinstance(values, Sequence):
+        return None
+    return [enum_cls(str(value)) for value in values]
+
+
+def _string_list(values: object) -> list[str] | None:
+    if not values or not isinstance(values, Sequence):
+        return None
+    return [str(value) for value in values]
+
+
+def _expected_time_course_from_columns(duration: object, modifiers: object) -> ExpectedTimeCourse | None:
+    if duration is None and not modifiers:
+        return None
+    mod_list = list(modifiers) if isinstance(modifiers, Sequence) else []
+    return ExpectedTimeCourse(
+        duration=ExpectedDuration(str(duration)) if duration is not None else None,
+        modifiers=[TimeCourseModifier(str(value)) for value in mod_list],
+    )
+
+
+def _age_profile_from_columns(scope: object, applicability_stages: object, more_common_in: object) -> AgeProfile | None:
+    if scope is None and not applicability_stages and not more_common_in:
+        return None
+
+    if str(scope) == "all_ages":
+        applicability: Literal["all_ages"] | list[AgeStage] = "all_ages"
+    else:
+        stages = list(applicability_stages) if isinstance(applicability_stages, Sequence) else []
+        applicability = [AgeStage(str(value)) for value in stages]
+
+    common_list = list(more_common_in) if isinstance(more_common_in, Sequence) else []
+    more_common = [AgeStage(str(value)) for value in common_list] or None
+    return AgeProfile(applicability=applicability, more_common_in=more_common)
+
 
 __all__ = [
     "AttributeInfo",

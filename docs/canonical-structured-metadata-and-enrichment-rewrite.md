@@ -254,7 +254,7 @@ Design note for `find_similar_models()`:
 - Extend read-side hydration and `IndexEntry`
 - Add `browse(...)`
 - Extend `search(...)` with facet-aware candidate generation and ranking inputs
-- Extend search text and embedding text with human-readable structured labels, not just raw ontology IDs
+- Keep canonical facets in structured columns for filtering, browsing, and retrieval logic; do not duplicate them into FTS search text or embedding text by default
 
 ### Phase 5: Add related-model retrieval and authoring integration
 

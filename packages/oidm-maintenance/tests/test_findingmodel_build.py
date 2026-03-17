@@ -57,6 +57,62 @@ def _fake_settings_with_openai_key() -> MaintenanceSettings:
     return MaintenanceSettings(openai_api_key=SecretStr("fake-key"))
 
 
+def _facet_rich_model() -> dict[str, object]:
+    return {
+        "oifm_id": "OIFM_TEST_000100",
+        "name": "Facet Storage Test Finding",
+        "description": "Structured metadata verification target.",
+        "synonyms": ["facet check"],
+        "tags": ["storage-check"],
+        "body_regions": ["pelvis", "abdomen"],
+        "subspecialties": ["GU", "AB"],
+        "etiologies": ["toxic", "mechanical"],
+        "entity_type": "finding",
+        "applicable_modalities": ["US", "MR"],
+        "expected_time_course": {
+            "duration": "weeks",
+            "modifiers": ["resolving", "recurrent"],
+        },
+        "age_profile": {
+            "applicability": ["adult", "middle_aged", "aged"],
+            "more_common_in": ["aged"],
+        },
+        "sex_specificity": "sex-neutral",
+        "anatomic_locations": [
+            {"system": "radlex", "code": "RID28768", "display": "pelvis"},
+            {"system": "radlex", "code": "RID2507", "display": "abdomen"},
+        ],
+        "index_codes": [
+            {"system": "snomedct", "code": "300849004", "display": "finding"},
+            {"system": "radlex", "code": "RID4272", "display": "finding"},
+        ],
+        "attributes": [
+            {
+                "oifma_id": "OIFMA_TEST_000100",
+                "name": "status",
+                "description": "Presence status.",
+                "type": "choice",
+                "values": [
+                    {"value_code": "OIFMA_TEST_000100.0", "name": "present"},
+                    {"value_code": "OIFMA_TEST_000100.1", "name": "absent"},
+                ],
+            }
+        ],
+    }
+
+
+async def _build_db_from_models(tmp_path: Path, models: list[dict[str, object]]) -> Path:
+    source_dir = tmp_path / "models"
+    source_dir.mkdir()
+    for model in models:
+        filename = f"{model['name']}".lower().replace(" ", "_") + ".fm.json"
+        (source_dir / filename).write_text(json.dumps(model), encoding="utf-8")
+
+    db_path = tmp_path / "test.duckdb"
+    await build_findingmodel_database(source_dir, db_path, generate_embeddings=False)
+    return db_path
+
+
 @pytest.fixture
 async def built_test_db(tmp_path: Path) -> Path:
     """Build a test database with mocked embeddings.
@@ -144,6 +200,31 @@ class TestBuildOperations:
                 "finding_model_json",
             }
             assert expected_tables.issubset(table_names)
+        finally:
+            conn.close()
+
+    async def test_build_schema_includes_structured_metadata_columns(self, built_test_db: Path) -> None:
+        """Build schema includes structured metadata columns on finding_models."""
+        conn = duckdb.connect(str(built_test_db), read_only=True)
+        try:
+            rows = conn.execute("PRAGMA table_info('finding_models')").fetchall()
+            column_names = {row[1] for row in rows}
+            expected_columns = {
+                "body_regions",
+                "subspecialties",
+                "etiologies",
+                "entity_type",
+                "applicable_modalities",
+                "expected_time_course_duration",
+                "expected_time_course_modifiers",
+                "age_applicability_scope",
+                "age_applicability_stages",
+                "age_more_common_in",
+                "sex_specificity",
+                "anatomic_location_ids",
+                "index_code_keys",
+            }
+            assert expected_columns.issubset(column_names)
         finally:
             conn.close()
 
@@ -958,6 +1039,121 @@ class TestDataCorrectness:
 
         finally:
             conn.close()
+
+    async def test_structured_metadata_columns_populate_from_model(self, tmp_path: Path) -> None:
+        """Structured metadata fields are stored in dedicated DuckDB columns."""
+        db_path = await _build_db_from_models(tmp_path, [_facet_rich_model()])
+
+        conn = duckdb.connect(str(db_path), read_only=True)
+        try:
+            result = conn.execute(
+                """
+                SELECT
+                    body_regions,
+                    subspecialties,
+                    etiologies,
+                    entity_type,
+                    applicable_modalities,
+                    expected_time_course_duration,
+                    expected_time_course_modifiers,
+                    age_applicability_scope,
+                    age_applicability_stages,
+                    age_more_common_in,
+                    sex_specificity,
+                    anatomic_location_ids,
+                    index_code_keys
+                FROM finding_models
+                WHERE oifm_id = 'OIFM_TEST_000100'
+                """
+            ).fetchone()
+            assert result is not None
+            assert list(result[0]) == ["pelvis", "abdomen"]
+            assert list(result[1]) == ["GU", "AB"]
+            assert list(result[2]) == ["toxic", "mechanical"]
+            assert result[3] == "finding"
+            assert list(result[4]) == ["US", "MR"]
+            assert result[5] == "weeks"
+            assert list(result[6]) == ["resolving", "recurrent"]
+            assert result[7] == "stages"
+            assert list(result[8]) == ["adult", "middle_aged", "aged"]
+            assert list(result[9]) == ["aged"]
+            assert result[10] == "sex-neutral"
+            assert list(result[11]) == ["radlex:RID28768", "radlex:RID2507"]
+            assert list(result[12]) == ["snomedct:300849004", "radlex:RID4272"]
+        finally:
+            conn.close()
+
+    async def test_index_hydrates_structured_metadata_fields(self, tmp_path: Path) -> None:
+        """FindingModelIndex exposes structured metadata directly from DuckDB rows."""
+        from findingmodel import (
+            AgeStage,
+            BodyRegion,
+            EntityType,
+            EtiologyCode,
+            ExpectedDuration,
+            Modality,
+            SexSpecificity,
+            Subspecialty,
+        )
+
+        db_path = await _build_db_from_models(tmp_path, [_facet_rich_model()])
+
+        async with FindingModelIndex(db_path) as index:
+            entry = await index.get("OIFM_TEST_000100")
+            assert entry is not None
+            assert entry.body_regions == [BodyRegion.PELVIS, BodyRegion.ABDOMEN]
+            assert entry.subspecialties == [Subspecialty.GU, Subspecialty.AB]
+            assert entry.etiologies == [EtiologyCode.TOXIC, EtiologyCode.MECHANICAL]
+            assert entry.entity_type == EntityType.FINDING
+            assert entry.applicable_modalities == [Modality.US, Modality.MR]
+            assert entry.expected_time_course is not None
+            assert entry.expected_time_course.duration == ExpectedDuration.WEEKS
+            assert [m.value for m in entry.expected_time_course.modifiers] == ["resolving", "recurrent"]
+            assert entry.age_profile is not None
+            assert entry.age_profile.applicability == [AgeStage.ADULT, AgeStage.MIDDLE_AGED, AgeStage.AGED]
+            assert entry.age_profile.more_common_in == [AgeStage.AGED]
+            assert entry.sex_specificity == SexSpecificity.SEX_NEUTRAL
+            assert entry.anatomic_location_ids == ["radlex:RID28768", "radlex:RID2507"]
+            assert entry.index_code_keys == ["snomedct:300849004", "radlex:RID4272"]
+
+            entries, total = await index.all(limit=10)
+            assert total == 1
+            assert entries[0].body_regions == [BodyRegion.PELVIS, BodyRegion.ABDOMEN]
+
+    async def test_index_hydrates_null_structured_metadata_fields(self, built_test_db: Path) -> None:
+        """Existing models without facet data hydrate structured fields as None."""
+        async with FindingModelIndex(built_test_db) as index:
+            entry = await index.get("OIFM_MSFT_134126")
+            assert entry is not None
+            assert entry.body_regions is None
+            assert entry.subspecialties is None
+            assert entry.etiologies is None
+            assert entry.entity_type is None
+            assert entry.applicable_modalities is None
+            assert entry.expected_time_course is None
+            assert entry.age_profile is None
+            assert entry.sex_specificity is None
+            assert entry.anatomic_location_ids is None
+            assert entry.index_code_keys is None
+
+    def test_text_builders_exclude_structured_metadata_labels(self) -> None:
+        """FTS and embedding text stay focused on free-text clinical content."""
+        from findingmodel.finding_model import FindingModelFull
+        from oidm_maintenance.findingmodel.build import _build_embedding_text, _build_search_text
+
+        model = FindingModelFull.model_validate(_facet_rich_model())
+        search_text = _build_search_text(model)
+        embedding_text = _build_embedding_text(model)
+
+        assert "Entity Type:" not in search_text
+        assert "Body Regions:" not in search_text
+        assert "Modalities:" not in search_text
+        assert "Subspecialties:" not in search_text
+
+        assert "Entity Type:" not in embedding_text
+        assert "Body Regions:" not in embedding_text
+        assert "Modalities:" not in embedding_text
+        assert "Subspecialties:" not in embedding_text
 
     async def test_tags_synonyms_deduplication(self, tmp_path: Path) -> None:
         """Verify duplicate tags and synonyms are deduplicated.
