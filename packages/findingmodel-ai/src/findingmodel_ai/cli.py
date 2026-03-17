@@ -5,9 +5,9 @@ import click
 from findingmodel.config import ConfigurationError
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
+from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
 from rich.console import Console
 
-from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
 from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
 from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
 from findingmodel_ai.config import settings

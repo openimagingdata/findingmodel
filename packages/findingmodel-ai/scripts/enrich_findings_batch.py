@@ -15,10 +15,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
+from findingmodel import logger
 from findingmodel.index import FindingModelIndex
 from findingmodel_ai.enrichment.unified import enrich_finding_unified
-
-from findingmodel import logger
 
 # Enable loguru logger
 logger.enable("findingmodel")
