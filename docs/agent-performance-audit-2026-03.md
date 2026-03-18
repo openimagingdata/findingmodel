@@ -303,215 +303,100 @@ Reviewed 12 agents across 4 domains (search, authoring). Enrichment agents exclu
 
 ---
 
-## Phase 2: Test Results Summary
+## Phase 2: Verified Benchmark Data
 
-**439 total runs** (364 initial + 75 supplemental fast-model runs), **0 errors across initial run, 1 failure in supplement** (flash-lite on enostosis anatomic selection).
+**Note on data validity**: An earlier benchmark script had a singleton propagation bug — model overrides set in the benchmark runner did not propagate to the agent modules, so the actual model used was not the one being tested. All benchmark data in this document has been replaced with Logfire-verified data only, where `gen_ai.response.model` in the Logfire spans confirms the model that handled each request.
 
-Tested 17 distinct model × reasoning configurations across 5 findings of varying complexity.
+All verified data can be reproduced via `scripts/benchmark_models.py` with Logfire verification, and queried from the Logfire `findingmodel` project. The original broken benchmark output files in `scripts/audit_results/` should not be used.
 
-### Finding 1: Task complexity determines whether model choice matters
+---
 
-**Simple tasks** (query generation, similar analysis): All models — from GPT-5-nano ($0.05/$0.40) to Claude Opus 4.6 ($5/$25) — produce equivalent quality. GPT-5-nano stood out as the fastest model for ontology query generation (2647ms) and finding description (1388ms, with the tightest variance of any config — max 1578ms vs gemini-flash's 4008ms spike). Budget models are competitive or fastest for these tasks.
+### Raw API Latency (simple prompt, no agent overhead)
 
-**Medium tasks** (ontology categorization): Quality is identical across all 17 configs for 4/5 findings. Latency varies more — budget models are actually *slower* here (Haiku: 3091ms, Flash-Lite/low: 3374ms) vs mid-tier models (gpt-5-mini/medium: 2085ms, Gemini 3.1 Pro/low: 2028ms).
+| Model | Avg Latency | Notes |
+|-------|-------------|-------|
+| **gpt-5.4-nano** | **~800ms** | 10-15x faster than gpt-5-nano |
+| **gpt-5.4-mini** | **~900ms** | 10-15x faster than gpt-5-mini |
+| gpt-5-nano (old) | ~13,000ms | Dramatically slower — deprioritized or degraded |
+| gpt-5-mini (old) | ~12,000ms | Same pattern as nano |
 
-**Hard tasks** (anatomic selection on edge cases): Model choice matters significantly. The enostosis edge case exposes dramatic differences in both quality and latency tail behavior.
+---
 
-### Finding 2: Budget models are fastest for simple tasks, slowest for hard ones
+### Agent Pipeline Benchmarks
 
-| Agent | Fastest Config | Latency | Model Tier |
-|-------|---------------|---------|-----------|
-| similar_analysis | **flash-lite/medium** | 1052ms | Budget |
-| similar_term_gen | **gemini-flash/minimal** | 978ms | Fast |
-| anatomic_query_gen | **gemini-flash/minimal** | 980ms | Fast |
-| finding_description | **gpt-5-nano/low** | 1388ms | Budget |
-| ontology_categorization | **gemini-3.1-pro/low** | 2028ms | Frontier |
-| anatomic_selection | **gemini-3.1-pro/medium** | 1944ms | Frontier |
+#### ontology_search (single LLM call — query generation)
 
-For categorization and selection, budget models (Haiku, Flash-Lite) are 30-65% slower than mid/frontier models. The extra thinking on harder tasks produces longer output and more hesitant behavior.
+| Model | Reasoning | Avg | Min | Max | n |
+|-------|-----------|-----|-----|-----|---|
+| gpt-5.4-mini | none | 1.2s | 1.1s | 1.6s | 5 |
+| gpt-5.4-nano | low | 1.4s | 1.2s | 1.6s | 5 |
+| gpt-5.4-nano | none | 1.8s | 1.1s | 2.5s | 7 |
+| gpt-5.4-mini | low | 1.9s | 1.3s | 2.4s | 5 |
+| claude-haiku-4-5 | low (thinking — BAD CONFIG) | 7.6s | 4.5s | 14.0s | 5 |
 
-### Finding 3: The enostosis P80 tail is the critical differentiator
+#### describe_finding (single LLM call — description generation)
 
-Most configs handle standard findings (pneumothorax, meniscal tear, etc.) in 1.5-2.5s for anatomic selection. The enostosis edge case reveals massive divergence:
+| Model | Reasoning | Avg | Min | Max | n |
+|-------|-----------|-----|-----|-----|---|
+| gpt-5.4-nano | none | 1.6s | 1.4s | 1.9s | 5 |
+| gpt-5.4-mini | low | 1.9s | 1.7s | 2.3s | 5 |
+| gpt-5.4-nano | low | 2.4s | 1.4s | 5.5s | 5 |
+| gpt-5.4-mini | none | 2.8s | 1.8s | 4.5s | 5 |
+| claude-haiku-4-5 | low (thinking — BAD CONFIG) | 13.9s | 5.6s | 28.1s | 5 |
 
-| Config | Enostosis Latency | Primary Location |
-|--------|-------------------|-----------------|
-| gemini-3.1-pro/medium | **1647ms** | "skeletal system" |
-| anthropic:claude-haiku-4-5/low | 5714ms | "bone" |
-| anthropic:claude-sonnet-4-6/low | 5762ms | "bone" |
-| openai:gpt-5.4/medium | 6759ms | "bone" |
-| anthropic:claude-opus-4-6/medium | 6743ms | "bone organ" |
-| google-gla:gemini-3-flash-preview/medium | 7679ms | "bone" |
-| openai:gpt-5.4/none | **7835ms** | **"vertebra"** (wrong) |
-| openai:gpt-5-mini/high | 8555ms | "bone" |
-| google-gla:gemini-3-flash-preview/low | 8830ms | "bone" |
-| google-gla:gemini-3.1-flash-lite-preview/low | **9001ms** | "bone" |
-| anthropic:claude-sonnet-4-6/medium | **9584ms** | "bone" |
+#### anatomic_select (multi-stage: query gen + DuckDB search + LLM selection)
 
-Gemini 3.1 Pro/medium is the only config that resolves enostosis quickly (1.6s vs 5.7-9.6s for everything else). However, it chose "skeletal system" which is arguably too broad — "bone" (chosen by most others) is more appropriate.
+| Model | Reasoning | Avg | Min | Max | n |
+|-------|-----------|-----|-----|-----|---|
+| gpt-5.4-mini | low | 5.8s | 4.6s | 8.0s | 5 |
+| gpt-5.4-nano | medium | 8.0s | 6.3s | 10.2s | 5 |
+| gemini-3.1-pro | medium | 11.0s | 8.1s | 14.8s | 5 |
+| gpt-5-mini (old) | medium | 17.3s | 11.4s | 22.8s | 5 |
+| claude-sonnet-4-6 | low | 21.3s | 11.8s | 54.7s | 5 |
+| claude-haiku-4-5 | low (thinking) | 54.4s | 8.3s | 74.6s | 5 |
 
-### Finding 4: `reasoning=none` is a latency trap on base tier
+#### ontology_match (multi-stage: query gen + BioOntology API + LLM categorization)
 
-GPT-5.4/none is the **slowest config** for:
-- ontology categorization: 2688ms (last place out of 17)
-- similar analysis: 1706ms (last place out of 17)
+| Model | Reasoning | Avg | Min | Max | n |
+|-------|-----------|-----|-----|-----|---|
+| gpt-5.4-mini | low | 8.5s | 5.4s | 11.2s | 5 |
+| gpt-5.4-nano | medium | 8.5s | 7.5s | 11.0s | 5 |
+| claude-haiku-4-5 | none (no thinking) | 8.8s | 7.0s | 10.8s | 4 |
+| claude-sonnet-4-6 | low | 11.1s | 9.6s | 12.4s | 5 |
+| gemini-3.1-pro | medium | 14.2s | 13.9s | 14.5s | 5 |
+| gpt-5-mini (old) | medium | 22.1s | 16.1s | 31.0s | 5 |
+| claude-haiku-4-5 | low (thinking — BAD CONFIG) | 36.4s | 17.5s | 52.5s | 5 |
 
-Adding reasoning — even just `low` — consistently reduces latency by 10-25%. The model produces shorter, more decisive output when it can think first.
+#### Pipeline breakdown (from Logfire httpx instrumentation, ontology_match with single-page BioOntology)
 
-### Finding 5: Quality is uniform; editing agents are latency-insensitive
-
-All models produce identical categorization for 4/5 findings. All correctly handle the NL edit command and markdown import. Editing agents are ~6s regardless of model — bottlenecked by output size, not reasoning.
+| Stage | Latency |
+|-------|---------|
+| Query gen (gpt-5.4-nano) | ~1.2s |
+| BioOntology API (single page, pagesize=100) | ~1.1s |
+| Haiku categorization (no thinking) | ~2.5s |
+| **Total** | **~7s** |
 
 ---
 
 ## Phase 3: Recommendations
 
-### Model Configuration Recommendations (Latency-Optimized)
+### Key Findings from Verified Data
 
-#### Small Tier — Match model to task simplicity
+1. **gpt-5.4-mini and gpt-5.4-nano are dramatically faster than previous-gen models** — 10-15x on raw API, 2-3x on full pipeline. They should be the primary OpenAI models in all agent chains.
 
-| Agent | Current | Current Avg | Recommended | Rec Avg | Savings | Why |
-|-------|---------|-------------|-------------|---------|---------|-----|
-| `ontology_search` | gemini-flash/low | 2872ms | **gpt-5-nano/low** | 2647ms | -8% | Fastest on this task; quality identical |
-| `anatomic_search` | gemini-flash/low | 1281ms | **gemini-flash/minimal** | 980ms | -24% | Same model, less thinking overhead |
-| `similar_search` (term gen) | gemini-flash/low | 1036ms | **gemini-flash/minimal** | 978ms | -6% | Marginal but free |
-| `describe_finding` | gemini-flash/low | 1950ms | **gpt-5-nano/low** | 1388ms | -29% | Fastest; consistent low-variance |
+2. **Haiku is fast WITHOUT thinking, catastrophically slow WITH thinking** — our config was sending `anthropic_thinking: {type: "enabled", budget_tokens: 1024}` for `reasoning=low`, which turned a 2.5s call into 36-54s. Fixed to send no thinking settings at all for `reasoning=none`. Haiku without thinking (8.8s on ontology_match) is competitive with gpt-5.4-mini (8.5s).
 
-#### Base Tier — Use the right model for the task complexity
+3. **BioOntology pagination was costing ~3s per search** — 4 sequential HTTP calls at ~1s each. Fixed to single 100-result page, saving ~3s on every ontology_match call.
 
-| Agent | Current | Avg (Max) | Recommended | Avg (Max) | Savings | Why |
-|-------|---------|-----------|-------------|-----------|---------|-----|
-| `ontology_match` | gpt-5.4/none | 2688 (3274) | **gemini-3.1-pro/low** | 2028 (2235) | -25% | Fastest; tight max; quality identical |
-| `anatomic_select` | gpt-5.4/none | 3272 (7835) | **gemini-3.1-pro/medium** | 1944 (2228) | **-41%** | Eliminates P80 tail spike entirely |
-| `similar_assess` | gpt-5.4/none | 1706 (2554) | **flash-lite/medium** | 1052 (1424) | **-38%** | Simple task; budget model is fastest |
-| `edit_instructions` | gpt-5.4/none | 6239 | **gpt-5.4/low** | 7514* | — | *See note; keep flagship, add reasoning for quality |
-| `edit_markdown` | gpt-5.4/none | 6239 | **gpt-5.4/low** | — | — | Same as above |
-| `import_markdown` | gpt-5.4/none | 5036 | **claude-opus-4-6/medium** | 4460 | -11% | Fastest; best quality for structured output |
+4. **Previous benchmark data was invalid** — the benchmark script's singleton replacement didn't propagate to agent modules, so models were not actually switched. All data prior to the subprocess-based benchmark script should be disregarded.
 
-*Note on editors: gemini-3.1-pro/low was fastest at 6017ms, but editing is the one task where we want to optimize for quality over latency. GPT-5.4 or Opus are the right models here — the ~6s is dominated by output size, not model capability.*
+5. **Logfire observability is essential for model benchmarking** — without checking `gen_ai.response.model` in Logfire spans, we had no way to verify which model actually ran. The httpx instrumentation also revealed the BioOntology pagination overhead.
 
-#### Pipeline-Level Impact
+### Current Agent Chain Configuration
 
-| Pipeline | Current | Optimized | Savings | Key Change |
-|----------|---------|-----------|---------|------------|
-| Ontology search | 5.6s | 4.7s | **-16%** | Gemini 3.1 Pro/low for categorization |
-| Anatomic search | 4.6s | **2.9s** | **-36%** | Gemini 3.1 Pro/medium for selection |
-| Similar models | 2.7s | **1.6s** | **-41%** | Flash-Lite/medium for analysis |
-| **Total LLM time** | **12.9s** | **9.2s** | **-29%** | |
+All chains now use gpt-5.4-nano/gpt-5.4-mini as the OpenAI option, with `reasoning=none` for Haiku entries (no thinking budget sent). See `packages/findingmodel-ai/src/findingmodel_ai/data/supported_models.toml`.
 
-The anatomic pipeline P80 drops from **7.8s → 2.2s** — eliminating the worst-case latency spikes.
-
-### Architecture Change: Replace Tier System with Per-Agent Model Profiles
-
-The tier system (`small`/`base`/`full`) is the wrong abstraction. The audit data shows the optimal model × reasoning pairing is **task-specific**, not tier-specific. Three "base" tier agents want three completely different models at three different reasoning levels.
-
-The current system should evolve so that **each agent declares its own model + reasoning as the primary configuration**, with tiers demoted to a fallback for agents that haven't been individually tuned.
-
-This also needs provider-based fallback logic: when a preferred provider's API key isn't configured, the system should fall back to the best available alternative for that agent's task profile, not just a generic tier default.
-
----
-
-## Appendix A: Per-Agent Benchmark Data (March 2026)
-
-Reference data for evaluating future models against current baselines. Each agent has a **task profile** describing what it needs, a **current best config**, and **baseline metrics** to beat.
-
-### Agent Task Profiles
-
-#### Simple generative (query/term generation)
-
-These agents produce short lists of medical terms. Quality is identical across all current-gen models. Optimize purely for latency.
-
-| Agent | Tag | Task Profile | Best Config | Avg Latency | Max Latency |
-|-------|-----|-------------|-------------|-------------|-------------|
-| Ontology Query Gen | `ontology_search` | Generate 2-5 medical synonym terms | `gpt-5-nano/low` | 2647ms | 3365ms |
-| Anatomic Query Gen | `anatomic_search` | Identify region + 3-5 anatomic terms | `gemini-3-flash/minimal` | 980ms | 1182ms |
-| Similar Term Gen | `similar_search` | Generate 3-5 search terms | `gemini-3-flash/minimal` | 978ms | 1162ms |
-| Finding Description | `describe_finding` | Name normalization + synonyms + 1-2 sentence description | `gpt-5-nano/low` | 1388ms | 1578ms |
-
-GPT-5-nano is the standout for pure text generation tasks (ontology queries, descriptions). It is the fastest model tested for those two agents, and critically has the **most consistent latency** — its max (1578ms for descriptions) is far below the spikes seen with other models (gemini-flash hit 4008ms on hepatic steatosis). At $0.05/$0.40 per MTok it is also essentially free. For tasks involving structured output with constrained types (region selection, term lists), gemini-flash/minimal edges it out.
-
-**What to look for in new models**: Sub-1s latency with structured output. Quality bar is low — any current-gen model passes. GPT-5-nano's consistency (tight max latency) is the benchmark to beat, not just average speed.
-
-#### Medical classification (categorization/selection)
-
-These agents classify or select from provided options. They require medical domain knowledge and multi-step judgment. Budget models are slower and less reliable here.
-
-| Agent | Tag | Task Profile | Best Config | Avg Latency | Max Latency | Key Edge Case |
-|-------|-----|-------------|-------------|-------------|-------------|---------------|
-| Ontology Categorization | `ontology_match` | Categorize ~12 concepts into 3 relevance tiers | `gemini-3.1-pro/low` | 2028ms | 2235ms | enostosis (rare finding) |
-| Anatomic Selection | `anatomic_select` | Select primary + alternates from search results | `gemini-3.1-pro/medium` | 1944ms | 2228ms | enostosis: **1647ms** (vs 5.7-9.6s others) |
-| Similar Analysis | `similar_assess` | Assess similarity, recommend edit vs create | `flash-lite/medium` | 1052ms | 1424ms | — (simple enough for budget) |
-
-**What to look for in new models**: Consistent sub-2.5s on categorization tasks. The key test is the **enostosis edge case for anatomic selection** — most models spike to 6-9s. A good model resolves it under 2s.
-
-**Enostosis anatomic selection benchmark** (the hardest single test):
-
-| Model | Reasoning | Latency | Primary Location | Quality |
-|-------|-----------|---------|-----------------|---------|
-| gemini-3.1-pro | medium | **1647ms** | "skeletal system" | Too broad |
-| claude-haiku-4-5 | low | 5714ms | "bone" | Correct |
-| claude-sonnet-4-6 | low | 5762ms | "bone" | Correct |
-| gpt-5.4 | medium | 6759ms | "bone" | Correct |
-| claude-opus-4-6 | medium | 6743ms | "bone organ" | Odd phrasing |
-| gemini-3-flash | medium | 7679ms | "bone" | Correct |
-| gpt-5.4 | none | 7835ms | "vertebra" | **Wrong** |
-| gpt-5-mini | high | 8555ms | "bone" | Correct |
-| gemini-3-flash | low | 8830ms | "bone" | Correct |
-| flash-lite | low | 9001ms | "bone" | Correct |
-| claude-sonnet-4-6 | medium | 9584ms | "bone" | Correct |
-
-#### Complex structured output (editing/import)
-
-These agents produce full JSON model structures. Latency is dominated by output size (~6s regardless of model). Quality and instruction-following matter most.
-
-| Agent | Tag | Task Profile | Best Config | Avg Latency | Notes |
-|-------|-----|-------------|-------------|-------------|-------|
-| NL Editor | `edit_instructions` | Parse NL command, edit FindingModelFull JSON | `gpt-5.4/low` | ~6.2s | Has output validator; quality > speed |
-| Markdown Editor | `edit_markdown` | Parse edited markdown, update JSON | `gpt-5.4/low` | ~6.2s | Same as above |
-| Markdown Import | `import_markdown` | Convert outline to FindingModelBase | `claude-opus-4-6/medium` | 4460ms | Best structured output quality |
-
-**What to look for in new models**: Faster structured JSON output (sub-4s) while maintaining ID preservation and change tracking accuracy. Streaming/partial output could help here architecturally.
-
-### Provider Capability Summary (March 2026)
-
-For configuring provider-based fallbacks when not all API keys are available:
-
-| Provider | Models Tested | Best For | Worst For | Key Strength |
-|----------|--------------|---------|-----------|-------------|
-| **OpenAI** | gpt-5-nano, gpt-5-mini, gpt-5.4 | **gpt-5-nano**: fastest + most consistent for simple generative tasks. **gpt-5.4**: complex editing with reasoning. **gpt-5-mini**: solid mid-tier, good with medium/high reasoning. | gpt-5.4/none is slowest config for categorization and analysis | Widest useful model range — nano for speed, 5.4 for capability |
-| **Google** | gemini-3-flash, gemini-3.1-flash-lite, gemini-3.1-pro | **gemini-3.1-pro/medium**: only model that avoids tail latency spikes on edge cases. **gemini-3-flash/minimal**: fastest for structured-output generation (region + terms). | Complex structured output (editing) | Thinking mode enables decisive, fast classification |
-| **Anthropic** | claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-6 | **claude-opus-4-6**: best for complex structured output (markdown import). **claude-haiku-4-5**: competitive on simple tasks. | Sonnet was never the fastest config for any agent | Best instruction-following for editing safety constraints |
-
-**Suggested provider fallback order per task profile**:
-- Simple generative: OpenAI (gpt-5-nano) → Google (gemini-3-flash/minimal) → Anthropic (haiku)
-- Medical classification: Google (gemini-3.1-pro) → OpenAI (gpt-5-mini+medium) → Anthropic (sonnet)
-- Complex structured output: Anthropic (claude-opus-4-6) → OpenAI (gpt-5.4) → Google (gemini-3.1-pro)
-
-### Ontology Categorization: Full Model Comparison
-
-All configs tested, ranked by average latency. Quality column shows categorization counts for pneumothorax / enostosis (the easy and hard cases).
-
-| Rank | Config | Avg | Max | Pneumothorax | Enostosis |
-|------|--------|-----|-----|-------------|-----------|
-| 1 | gemini-3.1-pro/low | 2028 | 2235 | 5e 1i 0m | 0e 3i 2m |
-| 2 | gpt-5.4/medium | 2078 | 2256 | 5e 1i 0m | 0e 3i 2m |
-| 3 | gpt-5-mini/medium | 2085 | 2280 | 5e 1i 0m | 0e 3i 2m |
-| 4 | gemini-3.1-pro/medium | 2126 | 2294 | 5e 1i 0m | 0e 3i 2m |
-| 5 | claude-opus-4-6/low | 2113 | 2388 | 5e 1i 0m | 0e 3i 2m |
-| 6 | gpt-5-mini/high | 2214 | 2465 | 5e 1i 0m | 0e 3i 2m |
-| 7 | claude-sonnet-4-6/low | 2275 | 3004 | 5e 1i 0m | 0e 3i 2m |
-| 8 | claude-opus-4-6/medium | 2342 | 3731 | 5e 1i 0m | 0e 3i 2m |
-| 9 | claude-sonnet-4-6/medium | 2398 | 3442 | 5e 1i 0m | 0e 3i 2m |
-| 10 | gpt-5.4/low | 2413 | 3034 | 5e 1i 0m | 0e 3i 2m |
-| 11 | gemini-3-flash/low | 2470 | 4024 | 5e 5i 1m | 0e 3i 2m |
-| 12 | gemini-3-flash/medium | 2497 | 3282 | 5e 1i 0m | 0e 3i 2m |
-| 13 | claude-haiku-4-5/medium | 2637 | 3107 | 5e 4i 2m | 0e 3i 2m |
-| 14 | gpt-5.4/none | 2688 | 3274 | 5e 1i 0m | 0e 3i 2m |
-| 15 | flash-lite/medium | 2897 | 4195 | 5e 5i 1m | 0e 3i 2m |
-| 16 | claude-haiku-4-5/low | 3091 | 3487 | 5e 4i 2m | 0e 3i 2m |
-| 17 | flash-lite/low | 3374 | 8012 | 5e 5i 1m | 0e 3i 2m |
-
-Note: Haiku, Flash, and Flash-Lite show slightly different categorization distribution (more items in should_include) but identical exact_matches. The core task is performed correctly by all models.
+The recommended per-agent config overhaul plan is deferred until the findingmodel-enrich branch merges — see `docs/plans/simplify-model-config.md`.
 
 ### Prompt Improvements (Priority Order)
 
@@ -547,14 +432,14 @@ Note: Haiku, Flash, and Flash-Lite show slightly different categorization distri
 
 ### Key Insights
 
-1. **Match model to task complexity, not to a fixed tier.** GPT-5-nano is fastest and most consistent for simple generative tasks (description: 1388ms avg, 1578ms max — tighter than any other model). Flash-Lite and Haiku win on simple classification (similar analysis: 1052ms). Mid-tier models (GPT-5-mini, Gemini 3.1 Pro) hit the sweet spot for medical judgment tasks. Frontier models (GPT-5.4, Opus 4.6) only earn their keep on complex editing.
+1. **gpt-5.4-nano and gpt-5.4-mini are the clear winners for all benchmarked tasks.** At ~800-900ms raw API latency (10-15x faster than their predecessors) and 1.2-2.8s for single-LLM-call agents, they dominate every simple generative task. For multi-stage pipelines, gpt-5.4-mini (5.8s anatomic_select, 8.5s ontology_match) leads all tested configurations.
 
-2. **`reasoning=none` on base tier is a latency trap.** GPT-5.4/none is dead last on 2 of 3 base-tier search agents. Models produce shorter, more decisive output when they can think first — reasoning overhead is more than compensated.
+2. **Haiku's thinking mode is a latency disaster.** The Anthropic `reasoning=low` config was inadvertently enabling extended thinking (`budget_tokens: 1024`), turning a 2.5s agent call into 36-54s. With thinking disabled, Haiku is competitive (8.8s on ontology_match). Never configure Haiku with a thinking budget for latency-sensitive agents.
 
-3. **The P80 tail matters more than the average.** Anatomic selection averages 1.9-3.4s across configs, but the enostosis edge case ranges from 1.6s (Gemini 3.1 Pro/medium) to 9.6s (Sonnet/medium). Optimizing for tail latency means picking the model that handles the worst case well.
+3. **BioOntology pagination overhead was hidden until Logfire httpx instrumentation.** Four sequential HTTP calls at ~1s each added ~3s to every ontology_match pipeline call. A single pagesize=100 request eliminated this. Instrumenting external HTTP calls is essential for understanding real pipeline latency.
 
-4. **Different agents need different models.** The optimal config uses 5+ distinct model × reasoning pairings. This requires implementing per-agent reasoning overrides (config.py:107 TODO) — the single most impactful infrastructure change.
+4. **Logfire model verification is non-negotiable for benchmarking.** The earlier benchmark data was entirely invalid because the wrong models were running. Always verify `gen_ai.response.model` in spans before drawing conclusions.
 
-5. **Editing agents are output-bound, not model-bound** (~6s regardless of model). Latency improvements require architectural changes (streaming, partial updates), not model swaps. Keep the best model for quality here.
+5. **Different agents need different models.** The optimal config uses multiple distinct model × reasoning pairings. This requires per-agent model configuration (already implemented via `supported_models.toml` fallback chains) rather than a global tier setting.
 
-6. **Quality is uniform across current-gen models for our tasks.** All 17 configs produce identical categorization for 4/5 findings. The differentiation is almost entirely in latency and tail behavior, not quality. This means we can optimize aggressively for speed without worrying about quality regression.
+6. **Editing agents are output-bound, not model-bound** (~6s regardless of model). Latency improvements require architectural changes (streaming, partial updates), not model swaps. Keep the best model for quality here.

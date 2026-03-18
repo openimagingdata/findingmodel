@@ -75,10 +75,26 @@ notes = "Cost-effective. Good base tier override."
 minimal = "low"
 xhigh = "high"
 
+[models."openai:gpt-5.4-mini"]
+provider = "openai"
+valid_reasoning = ["none", "low", "medium", "high"]
+notes = "GPT-5.4 architecture in mini form. 2x faster than gpt-5-mini, approaches flagship quality. Released 2026-03-17."
+[models."openai:gpt-5.4-mini".normalize]
+minimal = "low"
+xhigh = "high"
+
+[models."openai:gpt-5.4-nano"]
+provider = "openai"
+valid_reasoning = ["none", "low", "medium", "high"]
+notes = "GPT-5.4 architecture in nano form. Outperforms old gpt-5-mini at max reasoning. Released 2026-03-17."
+[models."openai:gpt-5.4-nano".normalize]
+minimal = "low"
+xhigh = "high"
+
 [models."openai:gpt-5-nano"]
 provider = "openai"
 valid_reasoning = ["none", "low", "medium", "high"]
-notes = "Lightest OpenAI option."
+notes = "Previous-gen lightest OpenAI option. Consider gpt-5.4-nano instead."
 [models."openai:gpt-5-nano".normalize]
 minimal = "low"
 xhigh = "high"
@@ -191,22 +207,22 @@ provider = "ollama"
 # the system works with any single API key configured.
 # =============================================================================
 
-# --- Simple generative: gpt-5-nano fastest + most consistent latency ---
+# --- Simple generative: gpt-5.4-nano fastest (sub-1s raw API) ---
 
 [agents.ontology_search]
 tier_fallback = "small"
 models = [
-    { model = "openai:gpt-5-nano", reasoning = "low" },
+    { model = "openai:gpt-5.4-nano", reasoning = "low" },
     { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]
 
 [agents.describe_finding]
 tier_fallback = "small"
 models = [
-    { model = "openai:gpt-5-nano", reasoning = "low" },
+    { model = "openai:gpt-5.4-nano", reasoning = "low" },
     { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]
 
 # --- Structured generation: gemini-flash/minimal fastest for region+terms ---
@@ -215,16 +231,16 @@ models = [
 tier_fallback = "small"
 models = [
     { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
-    { model = "openai:gpt-5-nano", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+    { model = "openai:gpt-5.4-nano", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]
 
 [agents.similar_term_gen]
 tier_fallback = "small"
 models = [
     { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
-    { model = "openai:gpt-5-nano", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+    { model = "openai:gpt-5.4-nano", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]
 
 # --- Medical classification: gemini-3.1-pro eliminates tail latency on edge cases ---
@@ -233,7 +249,7 @@ models = [
 tier_fallback = "base"
 models = [
     { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
-    { model = "openai:gpt-5-mini", reasoning = "medium" },
+    { model = "openai:gpt-5.4-mini", reasoning = "medium" },
     { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
 ]
 
@@ -241,7 +257,7 @@ models = [
 tier_fallback = "base"
 models = [
     { model = "google-gla:gemini-3.1-pro-preview", reasoning = "medium" },
-    { model = "openai:gpt-5-mini", reasoning = "medium" },
+    { model = "openai:gpt-5.4-mini", reasoning = "medium" },
     { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
 ]
 
@@ -251,8 +267,8 @@ models = [
 tier_fallback = "base"
 models = [
     { model = "google-gla:gemini-3.1-flash-lite-preview", reasoning = "medium" },
-    { model = "openai:gpt-5-mini", reasoning = "medium" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+    { model = "openai:gpt-5.4-mini", reasoning = "medium" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]
 
 # --- Tool-using search: needs strategy planning ---
@@ -297,8 +313,8 @@ models = [
 tier_fallback = "small"
 models = [
     { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
-    { model = "openai:gpt-5-mini", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "low" },
+    { model = "openai:gpt-5.4-mini", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]
 
 # --- Enrichment: not yet tuned (being overhauled separately) ---

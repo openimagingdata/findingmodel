@@ -127,10 +127,30 @@ class FindingModelAIConfig(BaseSettings):
     # BioOntology API
     bioontology_api_key: SecretStr | None = Field(default=None, description="BioOntology.org API key")
 
+    # Logfire observability
+    logfire_token: SecretStr = Field(default=SecretStr(""), description="Logfire write token for cloud tracing")
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
 
     # Private instance cache for Ollama available models
     _ollama_models_cache: set[str] | None = PrivateAttr(default=None)
+
+    def configure_logfire(self) -> None:
+        """Configure Logfire observability using the token from project config.
+
+        Idempotent — safe to call multiple times. Instruments pydantic-ai automatically.
+        This is the ONLY correct way to set up Logfire in this project. Do not call
+        logfire.configure() directly or rely on os.environ for the token.
+        """
+        token = self.logfire_token.get_secret_value() if self.logfire_token else None
+        logfire.configure(
+            send_to_logfire=bool(token),
+            token=token or None,
+            console=False,
+            inspect_arguments=False,
+        )
+        logfire.instrument_pydantic_ai()
+        logfire.instrument_httpx()
 
     def check_ready_for_tavily(self) -> Literal[True]:
         if not self.tavily_api_key.get_secret_value():
@@ -358,7 +378,7 @@ class FindingModelAIConfig(BaseSettings):
             from pydantic_ai.models.anthropic import AnthropicModelSettings
 
             if level == "none":
-                return AnthropicModelSettings(anthropic_thinking={"type": "disabled"})
+                return None  # No settings = natural model behavior (no thinking overhead)
 
             # Opus 4.6+ uses adaptive thinking (budget_tokens is deprecated)
             if model_name.startswith("claude-opus-4-6"):

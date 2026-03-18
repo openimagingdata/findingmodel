@@ -182,12 +182,9 @@ def test_anthropic_sonnet_reasoning_medium_builds_larger_budget() -> None:
 
 
 def test_anthropic_reasoning_none_disables_thinking() -> None:
-    """Anthropic + 'none' → disabled thinking (all models)."""
+    """Anthropic + 'none' → no settings (natural model behavior, no thinking overhead)."""
     result = settings._build_reasoning_settings("anthropic", "claude-sonnet-4-6", "none")
-    assert isinstance(result, dict)
-    thinking = result.get("anthropic_thinking")
-    assert thinking is not None
-    assert thinking["type"] == "disabled"
+    assert result is None
 
 
 # ---------------------------------------------------------------------------
@@ -222,10 +219,9 @@ def test_anthropic_opus46_xhigh_maps_to_effort_high() -> None:
 
 
 def test_anthropic_opus46_none_disables_thinking() -> None:
-    """Opus 4.6 with 'none' → disabled thinking (same as all models)."""
+    """Opus 4.6 with 'none' → no settings (natural model behavior)."""
     result = settings._build_reasoning_settings("anthropic", "claude-opus-4-6", "none")
-    assert isinstance(result, dict)
-    assert result.get("anthropic_thinking") == {"type": "disabled"}
+    assert result is None
 
 
 def test_anthropic_haiku_still_uses_budget_tokens() -> None:
@@ -477,7 +473,7 @@ def test_resolve_agent_config_returns_toml_chain() -> None:
     )
     chain = config.resolve_agent_config("ontology_search")
     assert len(chain) == 3
-    assert chain[0].model_string == "openai:gpt-5-nano"
+    assert chain[0].model_string == "openai:gpt-5.4-nano"
     assert chain[1].model_string == "google-gla:gemini-3-flash-preview"
     assert chain[2].model_string == "anthropic:claude-haiku-4-5"
 
@@ -493,7 +489,7 @@ def test_resolve_agent_config_filters_unavailable_providers(monkeypatch: pytest.
     chain = config.resolve_agent_config("ontology_match")
     model_strings = [c.model_string for c in chain]
     assert "google-gla:gemini-3.1-pro-preview" not in model_strings
-    assert "openai:gpt-5-mini" in model_strings
+    assert "openai:gpt-5.4-mini" in model_strings
     assert "anthropic:claude-sonnet-4-6" in model_strings
     assert len(chain) == 2
 
@@ -546,14 +542,14 @@ def test_resolve_agent_config_reasoning_per_model_normalization() -> None:
         google_api_key="test-google-key",
         anthropic_api_key="test-anthropic-key",
     )
-    # similar_term_gen uses reasoning = "minimal" for both gpt-5-nano and gemini-3-flash-preview
-    # gpt-5-nano: minimal → low (per TOML normalize)
+    # similar_term_gen uses reasoning = "minimal" for gemini-3-flash and "low" for gpt-5.4-nano
+    # gpt-5.4-nano: minimal → low (per TOML normalize)
     # gemini-3-flash-preview: minimal → minimal (valid for flash, no normalization needed)
     chain = config.resolve_agent_config("similar_term_gen")
     assert len(chain) == 3
-    nano_entry = next(c for c in chain if c.model_string == "openai:gpt-5-nano")
+    nano_entry = next(c for c in chain if c.model_string == "openai:gpt-5.4-nano")
     flash_entry = next(c for c in chain if c.model_string == "google-gla:gemini-3-flash-preview")
-    assert nano_entry.reasoning == "low"  # minimal → low for gpt-5-nano
+    assert nano_entry.reasoning == "low"  # TOML says "low" for gpt-5.4-nano
     assert flash_entry.reasoning == "minimal"  # minimal stays minimal for gemini-flash
 
 
@@ -601,9 +597,9 @@ def test_get_effective_model_string_returns_primary() -> None:
         google_api_key="test-google-key",
         anthropic_api_key="test-anthropic-key",
     )
-    # ontology_search: first model is openai:gpt-5-nano
+    # ontology_search: first model is openai:gpt-5.4-nano
     result = config.get_effective_model_string("ontology_search")
-    assert result == "openai:gpt-5-nano"
+    assert result == "openai:gpt-5.4-nano"
 
 
 def test_get_effective_reasoning_level_returns_primary() -> None:
@@ -613,7 +609,7 @@ def test_get_effective_reasoning_level_returns_primary() -> None:
         google_api_key="test-google-key",
         anthropic_api_key="test-anthropic-key",
     )
-    # ontology_search: first model is openai:gpt-5-nano with reasoning = "low"
+    # ontology_search: first model is openai:gpt-5.4-nano with reasoning = "low"
     result = config.get_effective_reasoning_level("ontology_search")
     assert result == "low"
 

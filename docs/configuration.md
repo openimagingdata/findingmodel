@@ -393,9 +393,11 @@ Lock to specific database versions:
 # Both URL and hash required
 FINDINGMODEL_REMOTE_DB_URL=https://your-host/finding_models.duckdb
 FINDINGMODEL_REMOTE_DB_HASH=sha256:abc123...
+FINDINGMODEL_MANIFEST_URL=https://your-host/manifest.json
 
 ANATOMIC_REMOTE_DB_URL=https://your-host/anatomic_locations.duckdb
 ANATOMIC_REMOTE_DB_HASH=sha256:def456...
+ANATOMIC_MANIFEST_URL=https://your-host/manifest.json
 ```
 
 ### Configuration Priority
@@ -489,16 +491,17 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `ANATOMIC_DB_PATH` | No | Auto-download | Path to anatomic database |
 | `FINDINGMODEL_REMOTE_DB_URL` | With hash | - | Custom index download URL |
 | `FINDINGMODEL_REMOTE_DB_HASH` | With URL | - | SHA256 hash for index |
+| `FINDINGMODEL_MANIFEST_URL` | No | Hosted manifest | Manifest URL for findingmodel database artifacts |
 | `ANATOMIC_REMOTE_DB_URL` | With hash | - | Custom anatomic download URL |
 | `ANATOMIC_REMOTE_DB_HASH` | With URL | - | SHA256 hash for anatomic |
+| `ANATOMIC_MANIFEST_URL` | No | Hosted manifest | Manifest URL for anatomic database artifacts |
 | `FINDINGMODEL_EMBEDDING_PROFILE` | No | `auto` | Runtime embedding profile for findingmodel index (`auto`, `openai`, or `local`) |
 | `ANATOMIC_EMBEDDING_PROFILE` | No | `openai` | Runtime embedding profile for anatomic index (`auto` or `openai`; `local` is unsupported) |
 | `ANATOMIC_OPENAI_API_KEY` | No | Falls back to `OPENAI_API_KEY` | OpenAI key for anatomic semantic search |
 | `OIDM_MAINTAIN_EMBEDDING_PROVIDER` | Maintainers | `openai` | Build/publish embedding provider for `oidm-maintain` |
 | `OIDM_MAINTAIN_EMBEDDING_MODEL` | Maintainers | `text-embedding-3-small` | Build/publish embedding model |
 | `OIDM_MAINTAIN_EMBEDDING_DIMENSIONS` | Maintainers | `512` | Build/publish embedding dimensions |
-| `LOGFIRE_TOKEN` | For tracing | - | Logfire.dev write token |
-| `DISABLE_SEND_TO_LOGFIRE` | No | `false` | Disable cloud tracing |
+| `LOGFIRE_TOKEN` | For eval tracing | - | Optional Logfire write token used by eval instrumentation |
 
 ## Troubleshooting
 

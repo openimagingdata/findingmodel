@@ -1,0 +1,718 @@
+[
+  {
+    "agent": "ontology_query_gen",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 7290.421749930829,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 4582.487500039861,
+    "synonyms": 1
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 8109.080292051658,
+    "exact": 5,
+    "include": 5,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 5375.304582994431,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 4772.706042043865,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 5532.465208088979,
+    "synonyms": 4
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 11632.43004202377,
+    "exact": 1,
+    "include": 1,
+    "marginal": 6
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 5107.539457967505,
+    "primary": "liver"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 3304.4363749213517,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 5328.173459041864,
+    "synonyms": 5
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 9741.944958106615,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 7432.728250045329,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 3897.5382909411564,
+    "terms": 4
+  },
+  {
+    "agent": "finding_description",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 4961.101624998264,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 6500.6170000415295,
+    "exact": 0,
+    "include": 4,
+    "marginal": 6
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 6259.464249946177,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 4418.205499998294,
+    "terms": 6
+  },
+  {
+    "agent": "finding_description",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 4651.7983339726925,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 8451.265584095381,
+    "exact": 0,
+    "include": 5,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 14072.10337498691,
+    "primary": "vertebra"
+  },
+  {
+    "agent": "nl_editor",
+    "input": "edit_command",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "low",
+    "latency_ms": 10067.168041015975,
+    "changes": 1,
+    "rejections": 1
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 4680.355916032568,
+    "terms": 6
+  },
+  {
+    "agent": "finding_description",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 3943.083000020124,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 8369.207207928412,
+    "exact": 5,
+    "include": 4,
+    "marginal": 3
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 5730.98187497817,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 3714.0732500702143,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 4778.601041063666,
+    "synonyms": 3
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 8223.28470798675,
+    "exact": 1,
+    "include": 1,
+    "marginal": 6
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 5974.818374961615,
+    "primary": "liver"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 3460.1165000349283,
+    "terms": 4
+  },
+  {
+    "agent": "finding_description",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 4044.614000013098,
+    "synonyms": 5
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 7788.142916979268,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 14309.85891702585,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 3668.7397500500083,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 4531.3784159952775,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 14854.509665980004,
+    "exact": 0,
+    "include": 1,
+    "marginal": 5
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 7748.362791026011,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 2979.6122499974445,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 4261.676000081934,
+    "synonyms": 1
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 8777.309707948007,
+    "exact": 0,
+    "include": 5,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 13473.591666901484,
+    "primary": "vertebra"
+  },
+  {
+    "agent": "nl_editor",
+    "input": "edit_command",
+    "model": "openai:gpt-5.4-nano",
+    "reasoning": "medium",
+    "latency_ms": 12332.08758290857,
+    "changes": 1,
+    "rejections": 1
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 2960.4085829341784,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 5351.694792043418,
+    "synonyms": 4
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 6887.528707971796,
+    "exact": 5,
+    "include": 4,
+    "marginal": 3
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 5602.417667047121,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 2353.751500020735,
+    "terms": 4
+  },
+  {
+    "agent": "finding_description",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 4096.41516697593,
+    "synonyms": 3
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 9704.804833047092,
+    "exact": 1,
+    "include": 3,
+    "marginal": 7
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 4688.7182500213385,
+    "primary": "liver"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 4185.744707938284,
+    "terms": 6
+  },
+  {
+    "agent": "finding_description",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 4990.270791924559,
+    "synonyms": 5
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 11903.419416048564,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 7045.604499988258,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 3033.606457989663,
+    "terms": 4
+  },
+  {
+    "agent": "finding_description",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 4950.6444580620155,
+    "synonyms": 3
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 7672.257374972105,
+    "exact": 0,
+    "include": 4,
+    "marginal": 6
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 7229.833666002378,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 3516.8260419741273,
+    "terms": 6
+  },
+  {
+    "agent": "finding_description",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 4942.5972499884665,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 9172.399915987626,
+    "exact": 0,
+    "include": 5,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 16171.318333945237,
+    "primary": "vertebra"
+  },
+  {
+    "agent": "nl_editor",
+    "input": "edit_command",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "low",
+    "latency_ms": 11441.345250001177,
+    "changes": 1,
+    "rejections": 1
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 2356.812958023511,
+    "terms": 6
+  },
+  {
+    "agent": "finding_description",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 1833.945625112392,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 12978.876249981113,
+    "exact": 5,
+    "include": 4,
+    "marginal": 3
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "pneumothorax",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 5769.643332925625,
+    "primary": "pleural space"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 5309.86654094886,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 3609.2722499743104,
+    "synonyms": 4
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 7598.775999969803,
+    "exact": 1,
+    "include": 1,
+    "marginal": 5
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "hepatic steatosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 5837.056166958064,
+    "primary": "liver"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 4381.6677500726655,
+    "terms": 6
+  },
+  {
+    "agent": "finding_description",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 7397.9817079380155,
+    "synonyms": 4
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 7016.838499926962,
+    "exact": 0,
+    "include": 10,
+    "marginal": 2
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "meniscal tear",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 11139.100832981057,
+    "primary": "knee joint"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 5267.317207995802,
+    "terms": 5
+  },
+  {
+    "agent": "finding_description",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 3137.6099579501897,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 7480.141791980714,
+    "exact": 0,
+    "include": 5,
+    "marginal": 5
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "subsegmental pulmonary embolism",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 8816.007582936436,
+    "primary": "pulmonary artery"
+  },
+  {
+    "agent": "ontology_query_gen",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 3191.483792033978,
+    "terms": 6
+  },
+  {
+    "agent": "finding_description",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 3965.048542013392,
+    "synonyms": 2
+  },
+  {
+    "agent": "ontology_categorization",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 10952.565332991071,
+    "exact": 0,
+    "include": 5,
+    "marginal": 0
+  },
+  {
+    "agent": "anatomic_selection",
+    "input": "enostosis",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 8388.3826660458,
+    "primary": "vertebra"
+  },
+  {
+    "agent": "nl_editor",
+    "input": "edit_command",
+    "model": "openai:gpt-5.4-mini",
+    "reasoning": "medium",
+    "latency_ms": 8486.14612489473,
+    "changes": 2,
+    "rejections": 0
+  }
+]

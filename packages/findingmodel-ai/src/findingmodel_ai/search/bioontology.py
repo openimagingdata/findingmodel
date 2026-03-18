@@ -264,34 +264,20 @@ class BioOntologySearchClient:
         Returns:
             List of all search results up to max_results
         """
-        all_results: list[BioOntologySearchResult] = []
-        page = 1
-        page_size = min(50, max_results)
+        # Single request with max page size (API max is 100) — avoids
+        # multiple round-trips that add ~1s each. 100 results is more than
+        # enough for downstream selection (we typically use top 12).
+        search_results = await self.search_bioontology(
+            query=query,
+            ontologies=ontologies,
+            page_size=min(100, max_results),
+            page=1,
+            include_fields=include_fields,
+            require_exact_match=require_exact_match,
+            semantic_types=semantic_types,
+        )
 
-        while len(all_results) < max_results:
-            search_results = await self.search_bioontology(
-                query=query,
-                ontologies=ontologies,
-                page_size=page_size,
-                page=page,
-                include_fields=include_fields,
-                require_exact_match=require_exact_match,
-                semantic_types=semantic_types,
-            )
-
-            all_results.extend(search_results.results)
-
-            # Check if we have all available results or reached max
-            if len(all_results) >= search_results.total_count or len(all_results) >= max_results:
-                break
-
-            # Check if there are more pages
-            if page >= search_results.page_count:
-                break
-
-            page += 1
-
-        return all_results[:max_results]
+        return search_results.results[:max_results]
 
     async def search_as_ontology_results(
         self,
