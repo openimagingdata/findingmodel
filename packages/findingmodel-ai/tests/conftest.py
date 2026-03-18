@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -33,6 +34,15 @@ def configure_test_logging() -> None:
     logger.enable("findingmodel")
     # Add a file handler to the findingmodel logger
     logger.add("test.log", level="INFO", rotation="10 MB")
+
+
+@pytest.fixture(autouse=True)
+def _reset_findingmodel_config_singleton() -> Iterator[None]:
+    """Reset the findingmodel config singleton between tests."""
+    import findingmodel.config as config_module
+
+    yield
+    config_module._settings = None
 
 
 @pytest.fixture
@@ -132,3 +142,24 @@ def index_with_test_db() -> Index:
     index = Index(db_path)
     index._ensure_connection()
     return index
+
+
+@pytest.fixture
+def findingmodel_test_db_path() -> Path:
+    """Path to the rebuilt local findingmodel test database."""
+    db_path = Path(__file__).parent.parent.parent / "findingmodel" / "tests" / "data" / "test_index.duckdb"
+    if not db_path.exists():
+        pytest.skip(
+            "Pre-built test database not found. Run: uv run python packages/oidm-maintenance/scripts/build_test_fixtures.py"
+        )
+    return db_path
+
+
+@pytest.fixture
+def use_findingmodel_test_db(monkeypatch: pytest.MonkeyPatch, findingmodel_test_db_path: Path) -> Path:
+    """Force findingmodel runtime lookups to use the rebuilt local test DB."""
+    monkeypatch.setenv("FINDINGMODEL_DB_PATH", str(findingmodel_test_db_path))
+    import findingmodel.config as config_module
+
+    config_module._settings = None
+    return findingmodel_test_db_path

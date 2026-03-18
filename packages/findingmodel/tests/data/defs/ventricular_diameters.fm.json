@@ -8,6 +8,18 @@
     "Left ventricular diameter (LVD)",
     "Right ventricular diameter (RVD)"
   ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID1385",
+      "display": "heart"
+    }
+  ],
+  "body_regions": ["chest"],
+  "subspecialties": ["CA"],
+  "entity_type": "measurement",
+  "applicable_modalities": ["US", "CT", "MR"],
+  "sex_specificity": "sex-neutral",
   "attributes": [
     {
       "name": "right ventricle diameter",

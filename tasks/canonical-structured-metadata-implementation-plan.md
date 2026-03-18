@@ -1,6 +1,6 @@
 # Canonical Structured Metadata Implementation Plan
 
-**Status:** In progress — Slice 1, Slice 2, and Slice 3 complete, pending commit
+**Status:** In progress — Slices 1–8 and 9-A complete. Slice 9-B and Slice 10 remain.
 
 **Design Spec:** [../docs/canonical-structured-metadata-and-enrichment-rewrite.md](../docs/canonical-structured-metadata-and-enrichment-rewrite.md)
 
@@ -41,11 +41,11 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - `packages/oidm-maintenance/src/oidm_maintenance/findingmodel/build.py`
 - relevant DuckDB tests and fixtures
 
-### Lane C: Enrichment Rewrite
-- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/`
+### Lane C: Metadata Assignment Rewrite
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/`
 - `packages/findingmodel-ai/src/findingmodel_ai/search/ontology.py`
 - `packages/findingmodel-ai/src/findingmodel_ai/search/anatomic.py`
-- enrichment tests/evals/scripts
+- metadata-assignment tests/evals/scripts
 
 ### Lane D: Retrieval and Similar-Model Rewrite
 - `packages/findingmodel-ai/src/findingmodel_ai/search/similar.py`
@@ -205,25 +205,39 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 **Docs Gate**
 - ✓ Design doc updated to reflect the “structured columns only” retrieval decision.
 
-## Slice 4: Add `browse(...)` and Facet-Aware Search APIs
+## Slice 4: `browse()` + Facet-Aware Search APIs ✓
 
-**Scope**
-- Add `browse(...)` to the index API with pagination-friendly return shape.
-- Extend `search(...)` and `search_batch(...)` with facet filters.
-- Keep `tags` as ALL-of while other multi-value facets use OR-within-facet semantics.
+**Status:** Complete
+
+**No major scope change** — this is the foundation for Slices 5 and 8.
 
 **Primary ownership**
 - Lane B
 
-**Files likely in scope**
-- `packages/findingmodel/src/findingmodel/index.py`
-- `packages/findingmodel/src/findingmodel/protocols.py`
+**Add to `packages/findingmodel/src/findingmodel/index.py`:**
+
+1. `browse(*, body_regions, subspecialties, etiologies, entity_type, applicable_modalities, sex_specificity, tags, limit, offset) -> tuple[list[IndexEntry], int]`
+   - Pure SQL filter, no FTS/embeddings
+   - OR-within-facet, AND-across-facets, ALL-of for tags
+   - Pagination via limit/offset with total count
+
+2. Extend `search()` signature with same facet filter params
+   - Filters push into SQL WHERE (pre-ranking, not post-ranking)
+   - Uses DuckDB `list_has_any()` for array columns
+
+3. Extend `search_batch()` signature with same facet filter params
+   - Critical for Slice 8: enables facet-guided candidate gathering alongside unfiltered search
+
+4. Internal `_build_facet_where_clause()` shared by all three methods
+
+**Also update `packages/findingmodel/src/findingmodel/protocols.py`** — update protocol definitions to match.
 
 **Tests**
-- `browse(...)` semantics
-- filter-only browse replacing `search("", tags=...)`
-- SQL pushdown behavior for search and batch search
-- exact-match behavior under facet filters
+- browse with single facet, multiple facets, empty result
+- search with facets narrows results
+- search_batch with facets
+- SQL pushdown verification (filter before ranking, not after)
+- tags retain ALL-of while facets use OR-within
 
 **Acceptance Gate**
 - Filter-only callers no longer depend on empty-query `search(...)`.
@@ -232,39 +246,61 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 **Docs Gate**
 - Update `packages/findingmodel/README.md` for the new retrieval API.
 
-## Slice 5: Add Deterministic `related_models(...)`
+## Slice 5: Deterministic `related_models()` ✓
 
-**Scope**
-- Add the core deterministic related-model API.
-- Implement the provisional scoring weights from the design doc.
-- Bootstrap a dedicated related-model evaluation fixture from the existing similar-model eval cases.
+**Status:** Complete
+
+**A first-class standalone API** — useful for browsing related models in MCP tools, CLI exploration, and as a candidate source for Slice 8's pipeline. No LLM calls; purely deterministic facet-overlap scoring.
 
 **Primary ownership**
 - Lane D
 
-**Files likely in scope**
-- `packages/findingmodel/src/findingmodel/index.py`
-- `packages/findingmodel-ai/evals/similar_models.py`
-- new related-model fixture/eval assets as needed
+**Add to `packages/findingmodel/src/findingmodel/index.py`:**
+
+```python
+async def related_models(
+    self,
+    model_id: str,
+    *,
+    limit: int = 10,
+    min_score: float = 3.0,
+    weights: RelatedModelWeights | None = None,
+) -> list[tuple[IndexEntry, float]]:
+```
+
+**Configurable weights** via `RelatedModelWeights(BaseModel)`:
+- `anatomic_location_ids: float = 5.0`
+- `index_code_keys: float = 4.0`
+- `entity_type: float = 3.0`
+- `body_regions: float = 2.0`
+- `etiologies: float = 2.0`
+- `subspecialties: float = 2.0`
+- `applicable_modalities: float = 1.0`
+- `age_overlap: float = 1.0`
+- `sex_match: float = 1.0`
+- `time_course: float = 1.0`
+
+Uses `browse()` internally to prefilter candidates sharing at least one facet with the source model, then scores the prefiltered set.
 
 **Tests**
-- overlap/scoring tests
-- threshold tests
-- gold-case-set evaluation coverage
+- Score calculation with known inputs
+- Threshold filtering
+- Self-exclusion (source model not in results)
+- Empty facets produce zero for that dimension (not NaN)
 
 **Acceptance Gate**
 - `related_models(...)` is usable independently of the LLM path.
-- Scoring is covered by deterministic tests and eval assets.
+- Scoring is covered by deterministic tests.
 
 **Docs Gate**
 - Update retrieval docs if `related_models(...)` is public.
 
-## Slice 6: Define New Enrichment Result and Review Types ✓
+## Slice 6: Define New Metadata-Assignment Result and Review Types ✓
 
 **Status:** Complete
 
 **Scope**
-- Define `EnrichModelResult`, `EnrichModelReview`, and any helper types needed for typed candidate gathering and review output.
+- Define `MetadataAssignmentResult`, `MetadataAssignmentReview`, and any helper types needed for typed candidate gathering and review output.
 - Keep the review artifact JSON-serializable and explicitly separate from canonical model JSON.
 - All new types go in a new `types.py` module, importing canonical facet types from `findingmodel`.
 
@@ -276,13 +312,13 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - Lane C
 
 **Files changed**
-- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/types.py` (new) — 8 types: FieldConfidence, OntologyCandidateRelationship, OntologyCandidate, OntologyCandidateReport, AnatomicCandidate, EnrichModelReview, EnrichModelResult
-- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/__init__.py` — added exports for new types
-- `packages/findingmodel-ai/tests/test_enrichment_types.py` (new) — 9 tests
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/types.py` — typed metadata-assignment result and review models
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/__init__.py` — public exports for metadata-assignment types
+- `packages/findingmodel-ai/tests/test_metadata_types.py` — coverage for metadata-assignment types
 
 **Design decisions**
 - `AnatomicCandidate.location` uses `IndexCode` to avoid duplicating system/code/display fields
-- `EnrichModelResult.model` is `FindingModelFull` (not a union) — enrichment operates on registered models
+- `MetadataAssignmentResult.model` is `FindingModelFull` (not a union) — metadata assignment operates on registered models
 - `model_tier` uses `Literal["base", "small", "full"]` to keep types.py dependency-free from config
 - No raw search results stored — Logfire instrumentation handles traceability
 
@@ -299,20 +335,66 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - ✓ No design doc update needed — types match existing design doc spec
 - ✓ Implementation plan updated
 
-## Slice 7: Implement `enrich_model(...)`
+## Slice 7: Implement `assign_metadata(...)` ✓
+
+**Status:** Complete
 
 **Scope**
-- Build the new canonical enrichment entrypoint around `FindingModel` updates.
+- Build the new canonical metadata-assignment entrypoint around `FindingModel` updates.
 - Keep candidate gathering deterministic and coded.
 - Use typed structured inputs/outputs for the narrow classifier step.
-- Apply canonical normalization during enrichment.
+- Apply canonical normalization during metadata assignment.
+- Add careful, tiered Logfire observability for the metadata-assignment run and major substeps.
 
 **Primary ownership**
 - Lane C
 
+**Files changed**
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/assignment.py` — canonical metadata-assignment entrypoint, deterministic phase helpers, narrow classifier agent, and Logfire tracing
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/types.py` — `logfire_trace_id` and ontology rejection taxonomy support on review candidates
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/__init__.py` — exported `assign_metadata(...)` and the rejection taxonomy
+- `packages/findingmodel-ai/tests/test_assign_metadata.py` — canonical assembly, prompt-shape, and fast-path tests
+- `packages/findingmodel-ai/tests/test_metadata_types.py` — coverage for trace correlation and ontology rejection reason enums
+- `packages/findingmodel-ai/README.md` — documented the new canonical entrypoint
+
 **Files likely in scope**
-- new module(s) under `packages/findingmodel-ai/src/findingmodel_ai/enrichment/`
+- new module(s) under `packages/findingmodel-ai/src/findingmodel_ai/metadata/`
 - salvage helpers in `packages/findingmodel-ai/src/findingmodel_ai/search/`
+
+**Implementation notes**
+- Add a new canonical entrypoint, `async assign_metadata(finding_model: FindingModelFull, *, model_tier: ModelTier = "small", model: str | None = None) -> MetadataAssignmentResult`.
+- Keep file I/O, review-artifact persistence, and bulk backfill out of this slice. Slice 7 returns typed in-memory results only.
+- Preserve the incoming model identity and authored text (`oifm_id`, `slug_name`, `name`, `description`, `synonyms`, `attributes`, `tags`) unless deterministic code or the narrow classifier explicitly updates a canonical metadata field.
+- Add field-aware fast paths:
+  - skip ontology gathering when canonical `index_codes` are already present
+  - skip anatomic gathering when canonical `anatomic_locations` are already present
+  - skip the classifier entirely when all canonical metadata/code/location targets are already populated
+- Candidate gathering remains coded:
+  - ontology candidates from `search/ontology.py`
+  - anatomic candidates from `search/anatomic.py`
+  - no raw search result blobs stored on the canonical model
+- Use one narrow typed classifier output model for only the ambiguous canonical decisions:
+  - canonical facet values
+  - ontology/anatomic candidate selection decisions where deterministic ranking alone is insufficient
+  - field-level rationale/confidence for the review artifact
+- Ontology selection should follow the explicit generality rule borrowed from the coding pipeline:
+  - a slightly broader match can be acceptable when it preserves grouping of equivalent findings
+  - a narrower match is not acceptable
+- Review-only ontology candidates should carry a typed rejection taxonomy where applicable:
+  - `too_specific`
+  - `too_broad`
+  - `wrong_concept`
+  - `definition_mismatch`
+  - `overlapping_scope`
+- Instrument the entrypoint with tiered Logfire spans:
+  - one top-level metadata-assignment run span
+  - child spans for ontology gathering, anatomic gathering, classifier decision, and final model assembly
+  - structured summary events/warnings at major boundaries, but no noisy per-candidate trace spam by default
+- Capture the top-level Logfire `trace_id` when available and store it on `MetadataAssignmentReview.logfire_trace_id` so review artifacts can be correlated back to the full trace.
+- Normalize all selected values through the canonical `findingmodel` types before assembling the final `FindingModelFull`.
+- Default the narrow structured-output LLM steps to `small` tier unless an override is configured; allow bumping to `base`/`full` via `AGENT_MODEL_OVERRIDES` or the entrypoint argument.
+- Export the new entrypoint from `findingmodel_ai.metadata`.
+- Pull Slice 9 forward for this surface: remove the old `findingmodel_ai.enrichment` package rather than preserving it alongside the new metadata-assignment API.
 
 **Tests**
 - unit tests with `TestModel` and `FunctionModel`
@@ -320,73 +402,123 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 - review artifact generation tests
 
 **Acceptance Gate**
-- `enrich_model(...)` returns an updated canonical model plus separate review data.
-- The old sidecar-style enrichment result is no longer the primary product internally.
+- ✓ `assign_metadata(...)` returns an updated canonical model plus separate review data.
+- ✓ The old sidecar-style result is no longer the primary product internally.
+- ✓ The metadata-assignment run emits tiered Logfire traces and includes a trace handle on the review object when available.
+- ✓ Field-aware fast paths avoid unnecessary LLM work when canonical data is already present.
+- ✓ Review data clearly distinguishes canonical ontology selections from rejected candidates and records typed rejection reasons where applicable.
 
 **Docs Gate**
-- Update `packages/findingmodel-ai/README.md` to introduce the new entrypoint once it is usable.
+- ✓ `packages/findingmodel-ai/README.md` updated to introduce the new entrypoint.
 
-## Slice 8: Rewrite `find_similar_models()`
+## Slice 8: Rewrite `find_similar_models()` — 5-Phase Pipeline ✓
 
-**Scope**
-- Rework candidate gathering to use:
-  - exact checks
-  - unfiltered text search
-  - optional facet-guided filtered search passes
-  - `related_models(...)` when an existing canonical model ID is available
-- Keep the planner step narrow and typed.
-- Keep the final LLM decision limited to "edit existing vs create new".
+**Status:** Complete
+
+Adopts the 5-phase pipeline architecture from the coding project.
 
 **Primary ownership**
 - Lane D
 
-**Files likely in scope**
-- `packages/findingmodel-ai/src/findingmodel_ai/search/similar.py`
-- `packages/findingmodel-ai/evals/similar_models.py`
+**New shared infrastructure** (`packages/findingmodel-ai/src/findingmodel_ai/search/pipeline_helpers.py`):
+- `ModelMatchRejectionReason` enum: `too_specific`, `too_broad`, `wrong_concept`, `definition_mismatch`, `overlapping_scope`
+- `CandidatePool` — deduplicated candidate container with provenance tracking and max cap
+- `validate_selection_in_candidates()` — post-selection check for hallucinated IDs
+- `FacetHypothesis` model — typed container for LLM-generated facet guesses
+- Result types: `SimilarModelMatch`, `SimilarModelRejection`, `SimilarModelResult`
+
+**5-Phase Pipeline** (`packages/findingmodel-ai/src/findingmodel_ai/search/similar.py` rewrite):
+
+1. **Phase 1: Fast-path** — exact match by name/synonyms via `index.get()`, return immediately if found
+2. **Phase 2: LLM Planning** — single small-model call generating `SimilarModelPlan` (search terms + facet hypotheses)
+3. **Phase 3: Multi-Pass Search** — unfiltered text search (recall protection) + facet-filtered search + optional `related_models()`
+4. **Phase 4: LLM Selection** — structured output `SimilarModelSelection` with rejection taxonomy and asymmetric generality rule
+5. **Phase 5: Assembly** — build `SimilarModelResult` from validated selections
+
+**Agent tags**: `similar_plan` (replaces `similar_search`), `similar_select` (replaces `similar_assess`)
+
+**What gets removed**: `create_search_agent()`, `create_term_generation_agent()`, `create_analysis_agent()`, `search_models_tool()`, `SearchStrategy`, `SimilarModelAnalysis`, `_generate_search_terms_with_fallback()`
 
 **Tests**
-- exact match behavior
-- new-finding scenario behavior
-- recall protection when facet hypotheses are wrong
-- evaluation coverage on the updated candidate pipeline
+- Fast-path: exact name/synonym match returns immediately
+- Phase 2: plan generation with FunctionModel
+- Phase 3: multi-pass search merges correctly, deduplicates, caps at MAX_CANDIDATES
+- Phase 3: recall protection — wrong facet hypothesis doesn't collapse results
+- Phase 4: selection with each rejection reason
+- Phase 4: post-validation catches hallucinated IDs
+- Integration: full pipeline with `@pytest.mark.callout`
 
 **Acceptance Gate**
 - `find_similar_models()` no longer relies on text-only search-term generation alone.
 - Facet hypotheses improve retrieval without becoming hard gates.
+- Post-selection validation catches hallucinated IDs.
 
 **Docs Gate**
 - Update `packages/findingmodel-ai/README.md` examples for similar-model lookup.
 
-## Slice 9: Public Surface Migration and Canonical CLI
+## Slice 9-A: Canonical CLI and Legacy Removal ✓
+
+**Status:** Complete
 
 **Scope**
-- Add the canonical CLI for single-model enrichment and bulk backfill.
-- Define review-artifact write location and overwrite/resume behavior.
-- Update or remove ad hoc enrichment scripts and old exported entrypoints.
-- Update CLI/MCP callers that moved from filter-only `search(...)` to `browse(...)`.
+- Add canonical CLI for single-model metadata assignment.
+- Remove old enrichment package, entrypoints, and scripts.
+- Rename `enrichment/` → `metadata/`, `enrich_model()` → `assign_metadata()`.
+- Add shared runtime Logfire initializer for executable paths.
 
 **Primary ownership**
-- Lane C for enrichment CLI
-- Lane B/D for retrieval caller migrations
+- Lane C
 
-**Files likely in scope**
-- `packages/findingmodel-ai/src/findingmodel_ai/cli.py`
-- `packages/findingmodel-ai/scripts/*`
-- `packages/findingmodel/src/findingmodel/cli.py`
-- `packages/findingmodel/src/findingmodel/mcp_server.py`
-- `packages/findingmodel-ai/src/findingmodel_ai/enrichment/__init__.py`
-
-**Tests**
-- CLI smoke tests
-- MCP-facing API tests where applicable
-- migration tests for retired/renamed public entrypoints
+**Files changed**
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/` — new package (renamed from `enrichment/`)
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/assignment.py` — renamed from `canonical.py`
+- `packages/findingmodel-ai/src/findingmodel_ai/metadata/types.py` — renamed types (`MetadataAssignmentResult`, etc.)
+- `packages/findingmodel-ai/src/findingmodel_ai/observability.py` — shared Logfire + HTTPX instrumentation
+- `packages/findingmodel-ai/src/findingmodel_ai/cli.py` — `assign-metadata` command with `--logfire` and review output
+- `packages/findingmodel-ai/src/findingmodel_ai/__init__.py` — exports `metadata` and `observability` instead of `enrichment`
+- `packages/findingmodel-ai/src/findingmodel_ai/config.py` — agent tag `metadata_assign` replaces `enrich_classify`
+- Deleted: `enrichment/unified.py`, `enrichment/agentic.py`, `enrichment/__init__.py`, `enrichment/types.py`, old batch scripts, `test_finding_enrichment.py`, `test_enrichment_types.py`
 
 **Acceptance Gate**
-- One canonical enrichment CLI exists.
-- Old enrichment codepaths are removed or intentionally retired in one coordinated pass.
+- ✓ One canonical `findingmodel-ai assign-metadata` CLI exists with `--logfire` and optional review JSON output
+- ✓ Old enrichment codepaths removed in one coordinated pass
+- ✓ Executable paths can opt into Logfire with agent + outbound HTTP traces via `ensure_logfire_configured()`
 
 **Docs Gate**
-- Update package READMEs and top-level docs for the final public surface.
+- ✓ README, CHANGELOG, configuration docs updated for the rename and new CLI
+
+## Slice 9-B: MCP/CLI Caller Migration and Bulk Backfill
+
+**Status:** Not started
+
+**Scope**
+- Update MCP server tools to use `browse()` for facet-filtered listing.
+- Update `findingmodel` CLI to expose `browse()` and `related_models()`.
+- Add bulk backfill CLI (`assign-metadata --batch` or similar) with resume/overwrite behavior.
+- Define review-artifact write location convention for bulk runs.
+
+**Primary ownership**
+- Lane B/D for retrieval caller migrations
+- Lane C for bulk backfill
+
+**Files likely in scope**
+- `packages/findingmodel/src/findingmodel/mcp_server.py`
+- `packages/findingmodel/src/findingmodel/cli.py`
+- `packages/findingmodel-ai/src/findingmodel_ai/cli.py`
+
+**Tests**
+- MCP tool tests for browse/facet-filtered listing
+- CLI smoke tests for bulk backfill
+- Resume/overwrite behavior tests
+
+**Acceptance Gate**
+- MCP server exposes facet-based browsing.
+- Bulk backfill CLI exists with atomic writes and resume support.
+- Review artifacts have a defined write location convention.
+
+**Docs Gate**
+- Update MCP server documentation for new tools.
+- Update CLI documentation for bulk backfill.
 
 ## Slice 10: Backfill, Fixtures, and Final Documentation Review
 
@@ -449,7 +581,7 @@ After Slices 4, 5, and 6 are stable:
 - [ ] DuckDB build and hydration support the canonical fields
 - [ ] `browse(...)`, facet-aware `search(...)`, and facet-aware `search_batch(...)` are implemented
 - [ ] `related_models(...)` exists and is tested against a dedicated evaluation set
-- [ ] `enrich_model(...)` is the canonical enrichment entrypoint
+- [ ] `assign_metadata(...)` is the canonical metadata-assignment entrypoint
 - [ ] `find_similar_models()` uses the new deterministic candidate pipeline
 - [ ] canonical enrichment CLI/backfill flow exists
 - [ ] docs and changelog match the final shipped behavior

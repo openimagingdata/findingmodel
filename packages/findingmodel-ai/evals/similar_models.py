@@ -56,7 +56,8 @@ import time
 
 from findingmodel.index import FindingModelIndex as Index
 from findingmodel_ai.evaluators import PerformanceEvaluator
-from findingmodel_ai.search.similar import SimilarModelAnalysis, find_similar_models
+from findingmodel_ai.search.pipeline_helpers import SimilarModelResult
+from findingmodel_ai.search.similar import find_similar_models
 from pydantic import BaseModel, Field
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
@@ -95,7 +96,7 @@ class SimilarModelsExpectedOutput(BaseModel):
 class SimilarModelsActualOutput(BaseModel):
     """Actual output from running a similar models case."""
 
-    analysis: SimilarModelAnalysis
+    analysis: SimilarModelResult
     query_time: float = Field(description="Time taken to execute query in seconds")
     error: str | None = Field(default=None, description="Error message if query failed")
 
@@ -188,7 +189,7 @@ class DuplicateDetectionEvaluator(
             return 0.0
 
         # Check if we found similar models
-        has_similar_models = len(ctx.output.analysis.similar_models) > 0
+        has_similar_models = len(ctx.output.analysis.matches) > 0
         has_edit_recommendation = ctx.output.analysis.recommendation == "edit_existing"
         has_create_recommendation = ctx.output.analysis.recommendation == "create_new"
 
@@ -250,11 +251,11 @@ class RankingQualityEvaluator(Evaluator[SimilarModelsInput, SimilarModelsActualO
             return 0.0
 
         # Skip if no results returned
-        if not ctx.output.analysis.similar_models:
+        if not ctx.output.analysis.matches:
             return 0.0
 
         # Extract OIFM IDs from results in order
-        actual_ids = [model["oifm_id"] for model in ctx.output.analysis.similar_models]
+        actual_ids = [m.entry.oifm_id for m in ctx.output.analysis.matches]
         expected_ids_set = set(ctx.metadata.expected_similar_ids)
 
         # Find rank of first relevant result (1-indexed)
@@ -312,12 +313,12 @@ class PrecisionAtKEvaluator(Evaluator[SimilarModelsInput, SimilarModelsActualOut
             return 0.0
 
         # Get top K results
-        top_k_models = ctx.output.analysis.similar_models[: self.k]
+        top_k_models = ctx.output.analysis.matches[: self.k]
         if not top_k_models:
             return 0.0
 
         # Count relevant results in top K
-        actual_ids = [model["oifm_id"] for model in top_k_models]
+        actual_ids = [m.entry.oifm_id for m in top_k_models]
         expected_ids_set = set(ctx.metadata.expected_similar_ids)
         relevant_count = sum(1 for oifm_id in actual_ids if oifm_id in expected_ids_set)
 
@@ -363,15 +364,15 @@ class SemanticSimilarityEvaluator(
             return 0.0
 
         # Skip if no results returned
-        if not ctx.output.analysis.similar_models:
+        if not ctx.output.analysis.matches:
             return 0.0
 
         # Combine all text from results
         result_text = []
-        for model in ctx.output.analysis.similar_models:
-            result_text.append(model.get("name", "").lower())
-            if "description" in model:
-                result_text.append(model["description"].lower())
+        for match in ctx.output.analysis.matches:
+            result_text.append(match.entry.name.lower())
+            if match.entry.description:
+                result_text.append(match.entry.description.lower())
         combined_text = " ".join(result_text)
 
         # Count keyword matches
@@ -417,7 +418,7 @@ class ExclusionEvaluator(Evaluator[SimilarModelsInput, SimilarModelsActualOutput
             return 0.0
 
         # Check if any unexpected IDs appear in results
-        actual_ids = {model["oifm_id"] for model in ctx.output.analysis.similar_models}
+        actual_ids = {m.entry.oifm_id for m in ctx.output.analysis.matches}
         unexpected_found = actual_ids & set(ctx.metadata.unexpected_similar_ids)
 
         return 0.0 if unexpected_found else 1.0
@@ -847,10 +848,8 @@ async def run_similar_models_task(input_data: SimilarModelsInput) -> SimilarMode
     except Exception as e:
         # Return error in output for evaluation
         return SimilarModelsActualOutput(
-            analysis=SimilarModelAnalysis(
-                similar_models=[],
+            analysis=SimilarModelResult(
                 recommendation="create_new",
-                confidence=0.0,
             ),
             query_time=0.0,
             error=str(e),

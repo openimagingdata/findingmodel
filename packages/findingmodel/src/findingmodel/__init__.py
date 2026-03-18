@@ -37,6 +37,7 @@ from .finding_model import FindingModelFull as FindingModelFull
 from .finding_model import NumericAttribute as NumericAttribute
 from .finding_model import NumericAttributeIded as NumericAttributeIded
 from .index import FindingModelIndex as Index
+from .index import RelatedModelWeights as RelatedModelWeights
 
 __all__ = [
     "AgeProfile",
@@ -53,6 +54,7 @@ __all__ = [
     "Index",
     "IndexCode",
     "Modality",
+    "RelatedModelWeights",
     "SexSpecificity",
     "Subspecialty",
     "TimeCourseModifier",

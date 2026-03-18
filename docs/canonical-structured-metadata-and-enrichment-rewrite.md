@@ -2,7 +2,8 @@
 
 ## Status
 
-- Proposed
+- In progress — core schema, retrieval APIs, related-model scoring, metadata-assignment types, canonical `assign_metadata(...)`, and the rewritten `find_similar_models()` are implemented in the worktree
+- Slices 9–10 remain for public-surface migration, backfill, and final docs cleanup
 - Supersedes the old enrichment implementation plan now archived at `docs/archive/finding-enrichment-implementation-plan.md`
 - Supersedes the older enrichment PRD now archived at `docs/archive/finding-enrichment-prd.md`
 - Implementation tracking lives in `tasks/canonical-structured-metadata-implementation-plan.md`
@@ -13,7 +14,7 @@
 - The original program-orchestrated pathway came first and better matches the repo's current AI workflow guidance.
 - The later agentic pathway was an alternate experiment.
 - Neither older pathway is acceptable as the canonical future implementation because both produce sidecar enrichment output instead of making structured metadata part of `FindingModel`.
-- The new direction is to build one new enrichment tool from scratch around the model we actually want, salvage only the useful search/prompt pieces from the old work, and remove both older enrichment pathways with no compatibility shims.
+- The new direction is to build one new metadata-assignment tool from scratch around the model we actually want, salvage only the useful search/prompt pieces from the old work, and remove both older enrichment pathways with no compatibility shims.
 
 ## Goals
 
@@ -82,35 +83,36 @@ Normalization rule for legacy body-region values:
 
 Do not store ontology candidate buckets, raw search results, prompt traces, or model reasoning on `FindingModel`.
 
-## Canonical Enrichment Tool
+## Canonical Metadata Assignment Tool
 
-Add one new AI entrypoint in `findingmodel-ai`:
+Add one new AI entrypoint in `findingmodel_ai.metadata`:
 
 ```python
-async def enrich_model(
+async def assign_metadata(
     model: FindingModelBase | FindingModelFull,
     *,
     tier: ModelTier = "base",
-) -> EnrichModelResult
+) -> MetadataAssignmentResult
 ```
 
-`EnrichModelResult` contains:
+`MetadataAssignmentResult` contains:
 
 - `model`: the updated model with canonical structured metadata filled in
 - `review`: a separate QA artifact with raw candidates, normalization notes, timings, and review-oriented reasoning
 
 `review` contract in v1:
 
-- Define a typed `EnrichModelReview` Pydantic model in `findingmodel-ai`
+- Define a typed `MetadataAssignmentReview` Pydantic model in `findingmodel-ai`
 - Make it fully JSON-serializable so CLI/backfill workflows can persist it without ad hoc shaping
-- Return it from `enrich_model(...)` directly; file writing stays outside the core function
+- Return it from `assign_metadata(...)` directly; file writing stays outside the core function
 - Canonical CLI/backfill writes review JSON to a separate artifact location, not into `.fm.json`
-- Default bulk-backfill layout should be deterministic by model identity, e.g. `<artifact_root>/<oifm_id>.enrich-review.json`
+- Default bulk-backfill layout should be deterministic by model identity, e.g. `<artifact_root>/<oifm_id>.metadata-review.json`
 - The plan must update all current scripts that assume a sidecar enrichment blob or custom output JSON shape
 
 Design rules:
 
 - Build this tool fresh around the canonical model update path.
+- Put the new code under `findingmodel_ai.metadata`, not under the legacy `findingmodel_ai.enrichment` package.
 - Reuse only the useful parts of the old work: ontology search helpers, anatomic search helpers, and prompt/example material.
 - Keep orchestration programmatic.
 - Query generation, candidate gathering, normalization, and deterministic fallback behavior live in code.
@@ -235,18 +237,23 @@ Design note for `find_similar_models()`:
   - overlapping or free-text age bins map through one explicit normalization table checked into the repo and covered by tests
   - "more common in" and "can occur in" signals are stored separately
 
-### Phase 3: Build the new enrichment tool
+### Phase 3: Build the new metadata-assignment tool
 
-- Implement `enrich_model(...)` from scratch in `findingmodel-ai`
+- Implement `assign_metadata(...)` from scratch in `findingmodel_ai.metadata`
 - Reuse only the salvageable search/prompt assets from the older work
 - Keep evidence gathering deterministic and coded
 - Keep the classifier narrow, typed, and model-oriented
+- Add field-aware fast paths so already-populated canonical models do not pay for unnecessary LLM or search work
+- Follow the same ontology generality rule used in the coding pipeline: a slightly broader concept can be acceptable for grouping, but a narrower concept is not acceptable
+- Keep ontology rejection reasons explicit in review data (`too_specific`, `too_broad`, `wrong_concept`, `definition_mismatch`, `overlapping_scope`) rather than burying them in free text
+- Add careful, tiered Logfire observability around the new metadata-assignment run so deterministic gathering, narrow classification, and final assembly are easy to inspect without excessive trace noise
+- When executable paths enable Logfire, instrument both Pydantic AI and outbound `httpx` calls so non-LLM API traffic such as BioOntology lookups is visible in the same trace
 - Write review artifacts separately from canonical model JSON
+- Include the top-level Logfire `trace_id` on the review artifact when available so a saved review can be correlated back to the full trace
 - Replace the current exported enrichment entrypoints in one coordinated pass:
-  - `findingmodel_ai.enrichment.enrich_finding`
-  - `findingmodel_ai.enrichment.enrich_finding_unified`
-  - `findingmodel_ai.enrichment.enrich_finding_agentic`
-  - scripts and tests that currently depend on `FindingEnrichmentResult`
+  - remove the legacy `findingmodel_ai.enrichment` package
+  - remove `enrich_finding`, `enrich_finding_unified`, and `enrich_finding_agentic`
+  - migrate scripts/tests/docs to `findingmodel_ai.metadata.assign_metadata`
 
 ### Phase 4: Rebuild indexing and retrieval around the canonical fields
 

@@ -49,6 +49,9 @@ findingmodel-ai make-stub-model "pneumothorax"
 # Convert a Markdown outline to a finding model
 findingmodel-ai markdown-to-fm outline.md
 
+# Assign canonical structured metadata to an existing model
+findingmodel-ai assign-metadata pneumonia.fm.json --output pneumonia.updated.fm.json --review-output pneumonia.metadata-review.json
+
 # Search BioOntology.org for ontology concepts
 findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results 10
 ```
@@ -175,7 +178,35 @@ async def main():
 asyncio.run(main())
 ```
 
+### Canonical Metadata Assignment
+
+`assign_metadata()` is the new canonical in-memory metadata-assignment entrypoint. It returns an updated `FindingModelFull` plus a separate review object for candidate provenance, confidence, warnings, timings, and optional Logfire trace correlation.
+
+For executable paths that opt into Logfire, `findingmodel_ai.observability.ensure_logfire_configured()` instruments both Pydantic AI and outbound `httpx` calls, so BioOntology and similar non-LLM requests appear in the same trace as the agent run.
+
+```python
+import asyncio
+from findingmodel import FindingModelFull
+from findingmodel_ai.metadata import assign_metadata
+
+
+async def main():
+    with open("pneumonia.fm.json") as f:
+        model = FindingModelFull.model_validate_json(f.read())
+
+    result = await assign_metadata(model, model_tier="small")
+
+    print(result.model.body_regions)
+    print(result.model.index_codes)
+    print(result.review.logfire_trace_id)
+
+
+asyncio.run(main())
+```
+
 ### Finding Similar Models
+
+Uses a 5-phase pipeline: fast-path exact lookup → LLM planning (search terms + facet hypotheses) → multi-pass search (unfiltered + facet-filtered + optional `related_models()`) → LLM selection with rejection taxonomy → typed result assembly.
 
 ```python
 import asyncio
@@ -183,18 +214,24 @@ from findingmodel_ai.search import find_similar_models
 
 
 async def main():
-    analysis = await find_similar_models(
+    result = await find_similar_models(
         finding_name="pneumothorax",
         description="Presence of air in the pleural space",
         synonyms=["PTX", "collapsed lung"],
     )
 
-    print(f"Recommendation: {analysis.recommendation}")
-    print(f"Confidence: {analysis.confidence:.2f}")
+    print(f"Recommendation: {result.recommendation}")  # "edit_existing" or "create_new"
 
-    if analysis.similar_models:
-        for model in analysis.similar_models:
-            print(f"  Similar: {model.name} ({model.oifm_id})")
+    for match in result.matches:
+        print(f"  Match: {match.entry.name} ({match.entry.oifm_id})")
+        print(f"    Reasoning: {match.match_reasoning}")
+
+    if result.closest_rejection:
+        print(f"  Closest rejected: {result.closest_rejection.entry.name}")
+        print(f"    Reason: {result.closest_rejection.rejection_reason.value}")
+
+    # Search pass statistics
+    print(f"  Search passes: {result.search_passes}")
 
 
 asyncio.run(main())
@@ -202,11 +239,13 @@ asyncio.run(main())
 
 ## Architecture
 
-### Two-Agent Patterns
+### Pipeline Patterns
 
-Complex workflows use paired agents:
-- **Search agent**: Generates diverse queries to find candidates
-- **Matching agent**: Selects best options based on clinical relevance
+Complex workflows use structured pipelines:
+- **Fast-path**: Exact lookups before any LLM involvement
+- **LLM planning**: Structured output for search terms and facet hypotheses
+- **Multi-pass search**: Unfiltered pass (recall protection) + facet-filtered pass + deterministic related models
+- **LLM selection**: Structured pick with rejection taxonomy and asymmetric generality rule
 
 ### Multi-Provider Support
 

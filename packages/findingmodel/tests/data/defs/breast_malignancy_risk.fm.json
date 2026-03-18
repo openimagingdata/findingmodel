@@ -7,6 +7,22 @@
     "Case Score",
     "Breast cancer risk assessment"
   ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID29895",
+      "display": "female breast"
+    }
+  ],
+  "body_regions": ["breast"],
+  "subspecialties": ["BR"],
+  "entity_type": "assessment",
+  "applicable_modalities": ["MG"],
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "sex_specificity": "female-specific",
   "attributes": [
     {
       "name": "Case Score",

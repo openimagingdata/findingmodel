@@ -6,6 +6,18 @@
     "aortic rupture",
     "dissecting aneurysm"
   ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID480",
+      "display": "aorta"
+    }
+  ],
+  "body_regions": ["chest"],
+  "subspecialties": ["CA", "VI", "ER"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "MR", "XR"],
+  "sex_specificity": "sex-neutral",
   "attributes": [
     {
       "oifma_id": "OIFMA_MSFT_196263",

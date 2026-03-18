@@ -1,395 +1,374 @@
+"""Similar Finding Models — 5-Phase Pipeline
+
+Finds existing finding models that are similar enough to a proposed model
+that editing them might be better than creating new ones.
+
+Phases:
+1. Fast-path: exact match by name/synonyms
+2. LLM Planning: generate search terms + facet hypotheses
+3. Multi-Pass Search: unfiltered + facet-filtered + related_models
+4. LLM Selection: structured pick with rejection taxonomy
+5. Assembly: build typed result
 """
-Similar Finding Models Tool
 
-Uses two specialized Pydantic AI agents to find existing finding models that are
-similar enough to a proposed model that editing them might be better than creating new ones.
+from __future__ import annotations
 
-Agent 1: Search Strategy - Determines search terms and gathers comprehensive results
-Agent 2: Analysis - Analyzes results and makes similarity recommendations
-"""
-
-import json
-from dataclasses import dataclass
-from typing import Literal, NotRequired
-
+import logfire
 from findingmodel.index import FindingModelIndex as Index
-from pydantic import BaseModel, Field
-from pydantic_ai import Agent, RunContext
-from typing_extensions import TypedDict
+from pydantic_ai import Agent
 
 from findingmodel_ai import logger
-from findingmodel_ai._internal.common import get_markdown_text_from_path_or_text  # noqa: F401
 from findingmodel_ai.config import ModelTier, settings
+from findingmodel_ai.search.pipeline_helpers import (
+    CandidatePool,
+    FacetHypothesis,
+    SimilarModelMatch,
+    SimilarModelPlan,
+    SimilarModelRejection,
+    SimilarModelResult,
+    SimilarModelSelection,
+    validate_selection_in_candidates,
+)
+
+# ---------------------------------------------------------------------------
+# Agent factories
+# ---------------------------------------------------------------------------
+
+PLANNING_SYSTEM_PROMPT = """\
+You are a medical terminology specialist. Given a proposed imaging finding,
+generate 2-5 effective search terms for finding existing definitions that might
+match or overlap, PLUS your best guess at the finding's facet profile.
+
+**Search term rules:**
+- Use standard medical terminology, no acronyms
+- Prefer MORE GENERAL terms — the index may use broader names
+- NEVER more specific than the finding itself
+- Use diverse phrasings for recall
+- Do NOT generalize to meta-categories ("finding", "disease", "abnormality")
+- Use "lesion" for focal findings, not for diffuse processes
+
+**Facet hypotheses:**
+Fill in your best guesses. These are hints, not hard constraints — leave empty
+lists when unsure rather than guessing incorrectly.
+"""
+
+SELECTION_SYSTEM_PROMPT = """\
+You are an expert medical imaging informatics analyst. Given a proposed finding
+and a set of candidate existing definitions, determine which (if any) are close
+enough matches that editing them would be better than creating a new definition.
+
+**Selection rules:**
+- Match based on canonical clinical meaning, not surface string similarity
+- A slightly MORE GENERAL candidate is acceptable and often preferred
+  (convergence on common concept)
+- A MORE SPECIFIC candidate is NOT acceptable (fragments what should be one group)
+- When no match, MUST identify the closest candidate and classify the rejection reason
+- Consider name, description, synonyms, tags, and facets of each candidate
+- "edit_existing" = proposed finding should be a synonym or revision of existing
+- "create_new" = proposed finding is a distinct clinical concept
+
+**Rejection taxonomy:**
+- too_specific: candidate narrows beyond proposed finding
+- too_broad: candidate too general to be useful
+- wrong_concept: different clinical entity entirely
+- definition_mismatch: name matches but meaning differs
+- overlapping_scope: partial overlap, neither subsumes other
+"""
 
 
-class SearchResult(TypedDict):
-    """TypedDict for individual search results."""
-
-    oifm_id: str
-    name: str
-    description: NotRequired[str]
-    synonyms: NotRequired[list[str]]
-
-
-class SearchTerms(BaseModel):
-    """Search terms generated for finding similar models."""
-
-    search_terms: list[str] = Field(description="3-5 search terms for finding similar medical imaging definitions")
-
-
-class SearchStrategy(BaseModel):
-    """Search strategy and results from the first agent."""
-
-    search_terms_used: list[str] = Field(description="List of search terms that were actually used")
-    total_results_found: int = Field(description="Total number of unique models found across all searches")
-    search_results: list[SearchResult] = Field(description="All unique search results with model details")
-    search_summary: str = Field(description="Summary of the search strategy and what was found")
-
-
-@dataclass
-class SearchContext:
-    """Context class to pass the index to search tools."""
-
-    index: Index
-
-
-async def search_models_tool(ctx: RunContext[SearchContext], query: str, limit: int = 5) -> str:
-    """
-    Search for existing finding models in the index using a text query.
-
-    Args:
-        query: Search terms (can be finding names, synonyms, anatomical terms, etc.)
-        limit: Maximum number of results to return (default 5)
-
-    Returns:
-        JSON string containing search results with model details
-    """
-    try:
-        results = await ctx.deps.index.search(query, limit=limit)
-
-        if not results:
-            return f"No models found for query: '{query}'"
-
-        # Format results for the agent
-        formatted_results: list[SearchResult] = []
-        for result in results:
-            search_result = SearchResult(oifm_id=result.oifm_id, name=result.name)
-            if result.description:
-                search_result["description"] = result.description
-            if result.synonyms:
-                search_result["synonyms"] = result.synonyms
-            formatted_results.append(search_result)
-
-        return json.dumps({"query": query, "count": len(results), "results": formatted_results}, indent=2)
-
-    except Exception as e:
-        return f"Search failed for '{query}': {e!s}"
-
-
-def create_search_agent(model_tier: ModelTier = "base") -> Agent[SearchContext, SearchStrategy]:
-    """Create the search agent for gathering comprehensive results.
-
-    Args:
-        model_tier: Model tier to use (defaults to "base")
-    """
-    return Agent[SearchContext, SearchStrategy](
-        model=settings.get_agent_model("similar_search", default_tier=model_tier),
-        output_type=SearchStrategy,
-        deps_type=SearchContext,
-        tools=[search_models_tool],
-        retries=3,
-        system_prompt="""You are a search specialist for identifying standard codes for medical imaging findings.
-Your job is to systematically search for existing definitions that might be referred to using natural language; we
-want to find the best match in existing definitions, if there is one.
-
-Your goal is to be broad in your search strategy. Use a couple of approaches, searching for related
-terms and concepts to find likely relevant existing definitions.
-
-1. **Direct searches**: Exact finding name and each synonym
-2. **Anatomical searches**: Body parts, organs, regions mentioned
-3. **Pathology searches**: Conditions, abnormalities, diseases
-6. **Combination searches**: Multiple terms together
-
-Strategy:
-- Start with obvious searches (name, synonyms)
-- Extract key medical terms from description and search those
-- Search for anatomical locations
-
-Generate about 5 likely search terms, perform the searches and keep track of unique results.
-Pick about 10 broadly likely results from all searches; you don't need to return all the reults,
-but don't be too restrictive--the next agent will analyze the results.
-""",
+def create_planning_agent(model_tier: ModelTier = "small") -> Agent[None, SimilarModelPlan]:
+    """Create the Phase 2 planning agent."""
+    return Agent[None, SimilarModelPlan](
+        model=settings.get_agent_model("similar_plan", default_tier=model_tier),
+        output_type=SimilarModelPlan,
+        instructions=PLANNING_SYSTEM_PROMPT,
     )
 
 
-def create_term_generation_agent(model_tier: ModelTier = "small") -> Agent[None, SearchTerms]:
-    """Create a lightweight agent for generating search terms.
-
-    Args:
-        model_tier: Model tier to use (defaults to "small")
-    """
-    return Agent[None, SearchTerms](
-        model=settings.get_agent_model("similar_term_gen", default_tier=model_tier),
-        output_type=SearchTerms,
-        system_prompt="""You are a medical terminology specialist. Your job is to generate 3-5 effective search terms
-for finding existing medical imaging finding definitions that might be similar to a proposed new finding.
-
-Generate diverse search terms using these strategies:
-1. **Direct terms**: The exact finding name and key synonyms
-2. **Anatomical terms**: Body parts, organs, regions mentioned
-3. **Pathological terms**: Conditions, abnormalities, disease processes
-4. **Alternative phrasings**: Different ways to describe the same concept
-
-Keep terms concise and focused. Aim for terms that would appear in medical definitions.
-Return exactly 3-5 terms, prioritizing the most likely to find relevant matches.""",
+def create_selection_agent(model_tier: ModelTier = "small") -> Agent[None, SimilarModelSelection]:
+    """Create the Phase 4 selection agent."""
+    return Agent[None, SimilarModelSelection](
+        model=settings.get_agent_model("similar_select", default_tier=model_tier),
+        output_type=SimilarModelSelection,
+        instructions=SELECTION_SYSTEM_PROMPT,
     )
 
 
-class SimilarModelAnalysis(BaseModel):
-    """Final analysis of similar models from the second agent."""
-
-    similar_models: list[SearchResult] = Field(
-        description="List of 1-3 existing models that are most similar and might be better to edit instead",
-        min_length=0,
-        max_length=3,
-    )
-    recommendation: Literal["edit_existing", "create_new"] = Field(
-        description="Whether to edit existing models or create the new one"
-    )
-    confidence: float = Field(description="Confidence score from 0.0 to 1.0 for the recommendation", ge=0.0, le=1.0)
+# ---------------------------------------------------------------------------
+# Phase helpers
+# ---------------------------------------------------------------------------
 
 
-def create_analysis_agent(model_tier: ModelTier = "base") -> Agent[None, SimilarModelAnalysis]:
-    """Create the analysis agent for evaluating similarity and making recommendations.
-
-    Args:
-        model_tier: Model tier to use (defaults to "base")
-    """
-    return Agent[None, SimilarModelAnalysis](
-        model=settings.get_agent_model("similar_assess", default_tier=model_tier),
-        output_type=SimilarModelAnalysis,
-        retries=3,
-        system_prompt="""You are an expert medical imaging informatics analyst specializing in mapping natural language
-to standard codes and language for findings in medical imaging. Given a basic description of an imaging finding, your job
-is to analyze search results from a dictionary of standard codes and language and determine if any existing definitions
-are enough to the to be used for the proposed finding language, or if the described finding is distinct enough that it
-should be a new definition.
-
-Evaluate similarity based on:
-
-**HIGH SIMILARITY (70%+ - recommend editing existing):**
-- Same anatomical focus AND same finding type
-- New term could be included as a synonym or alternative name for the existing definition
-- Same clinical use case or scenario
-- Would serve same diagnostic purpose
-
-**MEDIUM SIMILARITY (40-70% - consider editing):**
-- Same anatomical focus OR same finding type
-- New term could be a useful synonym, but might required updating existing definition
-- Related clinical use cases
-- Could potentially be extended to cover new use case
-
-**LOW SIMILARITY (<40% - create new):**
-- Different anatomical focus AND different finding type
-- New term is sufficiently distinct from existing definitions that it would not fit well
-- Different clinical purposes
-- Would require major restructuring to accommodate
-
-Guidelines:
-- Only recommend editing if there's genuine overlap in clinical meaning and purpose
-- Consider if extending an existing definition would make it too broad/complex
-- Prefer creating new definitions when the clinical context is clearly different
-- Be conservative - when in doubt, recommend creating new
-
-Return 1-3 most similar models ONLY if they meet the criteria for editing.""",
-    )
+def _build_finding_description(
+    finding_name: str,
+    description: str | None = None,
+    synonyms: list[str] | None = None,
+) -> str:
+    """Build a text summary of the proposed finding for LLM prompts."""
+    parts = [f"Name: {finding_name}"]
+    if description:
+        parts.append(f"Description: {description}")
+    if synonyms:
+        parts.append(f"Synonyms: {', '.join(synonyms)}")
+    return "\n".join(parts)
 
 
-async def find_similar_models(  # noqa: C901
+def _build_candidate_descriptions(pool: CandidatePool) -> str:
+    """Format candidate pool entries for the selection agent prompt."""
+    lines: list[str] = []
+    for entry in pool.entries:
+        parts = [f"- **{entry.oifm_id}** | {entry.name}"]
+        if entry.description:
+            parts.append(f"  Description: {entry.description}")
+        if entry.synonyms:
+            parts.append(f"  Synonyms: {', '.join(entry.synonyms)}")
+        if entry.tags:
+            parts.append(f"  Tags: {', '.join(entry.tags)}")
+        if entry.body_regions:
+            parts.append(f"  Body regions: {', '.join(br.value for br in entry.body_regions)}")
+        if entry.entity_type:
+            parts.append(f"  Entity type: {entry.entity_type.value}")
+        lines.append("\n".join(parts))
+    return "\n\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Main pipeline
+# ---------------------------------------------------------------------------
+
+
+async def find_similar_models(
     finding_name: str,
     description: str | None = None,
     synonyms: list[str] | None = None,
     index: Index | None = None,
-    search_model_tier: ModelTier = "small",
-    analysis_model_tier: ModelTier = "base",
-) -> SimilarModelAnalysis:
+    *,
+    existing_model_id: str | None = None,
+    model_tier: ModelTier = "small",
+) -> SimilarModelResult:
+    """Find existing finding models similar to a proposed finding.
+
+    5-phase pipeline: fast-path → LLM planning → multi-pass search →
+    LLM selection → assembly.
+
+    Args:
+        finding_name: Name of the proposed finding
+        description: Optional description
+        synonyms: Optional list of synonyms
+        index: FindingModelIndex (creates one if None)
+        existing_model_id: If an existing model ID is available, adds related_models() pass
+        model_tier: LLM tier for planning and selection agents
     """
-    Find existing finding models that are similar enough to the proposed model
-    that it might be better to edit those instead of creating a new one.
+    with logfire.span("find_similar_models", finding_name=finding_name, tier=model_tier):
+        if index is None:
+            index = Index()
 
-    Optimized approach:
-    1. Generate search terms using small model (with fallback to default if needed)
-    2. Batch search all terms at once
-    3. Analyze results using default model
+        # === Phase 1: Fast-path ===
+        with logfire.span("phase1_fast_path"):
+            result = await _phase1_fast_path(index, finding_name, synonyms)
+            if result is not None:
+                logfire.info("Fast-path resolved", resolved=True)
+                return result
+            logfire.info("Fast-path resolved", resolved=False)
 
-    :param finding_name: Name of the proposed finding model
-    :param description: Description of the proposed finding model
-    :param synonyms: List of synonyms for the proposed finding model
-    :param index: Index object to search. If None, creates a new one
-    :param search_model_tier: Model tier for generating search terms (defaults to "small")
-    :param analysis_model_tier: Model tier for analyzing results (defaults to "base")
-    :return: Analysis with similar models and recommendation
-    """
-
-    # Create index if not provided
-    if index is None:
-        index = Index()
-
-    # Check if the index already has an exact match
-    existing_model = await index.get(finding_name)
-    if existing_model:
-        logger.info(
-            f"Exact match found in index for '{finding_name}': {existing_model.oifm_id} ({existing_model.name})"
-        )
-        confidence = 1.0 if existing_model.name == finding_name else 0.9
-        return SimilarModelAnalysis(
-            similar_models=[SearchResult(oifm_id=existing_model.oifm_id, name=existing_model.name)],
-            recommendation="edit_existing",
-            confidence=confidence,
-        )
-
-    # Check for an exact match in synonyms
-    if synonyms:
-        for synonym in synonyms:
-            existing_model = await index.get(synonym)
-            if existing_model:
-                confidence = 0.9 if existing_model.name == synonym else 0.8
-                logger.info(
-                    f"Synonym match found in index for synonym '{synonym}': {existing_model.oifm_id} ({existing_model.name})"
-                )
-                return SimilarModelAnalysis(
-                    similar_models=[SearchResult(oifm_id=existing_model.oifm_id, name=existing_model.name)],
-                    recommendation="edit_existing",
-                    confidence=confidence,
-                )
-
-    model_info = f"Name: {finding_name}\n"
-    if description:
-        model_info += f"Description: {description}\n"
-    if synonyms:
-        model_info += f"Synonyms: {', '.join(synonyms)}\n"
-
-    term_prompt = f"Generate 3-5 search terms for finding existing medical imaging definitions similar to this finding:\n\n{model_info}"
-
-    try:
-        # Step 1: Generate search terms with smart model selection
-        search_terms = await _generate_search_terms_with_fallback(term_prompt, search_model_tier, finding_name)
-
-        # Step 2: Batch search all terms at once
-        logger.info("Performing batch search for all terms")
-        batch_results = await index.search_batch(search_terms, limit=5)
-
-        # Combine and deduplicate results
-        all_found_models = {}
-        for _query, results in batch_results.items():
-            for result in results:
-                all_found_models[result.oifm_id] = result
-
-        total_unique = len(all_found_models)
-        logger.info(f"Batch search found {total_unique} unique models across {len(search_terms)} terms")
-
-        if not all_found_models:
-            logger.info("No similar models found")
-            return SimilarModelAnalysis(
-                similar_models=[],
-                recommendation="create_new",
-                confidence=1.0,
+        # === Phase 2: LLM Planning ===
+        with logfire.span("phase2_planning"):
+            finding_desc = _build_finding_description(finding_name, description, synonyms)
+            plan = await _phase2_planning(finding_desc, model_tier)
+            logfire.info(
+                "Planning complete",
+                terms_generated=len(plan.search_terms),
+                has_facet_hypotheses=bool(
+                    plan.facet_hypotheses.body_regions
+                    or plan.facet_hypotheses.modalities
+                    or plan.facet_hypotheses.entity_type
+                    or plan.facet_hypotheses.subspecialties
+                ),
             )
 
-        # Step 3: Analyze results using default model
-        search_results_data: list[dict[str, str | list[str]]] = []
-        for result in all_found_models.values():
-            result_data: dict[str, str | list[str]] = {"oifm_id": result.oifm_id, "name": result.name}
-            if result.description:
-                result_data["description"] = result.description
-            if result.synonyms:
-                result_data["synonyms"] = result.synonyms
-            search_results_data.append(result_data)
+        # === Phase 3: Multi-Pass Search ===
+        with logfire.span("phase3_search"):
+            pool = await _phase3_search(index, plan, existing_model_id)
+            logfire.info("Search complete", candidate_count=len(pool), passes=pool.pass_counts)
 
-        analysis_prompt = f"""
-Based on the search results, analyze the similarity between the proposed model and existing models.
+        if len(pool) == 0:
+            logger.info(f"No candidates found for '{finding_name}'")
+            return SimilarModelResult(
+                recommendation="create_new",
+                search_passes=pool.pass_counts,
+                facet_hypotheses=plan.facet_hypotheses,
+            )
 
-Finding Information:
-{model_info}
+        # === Phase 4: LLM Selection ===
+        with logfire.span("phase4_selection"):
+            selection = await _phase4_selection(finding_desc, pool, model_tier)
+            logfire.info(
+                "Selection complete",
+                selected_count=len(selection.selected_ids),
+                recommendation=selection.recommendation,
+            )
 
-SEARCH RESULTS:
-Search Terms Used: {search_terms}
-Total Models Found: {total_unique}
+        # === Phase 5: Assembly ===
+        with logfire.span("phase5_assembly"):
+            result = _phase5_assembly(selection, pool, plan.facet_hypotheses)
+            logfire.info("Assembly complete", recommendation=result.recommendation)
 
-Existing definitions Found:
-```json
-{json.dumps(search_results_data, indent=2)}
-```
+        return result
 
-Your task: Analyze these results and determine if any existing definitions are similar enough that editing them would be better
-than creating a new definition based on this finding. Apply the similarity criteria strictly and be conservative in your
-recommendations.
-"""
 
-        # Create analysis agent (standard model)
-        analysis_agent = create_analysis_agent(analysis_model_tier)
-        logger.info(f"Starting similarity analysis using tier {analysis_model_tier}")
-        analysis_result = await analysis_agent.run(analysis_prompt)
-        final_analysis = analysis_result.output
+# ---------------------------------------------------------------------------
+# Phase implementations
+# ---------------------------------------------------------------------------
 
-        logger.info(
-            f"Analysis complete for '{finding_name}': {final_analysis.recommendation} "
-            f"(confidence: {final_analysis.confidence:.2f})"
+
+async def _phase1_fast_path(
+    index: Index,
+    finding_name: str,
+    synonyms: list[str] | None,
+) -> SimilarModelResult | None:
+    """Phase 1: Check for exact match by name or synonyms."""
+    # Check name
+    existing = await index.get(finding_name)
+    if existing:
+        logger.info(f"Exact match found for '{finding_name}': {existing.oifm_id}")
+        return SimilarModelResult(
+            recommendation="edit_existing",
+            matches=[SimilarModelMatch(entry=existing, match_reasoning="Exact name match in index")],
+            search_passes={"fast_path": 1},
         )
 
-        if final_analysis.similar_models:
-            logger.info(f"Similar models found: {final_analysis.similar_models}")
+    # Check synonyms (batch via index.get)
+    if synonyms:
+        for synonym in synonyms:
+            existing = await index.get(synonym)
+            if existing:
+                logger.info(f"Synonym match found for '{synonym}': {existing.oifm_id}")
+                return SimilarModelResult(
+                    recommendation="edit_existing",
+                    matches=[SimilarModelMatch(entry=existing, match_reasoning=f"Synonym match: '{synonym}'")],
+                    search_passes={"fast_path": 1},
+                )
 
-        return final_analysis
-
-    except Exception as e:
-        logger.error(f"Optimized analysis failed: {e}")
-        # Return a fallback response
-        return SimilarModelAnalysis(
-            similar_models=[],
-            recommendation="create_new",
-            confidence=0.0,
-        )
+    return None
 
 
-async def _generate_search_terms_with_fallback(
-    term_prompt: str, search_model_tier: ModelTier, finding_name: str
-) -> list[str]:
-    """
-    Generate search terms with fallback to default model if small model performs poorly.
-    """
-    import time
+async def _phase2_planning(finding_desc: str, model_tier: ModelTier) -> SimilarModelPlan:
+    """Phase 2: Generate search terms and facet hypotheses via LLM."""
+    agent = create_planning_agent(model_tier)
+    prompt = f"Generate search terms and facet hypotheses for this proposed finding:\n\n{finding_desc}"
+    result = await agent.run(prompt)
+    return result.output
 
-    # Try the specified model first
-    logger.info(f"Generating search terms for '{finding_name}' using tier {search_model_tier}")
 
-    term_agent = create_term_generation_agent(search_model_tier)
-    start_time = time.time()
-    term_result = await term_agent.run(term_prompt)
-    duration = time.time() - start_time
-    search_terms = term_result.output.search_terms
+async def _phase3_search(
+    index: Index,
+    plan: SimilarModelPlan,
+    existing_model_id: str | None,
+) -> CandidatePool:
+    """Phase 3: Multi-pass search merged into CandidatePool."""
+    pool = CandidatePool()
 
-    logger.info(f"Generated {len(search_terms)} search terms in {duration:.2f}s: {search_terms}")
+    # Pass 1: Unfiltered text search (recall protection — ALWAYS runs)
+    try:
+        unfiltered_results = await index.search_batch(plan.search_terms, limit=6)
+        for entries in unfiltered_results.values():
+            pool.add_many(entries, "unfiltered_text")
+    except (ValueError, Exception) as e:
+        logger.warning(f"Unfiltered text search failed: {e}")
 
-    # Check if we got reasonable results (at least 2 terms, reasonable performance)
-    if len(search_terms) < 2 or duration > 3.0:
-        fallback_tier: ModelTier = "base"
-        logger.info(
-            f"Small model underperformed ({len(search_terms)} terms, {duration:.2f}s), trying tier {fallback_tier}"
-        )
+    # Pass 2: Facet-filtered search (when hypotheses available)
+    hyp = plan.facet_hypotheses
+    has_facets = hyp.body_regions or hyp.modalities or hyp.entity_type or hyp.subspecialties
+    if has_facets:
+        try:
+            # Use first 2 terms for filtered pass
+            filtered_terms = plan.search_terms[:2]
+            filtered_results = await index.search_batch(
+                filtered_terms,
+                limit=6,
+                body_regions=hyp.body_regions or None,
+                applicable_modalities=hyp.modalities or None,
+                entity_type=hyp.entity_type,
+                subspecialties=hyp.subspecialties or None,
+            )
+            for entries in filtered_results.values():
+                pool.add_many(entries, "facet_filtered")
+        except (ValueError, Exception) as e:
+            logger.warning(f"Facet-filtered search failed: {e}")
 
-        fallback_agent = create_term_generation_agent(fallback_tier)
-        start_time = time.time()
-        fallback_result = await fallback_agent.run(term_prompt)
-        fallback_duration = time.time() - start_time
-        fallback_terms = fallback_result.output.search_terms
+    # Pass 3: related_models() when caller provides an existing model ID
+    if existing_model_id:
+        try:
+            related = await index.related_models(existing_model_id, limit=6)
+            pool.add_many([entry for entry, _ in related], "related_models")
+        except (KeyError, Exception) as e:
+            logger.warning(f"related_models() failed for {existing_model_id}: {e}")
 
-        logger.info(
-            f"Fallback generated {len(fallback_terms)} search terms in {fallback_duration:.2f}s: {fallback_terms}"
-        )
+    return pool
 
-        # Use fallback if it's significantly better
-        if len(fallback_terms) > len(search_terms):
-            return fallback_terms
 
-    return search_terms
+async def _phase4_selection(
+    finding_desc: str,
+    pool: CandidatePool,
+    model_tier: ModelTier,
+) -> SimilarModelSelection:
+    """Phase 4: LLM selection from candidate pool."""
+    agent = create_selection_agent(model_tier)
+    candidate_text = _build_candidate_descriptions(pool)
+
+    prompt = f"""Analyze these candidate models for the proposed finding:
+
+**Proposed Finding:**
+{finding_desc}
+
+**Candidates ({len(pool)} total):**
+{candidate_text}
+
+Select 0-3 models that are close enough matches, or recommend creating a new model.
+If recommending create_new, identify the closest candidate and classify why it was rejected."""
+
+    result = await agent.run(prompt)
+    selection = result.output
+
+    # Post-validation: remove hallucinated IDs
+    selection = validate_selection_in_candidates(selection, pool)
+
+    return selection
+
+
+def _phase5_assembly(
+    selection: SimilarModelSelection,
+    pool: CandidatePool,
+    facet_hypotheses: FacetHypothesis,
+) -> SimilarModelResult:
+    """Phase 5: Assemble typed result from validated selection."""
+    matches: list[SimilarModelMatch] = []
+    for oifm_id in selection.selected_ids:
+        entry = pool.get(oifm_id)
+        if entry:
+            matches.append(SimilarModelMatch(entry=entry, match_reasoning=selection.reasoning))
+
+    closest_rejection: SimilarModelRejection | None = None
+    if selection.closest_rejection_id and selection.closest_rejection_reason:
+        rejection_entry = pool.get(selection.closest_rejection_id)
+        if rejection_entry:
+            closest_rejection = SimilarModelRejection(
+                entry=rejection_entry,
+                rejection_reason=selection.closest_rejection_reason,
+                reasoning=selection.reasoning,
+            )
+
+    # Coherence: if all selected IDs were removed by post-validation,
+    # downgrade "edit_existing" to "create_new"
+    recommendation = selection.recommendation
+    if recommendation == "edit_existing" and not matches:
+        logger.warning("Post-validation removed all selected IDs; downgrading to create_new")
+        recommendation = "create_new"
+
+    return SimilarModelResult(
+        recommendation=recommendation,
+        matches=matches,
+        closest_rejection=closest_rejection,
+        facet_hypotheses=facet_hypotheses,
+        search_passes=pool.pass_counts,
+    )

@@ -13,6 +13,31 @@
     },
     { "name": "Microsoft", "code": "MSFT", "url": "https://microsoft.com/" }
   ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID480",
+      "display": "aorta"
+    },
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID905",
+      "display": "abdominal aorta"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "233985008",
+      "display": "Abdominal aortic aneurysm"
+    }
+  ],
+  "body_regions": ["abdomen"],
+  "subspecialties": ["AB", "VI", "ER"],
+  "etiologies": ["vascular:aneurysmal"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "US", "MR"],
+  "sex_specificity": "sex-neutral",
   "attributes": [
     {
       "oifma_id": "OIFMA_MSFT_898601",

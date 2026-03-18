@@ -7,7 +7,7 @@ from .index_codes import add_standard_codes_to_model
 
 # NOTE: AI tools have moved to findingmodel_ai package.
 # Import from the appropriate subpackage:
-#   - findingmodel_ai.enrichment (enrich_finding, enrich_finding_unified, enrich_finding_agentic)
+#   - findingmodel_ai.metadata (assign_metadata)
 #   - findingmodel_ai.search (find_anatomic_locations, find_similar_models, match_ontology_concepts)
 #   - findingmodel_ai.authoring (create_info_from_name, create_model_from_markdown, edit_model_natural_language)
 

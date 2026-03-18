@@ -152,8 +152,74 @@ async def main():
         # List all with pagination
         models, total = await index.all(limit=20, offset=0)
 
+        # Browse by facet filters (no text search)
+        chest_findings, total = await index.browse(
+            body_regions=[BodyRegion.CHEST],
+            entity_type=EntityType.FINDING,
+            limit=10,
+        )
+
+        # Search with facet filters (text search + facet pre-filtering)
+        results = await index.search(
+            "effusion",
+            body_regions=[BodyRegion.CHEST],
+            applicable_modalities=[Modality.CT, Modality.XR],
+            limit=5,
+        )
+
+        # Find related models by deterministic facet-overlap scoring
+        related = await index.related_models("OIFM_RADLEX_000001", limit=5)
+        for entry, score in related:
+            print(f"  Related: {entry.name} (score={score:.1f})")
+
 
 asyncio.run(main())
+```
+
+### browse()
+
+Pure SQL facet filtering with pagination. Facet semantics: OR-within-facet, AND-across-facets, ALL-of for tags.
+
+```python
+entries, total = await index.browse(
+    body_regions=[BodyRegion.CHEST, BodyRegion.ABDOMEN],  # OR: chest OR abdomen
+    entity_type=EntityType.FINDING,  # AND: must be a finding
+    tags=["established"],  # AND + ALL-of: must have this tag
+    limit=20,
+    offset=0,
+)
+```
+
+### Facet-Aware Search
+
+`search()` and `search_batch()` accept the same facet filter parameters as `browse()`. Filters are pushed into SQL WHERE clauses before ranking (pre-ranking, not post-ranking).
+
+Supported facet filters currently include:
+- `body_regions`
+- `subspecialties`
+- `etiologies`
+- `entity_type`
+- `applicable_modalities`
+- `age_applicability`
+- `age_more_common_in`
+- `sex_specificity`
+- `time_course_durations`
+- `time_course_modifiers`
+- `tags`
+
+### related_models()
+
+Deterministic facet-overlap scoring — no LLM calls. Finds models sharing facets with a source model, scored by configurable weights.
+
+```python
+from findingmodel import RelatedModelWeights
+
+# Use default weights
+related = await index.related_models("OIFM_RADLEX_000001", limit=10, min_score=3.0)
+
+# Custom weights (e.g., prioritize anatomic location overlap)
+weights = RelatedModelWeights(anatomic_location_ids=10.0, body_regions=1.0)
+related = await index.related_models("OIFM_RADLEX_000001", weights=weights)
 ```
 
 ## MCP Server

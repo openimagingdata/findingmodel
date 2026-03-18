@@ -82,6 +82,21 @@ class IndexEntry(BaseModel):
         return bool(self.synonyms and any(s.casefold() == identifier.casefold() for s in self.synonyms))
 
 
+class RelatedModelWeights(BaseModel):
+    """Configurable weights for related_models() facet-overlap scoring."""
+
+    anatomic_location_ids: float = 5.0
+    index_code_keys: float = 4.0
+    entity_type: float = 3.0
+    body_regions: float = 2.0
+    etiologies: float = 2.0
+    subspecialties: float = 2.0
+    applicable_modalities: float = 1.0
+    age_overlap: float = 1.0
+    sex_match: float = 1.0
+    time_course: float = 1.0
+
+
 class FindingModelIndex(ReadOnlyDuckDBIndex):
     """DuckDB-based index with read-only connections."""
 
@@ -337,6 +352,69 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         conn = self._ensure_connection()
         return await asyncify(self._query_search_count)(conn, where_clause, sql_pattern)
 
+    @staticmethod
+    def _build_facet_where_clause(  # noqa: C901
+        *,
+        body_regions: Sequence[BodyRegion] | None = None,
+        subspecialties: Sequence[Subspecialty] | None = None,
+        etiologies: Sequence[EtiologyCode] | None = None,
+        entity_type: EntityType | Sequence[EntityType] | None = None,
+        applicable_modalities: Sequence[Modality] | None = None,
+        sex_specificity: SexSpecificity | Sequence[SexSpecificity] | None = None,
+        tags: Sequence[str] | None = None,
+    ) -> tuple[list[str], list[Any]]:
+        """Build WHERE clause fragments for facet filtering.
+
+        Multi-value facets use OR-within-facet (any overlap matches).
+        Tags use ALL-of semantics (model must have every requested tag).
+        All facet clauses are AND-ed together.
+
+        Returns:
+            (list of SQL fragments, list of parameters)
+        """
+        clauses: list[str] = []
+        params: list[Any] = []
+
+        # Array columns: OR-within via list_has_any
+        if body_regions:
+            clauses.append("list_has_any(body_regions, ?::VARCHAR[])")
+            params.append([br.value for br in body_regions])
+        if subspecialties:
+            clauses.append("list_has_any(subspecialties, ?::VARCHAR[])")
+            params.append([s.value for s in subspecialties])
+        if etiologies:
+            clauses.append("list_has_any(etiologies, ?::VARCHAR[])")
+            params.append([e.value for e in etiologies])
+        if applicable_modalities:
+            clauses.append("list_has_any(applicable_modalities, ?::VARCHAR[])")
+            params.append([m.value for m in applicable_modalities])
+
+        # Scalar columns: match any of the given values
+        if entity_type is not None:
+            if isinstance(entity_type, EntityType):
+                clauses.append("entity_type = ?")
+                params.append(entity_type.value)
+            else:
+                placeholders = ", ".join("?" for _ in entity_type)
+                clauses.append(f"entity_type IN ({placeholders})")
+                params.extend(et.value for et in entity_type)
+        if sex_specificity is not None:
+            if isinstance(sex_specificity, SexSpecificity):
+                clauses.append("sex_specificity = ?")
+                params.append(sex_specificity.value)
+            else:
+                placeholders = ", ".join("?" for _ in sex_specificity)
+                clauses.append(f"sex_specificity IN ({placeholders})")
+                params.extend(ss.value for ss in sex_specificity)
+
+        # Tags: ALL-of semantics (model must have every requested tag)
+        if tags:
+            for tag in tags:
+                clauses.append("oifm_id IN (SELECT oifm_id FROM tags WHERE tag = ?)")
+                params.append(tag)
+
+        return clauses, params
+
     def _build_slug_search_clause(
         self, pattern: str, match_type: Literal["exact", "prefix", "contains"]
     ) -> tuple[str, str, str]:
@@ -457,22 +535,239 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
 
         return entries, total
 
+    async def browse(
+        self,
+        *,
+        body_regions: Sequence[BodyRegion] | None = None,
+        subspecialties: Sequence[Subspecialty] | None = None,
+        etiologies: Sequence[EtiologyCode] | None = None,
+        entity_type: EntityType | Sequence[EntityType] | None = None,
+        applicable_modalities: Sequence[Modality] | None = None,
+        sex_specificity: SexSpecificity | Sequence[SexSpecificity] | None = None,
+        tags: Sequence[str] | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[IndexEntry], int]:
+        """Browse finding models by facet filters with pagination.
+
+        Pure SQL filtering — no FTS or embedding search. Facet semantics:
+        OR-within-facet (any overlap matches), AND-across-facets, ALL-of for tags.
+
+        Args:
+            body_regions: Filter by body regions (OR-within)
+            subspecialties: Filter by subspecialties (OR-within)
+            etiologies: Filter by etiologies (OR-within)
+            entity_type: Filter by entity type(s)
+            applicable_modalities: Filter by modalities (OR-within)
+            sex_specificity: Filter by sex specificity value(s)
+            tags: Filter by tags (ALL-of)
+            limit: Maximum results to return
+            offset: Number of results to skip
+
+        Returns:
+            (list of matching IndexEntry objects, total count)
+        """
+        clauses, params = self._build_facet_where_clause(
+            body_regions=body_regions,
+            subspecialties=subspecialties,
+            etiologies=etiologies,
+            entity_type=entity_type,
+            applicable_modalities=applicable_modalities,
+            sex_specificity=sex_specificity,
+            tags=tags,
+        )
+        where_clause = " AND ".join(clauses) if clauses else ""
+        conn = self._ensure_connection()
+        return await asyncify(self._execute_paginated_query)(
+            conn,
+            where_clause=where_clause,
+            where_params=params,
+            order_clause="LOWER(name)",
+            limit=limit,
+            offset=offset,
+        )
+
+    async def related_models(  # noqa: C901
+        self,
+        model_id: str,
+        *,
+        limit: int = 10,
+        min_score: float = 3.0,
+        weights: RelatedModelWeights | None = None,
+    ) -> list[tuple[IndexEntry, float]]:
+        """Find models related to the given model by deterministic facet-overlap scoring.
+
+        No LLM calls — purely deterministic. Uses browse() to prefilter candidates
+        sharing at least one facet, then scores based on configurable weights.
+
+        Args:
+            model_id: OIFM ID of the source model
+            limit: Maximum number of results
+            min_score: Minimum score threshold
+            weights: Optional weight overrides (defaults to RelatedModelWeights())
+
+        Returns:
+            List of (IndexEntry, score) tuples sorted by descending score
+
+        Raises:
+            KeyError: If model_id not found in index
+        """
+        w = weights or RelatedModelWeights()
+
+        # Fetch the source model entry
+        conn = self._ensure_connection()
+        source = await asyncify(self._fetch_index_entry)(conn, model_id)
+        if source is None:
+            raise KeyError(f"Model not found: {model_id}")
+
+        # Gather candidate models sharing at least one facet with source.
+        # Uses browse() for enum facets, and direct SQL for string-list columns
+        # (anatomic_location_ids, index_code_keys) which are the highest-weighted signals.
+        candidates: dict[str, IndexEntry] = {}
+
+        def _add_candidates(entries: list[IndexEntry]) -> None:
+            for entry in entries:
+                if entry.oifm_id != model_id:
+                    candidates[entry.oifm_id] = entry
+
+        # Enum facets via browse()
+        facet_queries: list[dict[str, Any]] = []
+        if source.body_regions:
+            facet_queries.append({"body_regions": source.body_regions})
+        if source.subspecialties:
+            facet_queries.append({"subspecialties": source.subspecialties})
+        if source.etiologies:
+            facet_queries.append({"etiologies": source.etiologies})
+        if source.entity_type:
+            facet_queries.append({"entity_type": source.entity_type})
+        if source.applicable_modalities:
+            facet_queries.append({"applicable_modalities": source.applicable_modalities})
+
+        for facet_kwargs in facet_queries:
+            entries, _ = await self.browse(**facet_kwargs, limit=200)
+            _add_candidates(entries)
+
+        # String-list columns via direct SQL (highest-weight signals)
+        if source.anatomic_location_ids:
+            ids = await asyncify(self._find_by_list_overlap)(
+                conn, "anatomic_location_ids", source.anatomic_location_ids, limit=200
+            )
+            _add_candidates(ids)
+        if source.index_code_keys:
+            ids = await asyncify(self._find_by_list_overlap)(conn, "index_code_keys", source.index_code_keys, limit=200)
+            _add_candidates(ids)
+
+        if not candidates:
+            return []
+
+        # Score each candidate
+        scored: list[tuple[IndexEntry, float]] = []
+        for entry in candidates.values():
+            score = self._score_related(source, entry, w)
+            if score >= min_score:
+                scored.append((entry, score))
+
+        scored.sort(key=lambda item: item[1], reverse=True)
+        return scored[:limit]
+
+    @staticmethod
+    def _score_related(source: IndexEntry, candidate: IndexEntry, w: RelatedModelWeights) -> float:  # noqa: C901
+        """Compute weighted facet-overlap score between two index entries."""
+        score = 0.0
+
+        # List overlap helpers
+        def list_overlap(a: list[str] | None, b: list[str] | None) -> float:
+            if not a or not b:
+                return 0.0
+            sa, sb = set(a), set(b)
+            intersection = len(sa & sb)
+            if intersection == 0:
+                return 0.0
+            return intersection / max(len(sa), len(sb))
+
+        def enum_list_overlap(a: list[Any] | None, b: list[Any] | None) -> float:
+            if not a or not b:
+                return 0.0
+            sa = {x.value if hasattr(x, "value") else x for x in a}
+            sb = {x.value if hasattr(x, "value") else x for x in b}
+            intersection = len(sa & sb)
+            if intersection == 0:
+                return 0.0
+            return intersection / max(len(sa), len(sb))
+
+        # Weighted overlap scoring
+        score += w.anatomic_location_ids * list_overlap(source.anatomic_location_ids, candidate.anatomic_location_ids)
+        score += w.index_code_keys * list_overlap(source.index_code_keys, candidate.index_code_keys)
+        score += w.body_regions * enum_list_overlap(source.body_regions, candidate.body_regions)
+        score += w.etiologies * enum_list_overlap(source.etiologies, candidate.etiologies)
+        score += w.subspecialties * enum_list_overlap(source.subspecialties, candidate.subspecialties)
+        score += w.applicable_modalities * enum_list_overlap(
+            source.applicable_modalities, candidate.applicable_modalities
+        )
+
+        # Entity type match (binary)
+        if source.entity_type and candidate.entity_type and source.entity_type == candidate.entity_type:
+            score += w.entity_type
+
+        # Sex specificity match (binary)
+        if source.sex_specificity and candidate.sex_specificity and source.sex_specificity == candidate.sex_specificity:
+            score += w.sex_match
+
+        # Age overlap
+        if source.age_profile and candidate.age_profile:
+            s_app = source.age_profile.applicability
+            c_app = candidate.age_profile.applicability
+            if s_app == "all_ages" or c_app == "all_ages":
+                # "all_ages" encompasses everything — full match
+                score += w.age_overlap
+            elif isinstance(s_app, list) and isinstance(c_app, list):
+                source_stages = set(s_app)
+                candidate_stages = set(c_app)
+                if source_stages and candidate_stages:
+                    intersection = len(source_stages & candidate_stages)
+                    score += w.age_overlap * (intersection / max(len(source_stages), len(candidate_stages)))
+
+        # Time course match
+        if (
+            source.expected_time_course
+            and candidate.expected_time_course
+            and source.expected_time_course.duration
+            and candidate.expected_time_course.duration
+            and source.expected_time_course.duration == candidate.expected_time_course.duration
+        ):
+            score += w.time_course
+
+        return score
+
     async def search(
         self,
         query: str,
         *,
         limit: int = 10,
         tags: Sequence[str] | None = None,
+        body_regions: Sequence[BodyRegion] | None = None,
+        subspecialties: Sequence[Subspecialty] | None = None,
+        etiologies: Sequence[EtiologyCode] | None = None,
+        entity_type: EntityType | Sequence[EntityType] | None = None,
+        applicable_modalities: Sequence[Modality] | None = None,
+        sex_specificity: SexSpecificity | Sequence[SexSpecificity] | None = None,
     ) -> list[IndexEntry]:
         """Search for finding models using hybrid search with RRF fusion.
 
         Uses Reciprocal Rank Fusion to combine FTS and semantic search results,
-        returning exact matches immediately if found.
+        returning exact matches immediately if found. Optional facet filters
+        are pushed into SQL WHERE clauses (pre-ranking, not post-ranking).
 
         Args:
             query: Search query string (must not be empty or whitespace-only)
             limit: Maximum number of results to return
             tags: Optional list of tags - models must have ALL specified tags
+            body_regions: Filter by body regions (OR-within)
+            subspecialties: Filter by subspecialties (OR-within)
+            etiologies: Filter by etiologies (OR-within)
+            entity_type: Filter by entity type(s)
+            applicable_modalities: Filter by modalities (OR-within)
+            sex_specificity: Filter by sex specificity value(s)
 
         Raises:
             ValueError: If query is empty or contains only whitespace
@@ -483,14 +778,32 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         conn = self._ensure_connection()
         self._require_openai_key_if_needed(conn)
 
+        # Build facet filter for structured columns only.
+        # Tags are handled separately by _search_exact/_search_fts/_search_semantic
+        # via their existing in-memory tag checks, to avoid double-filtering.
+        facet_clauses, facet_params = self._build_facet_where_clause(
+            body_regions=body_regions,
+            subspecialties=subspecialties,
+            etiologies=etiologies,
+            entity_type=entity_type,
+            applicable_modalities=applicable_modalities,
+            sex_specificity=sex_specificity,
+        )
+
         # Exact matches take priority - return immediately if found
         exact_matches = await asyncify(self._search_exact)(conn, query, tags=tags)
         if exact_matches:
+            if facet_clauses:
+                exact_matches = self._apply_facet_filter(conn, exact_matches, facet_clauses, facet_params)
             return exact_matches[:limit]
 
-        # Get both FTS and semantic results
-        fts_matches = await asyncify(self._search_fts)(conn, query, limit=limit, tags=tags)
-        semantic_matches = await self._search_semantic(conn, query, limit=limit, tags=tags)
+        # Get both FTS and semantic results (facet filtering applied in SQL, tags checked in-memory)
+        fts_matches = await asyncify(self._search_fts)(
+            conn, query, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+        )
+        semantic_matches = await self._search_semantic(
+            conn, query, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+        )
 
         # If no vector results, just return FTS results
         if not semantic_matches:
@@ -516,7 +829,17 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         return results
 
     async def search_batch(  # noqa: C901
-        self, queries: list[str], *, limit: int = 10
+        self,
+        queries: list[str],
+        *,
+        limit: int = 10,
+        body_regions: Sequence[BodyRegion] | None = None,
+        subspecialties: Sequence[Subspecialty] | None = None,
+        etiologies: Sequence[EtiologyCode] | None = None,
+        entity_type: EntityType | Sequence[EntityType] | None = None,
+        applicable_modalities: Sequence[Modality] | None = None,
+        sex_specificity: SexSpecificity | Sequence[SexSpecificity] | None = None,
+        tags: Sequence[str] | None = None,
     ) -> dict[str, list[IndexEntry]]:
         """Search multiple queries efficiently with single embedding call and RRF fusion.
 
@@ -524,9 +847,18 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         then performs hybrid search with RRF fusion for each query.
         Empty or whitespace-only queries are skipped.
 
+        Optional facet filters are applied pre-ranking in SQL WHERE clauses.
+
         Args:
             queries: List of search query strings
             limit: Maximum number of results per query
+            body_regions: Filter by body regions (OR-within)
+            subspecialties: Filter by subspecialties (OR-within)
+            etiologies: Filter by etiologies (OR-within)
+            entity_type: Filter by entity type(s)
+            applicable_modalities: Filter by modalities (OR-within)
+            sex_specificity: Filter by sex specificity value(s)
+            tags: Optional list of tags - models must have ALL specified tags
 
         Returns:
             Dictionary mapping each non-blank query string to its list of results
@@ -544,6 +876,18 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
 
         conn = self._ensure_connection()
         self._require_openai_key_if_needed(conn)
+
+        # Build facet filter for structured columns only.
+        # Tags are handled separately by _search_exact/_search_fts/_search_semantic
+        # via their existing in-memory tag checks, to avoid double-filtering.
+        facet_clauses, facet_params = self._build_facet_where_clause(
+            body_regions=body_regions,
+            subspecialties=subspecialties,
+            etiologies=etiologies,
+            entity_type=entity_type,
+            applicable_modalities=applicable_modalities,
+            sex_specificity=sex_specificity,
+        )
 
         provider, model, dimensions = self._get_db_embedding_profile(conn)
         cfg = get_settings()
@@ -563,18 +907,24 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         query: str
         for query, embedding in zip(valid_queries, embeddings, strict=True):
             # Check for exact match first
-            exact_matches = self._search_exact(conn, query, tags=None)
+            exact_matches = self._search_exact(conn, query, tags=tags)
             if exact_matches:
+                if facet_clauses:
+                    exact_matches = self._apply_facet_filter(conn, exact_matches, facet_clauses, facet_params)
                 results[query] = exact_matches[:limit]
                 continue
 
             # Perform FTS search
-            fts_matches = self._search_fts(conn, query, limit=limit, tags=None)
+            fts_matches = self._search_fts(
+                conn, query, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+            )
 
             # Perform semantic search using pre-generated embedding
             semantic_matches: list[tuple[IndexEntry, float]] = []
             if embedding is not None:
-                semantic_matches = self._search_semantic_with_embedding(conn, embedding, limit=limit, tags=None)
+                semantic_matches = self._search_semantic_with_embedding(
+                    conn, embedding, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+                )
 
             # If no vector results, just return FTS results
             if not semantic_matches:
@@ -1150,6 +1500,48 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         entry_tags = set(entry.tags or [])
         return all(tag in entry_tags for tag in tags)
 
+    def _apply_facet_filter(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        entries: list[IndexEntry],
+        facet_clauses: list[str],
+        facet_params: list[Any],
+    ) -> list[IndexEntry]:
+        """Filter entries by facet clauses using SQL for accuracy."""
+        if not entries or not facet_clauses:
+            return entries
+        oifm_ids = [e.oifm_id for e in entries]
+        placeholders = ", ".join("?" for _ in oifm_ids)
+        where = " AND ".join(facet_clauses)
+        rows = conn.execute(
+            f"SELECT oifm_id FROM finding_models WHERE oifm_id IN ({placeholders}) AND {where}",
+            oifm_ids + facet_params,
+        ).fetchall()
+        matching_ids = {row[0] for row in rows}
+        return [e for e in entries if e.oifm_id in matching_ids]
+
+    def _find_by_list_overlap(
+        self,
+        conn: duckdb.DuckDBPyConnection,
+        column: str,
+        values: list[str],
+        *,
+        limit: int = 200,
+    ) -> list[IndexEntry]:
+        """Find entries where a VARCHAR[] column overlaps with the given values."""
+        if not values:
+            return []
+        rows = conn.execute(
+            f"SELECT oifm_id FROM finding_models WHERE list_has_any({column}, ?::VARCHAR[]) LIMIT ?",
+            [values, limit],
+        ).fetchall()
+        entries: list[IndexEntry] = []
+        for (oifm_id,) in rows:
+            entry = self._fetch_index_entry(conn, str(oifm_id))
+            if entry:
+                entries.append(entry)
+        return entries
+
     def _search_fts(
         self,
         conn: duckdb.DuckDBPyConnection,
@@ -1157,14 +1549,26 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         *,
         limit: int,
         tags: Sequence[str] | None = None,
+        facet_clauses: list[str] | None = None,
+        facet_params: list[Any] | None = None,
     ) -> list[tuple[IndexEntry, float]]:
+        # Build optional facet pre-filter subquery
+        facet_prefilter = ""
+        all_params: list[Any] = [query]
+        if facet_clauses:
+            facet_where = " AND ".join(facet_clauses)
+            facet_prefilter = f"WHERE f.oifm_id IN (SELECT oifm_id FROM finding_models WHERE {facet_where})"
+            all_params.extend(facet_params or [])
+        all_params.append(limit * 3)
+
         rows = conn.execute(
-            """
+            f"""
             WITH candidates AS (
                 SELECT
                     f.oifm_id,
                     fts_main_finding_models.match_bm25(f.oifm_id, ?) AS bm25_score
                 FROM finding_models AS f
+                {facet_prefilter}
             )
             SELECT oifm_id, bm25_score
             FROM candidates
@@ -1172,7 +1576,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             ORDER BY bm25_score DESC
             LIMIT ?
             """,
-            (query, limit * 3),
+            all_params,
         ).fetchall()
 
         if not rows:
@@ -1206,6 +1610,8 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         *,
         limit: int,
         tags: Sequence[str] | None = None,
+        facet_clauses: list[str] | None = None,
+        facet_params: list[Any] | None = None,
     ) -> list[tuple[IndexEntry, float]]:
         """Perform semantic search by generating embedding for query text."""
 
@@ -1234,7 +1640,9 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         if embedding is None:
             return []
 
-        return await asyncify(self._search_semantic_with_embedding)(conn, embedding, limit=limit, tags=tags)
+        return await asyncify(self._search_semantic_with_embedding)(
+            conn, embedding, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+        )
 
     def _search_semantic_with_embedding(
         self,
@@ -1243,6 +1651,8 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         *,
         limit: int,
         tags: Sequence[str] | None = None,
+        facet_clauses: list[str] | None = None,
+        facet_params: list[Any] | None = None,
     ) -> list[tuple[IndexEntry, float]]:
         """Perform semantic search using a pre-computed embedding.
 
@@ -1253,6 +1663,8 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             embedding: Pre-computed embedding vector
             limit: Maximum number of results to return
             tags: Optional list of tags - models must have ALL specified tags
+            facet_clauses: Optional SQL WHERE fragments for facet filtering
+            facet_params: Parameters for facet WHERE fragments
 
         Returns:
             List of (IndexEntry, score) tuples sorted by descending similarity
@@ -1264,14 +1676,23 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         if len(embedding) != dimensions:
             self._warn_embedding_mismatch_once(len(embedding), dimensions)
             return []
+
+        # Build optional facet WHERE for SQL pushdown
+        facet_where = ""
+        extra_params: list[Any] = []
+        if facet_clauses:
+            facet_where = "WHERE " + " AND ".join(facet_clauses)
+            extra_params = list(facet_params or [])
+
         rows = conn.execute(
             f"""
             SELECT oifm_id, array_distance(embedding, CAST(? AS FLOAT[{dimensions}])) AS l2_distance
             FROM finding_models
+            {facet_where}
             ORDER BY array_distance(embedding, CAST(? AS FLOAT[{dimensions}]))
             LIMIT ?
             """,
-            (embedding, embedding, limit * 3),
+            [embedding, *extra_params, embedding, limit * 3],
         ).fetchall()
 
         if not rows:

@@ -11,6 +11,8 @@ from rich.console import Console
 from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
 from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
 from findingmodel_ai.config import settings
+from findingmodel_ai.metadata import assign_metadata
+from findingmodel_ai.observability import ensure_logfire_configured
 
 console = Console()
 
@@ -147,6 +149,77 @@ def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, outpu
             console.print_json(model.model_dump_json(indent=2, exclude_none=True))
 
     asyncio.run(_do_markdown_to_fm(finding_path, with_ids, source, output))
+
+
+@cli.command("assign-metadata")
+@click.argument("finding_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Output path for the updated finding model JSON. Defaults to stdout.",
+)
+@click.option(
+    "--review-output",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Optional output path for the metadata-assignment review JSON.",
+)
+@click.option(
+    "--model-tier",
+    type=click.Choice(["small", "base", "full"]),
+    default="small",
+    show_default=True,
+    help="Model tier for metadata assignment.",
+)
+@click.option(
+    "--model",
+    help="Optional explicit model override (provider:model) for this run only.",
+)
+@click.option(
+    "--logfire",
+    is_flag=True,
+    help="Opt in to Logfire instrumentation for this run, including outbound HTTP calls.",
+)
+def assign_metadata_command(
+    finding_path: Path,
+    output: Path | None,
+    review_output: Path | None,
+    model_tier: str,
+    model: str | None,
+    logfire: bool,
+) -> None:
+    """Assign canonical structured metadata to an existing .fm.json model."""
+
+    async def _do_assign_metadata() -> None:
+        if logfire:
+            ensure_logfire_configured(console=False)
+
+        finding_model = FindingModelFull.model_validate_json(finding_path.read_text())
+
+        with console.status("[bold green]Assigning canonical metadata..."):
+            result = await assign_metadata(
+                finding_model,
+                model_tier=model_tier,  # type: ignore[arg-type]
+                model=model,
+            )
+
+        model_json = result.model.model_dump_json(indent=2, exclude_none=True)
+        review_json = result.review.model_dump_json(indent=2, exclude_none=True)
+
+        if output:
+            output.write_text(model_json + "\n")
+            console.print(f"[green]Saved updated finding model to [yellow]{output}[/yellow][/green]")
+        else:
+            console.print_json(model_json)
+
+        if review_output:
+            review_output.write_text(review_json + "\n")
+            console.print(f"[green]Saved metadata review to [yellow]{review_output}[/yellow][/green]")
+
+        if result.review.logfire_trace_id:
+            click.echo(f"Logfire trace_id: {result.review.logfire_trace_id}", err=True)
+
+    asyncio.run(_do_assign_metadata())
 
 
 @cli.group()

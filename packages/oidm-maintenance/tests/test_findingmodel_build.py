@@ -1120,20 +1120,31 @@ class TestDataCorrectness:
             assert total == 1
             assert entries[0].body_regions == [BodyRegion.PELVIS, BodyRegion.ABDOMEN]
 
-    async def test_index_hydrates_null_structured_metadata_fields(self, built_test_db: Path) -> None:
-        """Existing models without facet data hydrate structured fields as None."""
+    async def test_index_hydrates_partial_structured_metadata_fields(self, built_test_db: Path) -> None:
+        """Built test data hydrates present fields and leaves missing structured fields as None."""
+        from findingmodel import (
+            AgeStage,
+            BodyRegion,
+            EntityType,
+            Modality,
+            SexSpecificity,
+            Subspecialty,
+        )
+
         async with FindingModelIndex(built_test_db) as index:
-            entry = await index.get("OIFM_MSFT_134126")
+            entry = await index.get("OIFM_MSFT_356221")
             assert entry is not None
-            assert entry.body_regions is None
-            assert entry.subspecialties is None
+            assert entry.body_regions == [BodyRegion.BREAST]
+            assert entry.subspecialties == [Subspecialty.BR]
             assert entry.etiologies is None
-            assert entry.entity_type is None
-            assert entry.applicable_modalities is None
+            assert entry.entity_type == EntityType.MEASUREMENT
+            assert entry.applicable_modalities == [Modality.MG]
             assert entry.expected_time_course is None
-            assert entry.age_profile is None
-            assert entry.sex_specificity is None
-            assert entry.anatomic_location_ids is None
+            assert entry.age_profile is not None
+            assert entry.age_profile.applicability == [AgeStage.ADULT, AgeStage.MIDDLE_AGED, AgeStage.AGED]
+            assert entry.age_profile.more_common_in == [AgeStage.MIDDLE_AGED, AgeStage.AGED]
+            assert entry.sex_specificity == SexSpecificity.FEMALE_SPECIFIC
+            assert entry.anatomic_location_ids == ["ANATOMICLOCATIONS:RID29895"]
             assert entry.index_code_keys is None
 
     def test_text_builders_exclude_structured_metadata_labels(self) -> None:

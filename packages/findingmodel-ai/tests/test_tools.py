@@ -553,13 +553,14 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
 # Comprehensive behavioral testing in evals/similar_models.py
 # This sanity check verifies basic wiring only
 @pytest.mark.callout
-async def test_find_similar_models_basic_wiring() -> None:
+async def test_find_similar_models_basic_wiring(use_findingmodel_test_db: str) -> None:
     """Sanity check: Verify basic wiring with real API.
 
     All comprehensive behavioral testing is in evals/similar_models.py.
     This test only verifies the tool can be called successfully.
     """
-    from findingmodel_ai.search.similar import SimilarModelAnalysis, find_similar_models
+    from findingmodel_ai.search.pipeline_helpers import SimilarModelResult
+    from findingmodel_ai.search.similar import find_similar_models
 
     # Skip if API key not configured
     if not ai_settings.openai_api_key or not ai_settings.openai_api_key.get_secret_value():
@@ -574,14 +575,14 @@ async def test_find_similar_models_basic_wiring() -> None:
         result = await find_similar_models(
             finding_name="pneumothorax",
             description="Presence of air in the pleural space",
-            analysis_model_tier="small",
+            model_tier="small",
         )
 
         # Assert only on structure, not behavior
-        assert isinstance(result, SimilarModelAnalysis)
-        assert hasattr(result, "similar_models")
+        assert isinstance(result, SimilarModelResult)
+        assert hasattr(result, "matches")
         assert hasattr(result, "recommendation")
-        assert hasattr(result, "confidence")
+        assert result.recommendation in ("edit_existing", "create_new")
 
         # NO behavioral assertions - those belong in evals
     finally:

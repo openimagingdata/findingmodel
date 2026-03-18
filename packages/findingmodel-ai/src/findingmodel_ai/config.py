@@ -129,6 +129,10 @@ class FindingModelAIConfig(BaseSettings):
 
     # Logfire observability
     logfire_token: SecretStr = Field(default=SecretStr(""), description="Logfire write token for cloud tracing")
+    disable_send_to_logfire: bool = Field(
+        default=False,
+        description="Disable sending traces to Logfire cloud; local instrumentation still works.",
+    )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
 

@@ -3,6 +3,26 @@
   "name": "pulmonary embolism",
   "description": "Pulmonary embolism is the occlusion of a pulmonary artery or one of its branches, typically caused by thrombi that originate from the deep veins of the legs or other parts of the body, leading to impaired gas exchange and potential hemodynamic instability.",
   "synonyms": ["PE"],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID1301",
+      "display": "lung"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "59282003",
+      "display": "Pulmonary embolism"
+    }
+  ],
+  "body_regions": ["chest"],
+  "subspecialties": ["CH", "ER"],
+  "etiologies": ["vascular:thrombotic"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "XR"],
+  "sex_specificity": "sex-neutral",
   "attributes": [
     {
       "oifma_id": "OIFMA_MSFT_463871",
