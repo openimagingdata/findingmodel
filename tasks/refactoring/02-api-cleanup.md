@@ -1,5 +1,7 @@
 # API Cleanup and Deprecation Plan
 
+Historical note: this plan predates the current public API surface. The duplicate alias set described below no longer matches the live codebase, so this document requires revalidation before execution.
+
 ## Executive Summary
 The tools module has 8+ duplicate function aliases creating API confusion and maintenance burden. This refactoring will establish a clear deprecation strategy and clean up the public API.
 

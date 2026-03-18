@@ -1,5 +1,7 @@
 # Finding Enrichment Pipeline Optimization Proposal
 
+Historical note: this proposal analyzes an older enrichment pipeline and refers to file/module locations that predate the current canonical rewrite direction.
+
 ## Executive Summary
 
 This document analyzes the current finding enrichment pipeline, identifies performance bottlenecks and prompt quality issues, and proposes specific improvements based on current prompting best practices.

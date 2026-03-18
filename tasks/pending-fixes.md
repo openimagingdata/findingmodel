@@ -1,5 +1,7 @@
 # Pending Fixes and Technical Debt
 
+Revalidation note: some file paths and command names below predate the current package split. Confirm the maintainer package entrypoints and module locations before implementation.
+
 ## Anatomic Location DuckDB Rebuild - Preserve Embeddings
 
 **Issue**: Need to implement rebuild/update strategy for `anatomic_locations.duckdb` that preserves existing embeddings

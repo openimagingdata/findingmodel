@@ -1,5 +1,7 @@
 # Finding Enrichment System - Product Requirements Document
 
+Historical note: this PRD documents an older enrichment pathway and uses pre-rewrite file/module locations. The current direction is tracked in `docs/canonical-structured-metadata-and-enrichment-rewrite.md`.
+
 ## Implementation Status
 
 **Status**: Testing Complete (Phases 1-8)

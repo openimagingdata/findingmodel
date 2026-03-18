@@ -1,5 +1,7 @@
 # Breaking Circular Dependencies Plan
 
+Historical note: this plan predates the current monorepo/package layout and contributor architecture. Revalidate the current dependency graph before using this document as implementation guidance.
+
 ## Executive Summary
 The codebase has circular dependencies between Person ↔ Organization ↔ Index classes, creating tight coupling and testing difficulties. This refactoring will break these cycles using dependency injection and the Repository pattern.
 

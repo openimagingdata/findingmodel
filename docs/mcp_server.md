@@ -87,7 +87,7 @@ To use the MCP server with Claude Desktop, add the following to your Claude Desk
 }
 ```
 
-**Note**: The server requires an OpenAI API key for semantic search functionality. Set the `OPENAI_API_KEY` environment variable or configure it in your `.env` file.
+**Note**: The server uses the active `findingmodel` database artifact and embedding profile. With the default `auto` profile, OpenAI-backed semantic search is used when `OPENAI_API_KEY` is configured; otherwise `findingmodel` can use local-profile artifacts.
 
 ## Tools Reference
 
@@ -162,10 +162,7 @@ How many finding models are in the index?
 
 **By default, the MCP server automatically downloads and uses the latest version of the Finding Model Repository Index.** No manual configuration is required.
 
-The database is downloaded from a trusted remote source and cached locally at:
-
-- Linux/macOS: `~/.local/share/findingmodel/finding_models.duckdb`
-- Windows: `%LOCALAPPDATA%\findingmodel\finding_models.duckdb`
+The database is downloaded from a trusted remote source and cached locally in the platform-native `findingmodel` data directory managed by `platformdirs`.
 
 ### Custom Database Location (Optional)
 
@@ -182,29 +179,29 @@ When using a custom path without additional configuration, the file will be used
 ### Running Tests
 
 ```bash
-uv run pytest test/test_mcp_server.py -v
+uv run pytest packages/findingmodel/tests/test_mcp_server.py -v
 ```
 
 ### Type Checking
 
 ```bash
-uv run mypy src/findingmodel/mcp_server.py
+uv run mypy packages/findingmodel/src/findingmodel/mcp_server.py
 ```
 
 ### Linting
 
 ```bash
-uv run ruff check src/findingmodel/mcp_server.py
-uv run ruff format src/findingmodel/mcp_server.py
+uv run ruff check packages/findingmodel/src/findingmodel/mcp_server.py
+uv run ruff format packages/findingmodel/src/findingmodel/mcp_server.py
 ```
 
 ## Troubleshooting
 
 ### OpenAI API Key Not Found
 
-**Error**: `ConfigurationError: OpenAI API key not configured`
+**Error**: Semantic search configuration error
 
-**Solution**: Set the `OPENAI_API_KEY` environment variable or add it to your `.env` file:
+**Solution**: Configure the runtime profile and matching database artifact. For OpenAI-backed search, set `OPENAI_API_KEY`:
 
 ```bash
 export OPENAI_API_KEY=your-api-key-here
@@ -231,10 +228,10 @@ The MCP server follows these design principles:
 
 To add new tools or modify existing ones:
 
-1. Add the tool function in `src/findingmodel/mcp_server.py`
+1. Add the tool function in `packages/findingmodel/src/findingmodel/mcp_server.py`
 2. Decorate it with `@mcp.tool()`
 3. Provide comprehensive docstrings (used by AI to understand the tool)
-4. Add tests in `test/test_mcp_server.py`
+4. Add tests in `packages/findingmodel/tests/test_mcp_server.py`
 5. Update this documentation
 
 ## License

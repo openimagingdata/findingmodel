@@ -49,7 +49,7 @@ index = AnatomicLocationIndex(db_path="/path/to/custom.duckdb")
 
 ### Semantic Search
 
-Set `OPENAI_API_KEY` (or `ANATOMIC_OPENAI_API_KEY`) to enable embedding-based semantic search. Without it, search uses keyword matching only (FTS), which may miss conceptual matches for multi-word queries.
+Set `OPENAI_API_KEY` (or `ANATOMIC_OPENAI_API_KEY`) to enable semantic search. The current runtime supports OpenAI-embedded anatomic databases only, so semantic search will fail fast if no OpenAI key is configured.
 
 ## CLI
 

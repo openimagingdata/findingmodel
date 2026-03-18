@@ -20,14 +20,14 @@ pip install findingmodel
 Create a `.env` file in your project root:
 
 ```bash
-# Required for embedding-based search
+# Optional: OpenAI-backed semantic search
 OPENAI_API_KEY=your_key_here
 
 # Optional: Custom database path
 FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb
 ```
 
-The finding model database is automatically downloaded on first use.
+The finding model database is automatically downloaded on first use. If no OpenAI key is configured, `findingmodel` can use local-profile database artifacts instead of OpenAI-backed search.
 
 ## CLI (`findingmodel`)
 
@@ -136,7 +136,6 @@ The package includes an MCP server for AI agent integration.
 
 - **search_finding_models**: Hybrid search (FTS + semantic) for finding models
 - **get_finding_model**: Retrieve specific models by ID, name, or synonym
-- **list_finding_model_tags**: List all available tags
 - **count_finding_models**: Get index statistics
 
 ### Running the Server

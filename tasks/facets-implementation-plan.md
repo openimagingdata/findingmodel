@@ -1,5 +1,7 @@
 # Faceted Classification Implementation Plan
 
+Revalidation note: the product direction may still be relevant, but the file paths and package references in this plan predate the current monorepo layout and should be updated before implementation starts.
+
 **Spec Reference:** [findingmodel-facets.md](./findingmodel-facets.md)
 
 **Date:** 2025-11-07

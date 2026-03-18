@@ -1,5 +1,7 @@
 # Performance Optimizations Plan
 
+Historical note: this plan predates the current monorepo/package layout. Revalidate the current bottlenecks and file/module locations before implementing it.
+
 ## Executive Summary
 The codebase has several performance bottlenecks including redundant database queries, inefficient batch operations, and missed opportunities for concurrent execution. This refactoring will optimize critical paths for 30-50% performance improvement.
 

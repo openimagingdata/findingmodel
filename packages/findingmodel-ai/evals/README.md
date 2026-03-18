@@ -142,10 +142,8 @@ python -m evals.model_editor
 ### Environment Variables
 
 - `LOGFIRE_TOKEN` - Write token (optional, enables cloud tracing)
-- `DISABLE_SEND_TO_LOGFIRE` - Force local-only mode (default: false)
-- `LOGFIRE_VERBOSE` - Enable console logging (default: false)
 
-**Note:** By default, Logfire console output is disabled to keep eval runs clean. Traces are still sent to the cloud when a token is present.
+**Note:** `ensure_instrumented()` currently configures Logfire with `send_to_logfire="if-token-present"` and `console=False`. If you need different behavior, update `packages/findingmodel-ai/evals/__init__.py`.
 
 ### For New Eval Suites
 
@@ -194,4 +192,3 @@ Run evals when:
 - [Model Editor Eval Suite](model_editor.py)
 - [Base Evaluators Library](base.py)
 - [Evaluation Utilities](utils.py)
-

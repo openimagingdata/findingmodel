@@ -1,5 +1,7 @@
 # Validation Framework Plan
 
+Historical note: this plan predates the current monorepo/package layout. Revalidate file paths and current responsibilities before treating it as active implementation guidance.
+
 ## Executive Summary
 The current validation logic is scattered across multiple methods with deep 5-level call chains. This refactoring will create a unified, extensible validation framework using the Chain of Responsibility pattern.
 

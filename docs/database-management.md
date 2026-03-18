@@ -47,16 +47,20 @@ Configure automatic downloads by setting environment variables in `.env`:
 # Finding models index
 FINDINGMODEL_REMOTE_DB_URL=https://your-server.com/finding_models.duckdb
 FINDINGMODEL_REMOTE_DB_HASH=sha256:your_hash_here
+FINDINGMODEL_MANIFEST_URL=https://your-server.com/manifest.json
 
 # Anatomic locations database
 ANATOMIC_REMOTE_DB_URL=https://your-server.com/anatomic_locations.duckdb
 ANATOMIC_REMOTE_DB_HASH=sha256:your_hash_here
+ANATOMIC_MANIFEST_URL=https://your-server.com/manifest.json
 ```
 
 Both URL and SHA256 hash must be provided. The package uses [Pooch](https://www.fatiando.org/pooch/) for:
 - Automatic downloads on first use
 - Hash verification (re-downloads if hash mismatches)
 - Caching in platform-native directories
+
+`*_MANIFEST_URL` can be used to point a package at an alternate manifest while still using manifest-managed artifact resolution.
 
 ## CLI Commands
 
@@ -185,7 +189,7 @@ To regenerate embeddings for anatomic locations:
 oidm-maintain anatomic build --source /path/to/data.json --force
 ```
 
-The `--force` flag overwrites the existing database.
+The `--force` flag overwrites the existing database. The current `anatomic-locations` runtime expects OpenAI-embedded database artifacts.
 
 ## File Locations Reference
 

@@ -4,6 +4,7 @@
 
 - Proposed
 - Supersedes the old enrichment implementation plan now archived at `docs/archive/finding-enrichment-implementation-plan.md`
+- Supersedes the older enrichment PRD now archived at `docs/archive/finding-enrichment-prd.md`
 
 ## Summary
 

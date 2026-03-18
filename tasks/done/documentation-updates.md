@@ -1,5 +1,7 @@
 # Documentation Update Plan
 
+Historical note: this plan reflected a partial post-monorepo audit and is now superseded by `docs/plans/documentation-audit-2026-03-17.md`.
+
 This document lists documentation updates needed to align with the current codebase behavior and CLI surface area.
 
 ## High Priority (Behavioral Mismatches)

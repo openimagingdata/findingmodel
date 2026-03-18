@@ -1,5 +1,7 @@
 # Index Class Decomposition Plan - Phase 2
 
+Historical note: this plan predates the current monorepo/package layout and still references MongoDB-era structures. Revalidate against the live codebase before implementing any part of it.
+
 **Status**: 📋 Planned (Phase 2 - not started)
 **Prerequisites**: Phase 1 DuckDB migration complete (see [../index-duckdb-migration.md](../index-duckdb-migration.md))
 **Scope**: Refactor BOTH MongoDB and DuckDB Index implementations

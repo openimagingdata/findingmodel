@@ -22,7 +22,7 @@ Both use the same patterns: remote distribution via manifest, local caching, and
 1. **manifest.json** on remote storage lists available databases with URLs and hashes
 2. **ensure_*_db()** functions check local cache, download if needed, verify hash
 3. **Pooch** handles download, caching, and hash verification
-4. Local files cached in platform-native directories (`~/.local/share/findingmodel/` on Linux)
+4. Local files are cached in platform-native directories via `platformdirs`
 
 ### Key Functions
 
@@ -51,9 +51,11 @@ db_path = ensure_db_file(
 FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb      # Skip download, use this file
 ANATOMIC_DB_PATH=/mnt/data/anatomic_locations.duckdb
 
-# Or specify explicit remote (overrides manifest)
+# Or specify explicit remote / manifest source
 FINDINGMODEL_REMOTE_DB_URL=https://example.com/db.duckdb
 FINDINGMODEL_REMOTE_DB_HASH=sha256:abc123...
+FINDINGMODEL_MANIFEST_URL=https://example.com/manifest.json
+ANATOMIC_MANIFEST_URL=https://example.com/anatomic-manifest.json
 ```
 
 ### Adding a New Database
@@ -214,18 +216,23 @@ See `oidm_maintenance/anatomic/build.py` in the oidm-maintenance package.
 DuckDB FLOAT columns are 32-bit. OpenAI returns 64-bit floats. Always convert:
 
 ```python
-from findingmodel.tools.duckdb_utils import get_embedding_for_duckdb, batch_embeddings_for_duckdb
+from oidm_common.embeddings import get_embedding, get_embeddings_batch
 
 # Single embedding (returns float32 list)
-embedding = await get_embedding_for_duckdb("kidney tumor")
+embedding = await get_embedding("kidney tumor", provider="openai", model="text-embedding-3-small", dimensions=512)
 
 # Batch embeddings (single API call, all float32)
-embeddings = await batch_embeddings_for_duckdb(["term1", "term2", "term3"], client=openai_client)
+embeddings = await get_embeddings_batch(
+    ["term1", "term2", "term3"],
+    provider="openai",
+    model="text-embedding-3-small",
+    dimensions=512,
+)
 ```
 
 ### Embedding Dimensions
 
-Configured via `settings.openai_embedding_dimensions` (default: 512). Both databases use the same dimension.
+Configured by the selected embedding profile and, when present, by the database's `embedding_profile` metadata.
 
 ---
 

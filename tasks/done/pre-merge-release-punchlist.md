@@ -1,5 +1,7 @@
 # Pre-Merge Release Punchlist
 
+Historical note: this punchlist targeted the old `refactor-multiple-packages` branch before merge to `dev`. It is retained for reference only.
+
 Date: 2026-01-29
 Branch: `refactor-multiple-packages` → `dev`
 Sources: Claude Code review, Codex automated review, Gemini automated review

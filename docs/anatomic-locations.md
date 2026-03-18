@@ -322,7 +322,7 @@ async with AnatomicLocationIndex(db_path="/path/to/custom.duckdb") as index:
 
 ### Semantic Search (OpenAI Embeddings)
 
-Semantic search uses OpenAI embeddings to find results beyond exact keyword matches (e.g., "cardiac chamber" → "ventricle"). It is enabled automatically when an OpenAI API key is available:
+Semantic search uses OpenAI embeddings to find results beyond exact keyword matches (e.g., "cardiac chamber" → "ventricle"). The current runtime supports OpenAI-embedded anatomic databases only, so an OpenAI key is required for semantic search:
 
 ```bash
 # Either standard key (recommended — shared with other packages)
@@ -332,7 +332,7 @@ OPENAI_API_KEY=sk-...
 ANATOMIC_OPENAI_API_KEY=sk-...
 ```
 
-Without an OpenAI key, search falls back to keyword-only (FTS), which works well for exact terms but may miss conceptual matches for multi-word queries.
+If no OpenAI key is configured, semantic search fails fast with a configuration error rather than silently falling back to keyword-only search.
 
 ### Auto-Download Behavior
 

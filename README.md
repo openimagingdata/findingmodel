@@ -27,13 +27,15 @@ pip install findingmodel-ai
 Create a `.env` file:
 
 ```bash
-# Required for embedding-based search and AI tools
+# AI tools require at least one provider key
 OPENAI_API_KEY=your_key_here
 
 # Or use another provider
 ANTHROPIC_API_KEY=your_key_here
 GOOGLE_API_KEY=your_key_here
 ```
+
+`findingmodel` search can also run against local-profile database artifacts without an API key. `anatomic-locations` semantic search currently requires an OpenAI key.
 
 ### Using the Index
 

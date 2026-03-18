@@ -1,5 +1,7 @@
 # Deferred to v0.5.1
 
+Revalidation note: this deferred plan predates the current `oidm-maintain` CLI and runtime embedding-profile behavior. Recheck commands, file paths, and search assumptions before implementation.
+
 Features and enhancements deferred from v0.5.0 to the next release.
 
 ## 1. Manifest and Database Distribution Enhancements
@@ -251,7 +253,7 @@ Add `search_type` parameter to search methods to support different search strate
 
 ### Current Gap
 
-The `search()` method always uses hybrid search (BM25 + semantic embeddings), which requires an OpenAI API key. If the key is missing, search fails entirely even though FTS could still provide useful results.
+This section reflects historical search behavior before the current runtime embedding-profile support. Revalidate the exact current gap before implementing a `search_type` parameter.
 
 ### Proposed Solution
 
