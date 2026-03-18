@@ -33,17 +33,14 @@ ReasoningLevel = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 # Agent tags for per-agent model configuration
 # Pattern: {domain}_{verb} - describes what the agent DOES
 AgentTag = Literal[
-    # Enrichment domain
-    "enrich_classify",  # Classifies finding attributes
-    "enrich_unified",  # Unified enrichment workflow
-    "enrich_research",  # Researches with tools before classifying
+    # Metadata assignment domain
+    "metadata_assign",  # Assigns canonical structured metadata
     # Anatomic location domain
     "anatomic_search",  # Searches for anatomic locations
     "anatomic_select",  # Selects from location candidates
     # Similar models domain
-    "similar_term_gen",  # Generates search terms for similar finding discovery
-    "similar_search",  # Searches for similar findings (tool-using search agent)
-    "similar_assess",  # Assesses similarity results
+    "similar_plan",  # Generates search terms + facet hypotheses
+    "similar_select",  # Selects matches from candidate pool
     # Ontology domain
     "ontology_match",  # Matches to ontology concepts
     "ontology_search",  # Searches ontologies

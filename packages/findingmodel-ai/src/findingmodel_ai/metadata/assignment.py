@@ -102,17 +102,15 @@ def _get_trace_id() -> str | None:
     return f"{span_context.trace_id:032x}"
 
 
-def _resolve_classifier_model(model_tier: ModelTier, model_name: str | None) -> tuple[Model | None, str]:
-    """Resolve the classifier model object and recordable model string."""
-    if model_name:
-        return settings.resolve_model_spec(model_name, default_tier=model_tier), model_name
-    return None, settings.get_effective_model_string("metadata_assign", default_tier=model_tier)
-
-
 def create_metadata_assignment_agent(
-    model_tier: ModelTier = "small", model: Model | None = None
+    model_tier: ModelTier = "small",
+    model: Model | None = None,
 ) -> Agent[None, MetadataAssignmentDecision]:
-    """Create the narrow classifier agent used by the metadata-assignment pipeline."""
+    """Create the narrow classifier agent used by the metadata-assignment pipeline.
+
+    The model parameter exists for test injection (TestModel/FunctionModel).
+    Production code should not pass it — model selection goes through agent tags.
+    """
     resolved_model = model or settings.get_agent_model("metadata_assign", default_tier=model_tier)
     return Agent[None, MetadataAssignmentDecision](
         model=resolved_model,
@@ -531,9 +529,8 @@ async def _run_classifier(
     ontology_states: dict[str, _OntologyCandidateState],
     anatomic_states: dict[str, _AnatomicCandidateState],
     model_tier: ModelTier,
-    model: str | None,
 ) -> tuple[MetadataAssignmentDecision, str, float]:
-    model_used = model or settings.get_effective_model_string("metadata_assign", default_tier=model_tier)
+    model_used = settings.get_effective_model_string("metadata_assign", default_tier=model_tier)
     decision = MetadataAssignmentDecision(classification_rationale="Fast-path: existing canonical data was sufficient.")
     start = perf_counter()
     with logfire.span(
@@ -543,8 +540,7 @@ async def _run_classifier(
         anatomic_candidates=len(anatomic_states),
     ):
         if needs_classifier:
-            resolved_model, model_used = _resolve_classifier_model(model_tier, model)
-            agent = create_metadata_assignment_agent(model_tier=model_tier, model=resolved_model)
+            agent = create_metadata_assignment_agent(model_tier=model_tier)
             decision_result = await agent.run(_decision_prompt(finding_model, ontology_states, anatomic_states))
             decision = decision_result.output
             logfire.info(
@@ -562,7 +558,6 @@ async def assign_metadata(
     finding_model: FindingModelFull,
     *,
     model_tier: ModelTier = "small",
-    model: str | None = None,
 ) -> MetadataAssignmentResult:
     """Assign canonical structured metadata to a finding model."""
     warnings: list[str] = []
@@ -608,7 +603,6 @@ async def assign_metadata(
             ontology_states=ontology_states,
             anatomic_states=anatomic_states,
             model_tier=model_tier,
-            model=model,
         )
 
         _apply_ontology_decisions(ontology_states, decision.ontology_decisions, warnings)

@@ -542,10 +542,10 @@ def test_resolve_agent_config_reasoning_per_model_normalization() -> None:
         google_api_key="test-google-key",
         anthropic_api_key="test-anthropic-key",
     )
-    # similar_term_gen uses reasoning = "minimal" for gemini-3-flash and "low" for gpt-5.4-nano
+    # similar_plan uses reasoning = "minimal" for gemini-3-flash and "low" for gpt-5.4-nano
     # gpt-5.4-nano: minimal → low (per TOML normalize)
     # gemini-3-flash-preview: minimal → minimal (valid for flash, no normalization needed)
-    chain = config.resolve_agent_config("similar_term_gen")
+    chain = config.resolve_agent_config("similar_plan")
     assert len(chain) == 3
     nano_entry = next(c for c in chain if c.model_string == "openai:gpt-5.4-nano")
     flash_entry = next(c for c in chain if c.model_string == "google-gla:gemini-3-flash-preview")
@@ -615,38 +615,37 @@ def test_get_effective_reasoning_level_returns_primary() -> None:
 
 
 # ---------------------------------------------------------------------------
-# AgentTag validity — similar_term_gen
+# AgentTag validity — similar_plan
 # ---------------------------------------------------------------------------
 
 
-def test_similar_term_gen_tag_exists() -> None:
-    """'similar_term_gen' is a valid AgentTag and can be resolved without error."""
+def test_similar_plan_tag_exists() -> None:
+    """'similar_plan' is a valid AgentTag and can be resolved without error."""
     config = FindingModelAIConfig(
         openai_api_key="test-openai-key",
         google_api_key="test-google-key",
         anthropic_api_key="test-anthropic-key",
     )
-    chain = config.resolve_agent_config("similar_term_gen")
+    chain = config.resolve_agent_config("similar_plan")
     assert len(chain) >= 1
     assert all(c.model_string for c in chain)
 
 
 # ---------------------------------------------------------------------------
-# Enrichment agents — tier fallback (no models list in TOML)
+# Metadata assignment agent — has TOML models list
 # ---------------------------------------------------------------------------
 
 
-def test_enrichment_agents_use_tier_fallback() -> None:
-    """enrich_classify has no models list in TOML, so resolve returns the tier default."""
+def test_metadata_assign_tag_resolves() -> None:
+    """metadata_assign has a TOML models list and resolves to a chain."""
     config = FindingModelAIConfig(
         openai_api_key="test-openai-key",
         google_api_key="test-google-key",
         anthropic_api_key="test-anthropic-key",
     )
-    # enrich_classify has tier_fallback = "base" and no models list
-    chain = config.resolve_agent_config("enrich_classify")
-    assert len(chain) == 1
-    assert chain[0].model_string == config.default_model
+    chain = config.resolve_agent_config("metadata_assign")
+    assert len(chain) >= 1
+    assert all(c.model_string for c in chain)
 
 
 # ---------------------------------------------------------------------------

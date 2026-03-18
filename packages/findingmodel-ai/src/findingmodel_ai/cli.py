@@ -172,10 +172,6 @@ def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, outpu
     help="Model tier for metadata assignment.",
 )
 @click.option(
-    "--model",
-    help="Optional explicit model override (provider:model) for this run only.",
-)
-@click.option(
     "--logfire",
     is_flag=True,
     help="Opt in to Logfire instrumentation for this run, including outbound HTTP calls.",
@@ -185,7 +181,6 @@ def assign_metadata_command(
     output: Path | None,
     review_output: Path | None,
     model_tier: str,
-    model: str | None,
     logfire: bool,
 ) -> None:
     """Assign canonical structured metadata to an existing .fm.json model."""
@@ -200,7 +195,6 @@ def assign_metadata_command(
             result = await assign_metadata(
                 finding_model,
                 model_tier=model_tier,  # type: ignore[arg-type]
-                model=model,
             )
 
         model_json = result.model.model_dump_json(indent=2, exclude_none=True)

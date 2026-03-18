@@ -3,16 +3,16 @@
 This module provides Logfire instrumentation configuration for eval suites.
 Individual eval modules require NO additional Logfire code - instrumentation is provided by:
 - Pydantic Evals: Dataset.evaluate() creates root + per-case spans
-- Pydantic AI: logfire.instrument_pydantic_ai() traces agent/model/tool calls
+- Pydantic AI: traces agent/model/tool calls
+- HTTPX: traces outbound API calls such as BioOntology requests
 
-Configuration: LOGFIRE_TOKEN in .env is loaded via FindingModelAIConfig (pydantic-settings).
-Do NOT rely on os.environ or call logfire.configure() directly.
+Configuration via environment:
+- LOGFIRE_TOKEN: Set to send to Logfire cloud (optional)
 
 See: https://ai.pydantic.dev/evals/#integration-with-logfire
 """
 
-# Track instrumentation state to make ensure_instrumented() idempotent
-_instrumented = False
+from findingmodel_ai.observability import ensure_logfire_configured
 
 
 def ensure_instrumented() -> None:
@@ -20,20 +20,8 @@ def ensure_instrumented() -> None:
 
     This function is idempotent - safe to call multiple times.
     Call this explicitly in eval suite __main__ blocks before running evals.
-
-    Uses FindingModelAIConfig.configure_logfire() which reads LOGFIRE_TOKEN
-    from .env via pydantic-settings — the single config path for this project.
     """
-    global _instrumented
-
-    if _instrumented:
-        return
-
-    from findingmodel_ai.config import settings
-
-    settings.configure_logfire()
-
-    _instrumented = True
+    ensure_logfire_configured(console=False)
 
 
 __all__ = ["ensure_instrumented"]

@@ -280,7 +280,8 @@ Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each en
 | `ontology_search` | `openai:gpt-5-nano` | low | gemini-3-flash, haiku |
 | `describe_finding` | `openai:gpt-5-nano` | low | gemini-3-flash, haiku |
 | `anatomic_search` | `gemini-3-flash-preview` | minimal | gpt-5-nano, haiku |
-| `similar_term_gen` | `gemini-3-flash-preview` | minimal | gpt-5-nano, haiku |
+| `similar_plan` | `gemini-3-flash-preview` | minimal | gpt-5-nano, haiku |
+| `metadata_assign` | `gemini-3-flash-preview` | low | gpt-5-nano, haiku |
 
 #### Medical Classification
 
@@ -288,7 +289,7 @@ Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each en
 |-----|--------------|-----------|-----------|
 | `ontology_match` | `gemini-3.1-pro-preview` | low | gpt-5-mini/medium, sonnet |
 | `anatomic_select` | `gemini-3.1-pro-preview` | medium | gpt-5-mini/medium, sonnet |
-| `similar_assess` | `gemini-3.1-flash-lite` | medium | gpt-5-mini/medium, haiku |
+| `similar_select` | `gemini-3.1-flash-lite` | medium | gpt-5-mini/medium, haiku |
 
 #### Complex Structured Output
 
@@ -302,11 +303,7 @@ Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each en
 
 | Tag | Primary Model | Reasoning | Fallbacks |
 |-----|--------------|-----------|-----------|
-| `similar_search` | `openai:gpt-5.4` | low | sonnet, gemini-3.1-pro |
 | `describe_details` | `gemini-3-flash-preview` | low | gpt-5-mini, haiku |
-| `enrich_classify` | (tier fallback: base) | — | — |
-| `enrich_unified` | (tier fallback: base) | — | — |
-| `enrich_research` | (tier fallback: base) | — | — |
 
 ### Environment Variable Overrides
 
@@ -482,7 +479,7 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `DEFAULT_REASONING_SMALL` | No | `low` | Reasoning level for small tier |
 | `DEFAULT_REASONING_BASE` | No | `none` | Reasoning level for base tier |
 | `DEFAULT_REASONING_FULL` | No | `high` | Reasoning level for full tier |
-| `AGENT_MODEL_OVERRIDES__<tag>` | No | - | Override model for specific agent tag (e.g., enrich_classify) |
+| `AGENT_MODEL_OVERRIDES__<tag>` | No | - | Override model for specific agent tag (e.g., metadata_assign) |
 | `AGENT_REASONING_OVERRIDES__<tag>` | No | - | Override reasoning level for specific agent tag |
 | `TAVILY_API_KEY` | For citations | - | Tavily search API key |
 | `TAVILY_SEARCH_DEPTH` | No | `advanced` | Search depth: basic/advanced |
