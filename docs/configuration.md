@@ -41,9 +41,9 @@ OPENAI_API_KEY=sk-...
 ```
 
 **Supported models:**
-- `openai:gpt-5.4` - Flagship reasoning model (default base and full tiers)
-- `openai:gpt-5-mini` - Cost-effective option (good for base tier overrides)
-- `openai:gpt-5-nano` - Lightest option for high-volume simple tasks
+- `openai:gpt-5.4` - Flagship reasoning model (default full tier)
+- `openai:gpt-5.4-mini` - Fast default base-tier model
+- `openai:gpt-5.4-nano` - Lightest option for high-volume simple tasks
 
 ### Anthropic Setup
 
@@ -154,9 +154,9 @@ The following models are tested and supported. Model names must be specified exa
 
 | Model | Spec | Notes |
 |-------|------|-------|
-| GPT-5.4 | `openai:gpt-5.4` | Flagship; supports `xhigh` reasoning; **base and full tier default** |
-| GPT-5-mini | `openai:gpt-5-mini` | Fast, economical; good base-tier override |
-| GPT-5-nano | `openai:gpt-5-nano` | Lightest option; high-volume simple tasks |
+| GPT-5.4 | `openai:gpt-5.4` | Flagship; supports `xhigh` reasoning; **full tier default** |
+| GPT-5.4-mini | `openai:gpt-5.4-mini` | Fast, economical; **base tier default** |
+| GPT-5.4-nano | `openai:gpt-5.4-nano` | Lightest option; high-volume simple tasks |
 
 > **Note:** `openai:gpt-5` is a real model but not on the approved list — use `gpt-5.4` instead.
 
@@ -198,7 +198,7 @@ The library uses a three-tier model selection system to balance cost and capabil
 | Tier | Environment Variable | Default | Reasoning Default | Use Case |
 |------|---------------------|---------|-------------------|----------|
 | `small` | `DEFAULT_MODEL_SMALL` | `google-gla:gemini-3-flash-preview` | `low` | Simple classification, query generation |
-| `base` | `DEFAULT_MODEL` | `openai:gpt-5.4` | `none` | Most agent workflows |
+| `base` | `DEFAULT_MODEL` | `openai:gpt-5.4-mini` | `none` | Most agent workflows |
 | `full` | `DEFAULT_MODEL_FULL` | `openai:gpt-5.4` | `high` | Complex reasoning, model editing |
 
 > **Note on API keys:** The small-tier default uses Google Gemini and requires `GOOGLE_API_KEY`. If you only have an OpenAI key, set `DEFAULT_MODEL_SMALL=openai:gpt-5-mini` in your `.env`.
@@ -277,19 +277,19 @@ Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each en
 
 | Tag | Primary Model | Reasoning | Fallbacks |
 |-----|--------------|-----------|-----------|
-| `ontology_search` | `openai:gpt-5-nano` | low | gemini-3-flash, haiku |
-| `describe_finding` | `openai:gpt-5-nano` | low | gemini-3-flash, haiku |
-| `anatomic_search` | `gemini-3-flash-preview` | minimal | gpt-5-nano, haiku |
-| `similar_plan` | `gemini-3-flash-preview` | minimal | gpt-5-nano, haiku |
-| `metadata_assign` | `gemini-3-flash-preview` | low | gpt-5-nano, haiku |
+| `ontology_search` | `openai:gpt-5.4-nano` | low | gemini-3-flash, haiku |
+| `describe_finding` | `openai:gpt-5.4-nano` | low | gemini-3-flash, haiku |
+| `anatomic_search` | `gemini-3-flash-preview` | minimal | gpt-5.4-nano, haiku |
+| `similar_plan` | `gemini-3-flash-preview` | minimal | gpt-5.4-nano, haiku |
+| `metadata_assign` | `gemini-3-flash-preview` | low | gpt-5.4-nano, haiku |
 
 #### Medical Classification
 
 | Tag | Primary Model | Reasoning | Fallbacks |
 |-----|--------------|-----------|-----------|
-| `ontology_match` | `gemini-3.1-pro-preview` | low | gpt-5-mini/medium, sonnet |
-| `anatomic_select` | `gemini-3.1-pro-preview` | medium | gpt-5-mini/medium, sonnet |
-| `similar_select` | `gemini-3.1-flash-lite` | medium | gpt-5-mini/medium, haiku |
+| `ontology_match` | `gemini-3.1-pro-preview` | low | gpt-5.4-mini/medium, sonnet |
+| `anatomic_select` | `gpt-5.4-mini` | medium | gemini-3.1-pro/medium, sonnet |
+| `similar_select` | `gemini-3.1-flash-lite` | medium | gpt-5.4-mini/medium, haiku |
 
 #### Complex Structured Output
 
@@ -473,7 +473,7 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `GOOGLE_API_KEY` | One AI key required | - | Google AI Studio API key |
 | `PYDANTIC_AI_GATEWAY_API_KEY` | For gateway/* | - | Pydantic AI Gateway key |
 | `OLLAMA_BASE_URL` | No | `http://localhost:11434/v1` | Ollama server URL |
-| `DEFAULT_MODEL` | No | `openai:gpt-5.4` | Base tier model |
+| `DEFAULT_MODEL` | No | `openai:gpt-5.4-mini` | Base tier model |
 | `DEFAULT_MODEL_FULL` | No | `openai:gpt-5.4` | Full tier model |
 | `DEFAULT_MODEL_SMALL` | No | `google-gla:gemini-3-flash-preview` | Small tier model (requires `GOOGLE_API_KEY` or `PYDANTIC_AI_GATEWAY_API_KEY`) |
 | `DEFAULT_REASONING_SMALL` | No | `low` | Reasoning level for small tier |

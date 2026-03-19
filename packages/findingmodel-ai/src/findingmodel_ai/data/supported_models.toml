@@ -256,8 +256,8 @@ models = [
 [agents.anatomic_select]
 tier_fallback = "base"
 models = [
-    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "medium" },
     { model = "openai:gpt-5.4-mini", reasoning = "medium" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "medium" },
     { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
 ]
 

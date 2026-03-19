@@ -101,7 +101,7 @@ class FindingModelAIConfig(BaseSettings):
 
     # Model configuration (Pydantic AI string format: "provider:model")
     # See MODEL_SPEC_PATTERN for supported providers
-    default_model: ModelSpec = Field(default="openai:gpt-5.4")
+    default_model: ModelSpec = Field(default="openai:gpt-5.4-mini")
     default_model_full: ModelSpec = Field(default="openai:gpt-5.4")
     default_model_small: ModelSpec = Field(default="google-gla:gemini-3-flash-preview")
 

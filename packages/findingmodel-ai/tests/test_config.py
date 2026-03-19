@@ -255,9 +255,9 @@ def test_default_model_small_is_gemini_flash() -> None:
     assert config.default_model_small == "google-gla:gemini-3-flash-preview"
 
 
-def test_default_model_base_is_gpt54() -> None:
+def test_default_model_base_is_gpt54_mini() -> None:
     config = FindingModelAIConfig()
-    assert config.default_model == "openai:gpt-5.4"
+    assert config.default_model == "openai:gpt-5.4-mini"
 
 
 def test_default_model_full_is_gpt54() -> None:
@@ -536,7 +536,7 @@ def test_resolve_agent_config_reasoning_env_override(monkeypatch: pytest.MonkeyP
 
 
 def test_resolve_agent_config_reasoning_per_model_normalization() -> None:
-    """Reasoning levels are normalized per model: 'minimal' normalizes differently for gpt-5-nano vs gemini-3-flash."""
+    """Reasoning levels are normalized per model: gpt-5.4-nano differs from gemini flash."""
     config = FindingModelAIConfig(
         openai_api_key="test-openai-key",
         google_api_key="test-google-key",
