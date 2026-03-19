@@ -26,8 +26,8 @@ class ModelMatchRejectionReason(str, Enum):
     OVERLAPPING_SCOPE = "overlapping_scope"
 
 
-class FacetHypothesis(BaseModel):
-    """LLM-generated guesses about the finding's facet profile.
+class MetadataHypothesis(BaseModel):
+    """LLM-generated guesses about the finding's metadata profile.
 
     These are GUESSES — used to add a filtered search pass, not as hard gates.
     """
@@ -42,7 +42,7 @@ class SimilarModelPlan(BaseModel):
     """Output of Phase 2: LLM planning step."""
 
     search_terms: list[str] = Field(min_length=2, max_length=5)
-    facet_hypotheses: FacetHypothesis = Field(default_factory=FacetHypothesis)
+    metadata_hypotheses: MetadataHypothesis = Field(default_factory=MetadataHypothesis)
 
 
 class SimilarModelSelection(BaseModel):
@@ -76,7 +76,7 @@ class SimilarModelResult(BaseModel):
     recommendation: Literal["edit_existing", "create_new"]
     matches: list[SimilarModelMatch] = Field(default_factory=list, max_length=3)
     closest_rejection: SimilarModelRejection | None = None
-    facet_hypotheses: FacetHypothesis | None = None
+    metadata_hypotheses: MetadataHypothesis | None = None
     search_passes: dict[str, int] = Field(default_factory=dict)
 
 

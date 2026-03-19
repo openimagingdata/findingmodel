@@ -83,7 +83,7 @@ class IndexEntry(BaseModel):
 
 
 class RelatedModelWeights(BaseModel):
-    """Configurable weights for related_models() facet-overlap scoring."""
+    """Configurable weights for related_models() metadata-overlap scoring."""
 
     anatomic_location_ids: float = 5.0
     index_code_keys: float = 4.0
@@ -353,7 +353,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         return await asyncify(self._query_search_count)(conn, where_clause, sql_pattern)
 
     @staticmethod
-    def _build_facet_where_clause(  # noqa: C901
+    def _build_metadata_where_clause(  # noqa: C901
         *,
         body_regions: Sequence[BodyRegion] | None = None,
         subspecialties: Sequence[Subspecialty] | None = None,
@@ -363,11 +363,11 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         sex_specificity: SexSpecificity | Sequence[SexSpecificity] | None = None,
         tags: Sequence[str] | None = None,
     ) -> tuple[list[str], list[Any]]:
-        """Build WHERE clause fragments for facet filtering.
+        """Build WHERE clause fragments for metadata filtering.
 
-        Multi-value facets use OR-within-facet (any overlap matches).
+        Multi-value fields use OR-within-field (any overlap matches).
         Tags use ALL-of semantics (model must have every requested tag).
-        All facet clauses are AND-ed together.
+        All filter clauses are AND-ed together.
 
         Returns:
             (list of SQL fragments, list of parameters)
@@ -548,10 +548,10 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         limit: int = 100,
         offset: int = 0,
     ) -> tuple[list[IndexEntry], int]:
-        """Browse finding models by facet filters with pagination.
+        """Browse finding models by metadata filters with pagination.
 
-        Pure SQL filtering — no FTS or embedding search. Facet semantics:
-        OR-within-facet (any overlap matches), AND-across-facets, ALL-of for tags.
+        Pure SQL filtering — no FTS or embedding search. Filter semantics:
+        OR-within-field (any overlap matches), AND-across-fields, ALL-of for tags.
 
         Args:
             body_regions: Filter by body regions (OR-within)
@@ -567,7 +567,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         Returns:
             (list of matching IndexEntry objects, total count)
         """
-        clauses, params = self._build_facet_where_clause(
+        clauses, params = self._build_metadata_where_clause(
             body_regions=body_regions,
             subspecialties=subspecialties,
             etiologies=etiologies,
@@ -595,10 +595,10 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         min_score: float = 3.0,
         weights: RelatedModelWeights | None = None,
     ) -> list[tuple[IndexEntry, float]]:
-        """Find models related to the given model by deterministic facet-overlap scoring.
+        """Find models related to the given model by deterministic metadata-overlap scoring.
 
         No LLM calls — purely deterministic. Uses browse() to prefilter candidates
-        sharing at least one facet, then scores based on configurable weights.
+        sharing at least one metadata field, then scores based on configurable weights.
 
         Args:
             model_id: OIFM ID of the source model
@@ -620,7 +620,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         if source is None:
             raise KeyError(f"Model not found: {model_id}")
 
-        # Gather candidate models sharing at least one facet with source.
+        # Gather candidate models sharing at least one metadata field with source.
         # Uses browse() for enum facets, and direct SQL for string-list columns
         # (anatomic_location_ids, index_code_keys) which are the highest-weighted signals.
         candidates: dict[str, IndexEntry] = {}
@@ -631,20 +631,20 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
                     candidates[entry.oifm_id] = entry
 
         # Enum facets via browse()
-        facet_queries: list[dict[str, Any]] = []
+        metadata_queries: list[dict[str, Any]] = []
         if source.body_regions:
-            facet_queries.append({"body_regions": source.body_regions})
+            metadata_queries.append({"body_regions": source.body_regions})
         if source.subspecialties:
-            facet_queries.append({"subspecialties": source.subspecialties})
+            metadata_queries.append({"subspecialties": source.subspecialties})
         if source.etiologies:
-            facet_queries.append({"etiologies": source.etiologies})
+            metadata_queries.append({"etiologies": source.etiologies})
         if source.entity_type:
-            facet_queries.append({"entity_type": source.entity_type})
+            metadata_queries.append({"entity_type": source.entity_type})
         if source.applicable_modalities:
-            facet_queries.append({"applicable_modalities": source.applicable_modalities})
+            metadata_queries.append({"applicable_modalities": source.applicable_modalities})
 
-        for facet_kwargs in facet_queries:
-            entries, _ = await self.browse(**facet_kwargs, limit=200)
+        for metadata_kwargs in metadata_queries:
+            entries, _ = await self.browse(**metadata_kwargs, limit=200)
             _add_candidates(entries)
 
         # String-list columns via direct SQL (highest-weight signals)
@@ -672,7 +672,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
 
     @staticmethod
     def _score_related(source: IndexEntry, candidate: IndexEntry, w: RelatedModelWeights) -> float:  # noqa: C901
-        """Compute weighted facet-overlap score between two index entries."""
+        """Compute weighted metadata-overlap score between two index entries."""
         score = 0.0
 
         # List overlap helpers
@@ -755,7 +755,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         """Search for finding models using hybrid search with RRF fusion.
 
         Uses Reciprocal Rank Fusion to combine FTS and semantic search results,
-        returning exact matches immediately if found. Optional facet filters
+        returning exact matches immediately if found. Optional metadata filters
         are pushed into SQL WHERE clauses (pre-ranking, not post-ranking).
 
         Args:
@@ -778,10 +778,10 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         conn = self._ensure_connection()
         self._require_openai_key_if_needed(conn)
 
-        # Build facet filter for structured columns only.
+        # Build metadata filter for structured columns only.
         # Tags are handled separately by _search_exact/_search_fts/_search_semantic
         # via their existing in-memory tag checks, to avoid double-filtering.
-        facet_clauses, facet_params = self._build_facet_where_clause(
+        filter_clauses, filter_params = self._build_metadata_where_clause(
             body_regions=body_regions,
             subspecialties=subspecialties,
             etiologies=etiologies,
@@ -793,16 +793,16 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         # Exact matches take priority - return immediately if found
         exact_matches = await asyncify(self._search_exact)(conn, query, tags=tags)
         if exact_matches:
-            if facet_clauses:
-                exact_matches = self._apply_facet_filter(conn, exact_matches, facet_clauses, facet_params)
+            if filter_clauses:
+                exact_matches = self._apply_metadata_filter(conn, exact_matches, filter_clauses, filter_params)
             return exact_matches[:limit]
 
-        # Get both FTS and semantic results (facet filtering applied in SQL, tags checked in-memory)
+        # Get both FTS and semantic results (metadata filtering applied in SQL, tags checked in-memory)
         fts_matches = await asyncify(self._search_fts)(
-            conn, query, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+            conn, query, limit=limit, tags=tags, filter_clauses=filter_clauses, filter_params=filter_params
         )
         semantic_matches = await self._search_semantic(
-            conn, query, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+            conn, query, limit=limit, tags=tags, filter_clauses=filter_clauses, filter_params=filter_params
         )
 
         # If no vector results, just return FTS results
@@ -847,7 +847,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         then performs hybrid search with RRF fusion for each query.
         Empty or whitespace-only queries are skipped.
 
-        Optional facet filters are applied pre-ranking in SQL WHERE clauses.
+        Optional metadata filters are applied pre-ranking in SQL WHERE clauses.
 
         Args:
             queries: List of search query strings
@@ -877,10 +877,10 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         conn = self._ensure_connection()
         self._require_openai_key_if_needed(conn)
 
-        # Build facet filter for structured columns only.
+        # Build metadata filter for structured columns only.
         # Tags are handled separately by _search_exact/_search_fts/_search_semantic
         # via their existing in-memory tag checks, to avoid double-filtering.
-        facet_clauses, facet_params = self._build_facet_where_clause(
+        filter_clauses, filter_params = self._build_metadata_where_clause(
             body_regions=body_regions,
             subspecialties=subspecialties,
             etiologies=etiologies,
@@ -909,21 +909,21 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             # Check for exact match first
             exact_matches = self._search_exact(conn, query, tags=tags)
             if exact_matches:
-                if facet_clauses:
-                    exact_matches = self._apply_facet_filter(conn, exact_matches, facet_clauses, facet_params)
+                if filter_clauses:
+                    exact_matches = self._apply_metadata_filter(conn, exact_matches, filter_clauses, filter_params)
                 results[query] = exact_matches[:limit]
                 continue
 
             # Perform FTS search
             fts_matches = self._search_fts(
-                conn, query, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+                conn, query, limit=limit, tags=tags, filter_clauses=filter_clauses, filter_params=filter_params
             )
 
             # Perform semantic search using pre-generated embedding
             semantic_matches: list[tuple[IndexEntry, float]] = []
             if embedding is not None:
                 semantic_matches = self._search_semantic_with_embedding(
-                    conn, embedding, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+                    conn, embedding, limit=limit, tags=tags, filter_clauses=filter_clauses, filter_params=filter_params
                 )
 
             # If no vector results, just return FTS results
@@ -1500,22 +1500,22 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         entry_tags = set(entry.tags or [])
         return all(tag in entry_tags for tag in tags)
 
-    def _apply_facet_filter(
+    def _apply_metadata_filter(
         self,
         conn: duckdb.DuckDBPyConnection,
         entries: list[IndexEntry],
-        facet_clauses: list[str],
-        facet_params: list[Any],
+        filter_clauses: list[str],
+        filter_params: list[Any],
     ) -> list[IndexEntry]:
-        """Filter entries by facet clauses using SQL for accuracy."""
-        if not entries or not facet_clauses:
+        """Filter entries by metadata clauses using SQL for accuracy."""
+        if not entries or not filter_clauses:
             return entries
         oifm_ids = [e.oifm_id for e in entries]
         placeholders = ", ".join("?" for _ in oifm_ids)
-        where = " AND ".join(facet_clauses)
+        where = " AND ".join(filter_clauses)
         rows = conn.execute(
             f"SELECT oifm_id FROM finding_models WHERE oifm_id IN ({placeholders}) AND {where}",
-            oifm_ids + facet_params,
+            oifm_ids + filter_params,
         ).fetchall()
         matching_ids = {row[0] for row in rows}
         return [e for e in entries if e.oifm_id in matching_ids]
@@ -1549,16 +1549,16 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         *,
         limit: int,
         tags: Sequence[str] | None = None,
-        facet_clauses: list[str] | None = None,
-        facet_params: list[Any] | None = None,
+        filter_clauses: list[str] | None = None,
+        filter_params: list[Any] | None = None,
     ) -> list[tuple[IndexEntry, float]]:
-        # Build optional facet pre-filter subquery
-        facet_prefilter = ""
+        # Build optional metadata pre-filter subquery
+        filter_prequery = ""
         all_params: list[Any] = [query]
-        if facet_clauses:
-            facet_where = " AND ".join(facet_clauses)
-            facet_prefilter = f"WHERE f.oifm_id IN (SELECT oifm_id FROM finding_models WHERE {facet_where})"
-            all_params.extend(facet_params or [])
+        if filter_clauses:
+            filter_where = " AND ".join(filter_clauses)
+            filter_prequery = f"WHERE f.oifm_id IN (SELECT oifm_id FROM finding_models WHERE {filter_where})"
+            all_params.extend(filter_params or [])
         all_params.append(limit * 3)
 
         rows = conn.execute(
@@ -1568,7 +1568,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
                     f.oifm_id,
                     fts_main_finding_models.match_bm25(f.oifm_id, ?) AS bm25_score
                 FROM finding_models AS f
-                {facet_prefilter}
+                {filter_prequery}
             )
             SELECT oifm_id, bm25_score
             FROM candidates
@@ -1610,8 +1610,8 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         *,
         limit: int,
         tags: Sequence[str] | None = None,
-        facet_clauses: list[str] | None = None,
-        facet_params: list[Any] | None = None,
+        filter_clauses: list[str] | None = None,
+        filter_params: list[Any] | None = None,
     ) -> list[tuple[IndexEntry, float]]:
         """Perform semantic search by generating embedding for query text."""
 
@@ -1641,7 +1641,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             return []
 
         return await asyncify(self._search_semantic_with_embedding)(
-            conn, embedding, limit=limit, tags=tags, facet_clauses=facet_clauses, facet_params=facet_params
+            conn, embedding, limit=limit, tags=tags, filter_clauses=filter_clauses, filter_params=filter_params
         )
 
     def _search_semantic_with_embedding(
@@ -1651,8 +1651,8 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         *,
         limit: int,
         tags: Sequence[str] | None = None,
-        facet_clauses: list[str] | None = None,
-        facet_params: list[Any] | None = None,
+        filter_clauses: list[str] | None = None,
+        filter_params: list[Any] | None = None,
     ) -> list[tuple[IndexEntry, float]]:
         """Perform semantic search using a pre-computed embedding.
 
@@ -1663,8 +1663,8 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             embedding: Pre-computed embedding vector
             limit: Maximum number of results to return
             tags: Optional list of tags - models must have ALL specified tags
-            facet_clauses: Optional SQL WHERE fragments for facet filtering
-            facet_params: Parameters for facet WHERE fragments
+            filter_clauses: Optional SQL WHERE fragments for metadata filtering
+            filter_params: Parameters for metadata WHERE fragments
 
         Returns:
             List of (IndexEntry, score) tuples sorted by descending similarity
@@ -1677,18 +1677,18 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             self._warn_embedding_mismatch_once(len(embedding), dimensions)
             return []
 
-        # Build optional facet WHERE for SQL pushdown
-        facet_where = ""
+        # Build optional metadata WHERE for SQL pushdown
+        filter_where = ""
         extra_params: list[Any] = []
-        if facet_clauses:
-            facet_where = "WHERE " + " AND ".join(facet_clauses)
-            extra_params = list(facet_params or [])
+        if filter_clauses:
+            filter_where = "WHERE " + " AND ".join(filter_clauses)
+            extra_params = list(filter_params or [])
 
         rows = conn.execute(
             f"""
             SELECT oifm_id, array_distance(embedding, CAST(? AS FLOAT[{dimensions}])) AS l2_distance
             FROM finding_models
-            {facet_where}
+            {filter_where}
             ORDER BY array_distance(embedding, CAST(? AS FLOAT[{dimensions}]))
             LIMIT ?
             """,

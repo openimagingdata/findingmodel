@@ -1,7 +1,7 @@
-"""Tests for browse(), facet-aware search(), and search_batch() (Slice 4).
+"""Tests for browse(), metadata-aware search(), and search_batch() (Slice 4).
 
-Tests the facet WHERE clause builder, browse with facet filters,
-and search/search_batch with facet filtering against a populated fixture DB.
+Tests the metadata WHERE clause builder, browse with metadata filters,
+and search/search_batch with metadata filtering against a populated fixture DB.
 
 Test data reference (6 models in test_index.duckdb):
 - abdominal aortic aneurysm: abdomen, diagnosis, [AB,VI,ER], [CT,US,MR], aorta+abdominal_aorta, SNOMEDCT:233985008
@@ -39,40 +39,40 @@ async def index(prebuilt_db_path: Path) -> AsyncGenerator[FindingModelIndex, Non
 
 
 # ============================================================================
-# _build_facet_where_clause unit tests
+# _build_metadata_where_clause unit tests
 # ============================================================================
 
 
 class TestBuildFacetWhereClause:
-    """Test the SQL WHERE clause builder for facet filtering."""
+    """Test the SQL WHERE clause builder for metadata filtering."""
 
-    def test_no_facets_returns_empty(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause()
+    def test_no_metadatas_returns_empty(self) -> None:
+        clauses, params = FindingModelIndex._build_metadata_where_clause()
         assert clauses == []
         assert params == []
 
     def test_single_body_region(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(body_regions=[BodyRegion.CHEST])
+        clauses, params = FindingModelIndex._build_metadata_where_clause(body_regions=[BodyRegion.CHEST])
         assert len(clauses) == 1
         assert "list_has_any" in clauses[0]
         assert "body_regions" in clauses[0]
         assert params == [["chest"]]
 
     def test_multiple_body_regions(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(
+        clauses, params = FindingModelIndex._build_metadata_where_clause(
             body_regions=[BodyRegion.CHEST, BodyRegion.ABDOMEN]
         )
         assert len(clauses) == 1
         assert params == [["chest", "abdomen"]]
 
     def test_entity_type_scalar(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(entity_type=EntityType.FINDING)
+        clauses, params = FindingModelIndex._build_metadata_where_clause(entity_type=EntityType.FINDING)
         assert len(clauses) == 1
         assert "entity_type = ?" in clauses[0]
         assert params == ["finding"]
 
     def test_entity_type_list(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(
+        clauses, params = FindingModelIndex._build_metadata_where_clause(
             entity_type=[EntityType.FINDING, EntityType.DIAGNOSIS]
         )
         assert len(clauses) == 1
@@ -80,19 +80,19 @@ class TestBuildFacetWhereClause:
         assert params == ["finding", "diagnosis"]
 
     def test_sex_specificity_scalar(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(sex_specificity=SexSpecificity.FEMALE_SPECIFIC)
+        clauses, params = FindingModelIndex._build_metadata_where_clause(sex_specificity=SexSpecificity.FEMALE_SPECIFIC)
         assert len(clauses) == 1
         assert "sex_specificity = ?" in clauses[0]
         assert params == ["female-specific"]
 
     def test_tags_all_of_semantics(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(tags=["radiology", "chest"])
+        clauses, params = FindingModelIndex._build_metadata_where_clause(tags=["radiology", "chest"])
         assert len(clauses) == 2  # One subquery per tag
         assert all("tags" in c for c in clauses)
         assert params == ["radiology", "chest"]
 
-    def test_multiple_facets_and_across(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(
+    def test_multiple_metadatas_and_across(self) -> None:
+        clauses, params = FindingModelIndex._build_metadata_where_clause(
             body_regions=[BodyRegion.CHEST],
             entity_type=EntityType.FINDING,
             subspecialties=[Subspecialty.CH],
@@ -101,14 +101,16 @@ class TestBuildFacetWhereClause:
         assert len(params) == 3  # [["chest"]], "finding", [["CH"]]
 
     def test_modalities(self) -> None:
-        clauses, params = FindingModelIndex._build_facet_where_clause(applicable_modalities=[Modality.CT, Modality.MR])
+        clauses, params = FindingModelIndex._build_metadata_where_clause(
+            applicable_modalities=[Modality.CT, Modality.MR]
+        )
         assert len(clauses) == 1
         assert "applicable_modalities" in clauses[0]
         assert params == [["CT", "MR"]]
 
     def test_etiologies(self) -> None:
         # Just verify it doesn't crash for available enum values
-        clauses, _params = FindingModelIndex._build_facet_where_clause(etiologies=list(EtiologyCode)[:1])
+        clauses, _params = FindingModelIndex._build_metadata_where_clause(etiologies=list(EtiologyCode)[:1])
         assert len(clauses) == 1
         assert "etiologies" in clauses[0]
 
@@ -119,7 +121,7 @@ class TestBuildFacetWhereClause:
 
 
 class TestBrowse:
-    """Test browse() method with facet filters against populated fixture DB."""
+    """Test browse() method with metadata filters against populated fixture DB."""
 
     @pytest.mark.asyncio
     async def test_browse_no_filters_returns_all(self, index: FindingModelIndex) -> None:
@@ -173,7 +175,7 @@ class TestBrowse:
         assert total == 2
 
     @pytest.mark.asyncio
-    async def test_browse_and_across_facets(self, index: FindingModelIndex) -> None:
+    async def test_browse_and_across_metadatas(self, index: FindingModelIndex) -> None:
         """AND-across: chest AND diagnosis = aortic dissection + PE (not ventricular diameters)."""
         entries, total = await index.browse(
             body_regions=[BodyRegion.CHEST],
@@ -216,22 +218,22 @@ class TestBrowse:
 
 
 # ============================================================================
-# search() with facets tests
+# search() with metadatas tests
 # ============================================================================
 
 
 class TestSearchWithFacets:
-    """Test search() with facet filters against populated fixture DB."""
+    """Test search() with metadata filters against populated fixture DB."""
 
     @pytest.mark.asyncio
     @pytest.mark.callout
-    async def test_search_without_facets_returns_results(self, index: FindingModelIndex) -> None:
+    async def test_search_without_metadatas_returns_results(self, index: FindingModelIndex) -> None:
         results = await index.search("aortic", limit=5)
         assert len(results) > 0
 
     @pytest.mark.asyncio
     @pytest.mark.callout
-    async def test_search_facet_narrows_to_matching_region(self, index: FindingModelIndex) -> None:
+    async def test_search_metadata_narrows_to_matching_region(self, index: FindingModelIndex) -> None:
         """'aortic' with abdomen filter should find AAA but not aortic dissection (chest)."""
         results = await index.search("aortic", limit=5, body_regions=[BodyRegion.ABDOMEN])
         names = {r.name for r in results}
@@ -247,22 +249,22 @@ class TestSearchWithFacets:
 
     @pytest.mark.asyncio
     @pytest.mark.callout
-    async def test_search_nonexistent_facet_returns_empty(self, index: FindingModelIndex) -> None:
+    async def test_search_nonexistent_metadata_returns_empty(self, index: FindingModelIndex) -> None:
         results = await index.search("aortic", limit=5, body_regions=[BodyRegion.LOWER_EXTREMITY])
         assert len(results) == 0
 
 
 # ============================================================================
-# search_batch() with facets tests
+# search_batch() with metadatas tests
 # ============================================================================
 
 
 class TestSearchBatchWithFacets:
-    """Test search_batch() with facet filters against populated fixture DB."""
+    """Test search_batch() with metadata filters against populated fixture DB."""
 
     @pytest.mark.asyncio
     @pytest.mark.callout
-    async def test_search_batch_without_facets(self, index: FindingModelIndex) -> None:
+    async def test_search_batch_without_metadatas(self, index: FindingModelIndex) -> None:
         results = await index.search_batch(["aortic", "breast"], limit=3)
         assert "aortic" in results
         assert "breast" in results
@@ -284,7 +286,7 @@ class TestSearchBatchWithFacets:
 
     @pytest.mark.asyncio
     @pytest.mark.callout
-    async def test_search_batch_with_restrictive_facet(self, index: FindingModelIndex) -> None:
+    async def test_search_batch_with_restrictive_metadata(self, index: FindingModelIndex) -> None:
         results = await index.search_batch(
             ["aortic", "breast"],
             limit=3,

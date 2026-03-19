@@ -8,6 +8,31 @@
 
 **Supersedes for this workstream:** [facets-implementation-plan.md](./facets-implementation-plan.md)
 
+## Remaining Work Summary
+
+At this point the core structured-metadata architecture should be treated as implemented and usable via its intended public surfaces:
+
+- `findingmodel_ai.metadata.assign_metadata(...)`
+- `MetadataAssignmentResult` / `MetadataAssignmentReview`
+- `FindingModelIndex.browse(...)`
+- `FindingModelIndex.search(...)` / `search_batch(...)`
+- `FindingModelIndex.related_models(...)`
+
+The remaining work is now primarily in two buckets:
+
+1. Tooling migration
+   - update `findingmodel` MCP tools to expose facet-aware browsing
+   - update `findingmodel` CLI to expose `browse()` / `related_models()`
+   - add bulk metadata-assignment/backfill CLI flow with resume/overwrite behavior
+
+2. Content backfill
+   - run metadata assignment across the corpus
+   - review and persist canonical model updates / review sidecars
+   - rebuild fixtures and published DB artifacts from backfilled content
+   - do final documentation cleanup once the corpus and artifacts reflect the final state
+
+Forward work should generally treat the metadata core as a black box unless backfill reveals a concrete defect that requires reopening core behavior.
+
 ## Goal
 
 Implement the canonical structured metadata rewrite as a sequence of small, reviewable slices that can be:
@@ -32,7 +57,7 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 ### Lane A: Core Model Surface
 - `packages/findingmodel/src/findingmodel/finding_model.py`
 - `packages/findingmodel/src/findingmodel/__init__.py`
-- new shared facet type module(s) in `packages/findingmodel/src/findingmodel/`
+- shared metadata type module(s) (`facets.py`) in `packages/findingmodel/src/findingmodel/`
 - markdown/template/editor/stub round-trip code
 
 ### Lane B: Index and Build Surface
@@ -87,7 +112,7 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 **Status:** Complete
 
 **Scope**
-- Add shared facet types to core `findingmodel`.
+- Add shared structured metadata types to core `findingmodel`.
 - Extend `FindingModelBase` and `FindingModelFull` with the canonical optional fields.
 - Capture `IndexCode` semantic rules in code docstrings/comments where appropriate.
 - Export the new types from `findingmodel.__init__` if they are intended to be public.
@@ -181,7 +206,7 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 
 **Files changed**
 - `packages/oidm-maintenance/src/oidm_maintenance/findingmodel/build.py` — added structured metadata DuckDB columns, build-side value extraction, and normalized `index_code_keys`
-- `packages/findingmodel/src/findingmodel/index.py` — extended `IndexEntry` and hydration for canonical facet fields, `ExpectedTimeCourse`, `AgeProfile`, `anatomic_location_ids`, and `index_code_keys`
+- `packages/findingmodel/src/findingmodel/index.py` — extended `IndexEntry` and hydration for structured metadata fields, `ExpectedTimeCourse`, `AgeProfile`, `anatomic_location_ids`, and `index_code_keys`
 - `packages/oidm-maintenance/tests/test_findingmodel_build.py` — schema, populated/null hydration, and “not in search/embedding text” coverage
 - `packages/findingmodel/tests/data/test_index.duckdb` — regenerated committed fixture with the updated schema
 - `docs/canonical-structured-metadata-and-enrichment-rewrite.md` — updated to keep facets structured rather than duplicated into retrieval text
@@ -193,19 +218,19 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 **Tests**
 - exact schema/DDL assertions
 - build round-trip tests
-- hydration tests for populated and null facet columns
+- hydration tests for populated and null metadata columns
 - `packages/oidm-maintenance/tests/test_findingmodel_build.py`
 - `packages/findingmodel/tests/test_findingmodel_index.py`
 
 **Acceptance Gate**
 - ✓ Database build and read-side hydration fully support the canonical fields.
 - ✓ `index_code_keys` are normalized consistently as `system:code`.
-- ✓ FTS/search text and embedding text remain focused on free-text clinical content rather than duplicated facet values.
+- ✓ FTS/search text and embedding text remain focused on free-text clinical content rather than duplicated metadata values.
 
 **Docs Gate**
 - ✓ Design doc updated to reflect the “structured columns only” retrieval decision.
 
-## Slice 4: `browse()` + Facet-Aware Search APIs ✓
+## Slice 4: `browse()` + Metadata-Aware Search APIs ✓
 
 **Status:** Complete
 
@@ -218,22 +243,22 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 
 1. `browse(*, body_regions, subspecialties, etiologies, entity_type, applicable_modalities, sex_specificity, tags, limit, offset) -> tuple[list[IndexEntry], int]`
    - Pure SQL filter, no FTS/embeddings
-   - OR-within-facet, AND-across-facets, ALL-of for tags
+   - OR-within-field, AND-across-fields, ALL-of for tags
    - Pagination via limit/offset with total count
 
-2. Extend `search()` signature with same facet filter params
+2. Extend `search()` signature with same metadata filter params
    - Filters push into SQL WHERE (pre-ranking, not post-ranking)
    - Uses DuckDB `list_has_any()` for array columns
 
-3. Extend `search_batch()` signature with same facet filter params
-   - Critical for Slice 8: enables facet-guided candidate gathering alongside unfiltered search
+3. Extend `search_batch()` signature with same metadata filter params
+   - Critical for Slice 8: enables metadata-guided candidate gathering alongside unfiltered search
 
 4. Internal `_build_facet_where_clause()` shared by all three methods
 
 **Also update `packages/findingmodel/src/findingmodel/protocols.py`** — update protocol definitions to match.
 
 **Tests**
-- browse with single facet, multiple facets, empty result
+- browse with single field, multiple fields, empty result
 - search with facets narrows results
 - search_batch with facets
 - SQL pushdown verification (filter before ranking, not after)
@@ -241,7 +266,7 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 
 **Acceptance Gate**
 - Filter-only callers no longer depend on empty-query `search(...)`.
-- Batch candidate generation can use the same facet filter surface when needed.
+- Batch candidate generation can use the same metadata filter surface when needed.
 
 **Docs Gate**
 - Update `packages/findingmodel/README.md` for the new retrieval API.
@@ -250,7 +275,7 @@ Implement the canonical structured metadata rewrite as a sequence of small, revi
 
 **Status:** Complete
 
-**A first-class standalone API** — useful for browsing related models in MCP tools, CLI exploration, and as a candidate source for Slice 8's pipeline. No LLM calls; purely deterministic facet-overlap scoring.
+**A first-class standalone API** — useful for browsing related models in MCP tools, CLI exploration, and as a candidate source for Slice 8's pipeline. No LLM calls; purely deterministic metadata-overlap scoring.
 
 **Primary ownership**
 - Lane D
@@ -280,7 +305,7 @@ async def related_models(
 - `sex_match: float = 1.0`
 - `time_course: float = 1.0`
 
-Uses `browse()` internally to prefilter candidates sharing at least one facet with the source model, then scores the prefiltered set.
+Uses `browse()` internally to prefilter candidates sharing at least one metadata field with the source model, then scores the prefiltered set.
 
 **Tests**
 - Score calculation with known inputs
@@ -302,11 +327,11 @@ Uses `browse()` internally to prefilter candidates sharing at least one facet wi
 **Scope**
 - Define `MetadataAssignmentResult`, `MetadataAssignmentReview`, and any helper types needed for typed candidate gathering and review output.
 - Keep the review artifact JSON-serializable and explicitly separate from canonical model JSON.
-- All new types go in a new `types.py` module, importing canonical facet types from `findingmodel`.
+- All new types go in a new `types.py` module, importing structured metadata types from `findingmodel`.
 
 **Explicitly out of scope**
 - Do NOT modify `unified.py`, `agentic.py`, or their tests. The old enrichment modules are being replaced wholesale (Slice 7), not migrated. Retrofitting canonical types into dead-end code has no value.
-- The duplicated facet literals in the old modules will disappear when those modules are removed in Slice 9.
+- The duplicated metadata literals in the old modules will disappear when those modules are removed in Slice 9.
 
 **Primary ownership**
 - Lane C
@@ -374,7 +399,7 @@ Uses `browse()` internally to prefilter candidates sharing at least one facet wi
   - anatomic candidates from `search/anatomic.py`
   - no raw search result blobs stored on the canonical model
 - Use one narrow typed classifier output model for only the ambiguous canonical decisions:
-  - canonical facet values
+  - structured metadata values
   - ontology/anatomic candidate selection decisions where deterministic ranking alone is insufficient
   - field-level rationale/confidence for the review artifact
 - Ontology selection should follow the explicit generality rule borrowed from the coding pipeline:
@@ -424,14 +449,14 @@ Adopts the 5-phase pipeline architecture from the coding project.
 - `ModelMatchRejectionReason` enum: `too_specific`, `too_broad`, `wrong_concept`, `definition_mismatch`, `overlapping_scope`
 - `CandidatePool` — deduplicated candidate container with provenance tracking and max cap
 - `validate_selection_in_candidates()` — post-selection check for hallucinated IDs
-- `FacetHypothesis` model — typed container for LLM-generated facet guesses
+- `MetadataHypothesis` model — typed container for LLM-generated metadata guesses
 - Result types: `SimilarModelMatch`, `SimilarModelRejection`, `SimilarModelResult`
 
 **5-Phase Pipeline** (`packages/findingmodel-ai/src/findingmodel_ai/search/similar.py` rewrite):
 
 1. **Phase 1: Fast-path** — exact match by name/synonyms via `index.get()`, return immediately if found
-2. **Phase 2: LLM Planning** — single small-model call generating `SimilarModelPlan` (search terms + facet hypotheses)
-3. **Phase 3: Multi-Pass Search** — unfiltered text search (recall protection) + facet-filtered search + optional `related_models()`
+2. **Phase 2: LLM Planning** — single small-model call generating `SimilarModelPlan` (search terms + metadata hypotheses)
+3. **Phase 3: Multi-Pass Search** — unfiltered text search (recall protection) + metadata-filtered search + optional `related_models()`
 4. **Phase 4: LLM Selection** — structured output `SimilarModelSelection` with rejection taxonomy and asymmetric generality rule
 5. **Phase 5: Assembly** — build `SimilarModelResult` from validated selections
 
@@ -443,14 +468,14 @@ Adopts the 5-phase pipeline architecture from the coding project.
 - Fast-path: exact name/synonym match returns immediately
 - Phase 2: plan generation with FunctionModel
 - Phase 3: multi-pass search merges correctly, deduplicates, caps at MAX_CANDIDATES
-- Phase 3: recall protection — wrong facet hypothesis doesn't collapse results
+- Phase 3: recall protection — wrong metadata hypothesis doesn't collapse results
 - Phase 4: selection with each rejection reason
 - Phase 4: post-validation catches hallucinated IDs
 - Integration: full pipeline with `@pytest.mark.callout`
 
 **Acceptance Gate**
 - `find_similar_models()` no longer relies on text-only search-term generation alone.
-- Facet hypotheses improve retrieval without becoming hard gates.
+- Metadata hypotheses improve retrieval without becoming hard gates.
 - Post-selection validation catches hallucinated IDs.
 
 **Docs Gate**
@@ -492,7 +517,7 @@ Adopts the 5-phase pipeline architecture from the coding project.
 **Status:** Not started
 
 **Scope**
-- Update MCP server tools to use `browse()` for facet-filtered listing.
+- Update MCP server tools to use `browse()` for metadata-filtered listing.
 - Update `findingmodel` CLI to expose `browse()` and `related_models()`.
 - Add bulk backfill CLI (`assign-metadata --batch` or similar) with resume/overwrite behavior.
 - Define review-artifact write location convention for bulk runs.
@@ -507,12 +532,12 @@ Adopts the 5-phase pipeline architecture from the coding project.
 - `packages/findingmodel-ai/src/findingmodel_ai/cli.py`
 
 **Tests**
-- MCP tool tests for browse/facet-filtered listing
+- MCP tool tests for browse/metadata-filtered listing
 - CLI smoke tests for bulk backfill
 - Resume/overwrite behavior tests
 
 **Acceptance Gate**
-- MCP server exposes facet-based browsing.
+- MCP server exposes metadata-based browsing.
 - Bulk backfill CLI exists with atomic writes and resume support.
 - Review artifacts have a defined write location convention.
 
@@ -575,11 +600,11 @@ After Slices 4, 5, and 6 are stable:
 
 ## Final Completion Checklist
 
-- [ ] Canonical facet types live in core `findingmodel`
+- [ ] Structured metadata types live in core `findingmodel`
 - [ ] `FindingModelBase` and `FindingModelFull` carry the new structured metadata fields
 - [ ] `IndexCode` semantics are enforced at the model/review boundary
 - [ ] DuckDB build and hydration support the canonical fields
-- [ ] `browse(...)`, facet-aware `search(...)`, and facet-aware `search_batch(...)` are implemented
+- [ ] `browse(...)`, metadata-aware `search(...)`, and metadata-aware `search_batch(...)` are implemented
 - [ ] `related_models(...)` exists and is tested against a dedicated evaluation set
 - [ ] `assign_metadata(...)` is the canonical metadata-assignment entrypoint
 - [ ] `find_similar_models()` uses the new deterministic candidate pipeline

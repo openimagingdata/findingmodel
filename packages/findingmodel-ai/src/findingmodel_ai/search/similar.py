@@ -5,8 +5,8 @@ that editing them might be better than creating new ones.
 
 Phases:
 1. Fast-path: exact match by name/synonyms
-2. LLM Planning: generate search terms + facet hypotheses
-3. Multi-Pass Search: unfiltered + facet-filtered + related_models
+2. LLM Planning: generate search terms + metadata hypotheses
+3. Multi-Pass Search: unfiltered + metadata-filtered + related_models
 4. LLM Selection: structured pick with rejection taxonomy
 5. Assembly: build typed result
 """
@@ -21,7 +21,7 @@ from findingmodel_ai import logger
 from findingmodel_ai.config import ModelTier, settings
 from findingmodel_ai.search.pipeline_helpers import (
     CandidatePool,
-    FacetHypothesis,
+    MetadataHypothesis,
     SimilarModelMatch,
     SimilarModelPlan,
     SimilarModelRejection,
@@ -37,7 +37,7 @@ from findingmodel_ai.search.pipeline_helpers import (
 PLANNING_SYSTEM_PROMPT = """\
 You are a medical terminology specialist. Given a proposed imaging finding,
 generate 2-5 effective search terms for finding existing definitions that might
-match or overlap, PLUS your best guess at the finding's facet profile.
+match or overlap, PLUS your best guess at the finding's metadata profile.
 
 **Search term rules:**
 - Use standard medical terminology, no acronyms
@@ -47,7 +47,7 @@ match or overlap, PLUS your best guess at the finding's facet profile.
 - Do NOT generalize to meta-categories ("finding", "disease", "abnormality")
 - Use "lesion" for focal findings, not for diffuse processes
 
-**Facet hypotheses:**
+**Metadata hypotheses:**
 Fill in your best guesses. These are hints, not hard constraints — leave empty
 lists when unsure rather than guessing incorrectly.
 """
@@ -63,7 +63,7 @@ enough matches that editing them would be better than creating a new definition.
   (convergence on common concept)
 - A MORE SPECIFIC candidate is NOT acceptable (fragments what should be one group)
 - When no match, MUST identify the closest candidate and classify the rejection reason
-- Consider name, description, synonyms, tags, and facets of each candidate
+- Consider name, description, synonyms, tags, and metadata of each candidate
 - "edit_existing" = proposed finding should be a synonym or revision of existing
 - "create_new" = proposed finding is a distinct clinical concept
 
@@ -178,11 +178,11 @@ async def find_similar_models(
             logfire.info(
                 "Planning complete",
                 terms_generated=len(plan.search_terms),
-                has_facet_hypotheses=bool(
-                    plan.facet_hypotheses.body_regions
-                    or plan.facet_hypotheses.modalities
-                    or plan.facet_hypotheses.entity_type
-                    or plan.facet_hypotheses.subspecialties
+                has_metadata_hypotheses=bool(
+                    plan.metadata_hypotheses.body_regions
+                    or plan.metadata_hypotheses.modalities
+                    or plan.metadata_hypotheses.entity_type
+                    or plan.metadata_hypotheses.subspecialties
                 ),
             )
 
@@ -196,7 +196,7 @@ async def find_similar_models(
             return SimilarModelResult(
                 recommendation="create_new",
                 search_passes=pool.pass_counts,
-                facet_hypotheses=plan.facet_hypotheses,
+                metadata_hypotheses=plan.metadata_hypotheses,
             )
 
         # === Phase 4: LLM Selection ===
@@ -210,7 +210,7 @@ async def find_similar_models(
 
         # === Phase 5: Assembly ===
         with logfire.span("phase5_assembly"):
-            result = _phase5_assembly(selection, pool, plan.facet_hypotheses)
+            result = _phase5_assembly(selection, pool, plan.metadata_hypotheses)
             logfire.info("Assembly complete", recommendation=result.recommendation)
 
         return result
@@ -253,9 +253,9 @@ async def _phase1_fast_path(
 
 
 async def _phase2_planning(finding_desc: str, model_tier: ModelTier) -> SimilarModelPlan:
-    """Phase 2: Generate search terms and facet hypotheses via LLM."""
+    """Phase 2: Generate search terms and metadata hypotheses via LLM."""
     agent = create_planning_agent(model_tier)
-    prompt = f"Generate search terms and facet hypotheses for this proposed finding:\n\n{finding_desc}"
+    prompt = f"Generate search terms and metadata hypotheses for this proposed finding:\n\n{finding_desc}"
     result = await agent.run(prompt)
     return result.output
 
@@ -276,10 +276,10 @@ async def _phase3_search(
     except (ValueError, Exception) as e:
         logger.warning(f"Unfiltered text search failed: {e}")
 
-    # Pass 2: Facet-filtered search (when hypotheses available)
-    hyp = plan.facet_hypotheses
-    has_facets = hyp.body_regions or hyp.modalities or hyp.entity_type or hyp.subspecialties
-    if has_facets:
+    # Pass 2: Metadata-filtered search (when hypotheses available)
+    hyp = plan.metadata_hypotheses
+    has_metadata_hints = hyp.body_regions or hyp.modalities or hyp.entity_type or hyp.subspecialties
+    if has_metadata_hints:
         try:
             # Use first 2 terms for filtered pass
             filtered_terms = plan.search_terms[:2]
@@ -292,9 +292,9 @@ async def _phase3_search(
                 subspecialties=hyp.subspecialties or None,
             )
             for entries in filtered_results.values():
-                pool.add_many(entries, "facet_filtered")
+                pool.add_many(entries, "metadata_filtered")
         except (ValueError, Exception) as e:
-            logger.warning(f"Facet-filtered search failed: {e}")
+            logger.warning(f"Metadata-filtered search failed: {e}")
 
     # Pass 3: related_models() when caller provides an existing model ID
     if existing_model_id:
@@ -339,7 +339,7 @@ If recommending create_new, identify the closest candidate and classify why it w
 def _phase5_assembly(
     selection: SimilarModelSelection,
     pool: CandidatePool,
-    facet_hypotheses: FacetHypothesis,
+    metadata_hypotheses: MetadataHypothesis,
 ) -> SimilarModelResult:
     """Phase 5: Assemble typed result from validated selection."""
     matches: list[SimilarModelMatch] = []
@@ -369,6 +369,6 @@ def _phase5_assembly(
         recommendation=recommendation,
         matches=matches,
         closest_rejection=closest_rejection,
-        facet_hypotheses=facet_hypotheses,
+        metadata_hypotheses=metadata_hypotheses,
         search_passes=pool.pass_counts,
     )

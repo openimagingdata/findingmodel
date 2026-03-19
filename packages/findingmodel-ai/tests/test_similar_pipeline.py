@@ -10,7 +10,7 @@ import pytest
 from findingmodel.index import IndexEntry
 from findingmodel_ai.search.pipeline_helpers import (
     CandidatePool,
-    FacetHypothesis,
+    MetadataHypothesis,
     ModelMatchRejectionReason,
     SimilarModelPlan,
     SimilarModelResult,
@@ -202,7 +202,7 @@ class TestPhase5Assembly:
             recommendation="edit_existing",
             reasoning="Close match",
         )
-        result = _phase5_assembly(selection, pool, FacetHypothesis())
+        result = _phase5_assembly(selection, pool, MetadataHypothesis())
 
         assert result.recommendation == "edit_existing"
         assert len(result.matches) == 1
@@ -221,7 +221,7 @@ class TestPhase5Assembly:
             closest_rejection_id="ID1",
             closest_rejection_reason=ModelMatchRejectionReason.TOO_SPECIFIC,
         )
-        result = _phase5_assembly(selection, pool, FacetHypothesis())
+        result = _phase5_assembly(selection, pool, MetadataHypothesis())
 
         assert result.recommendation == "create_new"
         assert len(result.matches) == 0
@@ -239,7 +239,7 @@ class TestPhase5Assembly:
             recommendation="edit_existing",
             reasoning="Thought there was a match",
         )
-        result = _phase5_assembly(selection, pool, FacetHypothesis())
+        result = _phase5_assembly(selection, pool, MetadataHypothesis())
 
         assert result.recommendation == "create_new"
         assert len(result.matches) == 0
@@ -247,16 +247,16 @@ class TestPhase5Assembly:
     def test_assembly_includes_search_passes(self) -> None:
         pool = CandidatePool()
         pool.add(_make_entry("ID1", "a"), "unfiltered_text")
-        pool.add(_make_entry("ID2", "b"), "facet_filtered")
+        pool.add(_make_entry("ID2", "b"), "metadata_filtered")
 
         selection = SimilarModelSelection(
             selected_ids=["ID1"],
             recommendation="edit_existing",
             reasoning="Match",
         )
-        result = _phase5_assembly(selection, pool, FacetHypothesis())
+        result = _phase5_assembly(selection, pool, MetadataHypothesis())
         assert "unfiltered_text" in result.search_passes
-        assert "facet_filtered" in result.search_passes
+        assert "metadata_filtered" in result.search_passes
 
 
 # ============================================================================
@@ -269,8 +269,8 @@ class TestResultTypes:
         result = SimilarModelResult(
             recommendation="create_new",
             matches=[],
-            facet_hypotheses=FacetHypothesis(),
-            search_passes={"unfiltered_text": 5, "facet_filtered": 3},
+            metadata_hypotheses=MetadataHypothesis(),
+            search_passes={"unfiltered_text": 5, "metadata_filtered": 3},
         )
         data = result.model_dump()
         assert data["recommendation"] == "create_new"
@@ -287,7 +287,7 @@ class TestResultTypes:
         assert ModelMatchRejectionReason.OVERLAPPING_SCOPE.value == "overlapping_scope"
 
     def test_facet_hypothesis_defaults(self) -> None:
-        hyp = FacetHypothesis()
+        hyp = MetadataHypothesis()
         assert hyp.body_regions == []
         assert hyp.modalities == []
         assert hyp.entity_type is None
@@ -296,7 +296,7 @@ class TestResultTypes:
     def test_similar_model_plan_validation(self) -> None:
         plan = SimilarModelPlan(search_terms=["term1", "term2"])
         assert len(plan.search_terms) == 2
-        assert plan.facet_hypotheses is not None
+        assert plan.metadata_hypotheses is not None
 
     def test_similar_model_plan_min_terms(self) -> None:
         from pydantic import ValidationError
