@@ -362,7 +362,7 @@ Uses `browse()` internally to prefilter candidates sharing at least one facet wi
 - salvage helpers in `packages/findingmodel-ai/src/findingmodel_ai/search/`
 
 **Implementation notes**
-- Add a new canonical entrypoint, `async assign_metadata(finding_model: FindingModelFull, *, model_tier: ModelTier = "small", model: str | None = None) -> MetadataAssignmentResult`.
+- Add a new canonical entrypoint, `async assign_metadata(finding_model: FindingModelFull, *, model_tier: ModelTier = "small") -> MetadataAssignmentResult`. Model selection goes through agent tags and `AGENT_MODEL_OVERRIDES`; no per-call model override parameter.
 - Keep file I/O, review-artifact persistence, and bulk backfill out of this slice. Slice 7 returns typed in-memory results only.
 - Preserve the incoming model identity and authored text (`oifm_id`, `slug_name`, `name`, `description`, `synonyms`, `attributes`, `tags`) unless deterministic code or the narrow classifier explicitly updates a canonical metadata field.
 - Add field-aware fast paths:
