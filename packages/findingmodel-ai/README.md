@@ -49,7 +49,7 @@ findingmodel-ai make-stub-model "pneumothorax"
 # Convert a Markdown outline to a finding model
 findingmodel-ai markdown-to-fm outline.md
 
-# Assign canonical structured metadata to an existing model
+# Assign structured metadata to an existing model
 findingmodel-ai assign-metadata pneumonia.fm.json --output pneumonia.updated.fm.json --review-output pneumonia.metadata-review.json
 
 # Search BioOntology.org for ontology concepts
@@ -180,7 +180,7 @@ asyncio.run(main())
 
 ### Canonical Metadata Assignment
 
-`assign_metadata()` is the new canonical in-memory metadata-assignment entrypoint. It returns an updated `FindingModelFull` plus a separate review object for candidate provenance, confidence, warnings, timings, and optional Logfire trace correlation.
+`assign_metadata()` assigns structured metadata to a finding model. It returns an updated `FindingModelFull` plus a separate review object for candidate provenance, confidence, warnings, timings, and optional Logfire trace correlation.
 
 For executable paths that opt into Logfire, `findingmodel_ai.observability.ensure_logfire_configured()` instruments both Pydantic AI and outbound `httpx` calls, so BioOntology and similar non-LLM requests appear in the same trace as the agent run.
 

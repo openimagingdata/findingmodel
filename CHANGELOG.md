@@ -12,16 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
-- **`browse()` API**: Filter finding models by facets (including body region, subspecialty, entity type, modality, etiology, age, sex specificity, time course, and tags) with pagination. Pure SQL — no text or embedding search.
-- **Facet-aware `search()` and `search_batch()`**: Both methods now accept the same optional facet filter parameters as `browse()`. Filters are pushed into SQL WHERE clauses before ranking for efficient pre-filtering.
-- **`related_models()` API**: Deterministic facet-overlap scoring to find models related to a given model. Configurable weights via `RelatedModelWeights`. No LLM calls.
+- **`browse()` API**: Filter finding models by structured metadata (body region, subspecialty, entity type, modality, etiology, age, sex specificity, time course, and tags) with pagination. Pure SQL — no text or embedding search.
+- **Metadata-aware `search()` and `search_batch()`**: Both methods now accept optional structured metadata filter parameters matching `browse()`. Filters are pushed into SQL WHERE clauses before ranking.
+- **`related_models()` API**: Deterministic metadata-overlap scoring to find models related to a given model. Configurable weights via `RelatedModelWeights`. No LLM calls.
 
 ### findingmodel-ai
 
 #### Added
 
 - **`findingmodel-ai ontology search QUERY`**: Search medical ontologies (SNOMED CT, RADLEX, LOINC) via BioOntology.org. Options: `--ontology`, `--semantic-type`, `--exact`, `--max-results`. Requires `BIOONTOLOGY_API_KEY`.
-- **`assign_metadata()`**: New canonical in-memory metadata-assignment entrypoint returning an updated `FindingModelFull` plus separate review/provenance data, including optional Logfire trace correlation.
+- **`assign_metadata()`**: New in-memory metadata-assignment entrypoint returning an updated `FindingModelFull` plus separate review/provenance data, including optional Logfire trace correlation.
 - **Per-agent model defaults with fallback chains**: Each agent now has an optimized primary model + reasoning level configured in `supported_models.toml`, with automatic cross-provider fallback via pydantic-ai's `FallbackModel`. Defaults are based on the March 2026 performance audit (439 test runs). The system works with any single provider API key configured.
 - **Per-agent reasoning overrides**: Set reasoning level per agent via `AGENT_REASONING_OVERRIDES__<tag>=level` (e.g., `AGENT_REASONING_OVERRIDES__anatomic_select=medium`).
 - **Per-tier reasoning levels**: Configurable via `DEFAULT_REASONING_SMALL` / `_BASE` / `_FULL` (defaults: `low`/`none`/`high`). Levels are normalized per-provider automatically (e.g., `xhigh` maps to `HIGH` on Gemini, which has no `xhigh`).
@@ -30,12 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Changed
 
-- **Breaking:** Canonical metadata assignment now lives under `findingmodel_ai.metadata`, with `assign_metadata()` replacing the earlier `enrich_model()` naming.
+- **Breaking:** Metadata assignment now lives under `findingmodel_ai.metadata`, with `assign_metadata()` replacing the earlier `enrich_model()` naming.
 - **Logfire observability:** Runtime metadata-assignment paths now support shared Logfire setup that traces both agent execution and outbound `httpx` API calls together.
-- **`findingmodel-ai assign-metadata` CLI:** Added a canonical single-model metadata-assignment command with optional review JSON output and opt-in Logfire tracing.
+- **`findingmodel-ai assign-metadata` CLI:** Single-model metadata-assignment command with optional review JSON output and opt-in Logfire tracing.
 - **Breaking:** Removed the legacy `findingmodel_ai.enrichment` package and its old `enrich_finding*` entrypoints.
 - **Breaking: `find_similar_models()` rewritten** with 5-phase pipeline architecture. Returns `SimilarModelResult` with typed matches, rejection taxonomy, facet hypotheses, and search pass statistics. Agent tags: `similar_plan` (Phase 2) and `similar_select` (Phase 4).
-- **Breaking:** Default models updated — base/full: `openai:gpt-5.4`, small: `google-gla:gemini-3-flash-preview` (was `openai:gpt-5-nano`). If you only have an OpenAI key, set `DEFAULT_MODEL_SMALL=openai:gpt-5-mini`.
+- **Breaking:** Default models updated — base: `openai:gpt-5.4-mini`, full: `openai:gpt-5.4`, small: `google-gla:gemini-3-flash-preview`. OpenAI lightweight agent chains now prefer `openai:gpt-5.4-nano`.
 - CLI validates API keys for all default model tiers at startup, with actionable error messages.
 - **Minimum pydantic-ai version** bumped from `>=0.3.2` to `>=1.0.0` (required for `FallbackModel` and per-model settings).
 - Markdown authoring/import workflows are now documented as convenience tools rather than a canonical round-trip file format.

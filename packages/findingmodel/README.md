@@ -97,7 +97,7 @@ for attr in model.attributes:
 
 ### Structured Metadata Types
 
-Optional canonical metadata fields available on both `FindingModelBase` and `FindingModelFull`:
+Optional structured metadata fields available on both `FindingModelBase` and `FindingModelFull`:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -152,14 +152,14 @@ async def main():
         # List all with pagination
         models, total = await index.all(limit=20, offset=0)
 
-        # Browse by facet filters (no text search)
+        # Browse by metadata filters (no text search)
         chest_findings, total = await index.browse(
             body_regions=[BodyRegion.CHEST],
             entity_type=EntityType.FINDING,
             limit=10,
         )
 
-        # Search with facet filters (text search + facet pre-filtering)
+        # Search with metadata filters (text search + metadata pre-filtering)
         results = await index.search(
             "effusion",
             body_regions=[BodyRegion.CHEST],
@@ -167,7 +167,7 @@ async def main():
             limit=5,
         )
 
-        # Find related models by deterministic facet-overlap scoring
+        # Find related models by deterministic metadata-overlap scoring
         related = await index.related_models("OIFM_RADLEX_000001", limit=5)
         for entry, score in related:
             print(f"  Related: {entry.name} (score={score:.1f})")
@@ -178,7 +178,7 @@ asyncio.run(main())
 
 ### browse()
 
-Pure SQL facet filtering with pagination. Facet semantics: OR-within-facet, AND-across-facets, ALL-of for tags.
+Pure SQL metadata filtering with pagination. Filter semantics: OR-within-field, AND-across-fields, ALL-of for tags.
 
 ```python
 entries, total = await index.browse(
@@ -190,11 +190,11 @@ entries, total = await index.browse(
 )
 ```
 
-### Facet-Aware Search
+### Metadata-Filtered Search
 
-`search()` and `search_batch()` accept the same facet filter parameters as `browse()`. Filters are pushed into SQL WHERE clauses before ranking (pre-ranking, not post-ranking).
+`search()` and `search_batch()` accept the same metadata filter parameters as `browse()`. Filters are pushed into SQL WHERE clauses before ranking.
 
-Supported facet filters currently include:
+Supported metadata filters:
 - `body_regions`
 - `subspecialties`
 - `etiologies`
@@ -209,7 +209,7 @@ Supported facet filters currently include:
 
 ### related_models()
 
-Deterministic facet-overlap scoring — no LLM calls. Finds models sharing facets with a source model, scored by configurable weights.
+Deterministic metadata-overlap scoring — no LLM calls. Finds models sharing structured metadata with a source model, scored by configurable weights.
 
 ```python
 from findingmodel import RelatedModelWeights
