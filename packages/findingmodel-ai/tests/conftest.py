@@ -22,7 +22,7 @@ from findingmodel.finding_model import (
 # These should be valid ModelSpec strings (see config.MODEL_SPEC_PATTERN).
 # Update when model families change.
 
-TEST_OPENAI_MODEL = "openai:gpt-5-mini"
+TEST_OPENAI_MODEL = "openai:gpt-5.4-nano"
 TEST_ANTHROPIC_MODEL = "anthropic:claude-haiku-4-5"
 TEST_GOOGLE_MODEL = "google-gla:gemini-3-flash-preview"
 
