@@ -5,9 +5,9 @@ import click
 from findingmodel.config import ConfigurationError
 from findingmodel.finding_info import FindingInfo
 from findingmodel.finding_model import FindingModelBase, FindingModelFull
-from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
 from rich.console import Console
 
+from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
 from findingmodel_ai.authoring.description import add_details_to_info, create_info_from_name
 from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
 from findingmodel_ai.config import settings
@@ -165,13 +165,6 @@ def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, outpu
     help="Optional output path for the metadata-assignment review JSON.",
 )
 @click.option(
-    "--model-tier",
-    type=click.Choice(["small", "base", "full"]),
-    default="small",
-    show_default=True,
-    help="Model tier for metadata assignment.",
-)
-@click.option(
     "--logfire",
     is_flag=True,
     help="Opt in to Logfire instrumentation for this run, including outbound HTTP calls.",
@@ -180,7 +173,6 @@ def assign_metadata_command(
     finding_path: Path,
     output: Path | None,
     review_output: Path | None,
-    model_tier: str,
     logfire: bool,
 ) -> None:
     """Assign canonical structured metadata to an existing .fm.json model."""
@@ -192,10 +184,7 @@ def assign_metadata_command(
         finding_model = FindingModelFull.model_validate_json(finding_path.read_text())
 
         with console.status("[bold green]Assigning canonical metadata..."):
-            result = await assign_metadata(
-                finding_model,
-                model_tier=model_tier,  # type: ignore[arg-type]
-            )
+            result = await assign_metadata(finding_model)
 
         model_json = result.model.model_dump_json(indent=2, exclude_none=True)
         review_json = result.review.model_dump_json(indent=2, exclude_none=True)

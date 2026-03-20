@@ -51,14 +51,14 @@ To compare performance between providers on any eval suite:
 # Run with default model (OpenAI)
 task evals:finding_description
 
-# Run with Anthropic
-DEFAULT_MODEL=anthropic:claude-sonnet-4-6 task evals:finding_description
+# Run with a specific model for the describe_finding agent
+AGENT_MODEL_OVERRIDES__describe_finding=anthropic:claude-sonnet-4-6 task evals:finding_description
 
 # Or directly:
-DEFAULT_MODEL=anthropic:claude-sonnet-4-6 python -m evals.finding_description
+AGENT_MODEL_OVERRIDES__describe_finding=anthropic:claude-sonnet-4-6 python -m evals.finding_description
 ```
 
-The eval suite will use whichever model you specify via `DEFAULT_MODEL` (Pydantic AI format: `provider:model`). Compare the overall scores and individual evaluator results to see which provider performs better for your use case.
+Override specific agents via `AGENT_MODEL_OVERRIDES__<tag>=provider:model`. Compare overall scores and individual evaluator results to see which provider performs better for your use case.
 
 ### From Python
 

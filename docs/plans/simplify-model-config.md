@@ -1,128 +1,173 @@
-# Plan: Model Configuration Simplification
+# Plan: Merge Enrichment Branch + Model Config Simplification
 
-## Part A: Deferred Plan — Config Overhaul (after findingmodel-enrich merges)
+## Status: Steps 0-2 COMPLETE. Step 1.5 (benchmarking new agents) and Steps 3-4 (final docs) remain.
 
-This section documents the full config simplification to execute AFTER the findingmodel-enrich branch merges back to dev. Written now so the design is ready.
+## Context
 
-### Context
+The `feature/enrichment` branch has been merged onto `dev`. It implemented most of what our model config simplification plan called for:
 
-The March 2026 agent performance audit proved the tier system (small/base/full) is the wrong abstraction. Each agent needs its own model × reasoning pairing. The current system is over-engineered and has a singleton propagation bug that makes benchmarking unreliable.
+- Per-agent TOML fallback chains in `supported_models.toml`
+- `FallbackModel` wrapping via `resolve_agent_config()`
+- New agent tags: `metadata_assign`, `similar_plan`, `similar_select`
+- Removed old enrichment package (`unified.py`, `agentic.py`)
+- GPT-5.4-mini/nano as defaults, Haiku `reasoning=none`
+- `observability.py` module for Logfire setup
+- `disable_send_to_logfire` config field
+- New `metadata/`, `facets.py`, rewritten `similar.py`, `browse()`, `related_models()`
 
-The findingmodel-enrich branch rewrites `search/similar.py` (new tags: `similar_plan`, `similar_select`) and replaces the legacy `enrichment/` package with `metadata/` (`metadata_assign`). All of that work still uses `ModelTier`. Doing the config simplification before that merge would create conflicts and require re-doing the work. So we wait.
-
-### Release Posture
-
-- Breaking major-version change for `findingmodel-ai`
-- Targets `dev` after findingmodel-enrich merge
-- No compatibility shims — clean removal of tier system
-- Process-scoped configuration (not injectable) — benchmarks use subprocess isolation or pre-import env vars
-
-### What Gets Removed
-
+**What the enrichment branch still has that we want to remove:**
 - `ModelTier` type
 - `default_model`, `default_model_full`, `default_model_small` fields
 - `default_reasoning_small`, `default_reasoning_base`, `default_reasoning_full` fields
+- `model_tier` / `default_tier` parameters on agent factories and public APIs
+- Unprefixed env var names (`DEFAULT_MODEL`, `AGENT_MODEL_OVERRIDES__`, etc.)
 - `get_model(tier)` method
-- `_create_model_from_string(model_string, default_tier)`
+- `_create_model_from_string(model_string, default_tier)` with tier parameter
 - `_tier_model_string()`, `_tier_reasoning()` helpers
-- `tier_fallback` concept
-- `model_tier` / `default_tier` parameters on ALL agent factories and public APIs
-- Old env var names: `DEFAULT_MODEL`, `DEFAULT_MODEL_FULL`, `DEFAULT_MODEL_SMALL`, `DEFAULT_REASONING_*`
+- `tier_fallback` in TOML entries
 
-### What Replaces It
+**What we still want to add:**
+- `FMAI_` prefix for non-secret env vars
+- `agents.toml` as separate file (agent config split from model metadata)
+- Secret rejection in TOML
+- Two settings classes (`SecretSettings` + `FindingModelAIConfig`)
+- `ConfigurationError` when no models available (instead of silent tier fallback)
 
-- **`agents.toml`** — separate file for per-agent model+reasoning fallback chains (not mixed with model metadata in `supported_models.toml`)
-- **`FMAI_MODEL__<tag>` / `FMAI_REASONING__<tag>`** — env var overrides with `FMAI_` prefix for non-secret vars
-- **Secrets stay in `.env`** with standard names (OPENAI_API_KEY etc.), no prefix
-- **Secret rejection in TOML** — actively scan `agents.toml` for API key names, raise on violation
-- **Two settings classes** — `SecretSettings` (from .env, no prefix) and `FindingModelAIConfig` (FMAI_ prefix)
-- **`get_agent_model(agent_tag)` with no tier parameter** — resolution: env override → TOML chain → ConfigurationError
+## Decision: Merge first, then simplify
 
-### Agents In Scope (ALL — post-merge)
+The merge is clean and brings major new functionality. Simplify the config system as a follow-up on the merged branch, not as a pre-merge gate.
 
-The final agent tag list still depends on the exact merged state, but the enrich worktree is much clearer now than when this plan was first written. The current direction is a single `metadata_assign` agent under `findingmodel_ai.metadata`, with the legacy `findingmodel_ai.enrichment` package removed. Legacy `similar_search`/`similar_assess`/`similar_term_gen` tags are likewise being replaced by `similar_plan`/`similar_select`. Slice 9 public-surface migration is still in progress there, so recheck the final merged inventory before executing this simplification.
+## Step 0: Update repo-located planning docs ✅ DONE
 
-**At simplification time, inventory the actual merged state.** The list below is the expected post-merge state based on the enrichment rewrite plan's intent:
+Copy this plan to `docs/plans/simplify-model-config.md` (replacing the previous version which is now outdated — most of what it planned has been done by the enrichment branch). This is the executable plan going forward.
 
-Search domain:
-- `ontology_search`, `ontology_match` — `search/ontology.py`
-- `anatomic_search`, `anatomic_select` — `search/anatomic.py`
-- `similar_plan`, `similar_select` — `search/similar.py` (new tags from enrich branch, replacing legacy `similar_search`/`similar_assess`/`similar_term_gen`)
+## Step 1: Merge the enrichment branch ✅ DONE
 
-Authoring domain:
-- `describe_finding`, `describe_details` — `authoring/description.py`
-- `edit_instructions`, `edit_markdown` — `authoring/editor.py`
-- `import_markdown` — `authoring/markdown_in.py`
+```
+git merge feature/enrichment
+```
 
-Metadata-assignment domain:
-- `metadata_assign` — `metadata/assignment.py`
+Fast-forward, no conflicts. Then verify:
+- `task check` passes
+- `task test` passes
+- Quick smoke test of a benchmark run with Logfire verification
 
-**Legacy tag cleanup**: Any tags that exist in the merged code but are not part of the new metadata-assignment/similar-search design should be removed in this simplification pass, not left as dead config. This includes old enrichment tags (`enrich_classify`, `enrich_unified`, `enrich_research`) if they somehow remain after merge, and old similar-search tags (`similar_search`, `similar_assess`, `similar_term_gen`).
+## Step 1.5: Assess and update model defaults for new/updated agents ⏳ PENDING
 
-### Key Design Decisions (already made)
+The enrichment branch set agent defaults before our Logfire-verified benchmarks existed. Several defaults don't reflect current data:
 
-- **Pure config** — callers never specify models at call sites
-- **Process-scoped** — config is fixed at import time; runtime singleton replacement is not supported
-- **Injectable config deferred** — passing config/model objects through function signatures is a separate future refactor
+| Agent | Current Primary | Issue | Recommended |
+|-------|----------------|-------|-------------|
+| `ontology_match` | gemini-3.1-pro/low (14.2s) | gpt-5.4-mini/low is faster (8.5s) | **gpt-5.4-mini/low** as primary |
+| `anatomic_select` | gpt-5.4-mini/medium | `medium` reasoning not benchmarked; `low` was 5.8s | Benchmark `low` vs `medium`, keep whichever wins |
+| `metadata_assign` | gemini-3-flash/low | New agent, no benchmarks. Classification task. | Benchmark with gpt-5.4-mini and gpt-5.4-nano |
+| `similar_plan` | gemini-3-flash/minimal | New agent, generative task. Reasonable default. | Benchmark to verify |
+| `similar_select` | gemini-3.1-flash-lite/medium | New agent, classification task. | Benchmark to verify |
 
-### Reference Documents
+**Action**: After merge, run the benchmark script on the new agents (`metadata_assign`, `similar_plan`, `similar_select`) and update defaults based on verified data. Also update `ontology_match` primary to gpt-5.4-mini/low.
 
-- `docs/agent-performance-audit-2026-03.md` — audit data backing per-agent model choices
-- `docs/plans/per-agent-model-config.md` — earlier implementation plan (partially executed, to be superseded)
-- `/Users/talkasab/repos/findingmodel-enrich/docs/canonical-structured-metadata-and-enrichment-rewrite.md` — enrich branch plan
+### Benchmarking Plan for New Agents
 
----
+#### `metadata_assign` (highest priority — new core pipeline agent)
 
-## Part B: Cleanup Work — Do Now
+**What it does**: Narrow classifier that assigns structured metadata (body regions, subspecialties, etiologies, entity type, modalities, time course, age profile, sex specificity, ontology/anatomic decisions) from a FindingModelFull.
 
-Work that is safe and valuable to do right now, independent of the enrich merge.
+**Inputs**: Real FindingModelFull JSON from `packages/findingmodel/tests/data/defs/` (pulmonary_embolism, abdominal_aortic_aneurysm, breast_density). The full `assign_metadata()` pipeline includes ontology search, anatomic search, and the classifier agent — benchmark both the isolated classifier and the full pipeline.
 
-### B1. Fix Logfire configuration bug
+**Current default**: `gemini-3-flash/low` — likely suboptimal for a classification task with rich structured output.
 
-**Problem**: `logfire.configure()` in `evals/__init__.py` relies on `os.environ` for `LOGFIRE_TOKEN`, but `.env` is only loaded by pydantic-settings — not exported to the process environment. Logfire never actually sends traces.
+**Configs to test**:
+| Model | Reasoning | Hypothesis |
+|-------|-----------|-----------|
+| gpt-5.4-nano | none | Budget floor — is nano enough for metadata classification? |
+| gpt-5.4-nano | low | Budget with light reasoning |
+| gpt-5.4-mini | none | Mid-tier, no reasoning overhead |
+| gpt-5.4-mini | low | Mid-tier with reasoning — likely sweet spot based on ontology_match data |
+| gemini-3-flash | low | Current default — baseline |
+| haiku-4-5 | none | Anthropic budget option (no thinking!) |
 
-**Fix**:
-- `config.py` already has `logfire_token` field and `configure_logfire()` method (added this session)
-- `evals/__init__.py` already updated to use `settings.configure_logfire()` (added this session)
-- Verify it works: run benchmark, check Logfire MCP for traces
+#### `similar_plan` (generative — search term + metadata hypothesis generation)
 
-**Files**: `config.py` (already done), `evals/__init__.py` (already done)
+**What it does**: Generates 2-5 search terms and metadata hypotheses (body regions, modalities, entity type, subspecialties) for a proposed finding.
 
-### B2. Add gpt-5.4-mini and gpt-5.4-nano to model registry
+**Inputs**: Finding name + optional description/synonyms. Use same 5 test findings as existing benchmarks.
 
-**Problem**: These models were released 2026-03-17 and added to `supported_models.toml` but never properly benchmarked (the benchmark ran the wrong models due to the singleton bug).
+**Current default**: `gemini-3-flash/minimal` — reasonable for a generative task.
 
-**Fix**:
-- Models are already in `supported_models.toml` (added this session)
-- Write a proper benchmark script that sets env vars BEFORE import
-- Run benchmarks with Logfire observability
-- Verify via Logfire MCP that the correct model names appear in spans
-- Update `agents.toml` / `supported_models.toml` agent chains if the new models outperform current choices
+**Configs to test**:
+| Model | Reasoning | Hypothesis |
+|-------|-----------|-----------|
+| gpt-5.4-nano | none | Fastest option — ontology_search data suggests nano is strong here |
+| gpt-5.4-nano | low | With light reasoning |
+| gpt-5.4-mini | none | More capable, no overhead |
+| gemini-3-flash | minimal | Current default — baseline |
 
-**Files**: `scripts/benchmark_models.py`, `data/supported_models.toml`
+#### `similar_select` (classification — match selection from candidates)
 
-### B3. Fix benchmark script to work with process-scoped config
+**What it does**: Given a proposed finding and a candidate pool, selects 0-3 matches with rejection taxonomy. Requires medical judgment about concept relationships.
 
-**Problem**: The current `scripts/benchmark_models.py` tries to replace the module-level singleton at runtime, which doesn't propagate. The old `scripts/agent_audit.py` has the same problem.
+**Inputs**: Need to pre-fetch candidate pools from `find_similar_models()` Phase 3, then feed to the isolated selection agent. Use 3 test findings.
 
-**Fix**: Rewrite `scripts/benchmark_models.py` so each model config runs as a subprocess (or set env vars before any findingmodel_ai imports). Use Logfire MCP to analyze results instead of parsing stdout.
+**Current default**: `gemini-3.1-flash-lite/medium` — budget classification.
 
-**Files**: `scripts/benchmark_models.py`
+**Configs to test**:
+| Model | Reasoning | Hypothesis |
+|-------|-----------|-----------|
+| gpt-5.4-mini | low | Strong classification model — likely winner based on ontology_match/anatomic_select data |
+| gpt-5.4-mini | medium | With more reasoning |
+| gpt-5.4-nano | medium | Budget with reasoning |
+| flash-lite | medium | Current default — baseline |
+| haiku-4-5 | none | Anthropic option (no thinking) |
 
-### B4. Commit and document
+#### `ontology_match` (already benchmarked — just needs config update)
 
-- Commit the Logfire fix, new model entries, and benchmark script
-- Update `docs/agent-performance-audit-2026-03.md` with corrected gpt-5.4-mini/nano results (once we have real data)
-- Update CHANGELOG
+Verified data shows gpt-5.4-mini/low (8.5s) beats current primary gemini-3.1-pro/low (14.2s). Update the TOML chain to put gpt-5.4-mini first. No new benchmarks needed.
 
----
+#### Implementation
 
-## Execution Order for Part B
+Add `metadata_assign`, `similar_plan`, and `similar_select` to `scripts/benchmark_models.py` as new agent runners in `run_one()`. Add a `new-agents` comparison set. Run with Logfire verification, analyze via Logfire MCP, update TOML defaults based on results.
 
-1. Verify Logfire fix works (run a single agent call, check Logfire MCP for trace)
-2. Rewrite benchmark script for subprocess-based model switching
-3. Run gpt-5.4-mini/nano benchmarks with Logfire verification
-4. Analyze results via Logfire MCP
-5. Update audit doc and TOML agent chains if warranted
-6. Update docs and CHANGELOG
-7. Commit
+## Step 2: Post-merge tier removal ✅ DONE
+
+Tier system fully removed. What was done:
+
+### What was done
+
+- Removed `ModelTier` type, tier fields, `get_model()`, `model_tier` / `default_tier` parameters from all agent factories, public APIs, CLI, evals, and tests (27 files changed)
+- `resolve_agent_config()` now raises `ConfigurationError` when no models available (no tier fallback)
+- `validate_default_model_keys()` validates env override usability
+- Updated all error messages, READMEs, evals README, and configuration.md
+- `tier_fallback` removed from TOML entries
+- CHANGELOG updated with breaking change entry
+
+### What was deferred (optional polish, can be done anytime)
+
+- `FMAI_` env prefix for non-secret vars (currently still uses `AGENT_MODEL_OVERRIDES__` / `AGENT_REASONING_OVERRIDES__`)
+- Split agent config from `supported_models.toml` into separate `agents.toml`
+- Secret rejection in TOML
+- Two-class settings split (`SecretSettings` + `FindingModelAIConfig`)
+
+## Step 3: Verify and document ✅ DONE
+
+- `task check` + `task test` pass
+- Benchmark a few agents with Logfire to verify model routing still works
+- Update all docs
+- Migration notes in CHANGELOG for removed env vars and `model_tier` parameters
+
+## Step 4: Final documentation review ✅ DONE
+
+- Update `docs/plans/simplify-model-config.md` to mark plan as complete
+- Review `docs/configuration.md` matches final shipped behavior
+- Review `docs/agent-performance-audit-2026-03.md` for any stale tier references
+- Update `CHANGELOG.md` with breaking changes and migration notes
+- Review `CLAUDE.md` for stale tier references
+
+## Verification
+
+1. After merge: `task check` + `task test`
+2. After tier removal: `task check` + `task test`
+3. `grep -r ModelTier packages/` returns nothing
+4. `grep -r default_tier packages/` returns nothing
+5. `grep -r model_tier packages/` returns nothing (except comments/docs)
+6. Benchmark run with Logfire confirms model routing works without tiers
+7. All docs consistent with final state

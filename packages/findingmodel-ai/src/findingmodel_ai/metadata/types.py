@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Literal
 
 from findingmodel.finding_model import FindingModelFull
 from oidm_common.models import IndexCode
@@ -69,7 +68,6 @@ class MetadataAssignmentReview(BaseModel):
     finding_name: str
     assignment_timestamp: datetime
     model_used: str
-    model_tier: Literal["base", "small", "full"]
     logfire_trace_id: str | None = None
     ontology_candidates: OntologyCandidateReport = Field(default_factory=OntologyCandidateReport)
     anatomic_candidates: list[AnatomicCandidate] = Field(default_factory=list)

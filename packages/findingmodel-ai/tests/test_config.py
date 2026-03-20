@@ -250,45 +250,8 @@ def test_ollama_returns_no_settings() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_default_model_small_is_gemini_flash() -> None:
-    config = FindingModelAIConfig()
-    assert config.default_model_small == "google-gla:gemini-3-flash-preview"
-
-
-def test_default_model_base_is_gpt54_mini() -> None:
-    config = FindingModelAIConfig()
-    assert config.default_model == "openai:gpt-5.4-mini"
-
-
-def test_default_model_full_is_gpt54() -> None:
-    config = FindingModelAIConfig()
-    assert config.default_model_full == "openai:gpt-5.4"
-
-
-def test_default_reasoning_levels() -> None:
-    config = FindingModelAIConfig()
-    assert config.default_reasoning_small == "low"
-    assert config.default_reasoning_base == "none"
-    assert config.default_reasoning_full == "high"
-
-
-# ---------------------------------------------------------------------------
-# Per-tier reasoning env override
-# ---------------------------------------------------------------------------
-
-
-def test_per_tier_reasoning_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
-    """DEFAULT_REASONING_BASE env var overrides the base reasoning level."""
-    monkeypatch.setenv("DEFAULT_REASONING_BASE", "medium")
-    config = FindingModelAIConfig()
-    assert config.default_reasoning_base == "medium"
-
-
-def test_per_tier_small_reasoning_override(monkeypatch: pytest.MonkeyPatch) -> None:
-    """DEFAULT_REASONING_SMALL=none disables small-tier reasoning."""
-    monkeypatch.setenv("DEFAULT_REASONING_SMALL", "none")
-    config = FindingModelAIConfig()
-    assert config.default_reasoning_small == "none"
+# (Tier-specific default tests removed — tiers no longer exist.
+#  Model selection is per-agent via supported_models.toml chains.)
 
 
 # ---------------------------------------------------------------------------
@@ -312,7 +275,7 @@ def test_google_missing_key_raises_actionable_error(monkeypatch: pytest.MonkeyPa
     """Missing GOOGLE_API_KEY raises ConfigurationError with override hint."""
     monkeypatch.setenv("GOOGLE_API_KEY", "")
     config = FindingModelAIConfig()
-    with pytest.raises(ConfigurationError, match="DEFAULT_MODEL_SMALL"):
+    with pytest.raises(ConfigurationError, match="AGENT_MODEL_OVERRIDES"):
         config._make_google_gla_model("gemini-3-flash-preview")
 
 
@@ -320,17 +283,14 @@ def test_anthropic_missing_key_raises_actionable_error(monkeypatch: pytest.Monke
     """Missing ANTHROPIC_API_KEY raises ConfigurationError with override hint."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     config = FindingModelAIConfig()
-    with pytest.raises(ConfigurationError, match="DEFAULT_MODEL"):
+    with pytest.raises(ConfigurationError, match="AGENT_MODEL_OVERRIDES"):
         config._make_anthropic_model("claude-sonnet-4-6")
 
 
-def test_validate_default_model_keys_message_includes_remediation(monkeypatch: pytest.MonkeyPatch) -> None:
-    """validate_default_model_keys() error includes override hint when key is missing."""
-    monkeypatch.setenv("GOOGLE_API_KEY", "")
-    monkeypatch.setenv("PYDANTIC_AI_GATEWAY_API_KEY", "")
-    config = FindingModelAIConfig()
-    with pytest.raises(ConfigurationError, match="DEFAULT_MODEL_SMALL"):
-        config.validate_default_model_keys()
+def test_validate_default_model_keys_passes_with_any_key() -> None:
+    """validate_default_model_keys() passes when at least one provider key is set."""
+    config = FindingModelAIConfig(openai_api_key="test-key")
+    config.validate_default_model_keys()  # Should not raise
 
 
 # ---------------------------------------------------------------------------
@@ -449,13 +409,14 @@ def test_validate_default_model_keys_passes_with_gateway(monkeypatch: pytest.Mon
     config.validate_default_model_keys()  # Should not raise
 
 
-def test_validate_default_model_keys_fails_without_gateway(monkeypatch: pytest.MonkeyPatch) -> None:
-    """validate_default_model_keys() fails when no direct key AND no gateway key."""
+def test_validate_default_model_keys_fails_with_no_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """validate_default_model_keys() fails when no provider keys are configured."""
     monkeypatch.setenv("OPENAI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     monkeypatch.setenv("PYDANTIC_AI_GATEWAY_API_KEY", "")
     config = FindingModelAIConfig()
-    with pytest.raises(ConfigurationError, match="PYDANTIC_AI_GATEWAY_API_KEY"):
+    with pytest.raises(ConfigurationError):
         config.validate_default_model_keys()
 
 
@@ -494,17 +455,17 @@ def test_resolve_agent_config_filters_unavailable_providers(monkeypatch: pytest.
     assert len(chain) == 2
 
 
-def test_resolve_agent_config_all_unavailable_falls_to_tier(monkeypatch: pytest.MonkeyPatch) -> None:
-    """With no provider or gateway keys, resolve falls back to the tier default model."""
+def test_resolve_agent_config_all_unavailable_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With no provider or gateway keys, resolve raises ConfigurationError."""
+    from findingmodel.config import ConfigurationError
+
     monkeypatch.setenv("OPENAI_API_KEY", "")
     monkeypatch.setenv("GOOGLE_API_KEY", "")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     monkeypatch.setenv("PYDANTIC_AI_GATEWAY_API_KEY", "")
     config = FindingModelAIConfig()
-    # ontology_search has tier_fallback = "small" → default_model_small
-    chain = config.resolve_agent_config("ontology_search")
-    assert len(chain) == 1
-    assert chain[0].model_string == config.default_model_small
+    with pytest.raises(ConfigurationError):
+        config.resolve_agent_config("ontology_search")
 
 
 def test_resolve_agent_config_env_override_single_model(monkeypatch: pytest.MonkeyPatch) -> None:

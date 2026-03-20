@@ -29,7 +29,6 @@ def _result_for(model: FindingModelFull, *, trace_id: str | None = None) -> Meta
             finding_name=model.name,
             assignment_timestamp=datetime.now(tz=UTC),
             model_used="openai:gpt-5-mini",
-            model_tier="small",
             logfire_trace_id=trace_id,
         ),
     )

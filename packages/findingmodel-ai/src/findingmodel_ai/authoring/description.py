@@ -8,25 +8,23 @@ from pydantic_ai import Agent
 from findingmodel_ai import logger
 from findingmodel_ai._internal.common import get_async_tavily_client
 from findingmodel_ai._internal.prompts import load_prompt_template, render_agent_prompt
-from findingmodel_ai.config import ModelTier, settings
+from findingmodel_ai.config import settings
 
 PROMPT_TEMPLATE_NAME = "get_finding_description"
 
 
 async def create_info_from_name(
     finding_name: str,
-    model_tier: ModelTier = "small",
 ) -> FindingInfo:
     """
     Create a FindingInfo object from a finding name using the AI API.
     :param finding_name: The name of the finding to describe.
-    :param model_tier: The model tier to use ("small", "base", or "full").
     :return: A FindingInfo object containing the finding name, synonyms, and description.
     """
     template = load_prompt_template(PROMPT_TEMPLATE_NAME)
     instructions, user_prompt = render_agent_prompt(template, finding_name=finding_name)
 
-    agent = _create_finding_info_agent(model_tier, instructions)
+    agent = _create_finding_info_agent(instructions)
 
     result = await agent.run(user_prompt)
     finding_info = _normalize_finding_info(result.output, original_input=finding_name)
@@ -71,13 +69,12 @@ def _normalize_finding_info(finding_info: FindingInfo, *, original_input: str) -
 
 
 def _create_finding_info_agent(
-    model_tier: ModelTier,
     instructions: str,
 ) -> Agent[None, FindingInfo]:
     """Factory to build the finding info agent, extracted for easier testing overrides."""
 
     return Agent[None, FindingInfo](
-        model=settings.get_agent_model("describe_finding", default_tier=model_tier),
+        model=settings.get_agent_model("describe_finding"),
         output_type=FindingInfo,
         instructions=instructions,
     )
@@ -155,7 +152,7 @@ async def add_details_to_info(
 
     # Create agent with search tool
     agent = Agent[FindingInfo, str](
-        settings.get_agent_model("describe_details", default_tier="small"),
+        settings.get_agent_model("describe_details"),
         deps_type=FindingInfo,
         output_type=str,
         tools=[search_radiology_sources],

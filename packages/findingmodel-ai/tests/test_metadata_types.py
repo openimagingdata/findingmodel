@@ -41,7 +41,6 @@ def _make_minimal_review() -> MetadataAssignmentReview:
         finding_name="test finding",
         assignment_timestamp=datetime.now(tz=UTC),
         model_used="openai:gpt-4o",
-        model_tier="base",
     )
 
 
@@ -65,14 +64,6 @@ class TestMetadataAssignmentResultCreation:
 
         with pytest.raises(ValidationError):
             MetadataAssignmentReview(finding_name="x", assignment_timestamp=datetime.now(tz=UTC))  # type: ignore[call-arg]
-
-        with pytest.raises(ValidationError):
-            MetadataAssignmentReview(
-                finding_name="x",
-                assignment_timestamp=datetime.now(tz=UTC),
-                model_used="openai:gpt-4o",
-                # missing model_tier
-            )  # type: ignore[call-arg]
 
     def test_assign_metadata_review_minimal(self) -> None:
         """Only required fields — verify optional fields default correctly."""
@@ -123,7 +114,6 @@ class TestSerialization:
             finding_name="test finding",
             assignment_timestamp=datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC),
             model_used="openai:gpt-4o",
-            model_tier="full",
             logfire_trace_id="trace_123",
             ontology_candidates=OntologyCandidateReport(
                 canonical_codes=[
@@ -179,7 +169,6 @@ class TestSeparationInvariant:
             "anatomic_candidates",
             "assignment_timestamp",
             "model_used",
-            "model_tier",
             "logfire_trace_id",
         }
         overlap = model_keys & review_only_keys

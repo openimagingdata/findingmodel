@@ -10,10 +10,10 @@ AI-powered tools for finding model authoring: info generation, model editing, on
 
 ## AI Provider Configuration
 
-See Serena `code_style_conventions` for provider table and model tiers.
+Each agent has its own model + reasoning configured in `supported_models.toml` fallback chains.
 
-- Configure via `DEFAULT_MODEL` env var (e.g., `openai:gpt-5.4`)
 - Per-agent overrides: `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
+- Per-agent reasoning: `AGENT_REASONING_OVERRIDES__<tag>=level`
 - See `docs/configuration.md` for complete reference
 
 ## Architecture Patterns

@@ -2,7 +2,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast
 
-from findingmodel import Index
 from findingmodel.facets import format_age_profile, format_time_course
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
@@ -10,7 +9,8 @@ from pydantic import BaseModel, Field
 from pydantic_ai import ModelRetry, RunContext
 from pydantic_ai.agent import Agent
 
-from findingmodel_ai.config import ModelTier, settings
+from findingmodel import Index
+from findingmodel_ai.config import settings
 
 # Module-level Index instance with lazy initialization
 _index: Index | None = None
@@ -87,11 +87,8 @@ def _edited_text_instructions() -> str:
     )
 
 
-def create_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditResult]:
+def create_edit_agent() -> Agent[EditDeps, EditResult]:
     """Factory for the natural-language editing agent.
-
-    Args:
-        model_tier: Model tier to use (defaults to "base")
 
     Exposed to facilitate testing with TestModel/FunctionModel via agent.override(...).
     """
@@ -102,7 +99,7 @@ def create_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditRes
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=settings.get_agent_model("edit_instructions", default_tier=model_tier),
+        model=settings.get_agent_model("edit_instructions"),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,
@@ -123,11 +120,8 @@ def create_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditRes
     return agent
 
 
-def create_markdown_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps, EditResult]:
+def create_markdown_edit_agent() -> Agent[EditDeps, EditResult]:
     """Factory for the text-editing agent used for Markdown-like edits.
-
-    Args:
-        model_tier: Model tier to use (defaults to "base")
 
     The agent receives the current FindingModelFull (JSON) and an edited text string
     (often exported as Markdown) representing desired changes. It must output a COMPLETE
@@ -143,7 +137,7 @@ def create_markdown_edit_agent(model_tier: ModelTier = "base") -> Agent[EditDeps
     )
 
     agent = Agent[EditDeps, EditResult](
-        model=settings.get_agent_model("edit_markdown", default_tier=model_tier),
+        model=settings.get_agent_model("edit_markdown"),
         deps_type=EditDeps,
         output_type=EditResult,
         instructions=instructions,

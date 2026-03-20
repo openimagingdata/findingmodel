@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
 from findingmodel_ai import logger
-from findingmodel_ai.config import ModelTier, settings
+from findingmodel_ai.config import settings
 from findingmodel_ai.search.bioontology import BioOntologySearchClient
 
 
@@ -198,20 +198,17 @@ async def execute_ontology_search(
         raise
 
 
-def create_categorization_agent(model_tier: ModelTier = "base") -> Agent[CategorizationContext, CategorizedConcepts]:
+def create_categorization_agent() -> Agent[CategorizationContext, CategorizedConcepts]:
     """Create categorization agent following proper Pydantic AI patterns.
 
     This agent categorizes ontology search results into relevance tiers.
     Post-processing is handled separately to ensure exact matches are properly identified.
 
-    Args:
-        model_tier: Model tier to use (defaults to "base")
-
     Returns:
         Agent that takes CategorizationContext and produces CategorizedConcepts
     """
     return Agent[CategorizationContext, CategorizedConcepts](
-        model=settings.get_agent_model("ontology_match", default_tier=model_tier),
+        model=settings.get_agent_model("ontology_match"),
         output_type=CategorizedConcepts,
         deps_type=CategorizationContext,
         system_prompt="""You are a medical ontology expert.
@@ -325,18 +322,15 @@ def ensure_exact_matches_post_process(
     return output
 
 
-def create_query_generator_agent(model_tier: ModelTier = "small") -> Agent[None, list[str]]:
+def create_query_generator_agent() -> Agent[None, list[str]]:
     """Create agent for generating alternative medical terms for ontology matching.
-
-    Args:
-        model_tier: Model tier to use (defaults to "small")
 
     Returns:
         Agent that generates different ways to express the same medical finding
         to help match against formal medical ontologies.
     """
     return Agent[None, list[str]](
-        model=settings.get_agent_model("ontology_search", default_tier=model_tier),
+        model=settings.get_agent_model("ontology_search"),
         output_type=list[str],
         system_prompt="""We need to find terms that might match a radiology finding name in official medical ontologies that use formal medical terminology.
 
@@ -397,7 +391,6 @@ async def categorize_with_validation(
     finding_name: str,
     search_results: list[OntologySearchResult],
     query_terms: list[str],
-    model_tier: ModelTier = "base",
 ) -> CategorizedConcepts:
     """Categorize search results with automatic validation.
 
@@ -409,7 +402,6 @@ async def categorize_with_validation(
         finding_name: Name of the imaging finding
         search_results: List of ontology search results to categorize
         query_terms: List of search terms used for querying
-        model_tier: Model tier to use (defaults to "base")
 
     Returns:
         CategorizedConcepts with concept IDs in each relevance tier
@@ -420,7 +412,7 @@ async def categorize_with_validation(
     )
 
     # Use the categorization agent
-    categorization_agent = create_categorization_agent(model_tier=model_tier)
+    categorization_agent = create_categorization_agent()
 
     # Create a compact representation of results for the prompt
     compact_results = [{"id": r.concept_id, "text": r.concept_text} for r in search_results]
@@ -527,7 +519,6 @@ async def match_ontology_concepts(
     max_should_include: int = 10,
     max_marginal: int = 10,
     ontologies: list[str] | None = None,
-    model_tier: ModelTier = "base",
 ) -> CategorizedOntologyConcepts:
     """
     Match finding to relevant ontology concepts using BioOntology API.
@@ -546,7 +537,6 @@ async def match_ontology_concepts(
         max_should_include: Maximum should-include concepts
         max_marginal: Maximum marginal concepts to consider
         ontologies: Optional list of ontology acronyms to search (default: SNOMEDCT, RADLEX, LOINC)
-        model_tier: Model tier for categorization agent (query generation always uses "small")
 
     Returns:
         Categorized ontology concepts with rationale
@@ -574,7 +564,6 @@ async def match_ontology_concepts(
             finding_name=finding_name,
             search_results=search_results,
             query_terms=query_terms,
-            model_tier=model_tier,
         )
 
         # Stage 4: Transform to final output format

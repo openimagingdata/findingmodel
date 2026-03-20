@@ -21,8 +21,8 @@ GOOGLE_API_KEY=your_key_here
 # Optional: For detailed finding info with citations
 TAVILY_API_KEY=your_key_here
 
-# Optional: Override default model
-DEFAULT_MODEL=anthropic:claude-sonnet-4-6
+# Optional: Override a specific agent's model
+AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-sonnet-4-6
 ```
 
 ### Supported AI Providers
@@ -35,7 +35,7 @@ DEFAULT_MODEL=anthropic:claude-sonnet-4-6
 | Ollama (local) | `ollama:llama3` | None required |
 | Gateway | `gateway/openai:gpt-5.4` | `PYDANTIC_AI_GATEWAY_API_KEY` |
 
-See [Configuration Guide](../../docs/configuration.md) for model tiers and per-agent overrides.
+See [Configuration Guide](../../docs/configuration.md) for per-agent model configuration and overrides.
 
 ## CLI (`findingmodel-ai`)
 
@@ -194,7 +194,7 @@ async def main():
     with open("pneumonia.fm.json") as f:
         model = FindingModelFull.model_validate_json(f.read())
 
-    result = await assign_metadata(model, model_tier="small")
+    result = await assign_metadata(model)
 
     print(result.model.body_regions)
     print(result.model.index_codes)
@@ -250,8 +250,8 @@ Complex workflows use structured pipelines:
 ### Multi-Provider Support
 
 All tools support multiple AI providers through Pydantic AI:
-- Configure globally via `DEFAULT_MODEL`
-- Override per-agent via `AGENT_MODEL_OVERRIDES__<tag>`
+- Per-agent defaults configured in `supported_models.toml` with cross-provider fallback chains
+- Override per-agent via `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
 
 ### Structured Outputs
 

@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
 from findingmodel_ai import logger
-from findingmodel_ai.config import ModelTier, settings
+from findingmodel_ai.config import settings
 
 
 def _convert_to_ontology_results(locations: list[AnatomicLocation]) -> list[OntologySearchResult]:
@@ -55,7 +55,7 @@ class AnatomicQueryTerms(BaseModel):
 
 
 async def generate_anatomic_query_terms(
-    finding_name: str, finding_description: str | None = None, model_tier: ModelTier = "small"
+    finding_name: str, finding_description: str | None = None
 ) -> AnatomicQueryTerms:
     """Generate anatomic location search terms for a finding.
 
@@ -65,13 +65,12 @@ async def generate_anatomic_query_terms(
     Args:
         finding_name: Name of the finding
         finding_description: Optional detailed description
-        model_tier: Model tier to use (defaults to "small")
 
     Returns:
         List of anatomic location search terms
     """
     agent = Agent[None, AnatomicQueryTerms](
-        model=settings.get_agent_model("anatomic_search", default_tier=model_tier),
+        model=settings.get_agent_model("anatomic_search"),
         output_type=AnatomicQueryTerms,
         system_prompt="""You are an anatomic location specialist for medical imaging findings.
         
@@ -175,17 +174,14 @@ class LocationSearchResponse(BaseModel):
     reasoning: str = Field(description="Clear reasoning for selections made")
 
 
-def create_location_selection_agent(model_tier: ModelTier = "small") -> Agent[None, LocationSearchResponse]:
+def create_location_selection_agent() -> Agent[None, LocationSearchResponse]:
     """Create agent for selecting best anatomic locations from search results.
-
-    Args:
-        model_tier: Model tier to use (defaults to "small")
 
     Returns:
         Agent configured for location selection
     """
     return Agent[None, LocationSearchResponse](
-        model=settings.get_agent_model("anatomic_select", default_tier=model_tier),
+        model=settings.get_agent_model("anatomic_select"),
         output_type=LocationSearchResponse,
         system_prompt="""You are a medical imaging specialist who selects appropriate anatomic 
 locations for imaging findings. Given search results from medical ontology databases, you must 
@@ -213,7 +209,6 @@ async def find_anatomic_locations(
     finding_name: str,
     description: str | None = None,
     use_duckdb: bool = True,
-    model_tier: ModelTier = "small",
 ) -> LocationSearchResponse:
     """Find relevant anatomic locations for a finding using 3-stage pipeline.
 
@@ -226,7 +221,6 @@ async def find_anatomic_locations(
         finding_name: Name of the finding (e.g., "PCL tear")
         description: Optional detailed description
         use_duckdb: Use DuckDB client if True, LanceDB if False (default True)
-        model_tier: Model tier to use (defaults to "small")
 
     Returns:
         LocationSearchResponse with selected locations and reasoning
@@ -234,7 +228,7 @@ async def find_anatomic_locations(
     logger.info(f"Starting anatomic location search for: {finding_name}")
 
     # Stage 1: Generate query terms
-    query_info = await generate_anatomic_query_terms(finding_name, description, model_tier=model_tier)
+    query_info = await generate_anatomic_query_terms(finding_name, description)
     logger.info(f"Generated query terms: {query_info.terms}, region: {query_info.region}")
 
     # Stage 2: Execute search with AnatomicLocationIndex
@@ -261,7 +255,7 @@ async def find_anatomic_locations(
         )
 
     # Stage 3: Selection using AI agent
-    selection_agent = create_location_selection_agent(model_tier=model_tier)
+    selection_agent = create_location_selection_agent()
 
     # Build structured prompt for the agent
     prompt = f"""

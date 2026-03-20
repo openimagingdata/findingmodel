@@ -684,7 +684,7 @@ async def test_match_ontology_concepts_basic_wiring() -> None:
 
     try:
         # Call with simplest valid input - use fast model for integration test
-        result = await match_ontology_concepts(finding_name="pneumonia", model_tier="small")
+        result = await match_ontology_concepts(finding_name="pneumonia")
 
         # Assert only on structure, not behavior
         assert result is not None

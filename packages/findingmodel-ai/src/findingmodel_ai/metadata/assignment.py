@@ -9,6 +9,13 @@ from time import perf_counter
 from typing import Any
 
 import logfire
+from findingmodel.protocols import OntologySearchResult
+from oidm_common.models import IndexCode
+from opentelemetry import trace as otel_trace
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent
+from pydantic_ai.models import Model
+
 from findingmodel import (
     AgeProfile,
     BodyRegion,
@@ -20,15 +27,8 @@ from findingmodel import (
     SexSpecificity,
     Subspecialty,
 )
-from findingmodel.protocols import OntologySearchResult
-from oidm_common.models import IndexCode
-from opentelemetry import trace as otel_trace
-from pydantic import BaseModel, Field
-from pydantic_ai import Agent
-from pydantic_ai.models import Model
-
 from findingmodel_ai import logger
-from findingmodel_ai.config import ModelTier, settings
+from findingmodel_ai.config import settings
 from findingmodel_ai.metadata.types import (
     AnatomicCandidate,
     FieldConfidence,
@@ -103,7 +103,6 @@ def _get_trace_id() -> str | None:
 
 
 def create_metadata_assignment_agent(
-    model_tier: ModelTier = "small",
     model: Model | None = None,
 ) -> Agent[None, MetadataAssignmentDecision]:
     """Create the narrow classifier agent used by the metadata-assignment pipeline.
@@ -111,7 +110,7 @@ def create_metadata_assignment_agent(
     The model parameter exists for test injection (TestModel/FunctionModel).
     Production code should not pass it — model selection goes through agent tags.
     """
-    resolved_model = model or settings.get_agent_model("metadata_assign", default_tier=model_tier)
+    resolved_model = model or settings.get_agent_model("metadata_assign")
     return Agent[None, MetadataAssignmentDecision](
         model=resolved_model,
         output_type=MetadataAssignmentDecision,
@@ -416,7 +415,6 @@ async def _gather_ontology_candidates(
     finding_model: FindingModelFull,
     *,
     needs_ontology: bool,
-    model_tier: ModelTier,
     warnings: list[str],
 ) -> tuple[CategorizedOntologyConcepts, float]:
     ontology_result = CategorizedOntologyConcepts(
@@ -434,7 +432,6 @@ async def _gather_ontology_candidates(
                     finding_name=finding_model.name,
                     finding_description=finding_model.description,
                     exclude_anatomical=True,
-                    model_tier=model_tier,
                 )
                 logfire.info(
                     "Ontology candidate gathering complete",
@@ -466,7 +463,6 @@ async def _gather_anatomic_candidates(
                 anatomic_result = await find_anatomic_locations(
                     finding_name=finding_model.name,
                     description=finding_model.description,
-                    model_tier="small",
                 )
                 logfire.info(
                     "Anatomic candidate gathering complete",
@@ -528,9 +524,8 @@ async def _run_classifier(
     needs_classifier: bool,
     ontology_states: dict[str, _OntologyCandidateState],
     anatomic_states: dict[str, _AnatomicCandidateState],
-    model_tier: ModelTier,
 ) -> tuple[MetadataAssignmentDecision, str, float]:
-    model_used = settings.get_effective_model_string("metadata_assign", default_tier=model_tier)
+    model_used = settings.get_effective_model_string("metadata_assign")
     decision = MetadataAssignmentDecision(classification_rationale="Fast-path: existing canonical data was sufficient.")
     start = perf_counter()
     with logfire.span(
@@ -540,7 +535,7 @@ async def _run_classifier(
         anatomic_candidates=len(anatomic_states),
     ):
         if needs_classifier:
-            agent = create_metadata_assignment_agent(model_tier=model_tier)
+            agent = create_metadata_assignment_agent()
             decision_result = await agent.run(_decision_prompt(finding_model, ontology_states, anatomic_states))
             decision = decision_result.output
             logfire.info(
@@ -556,16 +551,12 @@ async def _run_classifier(
 
 async def assign_metadata(
     finding_model: FindingModelFull,
-    *,
-    model_tier: ModelTier = "small",
 ) -> MetadataAssignmentResult:
     """Assign canonical structured metadata to a finding model."""
     warnings: list[str] = []
     timings: dict[str, float] = {}
 
-    with logfire.span(
-        "assign_metadata", oifm_id=finding_model.oifm_id, finding_name=finding_model.name, model_tier=model_tier
-    ):
+    with logfire.span("assign_metadata", oifm_id=finding_model.oifm_id, finding_name=finding_model.name):
         trace_id = _get_trace_id()
         needs_ontology = _needs_ontology(finding_model)
         needs_anatomic = _needs_anatomic(finding_model)
@@ -583,7 +574,6 @@ async def assign_metadata(
             _gather_ontology_candidates(
                 finding_model,
                 needs_ontology=needs_ontology,
-                model_tier=model_tier,
                 warnings=warnings,
             ),
             _gather_anatomic_candidates(
@@ -602,7 +592,6 @@ async def assign_metadata(
             needs_classifier=needs_classifier,
             ontology_states=ontology_states,
             anatomic_states=anatomic_states,
-            model_tier=model_tier,
         )
 
         _apply_ontology_decisions(ontology_states, decision.ontology_decisions, warnings)
@@ -638,7 +627,6 @@ async def assign_metadata(
             finding_name=finding_model.name,
             assignment_timestamp=datetime.now(tz=UTC),
             model_used=model_used,
-            model_tier=model_tier,
             logfire_trace_id=trace_id,
             ontology_candidates=ontology_report,
             anatomic_candidates=_anatomic_review(anatomic_states),

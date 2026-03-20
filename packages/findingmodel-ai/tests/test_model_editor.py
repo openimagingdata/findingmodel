@@ -1,12 +1,13 @@
 from collections.abc import Iterator
 
 import pytest
-from findingmodel import Index
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel_ai.authoring import editor as model_editor
 from pydantic_ai import models
 from pydantic_ai.models.test import TestModel
+
+from findingmodel import Index
 
 
 @pytest.fixture(autouse=True)
@@ -41,8 +42,8 @@ async def test_edit_model_natural_language_add_attribute(real_model: FindingMode
     modified_model = FindingModelFull.model_validate(base_data)
 
     # Use TestModel to override the real model and supply a controlled output (EditResult)
-    # Need to mock get_model to avoid API key check
-    with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
+    # Need to mock get_agent_model to avoid API key check
+    with patch.object(FindingModelAIConfig, "get_agent_model", return_value="test"):
         agent = model_editor.create_edit_agent()
 
     command = "Add attribute 'severity' with values mild, moderate, severe."
@@ -164,7 +165,7 @@ async def test_edit_model_natural_language_callout_real_api(real_model: FindingM
     models.ALLOW_MODEL_REQUESTS = True
     try:
         # Use fast model for integration test
-        agent = model_editor.create_edit_agent(model_tier="small")
+        agent = model_editor.create_edit_agent()
 
         command = "Add a new attribute named 'severity' of type choice with values: mild, moderate, severe."
         result = await model_editor.edit_model_natural_language(real_model, command, agent=agent)

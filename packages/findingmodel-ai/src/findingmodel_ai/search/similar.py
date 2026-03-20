@@ -18,7 +18,7 @@ from findingmodel.index import FindingModelIndex as Index
 from pydantic_ai import Agent
 
 from findingmodel_ai import logger
-from findingmodel_ai.config import ModelTier, settings
+from findingmodel_ai.config import settings
 from findingmodel_ai.search.pipeline_helpers import (
     CandidatePool,
     MetadataHypothesis,
@@ -76,19 +76,19 @@ enough matches that editing them would be better than creating a new definition.
 """
 
 
-def create_planning_agent(model_tier: ModelTier = "small") -> Agent[None, SimilarModelPlan]:
+def create_planning_agent() -> Agent[None, SimilarModelPlan]:
     """Create the Phase 2 planning agent."""
     return Agent[None, SimilarModelPlan](
-        model=settings.get_agent_model("similar_plan", default_tier=model_tier),
+        model=settings.get_agent_model("similar_plan"),
         output_type=SimilarModelPlan,
         instructions=PLANNING_SYSTEM_PROMPT,
     )
 
 
-def create_selection_agent(model_tier: ModelTier = "small") -> Agent[None, SimilarModelSelection]:
+def create_selection_agent() -> Agent[None, SimilarModelSelection]:
     """Create the Phase 4 selection agent."""
     return Agent[None, SimilarModelSelection](
-        model=settings.get_agent_model("similar_select", default_tier=model_tier),
+        model=settings.get_agent_model("similar_select"),
         output_type=SimilarModelSelection,
         instructions=SELECTION_SYSTEM_PROMPT,
     )
@@ -144,7 +144,6 @@ async def find_similar_models(
     index: Index | None = None,
     *,
     existing_model_id: str | None = None,
-    model_tier: ModelTier = "small",
 ) -> SimilarModelResult:
     """Find existing finding models similar to a proposed finding.
 
@@ -157,9 +156,8 @@ async def find_similar_models(
         synonyms: Optional list of synonyms
         index: FindingModelIndex (creates one if None)
         existing_model_id: If an existing model ID is available, adds related_models() pass
-        model_tier: LLM tier for planning and selection agents
     """
-    with logfire.span("find_similar_models", finding_name=finding_name, tier=model_tier):
+    with logfire.span("find_similar_models", finding_name=finding_name):
         if index is None:
             index = Index()
 
@@ -174,7 +172,7 @@ async def find_similar_models(
         # === Phase 2: LLM Planning ===
         with logfire.span("phase2_planning"):
             finding_desc = _build_finding_description(finding_name, description, synonyms)
-            plan = await _phase2_planning(finding_desc, model_tier)
+            plan = await _phase2_planning(finding_desc)
             logfire.info(
                 "Planning complete",
                 terms_generated=len(plan.search_terms),
@@ -201,7 +199,7 @@ async def find_similar_models(
 
         # === Phase 4: LLM Selection ===
         with logfire.span("phase4_selection"):
-            selection = await _phase4_selection(finding_desc, pool, model_tier)
+            selection = await _phase4_selection(finding_desc, pool)
             logfire.info(
                 "Selection complete",
                 selected_count=len(selection.selected_ids),
@@ -252,9 +250,9 @@ async def _phase1_fast_path(
     return None
 
 
-async def _phase2_planning(finding_desc: str, model_tier: ModelTier) -> SimilarModelPlan:
+async def _phase2_planning(finding_desc: str) -> SimilarModelPlan:
     """Phase 2: Generate search terms and metadata hypotheses via LLM."""
-    agent = create_planning_agent(model_tier)
+    agent = create_planning_agent()
     prompt = f"Generate search terms and metadata hypotheses for this proposed finding:\n\n{finding_desc}"
     result = await agent.run(prompt)
     return result.output
@@ -310,10 +308,9 @@ async def _phase3_search(
 async def _phase4_selection(
     finding_desc: str,
     pool: CandidatePool,
-    model_tier: ModelTier,
 ) -> SimilarModelSelection:
     """Phase 4: LLM selection from candidate pool."""
-    agent = create_selection_agent(model_tier)
+    agent = create_selection_agent()
     candidate_text = _build_candidate_descriptions(pool)
 
     prompt = f"""Analyze these candidate models for the proposed finding:

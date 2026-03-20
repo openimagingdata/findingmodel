@@ -27,7 +27,6 @@ PROVIDER_CONFIGS: dict[str, Any] = _MODEL_REGISTRY.get("providers", {})
 _AGENT_REGISTRY: dict[str, Any] = _MODEL_REGISTRY.get("agents", {})
 
 # Type definitions for model configuration
-ModelTier = Literal["base", "small", "full"]
 ReasoningLevel = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 
 # Agent tags for per-agent model configuration
@@ -98,17 +97,6 @@ class FindingModelAIConfig(BaseSettings):
         default="http://localhost:11434/v1",
         description="Base URL for Ollama API",
     )
-
-    # Model configuration (Pydantic AI string format: "provider:model")
-    # See MODEL_SPEC_PATTERN for supported providers
-    default_model: ModelSpec = Field(default="openai:gpt-5.4-mini")
-    default_model_full: ModelSpec = Field(default="openai:gpt-5.4")
-    default_model_small: ModelSpec = Field(default="google-gla:gemini-3-flash-preview")
-
-    # Per-tier reasoning levels — overridable via env (e.g., DEFAULT_REASONING_SMALL=none)
-    default_reasoning_small: ReasoningLevel = Field(default="low")
-    default_reasoning_base: ReasoningLevel = Field(default="none")
-    default_reasoning_full: ReasoningLevel = Field(default="high")
 
     # Per-agent model overrides
     agent_model_overrides: dict[AgentTag, ModelSpec] = Field(default_factory=dict)
@@ -191,18 +179,6 @@ class FindingModelAIConfig(BaseSettings):
             "ollama": None,  # No API key required
         }.get(provider_part)
 
-    def _tier_model_string(self, tier: ModelTier) -> str:
-        """Return the model string for a given tier."""
-        return {"base": self.default_model, "full": self.default_model_full, "small": self.default_model_small}[tier]
-
-    def _tier_reasoning(self, tier: ModelTier) -> ReasoningLevel:
-        """Return the reasoning level for a given tier."""
-        return {
-            "small": self.default_reasoning_small,
-            "base": self.default_reasoning_base,
-            "full": self.default_reasoning_full,
-        }[tier]
-
     def _can_use_model(self, model_string: str) -> bool:
         """Check if we can use this model (API key or gateway available)."""
         key_field = self._get_required_key_field(model_string)
@@ -214,7 +190,7 @@ class FindingModelAIConfig(BaseSettings):
         gateway_eligible = {"openai", "anthropic", "google", "google-gla", "google-vertex"}
         return self._has_key("pydantic_ai_gateway_api_key") and provider_part in gateway_eligible
 
-    def resolve_agent_config(self, agent_tag: AgentTag, default_tier: ModelTier = "base") -> list[ResolvedModelConfig]:
+    def resolve_agent_config(self, agent_tag: AgentTag) -> list[ResolvedModelConfig]:
         """Resolve the ordered list of (model, reasoning) for an agent.
 
         Single source of truth used by get_agent_model(), get_effective_model_string(),
@@ -223,17 +199,16 @@ class FindingModelAIConfig(BaseSettings):
         Resolution order:
         1. Env overrides (AGENT_MODEL_OVERRIDES / AGENT_REASONING_OVERRIDES) → single model, no chain
         2. Per-agent TOML models list → filter to available providers, keep order
-        3. Tier default → single model fallback
+        3. ConfigurationError if no models are available
 
         Returns at least one entry. First entry is the primary model.
         """
         agent_entry = _AGENT_REGISTRY.get(agent_tag, {})
-        tier: ModelTier = agent_entry.get("tier_fallback", default_tier)
 
         # 1. Env override (highest priority — single model, no chain)
         if agent_tag in self.agent_model_overrides:
             model_string = self.agent_model_overrides[agent_tag]
-            reasoning = self.agent_reasoning_overrides.get(agent_tag) or self._tier_reasoning(tier)
+            reasoning = self.agent_reasoning_overrides.get(agent_tag) or "none"
             reasoning = self._normalize_reasoning(model_string, reasoning)
             return [ResolvedModelConfig(model_string, reasoning)]
 
@@ -245,62 +220,53 @@ class FindingModelAIConfig(BaseSettings):
             if self._can_use_model(model_string):
                 # Env reasoning override applies to ALL models in chain
                 toml_reasoning: ReasoningLevel | None = entry.get("reasoning")  # type: ignore[assignment]
-                reasoning = (
-                    self.agent_reasoning_overrides.get(agent_tag) or toml_reasoning or self._tier_reasoning(tier)
-                )
+                reasoning = self.agent_reasoning_overrides.get(agent_tag) or toml_reasoning or "none"
                 reasoning = self._normalize_reasoning(model_string, reasoning)
                 available.append(ResolvedModelConfig(model_string, reasoning))
 
         if available:
             return available
 
-        # 3. Tier fallback (all TOML models unavailable or no models list)
-        if models_list:
-            logfire.info(
-                "Agent {tag}: no preferred models available, using tier {tier} fallback",
-                tag=agent_tag,
-                tier=tier,
-            )
-        model_string = self._tier_model_string(tier)
-        reasoning = self.agent_reasoning_overrides.get(agent_tag) or self._tier_reasoning(tier)
-        reasoning = self._normalize_reasoning(model_string, reasoning)
-        return [ResolvedModelConfig(model_string, reasoning)]
+        # No models available — raise ConfigurationError
+        raise ConfigurationError(
+            f"No models available for agent '{agent_tag}'. "
+            "Configure at least one provider API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, "
+            "or PYDANTIC_AI_GATEWAY_API_KEY) or set an env override "
+            f"(AGENT_MODEL_OVERRIDES__{agent_tag}=provider:model)."
+        )
 
     def validate_default_model_keys(self) -> None:
-        """Validate that API keys are configured for all default models.
+        """Validate that at least one model is available for each agent's TOML chain.
 
-        Call this at application startup to fail fast if required API keys
-        are missing for the configured default models.
+        Call this at application startup to fail fast if no usable models
+        are available for any configured agent.
 
         Raises:
-            ConfigurationError: If any required API key is missing, with a
-                message listing which keys need to be set.
+            ConfigurationError: If any agent has no usable models, with a
+                message listing which agents are affected.
         """
-        models_to_check = [
-            ("default_model", self.default_model),
-            ("default_model_full", self.default_model_full),
-            ("default_model_small", self.default_model_small),
-        ]
+        blocked: list[str] = []
+        for tag in _AGENT_REGISTRY:
+            models_list: list[dict[str, str]] = _AGENT_REGISTRY[tag].get("models", [])
+            if not models_list:
+                continue
+            # Check env override first — but validate it's actually usable
+            agent_tag: AgentTag = tag  # type: ignore[assignment]
+            if agent_tag in self.agent_model_overrides:
+                if self._can_use_model(self.agent_model_overrides[agent_tag]):
+                    continue
+                blocked.append(tag)
+                continue
+            available = any(self._can_use_model(entry["model"]) for entry in models_list)
+            if not available:
+                blocked.append(tag)
 
-        has_gateway = self._has_key("pydantic_ai_gateway_api_key")
-        gateway_eligible_providers = {"openai", "anthropic", "google", "google-gla", "google-vertex"}
-
-        missing: list[tuple[str, str, str]] = []
-        for tier_name, model_string in models_to_check:
-            key_field = self._get_required_key_field(model_string)
-            if key_field and key_field != "pydantic_ai_gateway_api_key" and not self._has_key(key_field):
-                # Check if gateway fallback covers this provider
-                provider_part = model_string.split(":")[0]
-                if has_gateway and provider_part in gateway_eligible_providers:
-                    continue  # Gateway will handle this
-                missing.append((tier_name, model_string, key_field))
-
-        if missing:
-            details = "; ".join(f"{tier} ({model}) requires {key.upper()}" for tier, model, key in missing)
+        if blocked:
+            blocked_str = ", ".join(blocked)
             raise ConfigurationError(
-                f"Missing API keys for default models: {details}. "
-                "Set the missing key(s) in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
-                "or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini)."
+                f"No models available for agents: {blocked_str}. "
+                "Set at least one provider API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, "
+                "or PYDANTIC_AI_GATEWAY_API_KEY) in .env or your environment."
             )
 
     @staticmethod
@@ -445,8 +411,8 @@ class FindingModelAIConfig(BaseSettings):
             "Set one of these in .env or your environment."
         )
 
-    def _create_model_from_string(self, model_string: str, default_tier: ModelTier = "base") -> Model:
-        """Create a Pydantic AI model instance from a model string.
+    def _create_model_from_string(self, model_string: str) -> Model:
+        """Create a Pydantic AI model instance from a model string with no reasoning.
 
         Routes to the best available provider based on configured API keys.
         For direct providers (openai, anthropic, google*), falls back to the
@@ -455,7 +421,6 @@ class FindingModelAIConfig(BaseSettings):
 
         Args:
             model_string: Model specification (e.g., "openai:gpt-5.4", "anthropic:claude-sonnet-4-6")
-            default_tier: Tier to use for per-tier reasoning settings resolution
 
         Returns:
             Configured Model instance
@@ -463,59 +428,9 @@ class FindingModelAIConfig(BaseSettings):
         Raises:
             ConfigurationError: If model string is invalid, API key missing, or provider unknown
         """
-        if ":" not in model_string:
-            raise ConfigurationError(f"Invalid model format '{model_string}'. Expected 'provider:model_name'")
+        return self._create_model_from_resolved(model_string, "none")
 
-        provider_part, model_name = model_string.split(":", 1)
-        parts = provider_part.split("/")
-
-        # Resolve reasoning level for this tier and build provider-appropriate settings
-        reasoning_level: ReasoningLevel = {
-            "small": self.default_reasoning_small,
-            "base": self.default_reasoning_base,
-            "full": self.default_reasoning_full,
-        }[default_tier]
-        model_settings = self._build_reasoning_settings(provider_part, model_name, reasoning_level)
-
-        if parts == ["openai"]:
-            return self._resolve_with_fallback(
-                model_name,
-                model_settings,
-                direct_key="openai_api_key",
-                key_env_name="OPENAI_API_KEY",
-                make_direct="_make_openai_model",
-                make_gateway="_make_gateway_openai_model",
-            )
-        elif parts == ["anthropic"]:
-            return self._resolve_with_fallback(
-                model_name,
-                model_settings,
-                direct_key="anthropic_api_key",
-                key_env_name="ANTHROPIC_API_KEY",
-                make_direct="_make_anthropic_model",
-                make_gateway="_make_gateway_anthropic_model",
-            )
-        elif parts[0] in ("google", "google-gla", "google-vertex"):
-            return self._resolve_with_fallback(
-                model_name,
-                model_settings,
-                direct_key="google_api_key",
-                key_env_name="GOOGLE_API_KEY",
-                make_direct="_make_google_gla_model",
-                make_gateway="_make_gateway_google_vertex_model",
-            )
-        elif parts == ["ollama"]:
-            return self._make_ollama_model(model_name)
-        elif parts == ["gateway", "openai"]:
-            return self._make_gateway_openai_model(model_name, model_settings)
-        elif parts == ["gateway", "anthropic"]:
-            return self._make_gateway_anthropic_model(model_name, model_settings)
-        elif parts in [["gateway", "google"], ["gateway", "google-vertex"]]:
-            return self._make_gateway_google_vertex_model(model_name, model_settings)
-        else:
-            raise ConfigurationError(f"Unknown provider '{provider_part}'")
-
-    def get_effective_model_string(self, agent_tag: AgentTag, default_tier: ModelTier = "base") -> str:
+    def get_effective_model_string(self, agent_tag: AgentTag) -> str:
         """Return the primary model string for an agent (first in fallback chain).
 
         Useful for metadata/logging when you need the string, not the Model object.
@@ -525,52 +440,49 @@ class FindingModelAIConfig(BaseSettings):
 
         Args:
             agent_tag: Agent identifier
-            default_tier: Tier to use if no override configured
 
         Returns:
             Model specification string (e.g., "openai:gpt-5-mini")
         """
-        chain = self.resolve_agent_config(agent_tag, default_tier)
+        chain = self.resolve_agent_config(agent_tag)
         return chain[0].model_string
 
-    def get_effective_reasoning_level(self, agent_tag: AgentTag, default_tier: ModelTier = "base") -> ReasoningLevel:
+    def get_effective_reasoning_level(self, agent_tag: AgentTag) -> ReasoningLevel:
         """Return the reasoning level for an agent's primary model.
 
         Args:
             agent_tag: Agent identifier
-            default_tier: Tier to use if no override configured
 
         Returns:
             Resolved reasoning level for the primary model in the chain
         """
-        chain = self.resolve_agent_config(agent_tag, default_tier)
+        chain = self.resolve_agent_config(agent_tag)
         return chain[0].reasoning
 
-    def get_agent_model(self, agent_tag: AgentTag, *, default_tier: ModelTier = "base") -> Model:
+    def get_agent_model(self, agent_tag: AgentTag) -> Model:
         """Get model for a named agent, with fallback chain from TOML config.
 
         Resolution order:
         1. Env override (AGENT_MODEL_OVERRIDES) → single model
         2. Per-agent TOML defaults → FallbackModel with available providers
-        3. Tier default → single model
+        3. ConfigurationError if no models available
 
         Returns a FallbackModel when multiple models are available in the chain,
         or a direct model when only one is available.
 
         Args:
-            agent_tag: Agent identifier (e.g., "enrich_classify", "edit_instructions")
-            default_tier: Tier to use if no TOML agent config is found
+            agent_tag: Agent identifier (e.g., "edit_instructions", "ontology_match")
 
         Returns:
             Configured Model instance (direct or FallbackModel)
 
         Example:
-            model = settings.get_agent_model("enrich_classify", default_tier="base")
+            model = settings.get_agent_model("edit_instructions")
 
             # User overrides via environment:
             # AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-opus-4-6
         """
-        chain = self.resolve_agent_config(agent_tag, default_tier)
+        chain = self.resolve_agent_config(agent_tag)
 
         # Build Model instances — disable SDK retries on non-last models for fast fallback
         models: list[Model] = []
@@ -652,26 +564,6 @@ class FindingModelAIConfig(BaseSettings):
         else:
             raise ConfigurationError(f"Unknown provider '{provider_part}'")
 
-    def get_model(self, model_tier: ModelTier = "base") -> Model:
-        """Get a Pydantic AI model instance for the requested tier.
-
-        Args:
-            model_tier: "base", "small", or "full"
-
-        Returns:
-            Configured Model instance
-
-        Raises:
-            ConfigurationError: If API key missing or provider unknown
-        """
-        model_string = {
-            "base": self.default_model,
-            "full": self.default_model_full,
-            "small": self.default_model_small,
-        }[model_tier]
-
-        return self._create_model_from_string(model_string, model_tier)
-
     def _make_openai_model(
         self, model_name: str, settings: ModelSettings | None, *, disable_retries: bool = False
     ) -> OpenAIResponsesModel:
@@ -687,7 +579,7 @@ class FindingModelAIConfig(BaseSettings):
             raise ConfigurationError(
                 "OPENAI_API_KEY is not configured. "
                 "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
-                "or override the model tier (e.g., DEFAULT_MODEL=google-gla:gemini-3-flash-preview)."
+                "or set AGENT_MODEL_OVERRIDES__<tag>=provider:model for the specific agent."
             )
         if disable_retries:
             openai_client = AsyncOpenAI(api_key=api_key, max_retries=0)
@@ -713,7 +605,7 @@ class FindingModelAIConfig(BaseSettings):
             raise ConfigurationError(
                 "ANTHROPIC_API_KEY is not configured. "
                 "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
-                "or override the model tier (e.g., DEFAULT_MODEL=openai:gpt-5.4)."
+                "or set AGENT_MODEL_OVERRIDES__<tag>=provider:model for the specific agent."
             )
         if disable_retries:
             anthropic_client = AsyncAnthropic(api_key=api_key, max_retries=0)
@@ -742,7 +634,7 @@ class FindingModelAIConfig(BaseSettings):
             raise ConfigurationError(
                 "GOOGLE_API_KEY is not configured. "
                 "Set it in .env, set PYDANTIC_AI_GATEWAY_API_KEY for gateway fallback, "
-                "or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini)."
+                "or set AGENT_MODEL_OVERRIDES__<tag>=provider:model for the specific agent."
             )
         return GoogleModel(model_name, provider=GoogleProvider(api_key=api_key), settings=settings)
 
@@ -916,7 +808,6 @@ settings = FindingModelAIConfig()
 __all__ = [
     "AgentTag",
     "FindingModelAIConfig",
-    "ModelTier",
     "ReasoningLevel",
     "ResolvedModelConfig",
     "settings",

@@ -986,7 +986,7 @@ Be strict but fair. Medical professionals will use these descriptions.""",
         include_expected_output=True,
         score={"evaluation_name": "quality", "include_reason": True},
         assertion=False,
-        model=settings.get_model("small"),  # Model instance with embedded API key
+        model=settings.get_agent_model("describe_finding"),
     ),
     PerformanceEvaluator(time_limit=45.0),  # Accommodate Tavily cases which take longest
 ]

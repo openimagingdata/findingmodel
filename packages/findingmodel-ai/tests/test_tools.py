@@ -1,12 +1,13 @@
 from types import SimpleNamespace
 
-import findingmodel.tools
 import pytest
-from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
 from findingmodel.finding_model import ChoiceAttributeIded
 from findingmodel_ai.authoring import description as finding_description
 from findingmodel_ai.config import settings as ai_settings
 from pydantic_ai import models
+
+import findingmodel.tools
+from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
 
 # Prevent accidental model requests in unit tests
 # Tests marked with @pytest.mark.callout can enable this as needed
@@ -90,7 +91,7 @@ async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.Mon
     monkeypatch.setattr(
         finding_description,
         "_create_finding_info_agent",
-        lambda model_tier, instructions: stub_agent,
+        lambda instructions: stub_agent,
     )
 
     logged: list[str] = []
@@ -106,7 +107,7 @@ async def test_create_info_from_name_normalizes_and_logs(monkeypatch: pytest.Mon
     original = models.ALLOW_MODEL_REQUESTS
     models.ALLOW_MODEL_REQUESTS = True
     try:
-        result = await finding_description.create_info_from_name("left lower lobe opacity", model_tier="small")
+        result = await finding_description.create_info_from_name("left lower lobe opacity")
     finally:
         models.ALLOW_MODEL_REQUESTS = original
 
@@ -131,7 +132,7 @@ async def test_create_info_from_name_preserves_name_without_logging(monkeypatch:
     monkeypatch.setattr(
         finding_description,
         "_create_finding_info_agent",
-        lambda model_tier, instructions: stub_agent,
+        lambda instructions: stub_agent,
     )
 
     logged: list[str] = []
@@ -218,7 +219,7 @@ async def test_create_info_from_name_basic_wiring() -> None:
 
     try:
         # Single API call with simple input - use fast model for integration test
-        result = await create_info_from_name("pneumothorax", model_tier="small")
+        result = await create_info_from_name("pneumothorax")
 
         # Only structural assertions - no behavioral validation
         assert isinstance(result, FindingInfo)
@@ -291,7 +292,7 @@ async def test_add_details_to_info_with_test_model(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(Agent, "run", mock_run)
 
     # Mock settings.get_model to return a test model string
-    with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
+    with patch.object(FindingModelAIConfig, "get_agent_model", return_value="test"):
         # Run the function
         result = await add_details_to_info(finding)
 
@@ -344,7 +345,7 @@ async def test_add_details_to_info_empty_output_returns_none(monkeypatch: pytest
     monkeypatch.setattr(Agent, "run", mock_run)
 
     # Mock settings.get_model to return a test model string
-    with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
+    with patch.object(FindingModelAIConfig, "get_agent_model", return_value="test"):
         # Run the function
         result = await add_details_to_info(finding)
 
@@ -391,7 +392,7 @@ async def test_add_details_to_info_search_depth_parameter(search_depth: str, mon
     monkeypatch.setattr("pydantic_ai.models.ALLOW_MODEL_REQUESTS", True)
 
     # Mock settings.get_model and run add_details_to_info with the specified search_depth
-    with patch.object(FindingModelAIConfig, "get_model", return_value="test"):
+    with patch.object(FindingModelAIConfig, "get_agent_model", return_value="test"):
         result = await add_details_to_info(finding, search_depth=search_depth)
 
     # Verify the result is returned
@@ -527,7 +528,7 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
 
     try:
         # Create basic info - use fast model for integration test
-        finding_info = await create_info_from_name("pneumothorax", model_tier="small")
+        finding_info = await create_info_from_name("pneumothorax")
 
         # Simple markdown outline
         markdown_text = """
@@ -539,7 +540,7 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
         """
 
         # Create model from markdown - use fast model for integration test
-        model = await create_model_from_markdown(finding_info, markdown_text=markdown_text, model_tier="small")
+        model = await create_model_from_markdown(finding_info, markdown_text=markdown_text)
 
         # Only structural assertions - no behavioral validation
         assert isinstance(model, FindingModelBase)
@@ -575,7 +576,6 @@ async def test_find_similar_models_basic_wiring(use_findingmodel_test_db: str) -
         result = await find_similar_models(
             finding_name="pneumothorax",
             description="Presence of air in the pleural space",
-            model_tier="small",
         )
 
         # Assert only on structure, not behavior

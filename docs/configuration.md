@@ -52,7 +52,7 @@ OPENAI_API_KEY=sk-...
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-...
-DEFAULT_MODEL=anthropic:claude-sonnet-4-6
+AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-sonnet-4-6
 ```
 
 **Supported models:**
@@ -69,7 +69,7 @@ Google Gemini offers competitive pricing and performance.
 
 ```bash
 GOOGLE_API_KEY=AI...
-DEFAULT_MODEL=google-gla:gemini-3-flash-preview
+AGENT_MODEL_OVERRIDES__ontology_search=google-gla:gemini-3-flash-preview
 ```
 
 **Provider prefixes** — all three are interchangeable and route automatically:
@@ -114,7 +114,7 @@ ollama pull gpt-oss:20b
 
 ```bash
 # Use Ollama as default provider
-DEFAULT_MODEL=ollama:llama3
+AGENT_MODEL_OVERRIDES__describe_finding=ollama:llama3
 
 # For remote Ollama server (e.g., GPU server)
 OLLAMA_BASE_URL=http://gpu-server:11434/v1
@@ -141,7 +141,7 @@ The Gateway provides a unified proxy for multiple providers, useful for:
 
 ```bash
 PYDANTIC_AI_GATEWAY_API_KEY=your-gateway-key
-DEFAULT_MODEL=gateway/openai:gpt-5-mini
+AGENT_MODEL_OVERRIDES__ontology_search=gateway/openai:gpt-5-mini
 ```
 
 Gateway supports: `gateway/openai:`, `gateway/anthropic:`, `gateway/google:`
@@ -154,8 +154,8 @@ The following models are tested and supported. Model names must be specified exa
 
 | Model | Spec | Notes |
 |-------|------|-------|
-| GPT-5.4 | `openai:gpt-5.4` | Flagship; supports `xhigh` reasoning; **full tier default** |
-| GPT-5.4-mini | `openai:gpt-5.4-mini` | Fast, economical; **base tier default** |
+| GPT-5.4 | `openai:gpt-5.4` | Flagship; supports `xhigh` reasoning; used for editing agents |
+| GPT-5.4-mini | `openai:gpt-5.4-mini` | Fast, economical; used for classification agents |
 | GPT-5.4-nano | `openai:gpt-5.4-nano` | Lightest option; high-volume simple tasks |
 
 > **Note:** `openai:gpt-5` is a real model but not on the approved list — use `gpt-5.4` instead.
@@ -174,7 +174,7 @@ The following models are tested and supported. Model names must be specified exa
 
 | Model | Spec | Notes |
 |-------|------|-------|
-| Gemini 3 Flash | `google-gla:gemini-3-flash-preview` | Fast, cost-effective; **small tier default** |
+| Gemini 3 Flash | `google-gla:gemini-3-flash-preview` | Fast, cost-effective; used for query generation agents |
 | Gemini 3.1 Flash Lite | `google-gla:gemini-3.1-flash-lite-preview` | Lightest Gemini option |
 | Gemini 3.1 Pro | `google-gla:gemini-3.1-pro-preview` | Full-capability Gemini; use for complex tasks |
 
@@ -189,87 +189,59 @@ The following models are tested and supported. Model names must be specified exa
 
 Pull any Ollama model with `ollama pull <name>` before use. The library validates availability at startup and will list what's actually available if the model isn't found.
 
-## Model Tier System
+## Model Selection
 
-The library uses a three-tier model selection system to balance cost and capability.
+Each agent has its own model + reasoning configuration defined in `supported_models.toml`. There is no global tier system — each agent declares an ordered fallback chain across providers (OpenAI, Google, Anthropic). The system works with any single API key configured.
 
-### Tier Overview
+### How It Works
 
-| Tier | Environment Variable | Default | Reasoning Default | Use Case |
-|------|---------------------|---------|-------------------|----------|
-| `small` | `DEFAULT_MODEL_SMALL` | `google-gla:gemini-3-flash-preview` | `low` | Simple classification, query generation |
-| `base` | `DEFAULT_MODEL` | `openai:gpt-5.4-mini` | `none` | Most agent workflows |
-| `full` | `DEFAULT_MODEL_FULL` | `openai:gpt-5.4` | `high` | Complex reasoning, model editing |
-
-> **Note on API keys:** The small-tier default uses Google Gemini and requires `GOOGLE_API_KEY`. If you only have an OpenAI key, set `DEFAULT_MODEL_SMALL=openai:gpt-5-mini` in your `.env`.
+When an agent needs a model, the resolver checks (in order):
+1. **Env override** (`AGENT_MODEL_OVERRIDES__<tag>`) — single model, highest priority
+2. **TOML fallback chain** — filters to available providers, wraps in `FallbackModel`
+3. **Error** — if nothing is available, fails with a clear message
 
 ### Programmatic Access
 
 ```python
 from findingmodel_ai.config import settings
 
-# Get model for a specific tier (requires findingmodel-ai package)
-model = settings.get_model("base")   # Most workflows
-model = settings.get_model("small")  # Fast/cheap tasks
-model = settings.get_model("full")   # Complex reasoning
+# Get model for a specific agent (per-agent chain from TOML)
+model = settings.get_agent_model("ontology_search")
+model = settings.get_agent_model("edit_instructions")
 ```
 
-### Overriding Defaults
+### Overriding Per-Agent
 
-Override any tier in your `.env`:
+Override model and/or reasoning for specific agents via environment:
 
 ```bash
-# OpenAI-only setup (no Google key)
-DEFAULT_MODEL_SMALL=openai:gpt-5-mini
+# Override a specific agent's model
+AGENT_MODEL_OVERRIDES__ontology_search=anthropic:claude-sonnet-4-6
 
-# Use Claude for complex tasks
-DEFAULT_MODEL_FULL=anthropic:claude-opus-4-6
+# Override reasoning level
+AGENT_REASONING_OVERRIDES__anatomic_select=medium
 
-# Use local model for simple tasks
-DEFAULT_MODEL_SMALL=ollama:llama3
+# Use local model for an agent
+AGENT_MODEL_OVERRIDES__describe_finding=ollama:llama3
 ```
 
 ### Reasoning Level Configuration
 
-Each tier has a configurable reasoning level that controls how much computational effort the model uses. Reasoning improves quality but increases cost and latency.
-
-| Variable | Default | Options |
-|----------|---------|---------|
-| `DEFAULT_REASONING_SMALL` | `low` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
-| `DEFAULT_REASONING_BASE` | `none` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
-| `DEFAULT_REASONING_FULL` | `high` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh` |
+Each agent's reasoning level is set in `supported_models.toml` alongside its model. Reasoning controls how much computational effort the model uses — it improves quality but increases cost and latency. Override per-agent via environment:
 
 ```bash
-# Disable reasoning for cost savings on small tasks
-DEFAULT_REASONING_SMALL=none
-
-# Use high reasoning for base tier
-DEFAULT_REASONING_BASE=high
-
-# Downgrade full-tier reasoning to save cost
-DEFAULT_REASONING_FULL=low
+AGENT_REASONING_OVERRIDES__anatomic_select=medium
+AGENT_REASONING_OVERRIDES__ontology_search=none
 ```
+
+Valid levels: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`. Levels are normalized per-model automatically (e.g., Gemini Flash maps `none` → `minimal` since it can't fully disable thinking).
 
 Reasoning is applied using provider-native typed settings:
 - **OpenAI** (`gpt-5.4`, `gpt-5-mini`, etc.): `openai_reasoning_effort` — `none` disables reasoning entirely; `xhigh` is supported on gpt-5.4 for maximum effort
 - **Google Gemini**: `google_thinking_config` with `thinking_level` — valid levels are `MINIMAL`, `LOW`, `MEDIUM`, `HIGH` (no higher level exists; `xhigh` maps to `HIGH`). Thinking cannot be fully disabled on Gemini 3 models: Flash maps `none`/`minimal` → `MINIMAL`; Pro maps `none`/`minimal` → `LOW` (the minimum Pro supports)
 - **Anthropic**: `anthropic_thinking` — Opus 4.6+ uses adaptive thinking with `anthropic_effort` (low/medium/high); older models (Sonnet 4.6, Haiku 4.5) use extended thinking with `budget_tokens`. `none` disables thinking on all models
 
-## Per-Agent Model Configuration
-
-Each agent has an optimized default model and reasoning level configured in `supported_models.toml`, with an ordered fallback chain across providers. The system automatically selects the best available model based on which API keys are configured.
-
-### How Resolution Works
-
-When an agent requests a model, the resolver follows this priority:
-
-1. **Env override** (`AGENT_MODEL_OVERRIDES__<tag>`) — highest priority, single model
-2. **Per-agent TOML defaults** — ordered fallback chain filtered to available providers, wrapped in `FallbackModel` for automatic failover on API errors
-3. **Tier default** — last resort if no TOML models are available
-
-Each model in the chain carries its own reasoning level, normalized for that specific model's capabilities.
-
-### Per-Agent Defaults (from March 2026 audit)
+### Per-Agent Defaults
 
 Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each entry lists models ordered by latency/quality preference, covering all three major providers.
 
@@ -305,42 +277,18 @@ Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each en
 |-----|--------------|-----------|-----------|
 | `describe_details` | `gemini-3-flash-preview` | low | gpt-5-mini, haiku |
 
-### Environment Variable Overrides
-
-Override model and/or reasoning for specific agents:
-
-```bash
-# Override model (bypasses TOML chain — single model, no fallback)
-AGENT_MODEL_OVERRIDES__edit_instructions=anthropic:claude-opus-4-6
-
-# Override reasoning level (applies to all models in chain)
-AGENT_REASONING_OVERRIDES__anatomic_select=high
-
-# Both can be combined
-AGENT_MODEL_OVERRIDES__ontology_match=openai:gpt-5.4
-AGENT_REASONING_OVERRIDES__ontology_match=medium
-```
-
 ### Provider Availability & Fallback
 
 The system works with **any single provider configured**. If you only have `OPENAI_API_KEY`, agents that prefer Google or Anthropic models will automatically use their OpenAI fallback. With all three keys, agents get full `FallbackModel` protection — if one provider has an API error, the request automatically retries on the next provider.
-
-### When to Use Overrides
-
-- **Local development**: `AGENT_MODEL_OVERRIDES__edit_instructions=ollama:llama3`
-- **A/B testing**: Override one agent to compare providers
-- **Cost control**: Force cheaper models for high-volume agents
-- **Debugging**: Override to a specific model to reproduce issues
 
 ### Startup Validation
 
 The CLI validates API keys before running any AI command. If a required key is missing, you'll see a clear error with instructions before any agent runs:
 
 ```
-Error: Missing API keys for default models: default_model_small
-(google-gla:gemini-3-flash-preview) requires GOOGLE_API_KEY.
-Set the missing key(s) in .env or your environment,
-or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini).
+ConfigurationError: No models available for agents: ontology_search, ontology_match.
+Set at least one provider API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY,
+or PYDANTIC_AI_GATEWAY_API_KEY) in .env or your environment.
 ```
 
 For programmatic use, call `validate_default_model_keys()` explicitly at application startup:
@@ -351,12 +299,11 @@ from findingmodel_ai.config import settings
 settings.validate_default_model_keys()
 ```
 
-Error messages include an override hint:
+Error messages include remediation guidance:
 ```
-ConfigurationError: Missing API keys for default models:
-default_model_small (google-gla:gemini-3-flash-preview) requires GOOGLE_API_KEY.
-Set the missing key(s) in .env or your environment,
-or override the model tier (e.g., DEFAULT_MODEL_SMALL=openai:gpt-5-mini).
+ConfigurationError: No models available for agents: ontology_search, ontology_match.
+Set at least one provider API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY,
+or PYDANTIC_AI_GATEWAY_API_KEY) in .env or your environment.
 ```
 
 ## Database Configuration
@@ -473,12 +420,6 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `GOOGLE_API_KEY` | One AI key required | - | Google AI Studio API key |
 | `PYDANTIC_AI_GATEWAY_API_KEY` | For gateway/* | - | Pydantic AI Gateway key |
 | `OLLAMA_BASE_URL` | No | `http://localhost:11434/v1` | Ollama server URL |
-| `DEFAULT_MODEL` | No | `openai:gpt-5.4-mini` | Base tier model |
-| `DEFAULT_MODEL_FULL` | No | `openai:gpt-5.4` | Full tier model |
-| `DEFAULT_MODEL_SMALL` | No | `google-gla:gemini-3-flash-preview` | Small tier model (requires `GOOGLE_API_KEY` or `PYDANTIC_AI_GATEWAY_API_KEY`) |
-| `DEFAULT_REASONING_SMALL` | No | `low` | Reasoning level for small tier |
-| `DEFAULT_REASONING_BASE` | No | `none` | Reasoning level for base tier |
-| `DEFAULT_REASONING_FULL` | No | `high` | Reasoning level for full tier |
 | `AGENT_MODEL_OVERRIDES__<tag>` | No | - | Override model for specific agent tag (e.g., metadata_assign) |
 | `AGENT_REASONING_OVERRIDES__<tag>` | No | - | Override reasoning level for specific agent tag |
 | `TAVILY_API_KEY` | For citations | - | Tavily search API key |
@@ -507,7 +448,8 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 Ensure the appropriate key is set for your model provider:
 ```bash
 # Check which provider your model uses
-echo $DEFAULT_MODEL  # e.g., "openai:gpt-5-mini" needs OPENAI_API_KEY
+# Check your agent overrides and which keys are set
+env | grep -E 'OPENAI_API_KEY|ANTHROPIC_API_KEY|GOOGLE_API_KEY|AGENT_MODEL_OVERRIDES'
 ```
 
 ### "Ollama server not reachable"
@@ -532,11 +474,11 @@ ollama pull <model-name>
 
 ### Startup validation fails
 
-If `validate_default_model_keys()` fails, ensure API keys are set for all three default model tiers, or override defaults to use a provider you have configured:
+If `validate_default_model_keys()` fails, ensure at least one API key is set for a provider in the agent chains, or override specific agents to use Ollama:
 
 ```bash
-# Use Ollama for all tiers (no API keys needed)
-DEFAULT_MODEL=ollama:llama3
-DEFAULT_MODEL_FULL=ollama:llama3:70b
-DEFAULT_MODEL_SMALL=ollama:llama3
+# Use Ollama for specific agents (no API keys needed)
+AGENT_MODEL_OVERRIDES__describe_finding=ollama:llama3
+AGENT_MODEL_OVERRIDES__ontology_search=ollama:llama3
+AGENT_MODEL_OVERRIDES__edit_instructions=ollama:llama3:70b
 ```
