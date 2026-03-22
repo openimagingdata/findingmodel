@@ -1,6 +1,6 @@
 # Plan: Merge Enrichment Branch + Model Config Simplification
 
-## Status: Steps 0-2 COMPLETE. Step 1.5 (benchmarking new agents) and Steps 3-4 (final docs) remain.
+## Status: ALL STEPS COMPLETE.
 
 ## Context
 
@@ -52,7 +52,7 @@ Fast-forward, no conflicts. Then verify:
 - `task test` passes
 - Quick smoke test of a benchmark run with Logfire verification
 
-## Step 1.5: Assess and update model defaults for new/updated agents ⏳ PENDING
+## Step 1.5: Assess and update model defaults for new/updated agents ✅ DONE
 
 The enrichment branch set agent defaults before our Logfire-verified benchmarks existed. Several defaults don't reflect current data:
 

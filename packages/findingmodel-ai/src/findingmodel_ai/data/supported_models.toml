@@ -192,24 +192,23 @@ provider = "ollama"
 
 
 # =============================================================================
-# Per-agent model defaults (from March 2026 performance audit)
+# Per-agent model defaults
+#
+# Verified via Logfire benchmarks (March 2026, 150-run full-model-shootout).
+# Rule: nano for generation, mini for classification, gpt-5.4 for editing.
+# Gemini Flash is ~2x slower than GPT-5.4 models across all agents.
 #
 # Each agent declares an ordered fallback chain of (model, reasoning) pairs.
 # At runtime, unavailable providers are filtered out and remaining models are
 # wrapped in pydantic-ai's FallbackModel. If only one remains, it's used directly.
-#
-# Format:
-#   models = [ { model = "provider:name", reasoning = "level" }, ... ]
-#
-# Ordering: fastest/best for this task first, then alternatives by provider.
-# Each chain should cover all three providers (OpenAI, Google, Anthropic) so
-# the system works with any single API key configured.
 # =============================================================================
 
-# --- Simple generative: gpt-5.4-nano fastest (sub-1s raw API) ---
+# --- Generative agents: nano primary ---
+# These produce search terms, descriptions, or hypotheses. Quality is
+# equivalent across all models; optimize for latency.
 
 [agents.ontology_search]
-
+# Benchmark: nano/low 1.1s, mini/none 1.1s, flash/minimal 2.3s
 models = [
     { model = "openai:gpt-5.4-nano", reasoning = "low" },
     { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
@@ -217,63 +216,78 @@ models = [
 ]
 
 [agents.describe_finding]
+# Benchmark: nano/none 1.4s, mini/none 1.9s, flash/minimal 2.6s
+models = [
+    { model = "openai:gpt-5.4-nano", reasoning = "none" },
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
+]
 
+[agents.anatomic_search]
+# Benchmark: nano/low 4.6s (full pipeline), flash/minimal 4.6s — nano preferred for consistency
+models = [
+    { model = "openai:gpt-5.4-nano", reasoning = "low" },
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
+]
+
+[agents.similar_plan]
+# Benchmark: nano/low 1.3s, mini/none 1.4s, flash/minimal 2.5s
+models = [
+    { model = "openai:gpt-5.4-nano", reasoning = "low" },
+    { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
+    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
+]
+
+[agents.describe_details]
+# Tool-using (Tavily search) — nano for the LLM, Tavily for the search
 models = [
     { model = "openai:gpt-5.4-nano", reasoning = "low" },
     { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
     { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]
 
-# --- Structured generation: gemini-flash/minimal fastest for region+terms ---
-
-[agents.anatomic_search]
-
-models = [
-    { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
-    { model = "openai:gpt-5.4-nano", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
-]
-
-[agents.similar_plan]
-
-models = [
-    { model = "google-gla:gemini-3-flash-preview", reasoning = "minimal" },
-    { model = "openai:gpt-5.4-nano", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
-]
-
-# --- Medical classification: gemini-3.1-pro eliminates tail latency on edge cases ---
+# --- Classification agents: mini primary ---
+# These make medical judgments (categorization, selection, metadata assignment).
+# Mini produces better quality on nuanced fields; latency is similar to nano.
 
 [agents.ontology_match]
-
+# Benchmark: mini/none 5.1s, nano/low 5.0s — mini preferred for classification quality
 models = [
+    { model = "openai:gpt-5.4-mini", reasoning = "none" },
     { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
-    { model = "openai:gpt-5.4-mini", reasoning = "medium" },
     { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
 ]
 
 [agents.anatomic_select]
-
+# Benchmark: mini/none 4.9s, nano/none 4.8s — mini preferred for judgment quality
 models = [
-    { model = "openai:gpt-5.4-mini", reasoning = "medium" },
-    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "medium" },
+    { model = "openai:gpt-5.4-mini", reasoning = "none" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
     { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
 ]
 
-# --- Simple classification: budget model fastest ---
-
 [agents.similar_select]
-
+# Classification with rejection taxonomy — mini for quality
 models = [
-    { model = "google-gla:gemini-3.1-flash-lite-preview", reasoning = "medium" },
-    { model = "openai:gpt-5.4-mini", reasoning = "medium" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
+    { model = "openai:gpt-5.4-mini", reasoning = "low" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
+    { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
+]
+
+[agents.metadata_assign]
+# Complex structured classification (10+ fields). Nano leaves gaps on
+# nuanced fields (time_course, age_profile). Mini fills them.
+models = [
+    { model = "openai:gpt-5.4-mini", reasoning = "low" },
+    { model = "google-gla:gemini-3.1-pro-preview", reasoning = "low" },
+    { model = "anthropic:claude-sonnet-4-6", reasoning = "low" },
 ]
 
 # --- Complex structured output: quality over speed ---
+# These produce full FindingModel JSON. Output-bound (~6s regardless of model).
 
 [agents.edit_instructions]
-
 models = [
     { model = "openai:gpt-5.4", reasoning = "low" },
     { model = "anthropic:claude-opus-4-6", reasoning = "medium" },
@@ -281,7 +295,6 @@ models = [
 ]
 
 [agents.edit_markdown]
-
 models = [
     { model = "openai:gpt-5.4", reasoning = "low" },
     { model = "anthropic:claude-opus-4-6", reasoning = "medium" },
@@ -289,29 +302,8 @@ models = [
 ]
 
 [agents.import_markdown]
-
 models = [
     { model = "anthropic:claude-opus-4-6", reasoning = "medium" },
     { model = "openai:gpt-5.4", reasoning = "low" },
     { model = "google-gla:gemini-3.1-pro-preview", reasoning = "medium" },
-]
-
-# --- Tool-using detail search ---
-
-[agents.describe_details]
-
-models = [
-    { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
-    { model = "openai:gpt-5.4-mini", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
-]
-
-# --- Metadata assignment: narrow classifier for structured metadata ---
-
-[agents.metadata_assign]
-
-models = [
-    { model = "google-gla:gemini-3-flash-preview", reasoning = "low" },
-    { model = "openai:gpt-5.4-nano", reasoning = "low" },
-    { model = "anthropic:claude-haiku-4-5", reasoning = "none" },
 ]

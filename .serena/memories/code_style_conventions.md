@@ -31,11 +31,10 @@
 - **Test pattern**: Session-scoped fixture in `conftest.py` enables logging and adds file handler
 
 ## Configuration & Secrets
-- **Settings class**: `FindingModelConfig` extends Pydantic `BaseSettings` with `env_prefix="FINDINGMODEL_"`
-- **Access**: `from findingmodel.config import get_settings` (lazy singleton, auto-loads `.env`)
-- **Secret fields**: Use `SecretStr | None` with `AliasChoices` for shared keys (e.g., `OPENAI_API_KEY`)
-- **NEVER use os.getenv**: All config access through `get_settings().*` - ensures validation and type safety
-- **Validation**: Call `get_settings().validate_default_model_keys()` at app startup for fail-fast
+- **Settings class**: `FindingModelAIConfig` in `findingmodel_ai.config` extends Pydantic `BaseSettings`
+- **Secrets**: Standard env var names in `.env` (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+- **NEVER use os.getenv for config**: All config access through pydantic-settings
+- **Logfire**: Token loaded via `settings.configure_logfire()`, NOT from os.environ
 
 ## Testing
 - pytest with asyncio support
@@ -57,23 +56,14 @@
 - **Constants**: UPPER_SNAKE_CASE
 
 ## Design Principles
-- **YAGNI**: "You Aren't Going To Need It" - implement only what is required now
-  - Avoid speculative features, complex versioning systems, or abstractions until they're proven necessary
-  - Keep implementations simple and focused on current requirements
-  - Example: Pooch integration (2025-10-11) rejected complex versioning in favor of simple config-driven downloads
+- **YAGNI**: Implement only what is required now
+- **Process-scoped config**: Configuration is fixed at import time; no runtime singleton replacement
 
 ## Package Data Pattern
 - **Location**: `src/findingmodel/data/` for package-internal data files
 - **Access**: Use `importlib.resources.files('findingmodel') / 'data'` to locate package data directory
-- **Version control**: Add `.gitignore` for large files (e.g., `*.duckdb`)
-- Works correctly in pip install, editable install, and venv scenarios
 
-## File Organization
-- One main concept per file
-- Related utilities grouped in tools/ directory
-- Test files mirror source structure
-
-## Model Configuration
+## Model Configuration (March 2026)
 
 ### Supported Providers
 
@@ -85,32 +75,22 @@
 | Ollama | `ollama:` | `OLLAMA_BASE_URL` |
 | Gateway | `gateway/openai:`, `gateway/anthropic:`, `gateway/google:` | `PYDANTIC_AI_GATEWAY_API_KEY` |
 
-**Gateway fallback**: If a direct provider key is missing but `PYDANTIC_AI_GATEWAY_API_KEY` is set, requests route through the gateway automatically. Direct keys take priority.
+### Per-Agent Model Selection (NO TIERS)
 
-**Google prefixes**: `google:`, `google-gla:`, `google-vertex:` are interchangeable — routes to GLA when `GOOGLE_API_KEY` is set, or Vertex AI via gateway otherwise.
+There is no tier system. Each agent declares its own model + reasoning in `supported_models.toml` with cross-provider fallback chains.
 
-### Tier-Based Selection
+**Rule: nano for generation, mini for classification, gpt-5.4 for editing.**
 
-| Tier | Default | Reasoning | Use Case |
-|------|---------|-----------|----------|
-| `small` | `google-gla:gemini-3-flash-preview` | `low` | Simple classification, query generation |
-| `base` | `openai:gpt-5.4` | `none` | Most agent workflows |
-| `full` | `openai:gpt-5.4` | `high` | Complex reasoning, editing |
+| Task Type | Primary Model | Reasoning | Agents |
+|-----------|--------------|-----------|--------|
+| Generative | `gpt-5.4-nano` | low/none | ontology_search, describe_finding, anatomic_search, similar_plan, describe_details |
+| Classification | `gpt-5.4-mini` | none/low | ontology_match, anatomic_select, similar_select, metadata_assign |
+| Complex editing | `gpt-5.4` / `claude-opus-4-6` | low/medium | edit_instructions, edit_markdown, import_markdown |
 
-Access via: `settings.get_model("base")` or `settings.get_model("small")`
-
-Reasoning levels configurable via `DEFAULT_REASONING_SMALL` / `_BASE` / `_FULL` (values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`). Levels are normalized per-provider automatically.
-
-### Coding Rules
-- **ModelSpec Type**: Use validated `ModelSpec` type for model strings (see `MODEL_SPEC_PATTERN` in config.py)
-- **Test Constants**: Use `TEST_OPENAI_MODEL`, `TEST_ANTHROPIC_MODEL`, `TEST_GOOGLE_MODEL` from conftest.py (cheapest models for testing)
-- **Never hard-code**: Avoid hard-coded model strings like `"openai:gpt-4o-mini"` in test/production code
-- **Gateway tests**: Construct gateway models from constants: `f"gateway/{TEST_OPENAI_MODEL}"`
-- **API Key Validation**: Use `settings.validate_default_model_keys()` at app startup for fail-fast behavior
-
-### Per-Agent Model Configuration
-- **AgentTag type**: Use `AgentTag` Literal for valid agent identifiers (14 tags, `{domain}_{verb}` pattern)
-- **Agent model selection**: Use `settings.get_agent_model("tag", default_tier="base")` in agent factories
-- **Model string for metadata**: Use `settings.get_effective_model_string("tag", "base")` when recording which model was used
-- **Environment overrides**: Users configure via `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
-- See `docs/configuration.md` for complete tag reference by workflow
+- **Agent model selection**: `settings.get_agent_model("tag")` — no tier parameter
+- **Model string for metadata**: `settings.get_effective_model_string("tag")`
+- **Environment overrides**: `AGENT_MODEL_OVERRIDES__<tag>=provider:model`
+- **Reasoning overrides**: `AGENT_REASONING_OVERRIDES__<tag>=level`
+- **Haiku**: Always use `reasoning=none` (extended thinking is catastrophically slow)
+- **Gemini Flash**: Fallback, not primary — ~2x slower than GPT-5.4 models
+- See `docs/configuration.md` for complete reference

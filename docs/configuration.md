@@ -41,7 +41,7 @@ OPENAI_API_KEY=sk-...
 ```
 
 **Supported models:**
-- `openai:gpt-5.4` - Flagship reasoning model (default full tier)
+- `openai:gpt-5.4` - Flagship reasoning model; used for editing agents
 - `openai:gpt-5.4-mini` - Fast default base-tier model
 - `openai:gpt-5.4-nano` - Lightest option for high-volume simple tasks
 
@@ -79,7 +79,7 @@ AGENT_MODEL_OVERRIDES__ontology_search=google-gla:gemini-3-flash-preview
 - `gateway/google:` or `gateway/google-vertex:` — Explicitly routes through the Pydantic AI Gateway (Vertex AI backend).
 
 **Supported models:**
-- `google-gla:gemini-3-flash-preview` - Fast, cost-effective (default small tier)
+- `google-gla:gemini-3-flash-preview` - Fast, cost-effective; fallback for generative agents
 - `google-gla:gemini-3.1-pro-preview` - Full-capability Gemini 3.1 Pro
 - `google-gla:gemini-3.1-flash-lite-preview` - Lightest Gemini option
 
@@ -174,7 +174,7 @@ The following models are tested and supported. Model names must be specified exa
 
 | Model | Spec | Notes |
 |-------|------|-------|
-| Gemini 3 Flash | `google-gla:gemini-3-flash-preview` | Fast, cost-effective; used for query generation agents |
+| Gemini 3 Flash | `google-gla:gemini-3-flash-preview` | Fast, cost-effective; fallback for generative agents |
 | Gemini 3.1 Flash Lite | `google-gla:gemini-3.1-flash-lite-preview` | Lightest Gemini option |
 | Gemini 3.1 Pro | `google-gla:gemini-3.1-pro-preview` | Full-capability Gemini; use for complex tasks |
 
@@ -245,37 +245,32 @@ Reasoning is applied using provider-native typed settings:
 
 Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each entry lists models ordered by latency/quality preference, covering all three major providers.
 
-#### Simple Generative Tasks
+#### Generative Agents (nano primary — 1-2s)
 
 | Tag | Primary Model | Reasoning | Fallbacks |
 |-----|--------------|-----------|-----------|
-| `ontology_search` | `openai:gpt-5.4-nano` | low | gemini-3-flash, haiku |
-| `describe_finding` | `openai:gpt-5.4-nano` | low | gemini-3-flash, haiku |
-| `anatomic_search` | `gemini-3-flash-preview` | minimal | gpt-5.4-nano, haiku |
-| `similar_plan` | `gemini-3-flash-preview` | minimal | gpt-5.4-nano, haiku |
-| `metadata_assign` | `gemini-3-flash-preview` | low | gpt-5.4-nano, haiku |
+| `ontology_search` | `gpt-5.4-nano` | low | gemini-flash, haiku |
+| `describe_finding` | `gpt-5.4-nano` | none | gemini-flash, haiku |
+| `anatomic_search` | `gpt-5.4-nano` | low | gemini-flash, haiku |
+| `similar_plan` | `gpt-5.4-nano` | low | gemini-flash, haiku |
+| `describe_details` | `gpt-5.4-nano` | low | gemini-flash, haiku |
 
-#### Medical Classification
-
-| Tag | Primary Model | Reasoning | Fallbacks |
-|-----|--------------|-----------|-----------|
-| `ontology_match` | `gemini-3.1-pro-preview` | low | gpt-5.4-mini/medium, sonnet |
-| `anatomic_select` | `gpt-5.4-mini` | medium | gemini-3.1-pro/medium, sonnet |
-| `similar_select` | `gemini-3.1-flash-lite` | medium | gpt-5.4-mini/medium, haiku |
-
-#### Complex Structured Output
+#### Classification Agents (mini primary — 5s)
 
 | Tag | Primary Model | Reasoning | Fallbacks |
 |-----|--------------|-----------|-----------|
-| `edit_instructions` | `openai:gpt-5.4` | low | opus/medium, gemini-3.1-pro |
-| `edit_markdown` | `openai:gpt-5.4` | low | opus/medium, gemini-3.1-pro |
+| `ontology_match` | `gpt-5.4-mini` | none | gemini-3.1-pro, sonnet |
+| `anatomic_select` | `gpt-5.4-mini` | none | gemini-3.1-pro, sonnet |
+| `similar_select` | `gpt-5.4-mini` | low | gemini-3.1-pro, sonnet |
+| `metadata_assign` | `gpt-5.4-mini` | low | gemini-3.1-pro, sonnet |
+
+#### Complex Structured Output (gpt-5.4/opus — 6s+)
+
+| Tag | Primary Model | Reasoning | Fallbacks |
+|-----|--------------|-----------|-----------|
+| `edit_instructions` | `gpt-5.4` | low | opus/medium, gemini-3.1-pro |
+| `edit_markdown` | `gpt-5.4` | low | opus/medium, gemini-3.1-pro |
 | `import_markdown` | `claude-opus-4-6` | medium | gpt-5.4/low, gemini-3.1-pro |
-
-#### Other Agents
-
-| Tag | Primary Model | Reasoning | Fallbacks |
-|-----|--------------|-----------|-----------|
-| `describe_details` | `gemini-3-flash-preview` | low | gpt-5-mini, haiku |
 
 ### Provider Availability & Fallback
 

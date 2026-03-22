@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`findingmodel-ai ontology search QUERY`**: Search medical ontologies (SNOMED CT, RADLEX, LOINC) via BioOntology.org. Options: `--ontology`, `--semantic-type`, `--exact`, `--max-results`. Requires `BIOONTOLOGY_API_KEY`.
 - **`assign_metadata()`**: New in-memory metadata-assignment entrypoint returning an updated `FindingModelFull` plus separate review/provenance data, including optional Logfire trace correlation.
-- **Per-agent model defaults with fallback chains**: Each agent now has an optimized primary model + reasoning level configured in `supported_models.toml`, with automatic cross-provider fallback via pydantic-ai's `FallbackModel`. Defaults are based on the March 2026 performance audit (439 test runs). The system works with any single provider API key configured.
+- **Per-agent model defaults with fallback chains**: Each agent has an optimized primary model + reasoning level in `supported_models.toml`, with automatic cross-provider fallback via pydantic-ai's `FallbackModel`. Defaults verified via Logfire-instrumented benchmarks (150-run full-model-shootout, March 22). Rule: gpt-5.4-nano for generation (~1-2s), gpt-5.4-mini for classification (~5s), gpt-5.4 for editing (~6s+). Works with any single provider API key.
 - **Per-agent reasoning overrides**: Set reasoning level per agent via `AGENT_REASONING_OVERRIDES__<tag>=level` (e.g., `AGENT_REASONING_OVERRIDES__anatomic_select=medium`). Reasoning levels are normalized per-provider automatically (e.g., `xhigh` maps to `HIGH` on Gemini).
 - **Gateway fallback**: When a provider-specific API key is missing but `PYDANTIC_AI_GATEWAY_API_KEY` is set, requests route through the Pydantic AI Gateway automatically. A single gateway key can serve all cloud providers.
 - **Unified Google prefixes**: `google:`, `google-gla:`, and `google-vertex:` are interchangeable — routes to AI Studio (GLA) when `GOOGLE_API_KEY` is set, or Vertex AI via gateway otherwise.
@@ -35,15 +35,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Removed the legacy `findingmodel_ai.enrichment` package and its old `enrich_finding*` entrypoints.
 - **Breaking: `find_similar_models()` rewritten** with 5-phase pipeline architecture. Returns `SimilarModelResult` with typed matches, rejection taxonomy, facet hypotheses, and search pass statistics. Agent tags: `similar_plan` (Phase 2) and `similar_select` (Phase 4).
 - **Breaking: Tier system removed.** `ModelTier`, `get_model(tier)`, `model_tier` parameters, `DEFAULT_MODEL`/`DEFAULT_MODEL_SMALL`/`DEFAULT_MODEL_FULL` env vars, and `DEFAULT_REASONING_*` env vars are all gone. Model selection is now purely per-agent via TOML fallback chains in `supported_models.toml`. Override per-agent via `AGENT_MODEL_OVERRIDES__<tag>` and `AGENT_REASONING_OVERRIDES__<tag>`.
-- OpenAI agent chains updated to GPT-5.4-nano/mini (10-15x faster than previous-gen per Logfire-verified benchmarks). Haiku entries use `reasoning=none` (no thinking overhead).
+- OpenAI agent chains use GPT-5.4-nano (generative) and GPT-5.4-mini (classification) — 10-15x faster than previous-gen models on raw API. Gemini Flash is now a fallback, not primary.
+- Anthropic Haiku entries use `reasoning=none` (no thinking settings sent — Haiku with extended thinking was catastrophically slow).
 - BioOntology search uses single `pagesize=100` request instead of paginated 4×50 calls (~3s saved per ontology search).
-- CLI validates that each agent's TOML chain has at least one usable model at startup.
+- **Logfire observability**: Token loaded via pydantic-settings (not `os.environ`), httpx instrumentation enabled via `logfire[httpx]` for tracing external API calls.
+- CLI validates that each agent's TOML chain has at least one usable model at startup (including env overrides).
 - **Minimum pydantic-ai version** bumped from `>=0.3.2` to `>=1.0.0` (required for `FallbackModel` and per-model settings).
 - Markdown authoring/import workflows are now documented as convenience tools rather than a canonical round-trip file format.
 
 #### Fixed
 
 - Anthropic Opus 4.6+ now uses adaptive thinking instead of deprecated `budget_tokens`.
+- Anthropic `reasoning=none` now sends no settings at all (was sending `{type: disabled}` which added overhead).
 - `gateway/google-vertex` model specs now correctly receive Google reasoning settings.
 
 ### oidm-common

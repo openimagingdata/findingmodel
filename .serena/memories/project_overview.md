@@ -7,17 +7,10 @@ The `findingmodel` monorepo provides Python libraries for managing Open Imaging 
 
 ```
 findingmodel/                           # Workspace root
-├── pyproject.toml                      # Workspace config (no package)
-├── uv.lock                             # Single lockfile
-├── CLAUDE.md                           # AI instructions
-├── Taskfile.yml                        # Task runner
-├── .serena/memories/                   # Shared AI context
-│
 ├── packages/
 │   ├── oidm-common/                    # Shared infrastructure
 │   │   └── src/oidm_common/
 │   │       ├── duckdb/                 # Connection, search, indexes
-│   │       │   └── base.py             # ReadOnlyDuckDBIndex base class
 │   │       ├── embeddings/             # Cache, OpenAI provider
 │   │       ├── distribution/           # Manifest, download, paths
 │   │       └── models/                 # IndexCode, WebReference
@@ -25,123 +18,62 @@ findingmodel/                           # Workspace root
 │   ├── anatomic-locations/             # Anatomic ontology (READ-ONLY)
 │   │   └── src/anatomic_locations/
 │   │       ├── models/                 # AnatomicLocation, enums
-│   │       ├── index.py                # AnatomicLocationIndex (inherits ReadOnlyDuckDBIndex)
-│   │       ├── config.py               # Settings
+│   │       ├── index.py                # AnatomicLocationIndex
 │   │       └── cli.py                  # query, stats
 │   │
 │   ├── findingmodel/                   # Core package (READ-ONLY)
 │   │   └── src/findingmodel/
 │   │       ├── tools/                  # Non-AI utilities
-│   │       ├── finding_model.py        # FindingModel classes
-│   │       ├── index.py                # FindingModelIndex (inherits ReadOnlyDuckDBIndex); exported as Index
+│   │       ├── facets.py               # Canonical metadata types (BodyRegion, Subspecialty, etc.)
+│   │       ├── finding_model.py        # FindingModel classes (with structured metadata fields)
+│   │       ├── index.py                # FindingModelIndex: search(), browse(), related_models()
 │   │       ├── cli.py                  # fm-tool
 │   │       └── mcp_server.py           # MCP for IDE access
 │   │
 │   ├── findingmodel-ai/                # AI-powered workflows
 │   │   └── src/findingmodel_ai/
-│   │       ├── enrichment/             # Finding enrichment pipelines
-│   │       │   ├── unified.py          # 3-stage enrichment
-│   │       │   └── agentic.py          # Tool-calling approach
+│   │       ├── metadata/               # Structured metadata assignment
+│   │       │   ├── assignment.py       # assign_metadata() — main pipeline
+│   │       │   └── types.py            # MetadataAssignmentResult, review types
 │   │       ├── search/                 # Search & matching
 │   │       │   ├── ontology.py         # SNOMED/RadLex matching
 │   │       │   ├── anatomic.py         # Anatomic location search
-│   │       │   ├── similar.py          # Similar model search
+│   │       │   ├── similar.py          # 5-phase similar model search
+│   │       │   ├── pipeline_helpers.py # Similar search types
 │   │       │   └── bioontology.py      # BioOntology API client
 │   │       ├── authoring/              # Model creation & editing
 │   │       │   ├── description.py      # FindingInfo generation
 │   │       │   ├── markdown_in.py      # Markdown → FindingModel
 │   │       │   └── editor.py           # NL/markdown editing
 │   │       ├── _internal/              # Private utilities
-│   │       ├── evaluators.py           # pydantic_evals classes
-│   │       ├── config.py               # AI settings
-│   │       └── cli.py                  # fm-ai
+│   │       ├── observability.py        # Logfire setup (single source of truth)
+│   │       ├── config.py               # Per-agent model config, FallbackModel chains
+│   │       └── cli.py                  # findingmodel-ai CLI
 │   │
 │   └── oidm-maintenance/               # Build/publish (maintainers only)
-│       └── src/oidm_maintenance/
-│           ├── anatomic/               # Anatomic DB build
-│           ├── findingmodel/           # FindingModel DB build
-│           ├── s3.py                   # S3 upload, manifest
-│           └── cli.py                  # oidm-maintain
-
+│
 ├── docs/                               # Documentation
-├── tasks/                              # Planning documents
-└── notebooks/                          # Demos
-```
-
-## Package Dependencies
-
-```
-                    ┌─────────────────────┐
-                    │  oidm-maintenance   │  ← Build & publish
-                    └─────────┬───────────┘
-                              │ depends on all
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────────┐  ┌─────────────────┐  ┌─────────────────────┐
-│  findingmodel-ai │  │  findingmodel   │  │ anatomic-locations  │
-│ (AI workflows)   │  │ (core package)  │  │  (anatomic ontology)│
-└───────┬──────────┘  └────────┬────────┘  └─────────┬───────────┘
-        │                      │                     │
-        └──────────────────────┴─────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │     oidm-common     │
-                    │   (infrastructure)  │
-                    └─────────────────────┘
+│   ├── configuration.md                # Model config reference
+│   ├── agent-performance-audit-2026-03.md  # Benchmark data
+│   └── plans/                          # Active plans
+├── scripts/
+│   └── benchmark_models.py             # Subprocess-based benchmarking with Logfire
+└── evals/                              # Quality evaluation suites
 ```
 
 ## Key Design Decisions
 
 1. **Read-only user packages**: findingmodel and anatomic-locations only query pre-built databases
-2. **Maintainer-only builds**: oidm-maintenance handles all database creation/publishing
-3. **Explicit dependencies**: Each package declares all dependencies it directly imports
-4. **Single lockfile**: uv.lock ensures consistent versions across all packages
-5. **AI separation**: findingmodel-ai contains all AI/LLM dependencies, core findingmodel has none
-6. **Embedding cache**: `oidm_common.embeddings.get_embedding`/`get_embeddings_batch` use a transparent DuckDB-backed cache at `~/.cache/findingmodel/embeddings.duckdb`; pass `cache=None` to disable or provide a custom cache instance.
-7. **ReadOnlyDuckDBIndex**: Shared base class in `oidm_common.duckdb.base` provides connection lifecycle, auto-open, and context managers for all read-only DuckDB indexes.
-
-## Class Names
-
-- `FindingModelIndex` — canonical name in `findingmodel.index`; exported as `Index` from `findingmodel` (backward-compatible alias)
-- `AnatomicLocationIndex` — in `anatomic_locations.index`
-- Both inherit `ReadOnlyDuckDBIndex` from `oidm_common.duckdb.base`
+2. **AI separation**: findingmodel-ai contains all AI/LLM dependencies
+3. **Per-agent model config**: No tiers — each agent has its own model + reasoning in supported_models.toml
+4. **FallbackModel chains**: Cross-provider resilience via pydantic-ai FallbackModel
+5. **Process-scoped config**: Configuration fixed at import time; benchmarks use subprocess isolation
+6. **Logfire observability**: Token through pydantic-settings, httpx instrumentation for external API tracing
 
 ## Tech Stack
 - **Language**: Python 3.11+
 - **Build System**: uv workspaces
 - **Task Runner**: go-task
 - **Core deps**: pydantic v2, duckdb, click, rich, loguru
-- **AI deps** (findingmodel-ai only): pydantic-ai-slim, tavily, httpx
-
-## CLI Commands
-
-```bash
-# User commands
-findingmodel search "query"              # Search finding models
-findingmodel index stats                 # Show index statistics
-anatomic-locations search "nasal"         # Search anatomic locations
-anatomic-locations stats                 # Show anatomic DB stats
-
-# AI commands (findingmodel-ai)
-findingmodel-ai make-info "pneumothorax"      # Generate FindingInfo from name
-findingmodel-ai make-stub-model "finding"     # Generate stub model
-findingmodel-ai markdown-to-fm file.md        # Convert markdown to model
-findingmodel-ai ontology search QUERY         # Search medical ontologies via BioOntology.org
-  # Options: --ontology CODE (repeatable), --max-results N, --exact, --semantic-type TYPE (repeatable)
-
-# Maintainer commands (oidm-maintenance)
-oidm-maintain findingmodel build    # Build findingmodel database
-oidm-maintain findingmodel publish  # Publish to S3
-oidm-maintain anatomic build        # Build anatomic database
-oidm-maintain anatomic publish      # Publish to S3
-```
-
-## Development
-
-```bash
-task test                           # Run all tests (no callout)
-task test-full                      # Run all tests including API calls
-task check                          # Format + lint + type check
-uv sync --all-packages              # Sync workspace
-```
+- **AI deps** (findingmodel-ai only): pydantic-ai-slim>=1.0.0, tavily, httpx
+- **Observability**: logfire[httpx]>=1.0.0

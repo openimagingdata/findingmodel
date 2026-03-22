@@ -324,57 +324,87 @@ All verified data can be reproduced via `scripts/benchmark_models.py` with Logfi
 
 ### Agent Pipeline Benchmarks
 
-#### ontology_search (single LLM call — query generation)
+Full-model-shootout: 150 runs, 5 agents × 6 configs × 5 findings, all Logfire-verified (March 22, 2026).
 
-| Model | Reasoning | Avg | Min | Max | n |
-|-------|-----------|-----|-----|-----|---|
-| gpt-5.4-mini | none | 1.2s | 1.1s | 1.6s | 5 |
-| gpt-5.4-nano | low | 1.4s | 1.2s | 1.6s | 5 |
-| gpt-5.4-nano | none | 1.8s | 1.1s | 2.5s | 7 |
-| gpt-5.4-mini | low | 1.9s | 1.3s | 2.4s | 5 |
-| claude-haiku-4-5 | low (thinking — BAD CONFIG) | 7.6s | 4.5s | 14.0s | 5 |
+#### Generative agents (nano primary)
 
-#### describe_finding (single LLM call — description generation)
+**ontology_search** (single LLM call — query generation):
 
-| Model | Reasoning | Avg | Min | Max | n |
-|-------|-----------|-----|-----|-----|---|
-| gpt-5.4-nano | none | 1.6s | 1.4s | 1.9s | 5 |
-| gpt-5.4-mini | low | 1.9s | 1.7s | 2.3s | 5 |
-| gpt-5.4-nano | low | 2.4s | 1.4s | 5.5s | 5 |
-| gpt-5.4-mini | none | 2.8s | 1.8s | 4.5s | 5 |
-| claude-haiku-4-5 | low (thinking — BAD CONFIG) | 13.9s | 5.6s | 28.1s | 5 |
+| Model | Reasoning | Avg | n |
+|-------|-----------|-----|---|
+| **gpt-5.4-mini** | none | **1.1s** | 5 |
+| **gpt-5.4-nano** | low | **1.1s** | 5 |
+| gpt-5.4-mini | low | 1.2s | 5 |
+| gpt-5.4-nano | none | 1.9s | 5 |
+| gemini-flash | minimal | 2.3s | 5 |
+| gemini-flash | low | 3.7s | 5 |
 
-#### anatomic_select (multi-stage: query gen + DuckDB search + LLM selection)
+**describe_finding** (single LLM call — description generation):
 
-| Model | Reasoning | Avg | Min | Max | n |
-|-------|-----------|-----|-----|-----|---|
-| gpt-5.4-mini | low | 5.8s | 4.6s | 8.0s | 5 |
-| gpt-5.4-nano | medium | 8.0s | 6.3s | 10.2s | 5 |
-| gemini-3.1-pro | medium | 11.0s | 8.1s | 14.8s | 5 |
-| gpt-5-mini (old) | medium | 17.3s | 11.4s | 22.8s | 5 |
-| claude-sonnet-4-6 | low | 21.3s | 11.8s | 54.7s | 5 |
-| claude-haiku-4-5 | low (thinking) | 54.4s | 8.3s | 74.6s | 5 |
+| Model | Reasoning | Avg | n |
+|-------|-----------|-----|---|
+| **gpt-5.4-nano** | none | **1.4s** | 5 |
+| gpt-5.4-nano | low | 1.5s | 5 |
+| gpt-5.4-mini | none | 1.9s | 5 |
+| gpt-5.4-mini | low | 1.9s | 5 |
+| gemini-flash | minimal | 2.6s | 5 |
+| gemini-flash | low | 2.7s | 5 |
 
-#### ontology_match (multi-stage: query gen + BioOntology API + LLM categorization)
+**similar_plan** (generative — search terms + metadata hypotheses):
 
-| Model | Reasoning | Avg | Min | Max | n |
-|-------|-----------|-----|-----|-----|---|
-| gpt-5.4-mini | low | 8.5s | 5.4s | 11.2s | 5 |
-| gpt-5.4-nano | medium | 8.5s | 7.5s | 11.0s | 5 |
-| claude-haiku-4-5 | none (no thinking) | 8.8s | 7.0s | 10.8s | 4 |
-| claude-sonnet-4-6 | low | 11.1s | 9.6s | 12.4s | 5 |
-| gemini-3.1-pro | medium | 14.2s | 13.9s | 14.5s | 5 |
-| gpt-5-mini (old) | medium | 22.1s | 16.1s | 31.0s | 5 |
-| claude-haiku-4-5 | low (thinking — BAD CONFIG) | 36.4s | 17.5s | 52.5s | 5 |
+| Model | Reasoning | Avg | n |
+|-------|-----------|-----|---|
+| **gpt-5.4-nano** | low | **1.3s** | 5 |
+| gpt-5.4-mini | none | 1.4s | 5 |
+| gpt-5.4-mini | low | 1.4s | 5 |
+| gpt-5.4-nano | none | 1.6s | 5 |
+| gemini-flash | minimal | 2.5s | 5 |
+| gemini-flash | low | 2.5s | 5 |
 
-#### Pipeline breakdown (from Logfire httpx instrumentation, ontology_match with single-page BioOntology)
+#### Classification agents (mini primary)
+
+**ontology_match** (multi-stage: query gen + BioOntology API + LLM categorization):
+
+| Model | Reasoning | Avg | n |
+|-------|-----------|-----|---|
+| **gpt-5.4-nano** | low | **5.0s** | 5 |
+| **gpt-5.4-mini** | none | **5.1s** | 5 |
+| gpt-5.4-nano | none | 5.3s | 5 |
+| gpt-5.4-mini | low | 5.4s | 5 |
+| gemini-flash | minimal | 5.7s | 5 |
+| gemini-flash | low | 6.3s | 5 |
+
+**anatomic_select** (multi-stage: query gen + DuckDB search + LLM selection):
+
+| Model | Reasoning | Avg | n |
+|-------|-----------|-----|---|
+| **gpt-5.4-nano** | low | **4.6s** | 5 |
+| **gemini-flash** | minimal | **4.6s** | 5 |
+| gemini-flash | low | 4.7s | 5 |
+| gpt-5.4-nano | none | 4.8s | 5 |
+| gpt-5.4-mini | none | 4.9s | 5 |
+| gpt-5.4-mini | low | 5.0s | 5 |
+
+Note: classification agents show similar latency across nano/mini/flash. Mini is chosen as primary for **quality** (better medical judgment on nuanced fields), not speed.
+
+#### Full metadata assignment pipeline (from scratch, all metadata stripped)
+
+| Model (classifier) | Reasoning | Total Pipeline | n |
+|--------------------|-----------|---------------|---|
+| gpt-5.4-nano | low | 12.8s | 1 |
+| gpt-5.4-mini | low | 12.9s | 1 |
+
+Pipeline breakdown (Logfire httpx instrumentation):
 
 | Stage | Latency |
 |-------|---------|
-| Query gen (gpt-5.4-nano) | ~1.2s |
-| BioOntology API (single page, pagesize=100) | ~1.1s |
-| Haiku categorization (no thinking) | ~2.5s |
-| **Total** | **~7s** |
+| Ontology candidates (query gen + BioOntology search + categorization) | ~5.8-7.4s |
+| Anatomic candidates (query gen + DuckDB search + selection) | ~4.5s |
+| Metadata classifier (the agent under test) | ~5.4-6.8s |
+| Assembly | ~0s |
+| **Total** | **~13s** |
+
+Quality note: gpt-5.4-nano leaves gaps on nuanced fields (time_course, age_profile empty for PE). gpt-5.4-mini fills age_profile but still misses time_course and modalities. This is a prompt issue — both models handle the core fields (body_regions, entity_type, etiologies, sex_specificity) correctly.
 
 ---
 

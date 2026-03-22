@@ -106,6 +106,58 @@ COMPARISONS = {
             ("anthropic:claude-sonnet-4-6", "low"),
         ],
     },
+    "new-agents": {
+        "description": "Benchmark new agents from enrichment merge: metadata_assign, similar_plan, similar_select",
+        "agents": ["similar_plan", "similar_select"],
+        "configs": [
+            ("openai:gpt-5.4-nano", "none"),
+            ("openai:gpt-5.4-nano", "low"),
+            ("openai:gpt-5.4-mini", "none"),
+            ("openai:gpt-5.4-mini", "low"),
+            ("google-gla:gemini-3-flash-preview", "low"),
+            ("anthropic:claude-haiku-4-5", "none"),
+        ],
+    },
+    "metadata-assign": {
+        "description": "Benchmark metadata_assign agent (uses .fm.json test files)",
+        "agents": ["metadata_assign"],
+        "configs": [
+            ("openai:gpt-5.4-nano", "none"),
+            ("openai:gpt-5.4-nano", "low"),
+            ("openai:gpt-5.4-mini", "none"),
+            ("openai:gpt-5.4-mini", "low"),
+            ("google-gla:gemini-3-flash-preview", "low"),
+            ("anthropic:claude-haiku-4-5", "none"),
+        ],
+    },
+    "ontology-match-update": {
+        "description": "Verify gpt-5.4-mini should replace gemini-3.1-pro as ontology_match primary",
+        "agents": ["ontology_match"],
+        "configs": [
+            ("openai:gpt-5.4-mini", "low"),
+            ("openai:gpt-5.4-mini", "none"),
+            ("google-gla:gemini-3.1-pro-preview", "low"),
+        ],
+    },
+    "full-model-shootout": {
+        "description": "Every agent head-to-head: gpt-5.4-nano vs gpt-5.4-mini vs gemini-flash",
+        "agents": ["ontology_search", "describe_finding", "ontology_match", "anatomic_select", "similar_plan"],
+        "configs": [
+            ("openai:gpt-5.4-nano", "none"),
+            ("openai:gpt-5.4-nano", "low"),
+            ("openai:gpt-5.4-mini", "none"),
+            ("openai:gpt-5.4-mini", "low"),
+            ("google-gla:gemini-3-flash-preview", "low"),
+            ("google-gla:gemini-3-flash-preview", "minimal"),
+        ],
+    },
+}
+
+# Findings that have .fm.json test data (for metadata_assign)
+METADATA_FINDINGS = {
+    "pulmonary_embolism": "Blood clot in the pulmonary arteries.",
+    "abdominal_aortic_aneurysm": "Abnormal dilation of the abdominal aorta.",
+    "breast_density": "Assessment of mammographic breast tissue density.",
 }
 
 
@@ -211,6 +263,51 @@ def run_one(agent_tag: str, model: str, reasoning: str, finding_name: str) -> No
                 result = await create_model_from_markdown(info, markdown_text=outline)
                 logfire.info("result: {n} attributes", n=len(result.attributes))
 
+            elif agent_tag == "metadata_assign":
+                from findingmodel.finding_model import FindingModelFull
+                from findingmodel_ai.metadata import assign_metadata
+                test_json = (REPO_ROOT / "packages" / "findingmodel" / "tests" / "data" / "defs" / f"{finding_name.replace(' ', '_')}.fm.json").read_text()
+                fm = FindingModelFull.model_validate_json(test_json)
+                # Strip existing metadata so the pipeline does full work
+                fm = fm.model_copy(update={
+                    "index_codes": None,
+                    "anatomic_locations": None,
+                    "body_regions": None,
+                    "subspecialties": None,
+                    "etiologies": None,
+                    "entity_type": None,
+                    "applicable_modalities": None,
+                    "expected_time_course": None,
+                    "age_profile": None,
+                    "sex_specificity": None,
+                })
+                result = await assign_metadata(fm)
+                m = result.model
+                logfire.info("result: model={name} regions={regions} entity={entity} codes={codes} anat={anat} warnings={w}",
+                             name=m.name,
+                             regions=[r.value for r in m.body_regions] if m.body_regions else [],
+                             entity=m.entity_type.value if m.entity_type else None,
+                             codes=len(m.index_codes or []),
+                             anat=len(m.anatomic_locations or []),
+                             w=len(result.review.warnings))
+
+            elif agent_tag == "similar_plan":
+                from findingmodel_ai.search.similar import create_planning_agent, _build_finding_description
+                agent = create_planning_agent()
+                finding_desc = _build_finding_description(finding_name, description)
+                prompt = f"Generate search terms and metadata hypotheses for this proposed finding:\n\n{finding_desc}"
+                r = await agent.run(prompt)
+                plan = r.output
+                logfire.info("result: {n} terms, hypotheses={h}",
+                             n=len(plan.search_terms),
+                             h=bool(plan.metadata_hypotheses.body_regions or plan.metadata_hypotheses.entity_type))
+
+            elif agent_tag == "similar_select":
+                from findingmodel_ai.search.similar import find_similar_models
+                result = await find_similar_models(finding_name, description)
+                logfire.info("result: rec={rec} matches={m}",
+                             rec=result.recommendation, m=len(result.matches))
+
             else:
                 logfire.warn("Unknown agent tag: {tag}", tag=agent_tag)
 
@@ -230,7 +327,10 @@ def run_comparison(name: str) -> None:
     print(f"  {comp['description']}")
     print(f"  Agents: {comp['agents']}")
     print(f"  Configs: {len(comp['configs'])}")
-    total = len(comp["configs"]) * len(comp["agents"]) * len(FINDINGS)
+    total = sum(
+        len(METADATA_FINDINGS if a == "metadata_assign" else FINDINGS)
+        for a in comp["agents"]
+    ) * len(comp["configs"])
     print(f"  Total runs: {total}")
     print(f"{'=' * 60}\n")
 
@@ -241,7 +341,9 @@ def run_comparison(name: str) -> None:
     for model, reasoning in comp["configs"]:
         for agent_tag in comp["agents"]:
             print(f"\n--- {agent_tag} | {model} / {reasoning} ---")
-            for finding_name in FINDINGS:
+            # Use METADATA_FINDINGS for metadata_assign (needs .fm.json files)
+            findings = METADATA_FINDINGS if agent_tag == "metadata_assign" else FINDINGS
+            for finding_name in findings:
                 env = dict(__import__("os").environ)
                 env[f"AGENT_MODEL_OVERRIDES__{agent_tag}"] = model
                 env[f"AGENT_REASONING_OVERRIDES__{agent_tag}"] = reasoning

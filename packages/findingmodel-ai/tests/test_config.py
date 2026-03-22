@@ -503,15 +503,14 @@ def test_resolve_agent_config_reasoning_per_model_normalization() -> None:
         google_api_key="test-google-key",
         anthropic_api_key="test-anthropic-key",
     )
-    # similar_plan uses reasoning = "minimal" for gemini-3-flash and "low" for gpt-5.4-nano
-    # gpt-5.4-nano: minimal → low (per TOML normalize)
-    # gemini-3-flash-preview: minimal → minimal (valid for flash, no normalization needed)
+    # similar_plan chain: gpt-5.4-nano/low, gemini-flash/minimal, haiku/none
+    # gemini-3-flash-preview: minimal stays minimal (valid for flash)
     chain = config.resolve_agent_config("similar_plan")
     assert len(chain) == 3
-    nano_entry = next(c for c in chain if c.model_string == "openai:gpt-5.4-nano")
     flash_entry = next(c for c in chain if c.model_string == "google-gla:gemini-3-flash-preview")
-    assert nano_entry.reasoning == "low"  # TOML says "low" for gpt-5.4-nano
     assert flash_entry.reasoning == "minimal"  # minimal stays minimal for gemini-flash
+    nano_entry = next(c for c in chain if c.model_string == "openai:gpt-5.4-nano")
+    assert nano_entry.reasoning == "low"
 
 
 # ---------------------------------------------------------------------------
