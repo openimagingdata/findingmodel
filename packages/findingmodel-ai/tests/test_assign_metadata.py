@@ -7,6 +7,22 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
+from findingmodel import (
+    AgeProfile,
+    AgeStage,
+    BodyRegion,
+    ChoiceAttributeIded,
+    ChoiceValueIded,
+    EntityType,
+    EtiologyCode,
+    ExpectedDuration,
+    ExpectedTimeCourse,
+    FindingModelFull,
+    IndexCode,
+    Modality,
+    SexSpecificity,
+    Subspecialty,
+)
 from findingmodel.protocols import OntologySearchResult
 from findingmodel_ai.metadata.assignment import (
     MetadataAssignmentDecision,
@@ -25,23 +41,6 @@ from pydantic_ai import models
 from pydantic_ai.messages import ModelRequest, ModelResponse, ToolCallPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
-
-from findingmodel import (
-    AgeProfile,
-    AgeStage,
-    BodyRegion,
-    ChoiceAttributeIded,
-    ChoiceValueIded,
-    EntityType,
-    EtiologyCode,
-    ExpectedDuration,
-    ExpectedTimeCourse,
-    FindingModelFull,
-    IndexCode,
-    Modality,
-    SexSpecificity,
-    Subspecialty,
-)
 
 models.ALLOW_MODEL_REQUESTS = False
 

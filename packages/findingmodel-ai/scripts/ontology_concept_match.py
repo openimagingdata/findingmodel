@@ -6,6 +6,7 @@ import sys
 import time
 from typing import Any
 
+from findingmodel import logger
 from findingmodel.finding_info import FindingInfo
 from findingmodel_ai.authoring.description import create_info_from_name
 from findingmodel_ai.config import settings
@@ -15,8 +16,6 @@ from findingmodel_ai.search.ontology import (
     execute_ontology_search,
     generate_finding_query_terms,
 )
-
-from findingmodel import logger
 
 
 async def perform_search_stages(finding_info: FindingInfo) -> dict[str, Any]:

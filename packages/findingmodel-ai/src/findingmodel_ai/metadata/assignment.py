@@ -9,13 +9,6 @@ from time import perf_counter
 from typing import Any
 
 import logfire
-from findingmodel.protocols import OntologySearchResult
-from oidm_common.models import IndexCode
-from opentelemetry import trace as otel_trace
-from pydantic import BaseModel, Field
-from pydantic_ai import Agent
-from pydantic_ai.models import Model
-
 from findingmodel import (
     AgeProfile,
     BodyRegion,
@@ -27,6 +20,13 @@ from findingmodel import (
     SexSpecificity,
     Subspecialty,
 )
+from findingmodel.protocols import OntologySearchResult
+from oidm_common.models import IndexCode
+from opentelemetry import trace as otel_trace
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent
+from pydantic_ai.models import Model
+
 from findingmodel_ai import logger
 from findingmodel_ai.config import settings
 from findingmodel_ai.metadata.types import (
