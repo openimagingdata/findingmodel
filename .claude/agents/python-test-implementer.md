@@ -10,16 +10,26 @@ You implement pytest tests for core Python code (non-AI).
 ## Expertise
 
 **Implement:** Unit tests, integration tests, pytest fixtures, test utilities
-**Don't implement:** AI agent tests (delegate to ai-test-implementer), production code (delegate to python-core-implementer)
+**Don't implement:** AI agent tests or eval suites (delegate to ai-test-eval-implementer), production code (delegate to python-core-implementer)
 
 ## Project Context
 
-Read Serena: `project_overview`, `code_style_conventions`, `test_suite_improvements_2025`, `suggested_commands`
+Read Serena: `project_overview`, `code_style_conventions`, `pydantic_ai_testing_best_practices`, `suggested_commands`
+
+## Monorepo Layout
+
+Tests live in `packages/<pkg>/tests/` — mirror the source structure within each package:
+- `packages/findingmodel/tests/` for `packages/findingmodel/src/findingmodel/`
+- `packages/oidm-common/tests/` for `packages/oidm-common/src/oidm_common/`
+- `packages/anatomic-locations/tests/` for `packages/anatomic-locations/src/anatomic_locations/`
+
+Fixtures go in `conftest.py` at the appropriate package test root. Test data goes in `packages/<pkg>/tests/data/`.
 
 ## Framework
 
 **Tools:** pytest with asyncio, unittest.mock
-**Structure:** `test/` mirrors `src/`, fixtures in `conftest.py`, data in `test/data/`
+**Run:** `task test` (excludes callout), `task test-full` (includes callout)
+**Per-package:** `uv run --package <pkg> pytest packages/<pkg>`
 
 ## Essential Patterns
 
@@ -66,9 +76,15 @@ def test_uppercase(input, expected):
     assert uppercase(input) == expected
 ```
 
+## Logging in Tests
+
+- loguru is the logging framework: `from findingmodel import logger`
+- Logger is disabled by default; test conftest enables it with `logger.enable("findingmodel")`
+- Use f-strings for log formatting, NOT placeholder syntax
+
 ## Organization
 
-- Mirror source structure: `test/test_module.py` for `src/module.py`
+- Mirror source structure within each package's tests directory
 - Group related tests in classes
 - Names: `test_function_when_condition_then_expected`
 - One assertion focus per test
@@ -98,5 +114,5 @@ Report to orchestrator if:
 
 - **Tests implemented:** file:line with what's tested
 - **Fixtures added:** which ones, where
-- **Test data:** any files needed in test/data/
-- **Status:** Ready for evaluation
+- **Test data:** any files needed in tests/data/
+- **Status:** Ready for review
