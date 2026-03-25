@@ -1,6 +1,6 @@
 # Task Status Overview
 
-**Last Updated:** 2026-03-17
+**Last Updated:** 2026-03-23
 
 This file tracks the current state of active planning documents. Historical plans belong under `tasks/done/`.
 
@@ -17,6 +17,12 @@ This file tracks the current state of active planning documents. Historical plan
 - **Status**: Completed
 - **Plan**: [docs/plans/documentation-audit-2026-03-17.md](../docs/plans/documentation-audit-2026-03-17.md)
 - **Goal**: Update active docs to match the current codebase and archive material that is historical but still looks active.
+
+### Claude subagents modernization and skill portability
+
+- **Status**: Complete (2026-03-23)
+- **Plan**: [claude-subagents-modernization-and-skill-portability-plan.md](claude-subagents-modernization-and-skill-portability-plan.md)
+- **Result**: Replaced 10-agent evaluator/implementer matrix with 5 agents + 4 portable review skills. Added orchestrator-vs-agent-teams guardrails. See plan completion notes for details.
 
 ## Active Plans Requiring Revalidation
 

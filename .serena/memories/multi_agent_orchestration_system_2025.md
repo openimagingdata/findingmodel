@@ -1,209 +1,89 @@
-# Multi-Agent Orchestration System (2025)
+# Multi-Agent Orchestration System (Updated 2026-03-23)
 
 ## Overview
 
-A system for implementing multi-phase technical plans using specialized sub-agents. Designed for conciseness and clarity - all agent definitions condensed to focus on essential patterns.
+A system for implementing multi-phase technical plans using specialized subagents and review skills. Modernized in March 2026 to replace the legacy evaluator matrix with a single reviewer + portable review skills.
 
 ## Architecture
 
 ### Orchestrator Layer
-- **plan-orchestrator** (78 lines) - Coordinates entire implementation process
-  - Reads plan documents
-  - Delegates phases to implementation agents (parallel when possible)
-  - Coordinates evaluation cycles
-  - Handles escalations
-  - Manages git commits and Serena updates
+- **plan-orchestrator** (skill in `.claude/skills/plan-orchestrator/`) — Coordinates implementation
+  - Reads plan documents, delegates to implementers, validates via reviewer
+  - Includes guardrails: assesses orchestrator vs agent teams before starting, confirms with user
+  - Handles escalations (max 3 cycles before escalating to user)
 
-### Implementation Agents
-1. **python-core-implementer** (166 lines) - Core Python code (data structures, sync/async, non-AI logic)
-2. **pydantic-ai-implementer** (81 lines) - Pydantic AI agents, tools, workflows
-3. **python-test-implementer** (102 lines) - Pytest tests for core Python code
-4. **ai-test-implementer** (127 lines) - Tests for Pydantic AI agents (TestModel/FunctionModel)
+### Implementation Agents (`.claude/agents/`)
+1. **python-core-implementer** — Core Python code (data structures, sync/async, DuckDB, CLI)
+2. **pydantic-ai-implementer** — Pydantic AI agents, tools, workflows (v1.70+ patterns)
+3. **python-test-implementer** — Pytest tests for core Python code
+4. **ai-test-eval-implementer** — AI agent tests (TestModel/FunctionModel) AND Pydantic Evals suites
 
-### Evaluation Agents
-1. **python-core-evaluator** (242 lines) - Evaluates core Python implementations
-2. **pydantic-ai-evaluator** (82 lines) - Evaluates Pydantic AI implementations
-3. **python-test-evaluator** (95 lines) - Evaluates core Python tests
-4. **ai-test-evaluator** (135 lines) - Evaluates AI agent tests
+### Review Layer
+- **reviewer** (`.claude/agents/reviewer.md`) — Single read-only subagent (sonnet model)
+  - Applies appropriate review skill(s) based on domain
+  - Returns APPROVED | NEEDS_REVISION | BLOCKED with file:line findings
 
-**Total: 1108 lines** (down from ~2384 original - 54% reduction)
+### Review Skills (`.claude/skills/`)
+- **python-review** — Core Python rubric (completeness, focus, conciseness, appropriateness)
+- **pydantic-ai-review** — AI agent rubric (v1.70+ patterns, model config, toolsets)
+- **test-review** — Test rubric (pytest + Pydantic Evals patterns)
+- **docs-review** — Documentation rubric (accuracy, discoverability, alignment)
+
+All review skills use portable frontmatter (name + description only) for OpenCode/Codex compatibility.
 
 ## Workflow
 
 For each phase:
 ```
 1. Orchestrator reads phase description
-2. Delegates to appropriate implementation agent(s)
-   - Parallel delegation when phases independent
-   - Sequential when dependencies exist
-3. Implementation agent completes work
-4. Corresponding evaluation agent assesses work
-5. Evaluation returns: APPROVED | NEEDS_REVISION | BLOCKED
-6. If NEEDS_REVISION:
-   a. Orchestrator reformulates issues for implementer
-   b. Implementer fixes
-   c. Re-evaluate (max 3 cycles)
-7. If BLOCKED:
-   a. Check Serena for guidance
-   b. Provide guidance if clear from patterns
-   c. Escalate to user if architectural decision needed
-8. Run tests (task test or task test-full)
-9. If tests fail, iterate to fix (max 3 cycles)
-10. Create git commit for phase
-11. Update Serena memories with learnings
+2. Delegates to appropriate implementer(s) — parallel when independent
+3. Implementer completes work
+4. Reviewer validates using relevant review skill(s)
+5. Review returns: APPROVED | NEEDS_REVISION | BLOCKED
+6. If NEEDS_REVISION: fix cycle (max 3)
+7. If BLOCKED: check Serena → escalate to user
+8. Run tests (task test)
+9. Suggest commit for user confirmation
 ```
 
-## Evaluation Criteria
+## Orchestrator vs Agent Teams
 
-All evaluators check:
-- **Completeness**: Task fully done?
-- **Focus**: Stayed within boundaries?
-- **Conciseness**: YAGNI/DRY adherence? Not over-engineered?
-- **Appropriateness**: Follows local standards? Reuses existing code? Fits tech stack?
+The plan-orchestrator assesses each plan before starting and recommends the right approach:
 
-Status responses:
-- **APPROVED**: Ready for tests/next phase
-- **NEEDS_REVISION**: Fixable issues with specific guidance
-- **BLOCKED**: Requires architectural decision or user guidance
+**Orchestrator is better for:**
+- Phases with dependencies or ordering constraints
+- Quality gates (implement → review → test → commit)
+- Concrete plans with specific deliverables
+- Token-cost-sensitive work
 
-## Orchestration Patterns
+**Agent teams are better for:**
+- 3+ truly independent phases touching separate files/packages
+- Exploratory research or investigation
+- Workers that need to discuss with each other
+- Work without quality gates (spikes, prototyping)
 
-### Parallel Processing
-When phases are independent:
-```python
-# Single message with multiple Task calls
-Task(subagent_type="python-core-implementer", ...)
-Task(subagent_type="python-test-implementer", ...)
-```
+The orchestrator always confirms with the user before proceeding.
 
-### Sequential Processing
-When phases have dependencies:
-```python
-# Wait for each to complete before next
-Task(subagent_type="python-core-implementer", ...)
-# Wait for result...
-Task(subagent_type="python-core-evaluator", ...)
-```
+## Key Design Changes (March 2026)
 
-### Escalation Handling
-Agents report to orchestrator (not user directly):
-```
-Agent → Orchestrator → (check Serena) → User (if needed)
-```
+### What changed
+- **10 agents → 5**: Removed 4 evaluators, refactoring analyzer, documentation updater
+- **Evaluators → review skills**: Rubric content extracted into 4 portable skills
+- **Single reviewer**: One read-only subagent replaces 4 domain-specific evaluators
+- **ai-test-implementer → ai-test-eval-implementer**: Now covers Pydantic Evals suites too
+- **All implementers updated**: Current monorepo layout, Pydantic AI v1.70+, per-agent model config, Logfire, loguru
+- **Agent teams guardrails**: Orchestrator recommends approach before starting
 
-## Usage
-
-### Via Slash Command
-```bash
-/implement-plan tasks/my-plan.md
-```
-
-### Via Review Command
-```bash
-/review-plan tasks/my-plan.md
-```
-
-## Plan File Format
-
-Markdown file with clear phases:
-```markdown
-# Plan Title
-
-## Phase 1: Description
-- Specific task
-- Another task
-- Success criteria
-
-## Phase 2: Description
-- Tasks for this phase
-```
-
-## Agent Specialization
-
-### Implementation Agents
-- Have Read, Write, Edit, Bash, Serena tools
-- Access project context via Serena memories
-- Follow project coding standards
-- Escalate to orchestrator when unclear
-
-### Evaluation Agents
-- Have Read, Grep, Glob, Serena read-only tools
-- Cannot edit code (only evaluate)
-- Provide specific, actionable feedback with file:line references
-- Use APPROVED/NEEDS_REVISION/BLOCKED status
-
-## Project Context Integration
-
-All agents read relevant Serena memories:
-- `project_overview` - Architecture
-- `code_style_conventions` - Standards
-- `pydantic_ai_best_practices_2025_09` - AI patterns
-- `pydantic_ai_testing_best_practices` - Testing patterns
-- `suggested_commands` - Dev workflow
-
-## Git Commits
-
-Orchestrator creates commits with:
-- Descriptive message explaining phase
-- Reference to plan document
-- Claude Code co-author footer
-
-## Condensing Improvements (2025)
-
-Reduced verbosity by:
-1. **Removing code examples** - Reference existing code instead of 100+ lines of inline examples
-2. **Shortening "Before You Finish"** - From 8-9 items to 5 max checklist items
-3. **Eliminating redundancy** - Removed "Communication Style" sections (obvious)
-4. **Consolidating examples** - Keep 1 brief example max instead of multiple
-5. **Referencing Serena** - Point to memories instead of listing all project context
-
-Result: 54% reduction (2384→1108 lines) while maintaining clarity and completeness.
-
-## Key Design Principles
-
-1. **Separation of concerns**: Implementation vs evaluation
-2. **Specialization**: Each agent has focused expertise
-3. **Iterative refinement**: Fix cycles until quality criteria met (max 3)
-4. **Project alignment**: All agents follow local standards
-5. **Context awareness**: Agents read Serena memories for consistency
-6. **Concise definitions**: Technical language, essential patterns only
-7. **Escalation chain**: Agents → Orchestrator → User (when needed)
-
-## Agent Files
-
-Located in `.claude/agents/`:
-- `plan-orchestrator.md` (78 lines)
-- `python-core-implementer.md` (166 lines)
-- `pydantic-ai-implementer.md` (81 lines)
-- `python-test-implementer.md` (102 lines)
-- `ai-test-implementer.md` (127 lines)
-- `python-core-evaluator.md` (242 lines)
-- `pydantic-ai-evaluator.md` (82 lines)
-- `python-test-evaluator.md` (95 lines)
-- `ai-test-evaluator.md` (135 lines)
-
-Commands in `.claude/commands/`:
-- `implement-plan.md` - Orchestrates implementation
-- `review-plan.md` - Assesses plan quality
-
-## Example Plans
-
-- `tasks/test-multi-agent-system.md` - Minimal test plan
-- `tasks/index-duckdb-migration.md` - Complex real-world example
-
-## Benefits
-
-- **Consistency**: All implementations follow project standards
-- **Quality**: Evaluation cycles ensure completeness and appropriateness
-- **Efficiency**: Specialized agents + parallel processing
-- **Maintainability**: Clear separation, concise definitions
-- **Learning**: Serena memories capture patterns and decisions
-- **Focus**: Technical language, no fluff
+### Why
+- Legacy agents had stale references (MongoDB, wrong file paths, nonexistent Serena memories)
+- Evaluator matrix was over-specialized — a single reviewer with skill-based rubrics is simpler and more maintainable
+- Review skills are portable across Claude Code, OpenCode, and Codex
 
 ## Related Memories
 
-- `code_style_conventions` - Coding standards all agents follow
-- `pydantic_ai_best_practices_2025_09` - AI patterns for implementers
-- `pydantic_ai_testing_best_practices` - Testing patterns for test agents
-- `ai_assistant_usage_2025` - How AI assistants should work together
-- `instruction_files_plan_2025` - Guidance file maintenance
+- `code_style_conventions` — Coding standards all agents follow
+- `pydantic_ai_best_practices` — AI patterns for implementers
+- `pydantic_ai_testing_best_practices` — Testing patterns
+- `agent_evaluation_best_practices_2025` — Eval suite patterns
+- `evaluator_architecture_2025` — Where evaluators live
+- `suggested_commands` — Dev workflow

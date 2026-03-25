@@ -134,7 +134,7 @@ results: dict[str, list[AnatomicLocation]] = await index.search_batch(
 - Uses `AnatomicLocationSettings` in `packages/anatomic-locations/src/anatomic_locations/config.py`
 
 ### Search Client Refactoring (2025-10-13)
-- `duckdb_search.py` now uses `settings.openai_embedding_dimensions` (no hardcoded values)
+- Embedding model/dimensions sourced from `ACTIVE_EMBEDDING_CONFIG` in `oidm_common.embeddings.config` (single source of truth)
 - All connection/embedding/RRF logic uses common utilities from `duckdb_utils`
 - Improved maintainability and consistency
 
