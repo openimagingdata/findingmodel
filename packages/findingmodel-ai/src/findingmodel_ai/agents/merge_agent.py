@@ -1,0 +1,52 @@
+"""
+Merge agent for combining incoming finding definitions with existing database models.
+"""
+
+from dataclasses import dataclass
+from typing import Any, Dict
+
+from findingmodel import Index
+from pydantic import BaseModel
+from pydantic_ai import Agent, RunContext
+from pydantic_ai.models.openai import OpenAIResponsesModel, OpenAIResponsesModelSettings
+from pydantic_ai.exceptions import ModelRetry
+
+from findingmodel_ai.agents.prompts import CONTRIBUTORS_BLOCK, load_instructions
+
+MODEL = OpenAIResponsesModel("gpt-5.4")
+
+
+class MergeResult(BaseModel):
+    """Structured output from the merge agent."""
+
+    merged_model: Dict[str, Any]
+    target_oifm_id: str
+    changes_made: list[str]
+    findings_to_create: list[str]
+
+
+@dataclass
+class MergeContext:
+    """Dependencies for the merge agent."""
+
+    index: Index
+
+
+merge_agent = Agent(
+    model=MODEL,
+    deps_type=MergeContext,
+    output_type=MergeResult,
+    instructions=load_instructions("merge_agent", contributors=CONTRIBUTORS_BLOCK),
+    model_settings=OpenAIResponsesModelSettings(openai_reasoning_effort="medium"),
+    retries=3,
+)
+
+
+@merge_agent.tool
+async def get_full_model(ctx: RunContext[MergeContext], oifm_id: str) -> dict[str, Any]:
+    """Retrieve a full finding model by OIFM ID to inspect before merging."""
+    try:
+        model = await ctx.deps.index.get_full(oifm_id)
+        return model.model_dump(exclude_none=False)
+    except Exception as e:
+        raise ModelRetry(f"Failed to retrieve model {oifm_id}: {e}")
