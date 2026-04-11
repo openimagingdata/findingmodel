@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Sequence
 from datetime import datetime
 from enum import Enum
@@ -100,15 +99,15 @@ class RelatedModelWeights(BaseModel):
 class FindingModelIndex(ReadOnlyDuckDBIndex):
     """DuckDB-based index with read-only connections."""
 
+    _vector_table = "finding_models"
+    _vector_column = "embedding"
+
     def __init__(self, db_path: str | Path | None = None) -> None:
         from findingmodel.config import ensure_index_db
 
         super().__init__(db_path, ensure_db=ensure_index_db)
         self._oifm_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
         self._oifma_id_cache: dict[str, set[str]] = {}  # {source: {id, ...}}
-        self._db_embedding_profile: tuple[str, str, int] | None = None
-        self._db_embedding_dimensions: int | None = None
-        self._embedding_mismatch_warned = False
 
     async def contains(self, identifier: str) -> bool:
         """Return True if an ID, name, or synonym exists in the index."""
@@ -889,7 +888,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             sex_specificity=sex_specificity,
         )
 
-        provider, model, dimensions = self._get_db_embedding_profile(conn)
+        profile = self._get_db_embedding_profile(conn)
         cfg = get_settings()
         api_key = cfg.openai_api_key.get_secret_value() if cfg.openai_api_key else ""
 
@@ -897,10 +896,8 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         embeddings = await get_embeddings_batch(
             valid_queries,
             api_key=api_key,
-            provider=provider,
-            model=model,
-            dimensions=dimensions,
-            embed_mode="query",
+            model=profile.model,
+            dimensions=profile.dimensions,
         )
 
         results: dict[str, list[IndexEntry]] = {}
@@ -1622,20 +1619,18 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         if not trimmed_query:
             return []
 
-        provider, model, dimensions = self._get_db_embedding_profile(conn)
+        profile = self._get_db_embedding_profile(conn)
         cfg = get_settings()
         api_key = cfg.openai_api_key.get_secret_value() if cfg.openai_api_key else ""
-        if provider.strip().lower() == "openai" and not api_key.strip():
+        if not api_key.strip():
             raise ConfigurationError(
                 "This findingmodel database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
             )
         embedding = await get_embedding(
             trimmed_query,
             api_key=api_key,
-            provider=provider,
-            model=model,
-            dimensions=dimensions,
-            embed_mode="query",
+            model=profile.model,
+            dimensions=profile.dimensions,
         )
         if embedding is None:
             return []
@@ -1672,7 +1667,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         if limit <= 0:
             return []
 
-        dimensions = self._get_db_embedding_dimensions(conn)
+        dimensions = self._get_db_embedding_profile(conn).dimensions
         if len(embedding) != dimensions:
             self._warn_embedding_mismatch_once(len(embedding), dimensions)
             return []
@@ -1716,9 +1711,12 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
         return [(entry, score) for entry, score in paired]
 
     def _require_openai_key_if_needed(self, conn: duckdb.DuckDBPyConnection) -> None:
-        provider, _model, _dimensions = self._get_db_embedding_profile(conn)
-        if provider.strip().lower() != "openai":
-            return
+        profile = self._get_db_embedding_profile(conn)
+        if profile.provider.strip().lower() != "openai":
+            raise ConfigurationError(
+                f"This findingmodel database uses unsupported embedding provider '{profile.provider}'. "
+                "Only OpenAI embeddings are supported."
+            )
         cfg = get_settings()
         api_key = cfg.openai_api_key.get_secret_value().strip() if cfg.openai_api_key else ""
         if not api_key:
@@ -1726,57 +1724,6 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
                 "This findingmodel database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
             )
 
-    def _get_db_embedding_profile(self, conn: duckdb.DuckDBPyConnection) -> tuple[str, str, int]:
-        if self._db_embedding_profile is not None:
-            return self._db_embedding_profile
-
-        cfg = get_settings()
-        provider = cfg.embedding_provider
-        model = cfg.embedding_model
-        dimensions = cfg.embedding_dimensions
-
-        try:
-            has_profile = conn.execute(
-                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_profile'"
-            ).fetchone()
-            if has_profile and int(has_profile[0]) > 0:
-                row = conn.execute("SELECT provider, model, dimensions FROM embedding_profile LIMIT 1").fetchone()
-                if row and isinstance(row[0], str) and isinstance(row[1], str) and isinstance(row[2], int):
-                    self._db_embedding_profile = (row[0], row[1], int(row[2]))
-                    self._db_embedding_dimensions = int(row[2])
-                    return self._db_embedding_profile
-        except Exception:
-            pass
-
-        # Fallback: parse vector column dimensions and keep runtime provider/model defaults.
-        col_row = self._execute_one(
-            conn,
-            (
-                "SELECT data_type FROM information_schema.columns "
-                "WHERE table_name = 'finding_models' AND column_name = 'embedding' LIMIT 1"
-            ),
-        )
-        data_type = col_row.get("data_type") if col_row else None
-        if isinstance(data_type, str):
-            match = re.search(r"FLOAT\[(\d+)\]", data_type.upper())
-            if match is not None:
-                dimensions = int(match.group(1))
-        self._db_embedding_profile = (provider, model, dimensions)
-        self._db_embedding_dimensions = dimensions
-        return self._db_embedding_profile
-
-    def _get_db_embedding_dimensions(self, conn: duckdb.DuckDBPyConnection) -> int:
-        if self._db_embedding_dimensions is not None:
-            return self._db_embedding_dimensions
-        return self._get_db_embedding_profile(conn)[2]
-
-    def _warn_embedding_mismatch_once(self, actual: int, expected: int) -> None:
-        if self._embedding_mismatch_warned:
-            return
-        self._embedding_mismatch_warned = True
-        logger.warning(
-            f"Query embedding dimension mismatch (got {actual}, expected {expected}). Falling back to FTS-only results."
-        )
 
 
 # Alias for backward compatibility

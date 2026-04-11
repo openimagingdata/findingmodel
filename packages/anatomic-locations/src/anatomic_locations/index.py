@@ -6,14 +6,12 @@ All returned AnatomicLocation objects are automatically bound to the index.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
 import duckdb
 from asyncer import asyncify
-from loguru import logger
 from oidm_common.duckdb import ReadOnlyDuckDBIndex, rrf_fusion, setup_duckdb_connection
 from oidm_common.embeddings import get_embedding, get_embeddings_batch
 
@@ -71,13 +69,13 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         FROM anatomic_locations al
     """
 
+    _vector_table = "anatomic_locations"
+    _vector_column = "vector"
+
     def __init__(self, db_path: Path | None = None) -> None:
         from anatomic_locations.config import ensure_anatomic_db
 
         super().__init__(db_path, ensure_db=ensure_anatomic_db)
-        self._db_embedding_profile: tuple[str, str, int] | None = None
-        self._db_embedding_dimensions: int | None = None
-        self._embedding_mismatch_warned = False
 
     # =========================================================================
     # Core Lookups (all methods auto-bind returned objects)
@@ -187,19 +185,19 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         from anatomic_locations.config import get_settings as get_anatomic_settings
 
         anatomic_settings = get_anatomic_settings()
-        provider, model, dimensions = self._get_db_embedding_profile(conn)
+        profile = self._get_db_embedding_profile(conn)
         api_key = anatomic_settings.openai_api_key.get_secret_value() if anatomic_settings.openai_api_key else ""
-        if provider.strip().lower() == "openai" and not api_key.strip():
-            raise RuntimeError(
+        if not api_key.strip():
+            from anatomic_locations.config import ConfigurationError
+
+            raise ConfigurationError(
                 "This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
             )
         embedding = await get_embedding(
             query,
             api_key=api_key,
-            provider=provider,
-            model=model,
-            dimensions=dimensions,
-            embed_mode="query",
+            model=profile.model,
+            dimensions=profile.dimensions,
         )
         semantic_results: list[tuple[str, float]] = []
         if embedding is not None:
@@ -253,16 +251,14 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         from anatomic_locations.config import get_settings as get_anatomic_settings
 
         anatomic_settings = get_anatomic_settings()
-        provider, model, dimensions = self._get_db_embedding_profile(conn)
+        profile = self._get_db_embedding_profile(conn)
         api_key = anatomic_settings.openai_api_key.get_secret_value() if anatomic_settings.openai_api_key else ""
 
         raw_embeddings = await get_embeddings_batch(
             valid_queries,
             api_key=api_key,
-            provider=provider,
-            model=model,
-            dimensions=dimensions,
-            embed_mode="query",
+            model=profile.model,
+            dimensions=profile.dimensions,
         )
         embeddings: list[list[float] | None] = list(raw_embeddings)
 
@@ -600,7 +596,7 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         where_clause = " AND ".join(where_conditions)
         params.append(limit)
 
-        dimensions = self._get_db_embedding_dimensions(conn)
+        dimensions = self._get_db_embedding_profile(conn).dimensions
         if len(embedding) != dimensions:
             self._warn_embedding_mismatch_once(len(embedding), dimensions)
             return []
@@ -617,74 +613,20 @@ class AnatomicLocationIndex(ReadOnlyDuckDBIndex):
         return [(str(r[0]), 1.0 - float(r[1])) for r in rows if float(r[1]) <= max_distance]
 
     def _require_openai_key_if_needed(self, conn: duckdb.DuckDBPyConnection) -> None:
-        provider, model, dimensions = self._get_db_embedding_profile(conn)
-        if provider.strip().lower() != "openai":
-            raise RuntimeError(
-                "This anatomic-locations runtime currently supports only OpenAI-embedded databases, "
-                f"but the selected database is {provider}/{model}/{dimensions}."
-            )
-        from anatomic_locations.config import get_settings
+        from anatomic_locations.config import ConfigurationError, get_settings
 
+        profile = self._get_db_embedding_profile(conn)
+        if profile.provider.strip().lower() != "openai":
+            raise ConfigurationError(
+                "This anatomic-locations database uses unsupported embedding provider "
+                f"'{profile.provider}'. Only OpenAI embeddings are supported."
+            )
         settings = get_settings()
         api_key = settings.openai_api_key.get_secret_value().strip() if settings.openai_api_key else ""
         if not api_key:
-            raise RuntimeError(
+            raise ConfigurationError(
                 "This anatomic-locations database uses OpenAI embeddings, but OPENAI_API_KEY is not set."
             )
-
-    def _get_db_embedding_profile(self, conn: duckdb.DuckDBPyConnection) -> tuple[str, str, int]:
-        if self._db_embedding_profile is not None:
-            return self._db_embedding_profile
-
-        from anatomic_locations.config import get_settings
-
-        settings = get_settings()
-        provider = settings.embedding_provider
-        model = settings.embedding_model
-        dimensions = settings.embedding_dimensions
-
-        try:
-            has_profile = conn.execute(
-                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_profile'"
-            ).fetchone()
-            if has_profile and int(has_profile[0]) > 0:
-                row = conn.execute("SELECT provider, model, dimensions FROM embedding_profile LIMIT 1").fetchone()
-                if row and isinstance(row[0], str) and isinstance(row[1], str) and isinstance(row[2], int):
-                    self._db_embedding_profile = (row[0], row[1], int(row[2]))
-                    self._db_embedding_dimensions = int(row[2])
-                    return self._db_embedding_profile
-        except Exception:
-            pass
-
-        col_row = self._execute_one(
-            conn,
-            (
-                "SELECT data_type FROM information_schema.columns "
-                "WHERE table_name = 'anatomic_locations' AND column_name = 'vector' LIMIT 1"
-            ),
-        )
-        data_type = col_row.get("data_type") if col_row else None
-        if isinstance(data_type, str):
-            match = re.search(r"FLOAT\[(\d+)\]", data_type.upper())
-            if match is not None:
-                dimensions = int(match.group(1))
-
-        self._db_embedding_profile = (provider, model, dimensions)
-        self._db_embedding_dimensions = dimensions
-        return self._db_embedding_profile
-
-    def _get_db_embedding_dimensions(self, conn: duckdb.DuckDBPyConnection) -> int:
-        if self._db_embedding_dimensions is not None:
-            return self._db_embedding_dimensions
-        return self._get_db_embedding_profile(conn)[2]
-
-    def _warn_embedding_mismatch_once(self, actual: int, expected: int) -> None:
-        if self._embedding_mismatch_warned:
-            return
-        self._embedding_mismatch_warned = True
-        logger.warning(
-            f"Query embedding dimension mismatch (got {actual}, expected {expected}). Falling back to FTS-only results."
-        )
 
     def _apply_rrf_fusion(
         self,

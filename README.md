@@ -35,7 +35,7 @@ ANTHROPIC_API_KEY=your_key_here
 GOOGLE_API_KEY=your_key_here
 ```
 
-`findingmodel` search can also run against local-profile database artifacts without an API key. `anatomic-locations` semantic search currently requires an OpenAI key.
+Both `findingmodel` and `anatomic-locations` use OpenAI embeddings for semantic search, requiring an `OPENAI_API_KEY`.
 
 ### Using the Index
 

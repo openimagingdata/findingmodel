@@ -217,11 +217,13 @@ async def build_findingmodel_database(
                     raise RuntimeError("OPENAI_API_KEY not configured in environment")
 
                 embedding_texts = [_build_embedding_text(model) for model, _, _, _, _ in models_data]
+                from oidm_common.embeddings.config import ACTIVE_EMBEDDING_CONFIG
+
                 raw_embeddings = await get_embeddings_batch(
                     list(embedding_texts),
                     api_key=settings.openai_api_key.get_secret_value(),
-                    model=settings.openai_embedding_model,
-                    dimensions=settings.openai_embedding_dimensions,
+                    model=ACTIVE_EMBEDDING_CONFIG.model,
+                    dimensions=ACTIVE_EMBEDDING_CONFIG.dimensions,
                 )
 
                 embeddings: list[list[float]] = []

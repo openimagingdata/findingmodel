@@ -505,8 +505,6 @@ class TestAnatomicBuildCommand:
         mock_settings = MagicMock()
         mock_settings.openai_api_key = MagicMock()
         mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-        mock_settings.openai_embedding_model = "text-embedding-3-small"
-        mock_settings.openai_embedding_dimensions = 512
 
         # Generate fake embeddings for the expected number of records
         def fake_batch_embeddings(
@@ -615,8 +613,6 @@ class TestAnatomicBuildCommand:
         mock_settings = MagicMock()
         mock_settings.openai_api_key = MagicMock()
         mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-        mock_settings.openai_embedding_model = "text-embedding-3-small"
-        mock_settings.openai_embedding_dimensions = 512
 
         def fake_batch_embeddings(
             texts: list[str],

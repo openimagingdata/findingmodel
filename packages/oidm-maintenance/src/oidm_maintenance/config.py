@@ -23,10 +23,8 @@ class MaintenanceSettings(BaseSettings):
     manifest_key: str = "manifest.json"
     manifest_backup_prefix: str = "manifests/archive/"
 
-    # OpenAI for embeddings during build
+    # OpenAI API key for embedding generation during build
     openai_api_key: SecretStr | None = None
-    openai_embedding_model: str = "text-embedding-3-small"
-    openai_embedding_dimensions: int = 512
 
 
 _settings: MaintenanceSettings | None = None

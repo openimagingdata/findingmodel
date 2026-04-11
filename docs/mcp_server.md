@@ -87,7 +87,7 @@ To use the MCP server with Claude Desktop, add the following to your Claude Desk
 }
 ```
 
-**Note**: The server uses the active `findingmodel` database artifact and embedding profile. With the default `auto` profile, OpenAI-backed semantic search is used when `OPENAI_API_KEY` is configured; otherwise `findingmodel` can use local-profile artifacts.
+**Note**: The server uses the active `findingmodel` database artifact. Semantic search requires `OPENAI_API_KEY` to be configured.
 
 ## Tools Reference
 
@@ -201,7 +201,7 @@ uv run ruff format packages/findingmodel/src/findingmodel/mcp_server.py
 
 **Error**: Semantic search configuration error
 
-**Solution**: Configure the runtime profile and matching database artifact. For OpenAI-backed search, set `OPENAI_API_KEY`:
+**Solution**: Set `OPENAI_API_KEY` for semantic search:
 
 ```bash
 export OPENAI_API_KEY=your-api-key-here

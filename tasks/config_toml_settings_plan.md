@@ -27,8 +27,6 @@ Packages in scope:
    [findingmodel]
    duckdb_index_path = "/data/findingmodels.duckdb"
    remote_manifest_url = "https://findingmodelsdata.t3.storage.dev/manifest.json"
-   openai_embedding_model = "text-embedding-3-small"
-   openai_embedding_dimensions = 512
 
    [anatomic_locations]
    manifest_url = "https://anatomiclocationdata.t3.storage.dev/manifest.json"

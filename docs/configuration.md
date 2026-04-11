@@ -346,28 +346,9 @@ ANATOMIC_MANIFEST_URL=https://your-host/manifest.json
 3. If file doesn't exist with URL/hash → downloads from URL
 4. If nothing specified → downloads from manifest.json (default)
 
-### Embedding Profile Selection for Index Search
+### Embedding Configuration
 
-Runtime embedding profile selection is package-specific:
-
-- `findingmodel` supports `openai` and `local` profile DB artifacts.
-- `anatomic-locations` currently supports only OpenAI-embedded DB artifacts.
-
-```bash
-# findingmodel runtime profile (default: auto)
-FINDINGMODEL_EMBEDDING_PROFILE=auto
-# FINDINGMODEL_EMBEDDING_PROFILE=local
-
-# anatomic-locations runtime profile (default: openai; auto resolves to openai)
-ANATOMIC_EMBEDDING_PROFILE=openai
-```
-
-Supported profiles:
-
-- `findingmodel: auto` → `openai` / `text-embedding-3-small` / `512` when an OpenAI key is set; otherwise `fastembed` / `BAAI/bge-small-en-v1.5` / `384`
-- `findingmodel: openai` → `openai` / `text-embedding-3-small` / `512`
-- `findingmodel: local` → `fastembed` / `BAAI/bge-small-en-v1.5` / `384`
-- `anatomic-locations: auto/openai` → `openai` / `text-embedding-3-small` / `512`
+Both `findingmodel` and `anatomic-locations` use OpenAI embeddings (`text-embedding-3-small`, 512 dimensions). An `OPENAI_API_KEY` is required for semantic search.
 
 For database maintenance and building, see [Database Management Guide](database-management.md).
 
@@ -428,12 +409,7 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `ANATOMIC_REMOTE_DB_URL` | With hash | - | Custom anatomic download URL |
 | `ANATOMIC_REMOTE_DB_HASH` | With URL | - | SHA256 hash for anatomic |
 | `ANATOMIC_MANIFEST_URL` | No | Hosted manifest | Manifest URL for anatomic database artifacts |
-| `FINDINGMODEL_EMBEDDING_PROFILE` | No | `auto` | Runtime embedding profile for findingmodel index (`auto`, `openai`, or `local`) |
-| `ANATOMIC_EMBEDDING_PROFILE` | No | `openai` | Runtime embedding profile for anatomic index (`auto` or `openai`; `local` is unsupported) |
 | `ANATOMIC_OPENAI_API_KEY` | No | Falls back to `OPENAI_API_KEY` | OpenAI key for anatomic semantic search |
-| `OIDM_MAINTAIN_EMBEDDING_PROVIDER` | Maintainers | `openai` | Build/publish embedding provider for `oidm-maintain` |
-| `OIDM_MAINTAIN_EMBEDDING_MODEL` | Maintainers | `text-embedding-3-small` | Build/publish embedding model |
-| `OIDM_MAINTAIN_EMBEDDING_DIMENSIONS` | Maintainers | `512` | Build/publish embedding dimensions |
 | `LOGFIRE_TOKEN` | For eval tracing | - | Optional Logfire write token used by eval instrumentation |
 
 ## Troubleshooting

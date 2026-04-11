@@ -3,7 +3,7 @@
 
 Usage:
   uv run python scripts/check_anatomic_embeddings.py
-  uv run python scripts/check_anatomic_embeddings.py --db dist/anatomic_locations__local.duckdb
+  uv run python scripts/check_anatomic_embeddings.py --db dist/anatomic_locations.duckdb
 """
 
 from __future__ import annotations
@@ -33,8 +33,7 @@ def parse_args() -> argparse.Namespace:
 
 def default_db_paths() -> list[Path]:
     return [
-        Path("dist/anatomic_locations__openai.duckdb"),
-        Path("dist/anatomic_locations__local.duckdb"),
+        Path("dist/anatomic_locations.duckdb"),
     ]
 
 
@@ -44,11 +43,17 @@ def check_one_db(db_path: Path, min_nonzero_ratio: float) -> tuple[bool, str]:
 
     conn = duckdb.connect(str(db_path), read_only=True)
     try:
-        profile = conn.execute(
-            "SELECT provider, model, dimensions FROM embedding_profile LIMIT 1"
+        # Read embedding profile if available (optional metadata)
+        profile_label = "unknown"
+        has_profile = conn.execute(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'embedding_profile'"
         ).fetchone()
-        if profile is None:
-            return False, f"{db_path}: missing embedding_profile row"
+        if has_profile and int(has_profile[0]) > 0:
+            profile = conn.execute(
+                "SELECT provider, model, dimensions FROM embedding_profile LIMIT 1"
+            ).fetchone()
+            if profile is not None:
+                profile_label = f"{profile[0]}/{profile[1]}/{profile[2]}"
 
         total = conn.execute(
             "SELECT COUNT(*) FROM anatomic_locations WHERE vector IS NOT NULL"
@@ -65,11 +70,10 @@ def check_one_db(db_path: Path, min_nonzero_ratio: float) -> tuple[bool, str]:
         ratio = (nonzero / total) if total else 0.0
         ok = total > 0 and ratio >= min_nonzero_ratio
         status = "PASS" if ok else "FAIL"
-        provider, model, dims = profile
         return (
             ok,
             (
-                f"{status} {db_path} | profile={provider}/{model}/{dims} "
+                f"{status} {db_path} | embedding={profile_label} "
                 f"| nonzero={nonzero}/{total} ({ratio:.1%})"
             ),
         )

@@ -930,11 +930,13 @@ async def create_anatomic_database(
         if not settings.openai_api_key:
             raise ValueError("OpenAI API key required for embedding generation (OIDM_MAINTAIN_OPENAI_API_KEY)")
 
+        from oidm_common.embeddings.config import ACTIVE_EMBEDDING_CONFIG
+
         embeddings = await get_embeddings_batch(
             searchable_texts,
             api_key=settings.openai_api_key.get_secret_value(),
-            model=settings.openai_embedding_model,
-            dimensions=dimensions,
+            model=ACTIVE_EMBEDDING_CONFIG.model,
+            dimensions=ACTIVE_EMBEDDING_CONFIG.dimensions,
         )
 
         # Merge embeddings
@@ -976,8 +978,9 @@ async def build_anatomic_database(
     settings = get_settings()
     _ = batch_size
 
-    # Determine dimensions from settings
-    dimensions = settings.openai_embedding_dimensions
+    from oidm_common.embeddings.config import ACTIVE_EMBEDDING_CONFIG
+
+    dimensions = ACTIVE_EMBEDDING_CONFIG.dimensions
 
     with Progress(
         SpinnerColumn(),
@@ -1048,7 +1051,7 @@ async def build_anatomic_database(
                 embeddings = await get_embeddings_batch(
                     searchable_texts,
                     api_key=settings.openai_api_key.get_secret_value(),
-                    model=settings.openai_embedding_model,
+                    model=ACTIVE_EMBEDDING_CONFIG.model,
                     dimensions=dimensions,
                 )
                 progress.update(embed_task, completed=len(searchable_texts))

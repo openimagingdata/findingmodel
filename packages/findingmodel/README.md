@@ -27,7 +27,7 @@ OPENAI_API_KEY=your_key_here
 FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb
 ```
 
-The finding model database is automatically downloaded on first use. If no OpenAI key is configured, `findingmodel` can use local-profile database artifacts instead of OpenAI-backed search.
+The finding model database is automatically downloaded on first use. An `OPENAI_API_KEY` is required for semantic search.
 
 ## CLI (`findingmodel`)
 

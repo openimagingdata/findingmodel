@@ -219,12 +219,12 @@ DuckDB FLOAT columns are 32-bit. OpenAI returns 64-bit floats. Always convert:
 from oidm_common.embeddings import get_embedding, get_embeddings_batch
 
 # Single embedding (returns float32 list)
-embedding = await get_embedding("kidney tumor", provider="openai", model="text-embedding-3-small", dimensions=512)
+embedding = await get_embedding("kidney tumor", api_key=api_key, model="text-embedding-3-small", dimensions=512)
 
 # Batch embeddings (single API call, all float32)
 embeddings = await get_embeddings_batch(
     ["term1", "term2", "term3"],
-    provider="openai",
+    api_key=api_key,
     model="text-embedding-3-small",
     dimensions=512,
 )
@@ -232,7 +232,7 @@ embeddings = await get_embeddings_batch(
 
 ### Embedding Dimensions
 
-Configured by the selected embedding profile and, when present, by the database's `embedding_profile` metadata.
+Configured by the database's `embedding_profile` metadata table (provider: `openai`, model: `text-embedding-3-small`, dimensions: `512`).
 
 ---
 

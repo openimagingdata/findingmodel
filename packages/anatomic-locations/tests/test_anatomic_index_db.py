@@ -128,9 +128,6 @@ class TestAnatomicLocationIndexSearch:
             mock_settings = MagicMock()
             mock_settings.openai_api_key = MagicMock()
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-            mock_settings.embedding_provider = "openai"
-            mock_settings.embedding_model = "text-embedding-3-small"
-            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
@@ -163,11 +160,6 @@ class TestAnatomicLocationIndexSearch:
             mock_settings = MagicMock()
             mock_settings.openai_api_key = MagicMock()
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-            mock_settings.openai_embedding_model = "text-embedding-3-small"
-            mock_settings.openai_embedding_dimensions = 512
-            mock_settings.embedding_provider = "openai"
-            mock_settings.embedding_model = "text-embedding-3-small"
-            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
@@ -205,11 +197,6 @@ class TestAnatomicLocationIndexSearch:
             mock_settings = MagicMock()
             mock_settings.openai_api_key = MagicMock()
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-            mock_settings.openai_embedding_model = "text-embedding-3-small"
-            mock_settings.openai_embedding_dimensions = 512
-            mock_settings.embedding_provider = "openai"
-            mock_settings.embedding_model = "text-embedding-3-small"
-            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
@@ -239,9 +226,6 @@ class TestAnatomicLocationIndexSearch:
             mock_settings = MagicMock()
             mock_settings.openai_api_key = MagicMock()
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-            mock_settings.embedding_provider = "openai"
-            mock_settings.embedding_model = "text-embedding-3-small"
-            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
@@ -401,9 +385,6 @@ class TestAnatomicLocationIndexWeakRefBinding:
             mock_settings = MagicMock()
             mock_settings.openai_api_key = MagicMock()
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-            mock_settings.embedding_provider = "openai"
-            mock_settings.embedding_model = "text-embedding-3-small"
-            mock_settings.embedding_dimensions = 512
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
                 patch("anatomic_locations.index.get_embedding", new=AsyncMock(return_value=None)),
@@ -437,9 +418,6 @@ class TestSearchQualityThresholds:
             mock_settings = MagicMock()
             mock_settings.openai_api_key = MagicMock()
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-            mock_settings.embedding_provider = "openai"
-            mock_settings.embedding_model = "text-embedding-3-small"
-            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),
@@ -479,9 +457,6 @@ class TestSearchQualityThresholds:
             mock_settings = MagicMock()
             mock_settings.openai_api_key = MagicMock()
             mock_settings.openai_api_key.get_secret_value.return_value = "fake-key"
-            mock_settings.embedding_provider = "openai"
-            mock_settings.embedding_model = "text-embedding-3-small"
-            mock_settings.embedding_dimensions = 512
 
             with (
                 patch("anatomic_locations.config.get_settings", return_value=mock_settings),

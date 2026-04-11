@@ -13,6 +13,7 @@ import duckdb
 import pytest
 from anatomic_locations import AnatomicLocationIndex
 from oidm_common.duckdb import setup_duckdb_connection
+from oidm_common.embeddings.config import ACTIVE_EMBEDDING_CONFIG
 from oidm_maintenance.anatomic.build import (
     _bulk_load_table,
     _create_indexes,
@@ -25,24 +26,12 @@ from oidm_maintenance.anatomic.build import (
 from oidm_maintenance.config import MaintenanceSettings
 from pydantic import SecretStr
 from pydantic_ai import models
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Prevent accidental model requests in unit tests
 models.ALLOW_MODEL_REQUESTS = False
 
-
-# Create a minimal settings class for tests
-class TestSettings(BaseSettings):
-    """Minimal settings for anatomic location tests."""
-
-    __test__ = False  # Prevent pytest from collecting this as a test class
-
-    model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)
-
-    openai_embedding_dimensions: int = 512
-
-
-test_settings = TestSettings()
+# Use the canonical embedding dimensions for test fixtures
+_TEST_DIMENSIONS = ACTIVE_EMBEDDING_CONFIG.dimensions
 
 
 @pytest.fixture
@@ -58,13 +47,13 @@ def duckdb_conn(temp_duckdb_path: Path) -> Generator[duckdb.DuckDBPyConnection, 
 @pytest.fixture
 def schema_conn(duckdb_conn: duckdb.DuckDBPyConnection) -> duckdb.DuckDBPyConnection:
     """DuckDB connection with schema already created."""
-    _create_schema(duckdb_conn, dimensions=test_settings.openai_embedding_dimensions)
+    _create_schema(duckdb_conn, dimensions=_TEST_DIMENSIONS)
     return duckdb_conn
 
 
 def test_schema_creation(duckdb_conn: duckdb.DuckDBPyConnection) -> None:
     """Verify that tables are created correctly with all expected columns."""
-    _create_schema(duckdb_conn, dimensions=test_settings.openai_embedding_dimensions)
+    _create_schema(duckdb_conn, dimensions=_TEST_DIMENSIONS)
 
     # Check that all 4 tables exist
     tables = duckdb_conn.execute("SHOW TABLES").fetchall()
@@ -132,7 +121,7 @@ def test_bulk_load_table_basic(schema_conn: duckdb.DuckDBPyConnection) -> None:
 
 def test_bulk_load_preserves_vectors(schema_conn: duckdb.DuckDBPyConnection) -> None:
     """Verify FLOAT[] vectors survive JSON round-trip."""
-    dimensions = test_settings.openai_embedding_dimensions
+    dimensions = _TEST_DIMENSIONS
     schema_conn.execute(f"CREATE TABLE test (id VARCHAR, vector FLOAT[{dimensions}])")
 
     vector = [0.1] * dimensions
@@ -231,14 +220,14 @@ def test_bulk_load_with_real_data(
 
     # Add dummy vectors to location rows
     for location_row in location_rows:
-        location_row["vector"] = [0.1] * test_settings.openai_embedding_dimensions
+        location_row["vector"] = [0.1] * _TEST_DIMENSIONS
 
     # Bulk load locations
     count = _bulk_load_table(
         schema_conn,
         "anatomic_locations",
         location_rows,
-        _get_location_columns(test_settings.openai_embedding_dimensions),
+        _get_location_columns(_TEST_DIMENSIONS),
     )
     assert count == 3
 
@@ -270,7 +259,7 @@ def test_insert_or_ignore_duplicate_synonym(schema_conn: duckdb.DuckDBPyConnecti
             (id, description, laterality, search_text, vector)
         VALUES (?, ?, ?, ?, ?)
         """,
-        ("TEST001", "test", "nonlateral", "test", [0.1] * test_settings.openai_embedding_dimensions),
+        ("TEST001", "test", "nonlateral", "test", [0.1] * _TEST_DIMENSIONS),
     )
 
     # Insert first synonym
@@ -302,7 +291,7 @@ def test_insert_or_ignore_duplicate_code(schema_conn: duckdb.DuckDBPyConnection)
             (id, description, laterality, search_text, vector)
         VALUES (?, ?, ?, ?, ?)
         """,
-        ("TEST001", "test", "nonlateral", "test", [0.1] * test_settings.openai_embedding_dimensions),
+        ("TEST001", "test", "nonlateral", "test", [0.1] * _TEST_DIMENSIONS),
     )
 
     # Insert first code
@@ -339,7 +328,7 @@ def test_index_creation_fts(schema_conn: duckdb.DuckDBPyConnection) -> None:
             "test structure",
             "nonlateral",
             "test structure",
-            [0.1] * test_settings.openai_embedding_dimensions,
+            [0.1] * _TEST_DIMENSIONS,
             "test definition",
             "alias1 alias2",
         ),
@@ -402,7 +391,7 @@ def test_index_creation_hnsw(schema_conn: duckdb.DuckDBPyConnection) -> None:
                 f"test {i}",
                 "nonlateral",
                 f"test {i}",
-                [float(i) / 100.0] * test_settings.openai_embedding_dimensions,
+                [float(i) / 100.0] * _TEST_DIMENSIONS,
             ),
         )
     schema_conn.commit()
@@ -425,10 +414,10 @@ def test_index_creation_hnsw(schema_conn: duckdb.DuckDBPyConnection) -> None:
         # Verify index was created by checking DuckDB internals
         # DuckDB doesn't expose index metadata in information_schema, but we can
         # verify the index works by running a query that would use it
-        query_vector = [0.05] * test_settings.openai_embedding_dimensions
+        query_vector = [0.05] * _TEST_DIMENSIONS
         result = schema_conn.execute(
             f"""
-            SELECT id, array_distance(vector, ?::FLOAT[{test_settings.openai_embedding_dimensions}]) AS distance
+            SELECT id, array_distance(vector, ?::FLOAT[{_TEST_DIMENSIONS}]) AS distance
             FROM anatomic_locations
             ORDER BY distance
             LIMIT 3
@@ -472,7 +461,7 @@ def test_full_build_pipeline(
 
     try:
         # Create schema
-        _create_schema(conn, dimensions=test_settings.openai_embedding_dimensions)
+        _create_schema(conn, dimensions=_TEST_DIMENSIONS)
 
         # Verify schema
         tables = conn.execute("SHOW TABLES").fetchall()
@@ -485,7 +474,7 @@ def test_full_build_pipeline(
             description = str(record["description"])
             raw_synonyms = record.get("synonyms", [])
             synonyms_text = " ".join(raw_synonyms) if raw_synonyms and isinstance(raw_synonyms, list) else ""
-            embedding = anatomic_sample_embeddings.get(record_id, [0.1] * test_settings.openai_embedding_dimensions)
+            embedding = anatomic_sample_embeddings.get(record_id, [0.1] * _TEST_DIMENSIONS)
 
             conn.execute(
                 """
@@ -505,7 +494,7 @@ def test_full_build_pipeline(
         assert location_count[0] == 2
 
         # Create indexes
-        _create_indexes(conn, test_settings.openai_embedding_dimensions)
+        _create_indexes(conn, _TEST_DIMENSIONS)
 
         # Verify FTS index works
         fts_result = conn.execute(

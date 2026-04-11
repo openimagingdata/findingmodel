@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 import time
 from pathlib import Path
-from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, patch
 
@@ -1016,64 +1014,6 @@ class TestEmbeddingGenerationCaching:
         assert cache.calls == [(["a", "c"], [[0.1, 0.1], [0.3, 0.3]])]
 
 
-class TestFastEmbedCachePathResolution:
-    """Tests for FastEmbed model cache directory selection."""
-
-    def test_fastembed_uses_oidm_common_cache_dir_by_default(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Runtime should use oidm-common platform cache dir by default."""
-        from oidm_common.embeddings import generation
-
-        calls: list[dict[str, object]] = []
-
-        class _FakeTextEmbedding:
-            def __init__(self, **kwargs: object) -> None:
-                calls.append(kwargs)
-
-        monkeypatch.setattr(generation, "_DEFAULT_FASTEMBED_CACHE_DIR", tmp_path / "oidm-fastembed")
-        monkeypatch.setattr(generation, "_TEMP_FASTEMBED_CACHE_DIR", tmp_path / "temp-fastembed")
-        monkeypatch.setattr(generation, "_fastembed_model_cache", {})
-        monkeypatch.setitem(sys.modules, "fastembed", SimpleNamespace(TextEmbedding=_FakeTextEmbedding))
-
-        runtime = generation._get_or_create_fastembed_model("BAAI/bge-small-en-v1.5", threads=2)
-
-        assert runtime is not None
-        assert len(calls) == 1
-        assert calls[0]["model_name"] == "BAAI/bge-small-en-v1.5"
-        assert calls[0]["threads"] == 2
-        assert calls[0]["cache_dir"] == str(tmp_path / "oidm-fastembed")
-        assert (tmp_path / "oidm-fastembed").exists()
-
-    def test_fastembed_falls_back_when_primary_cache_dir_unwritable(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """If primary cache path is invalid/unwritable, runtime should use temp fallback."""
-        from oidm_common.embeddings import generation
-
-        calls: list[dict[str, object]] = []
-
-        class _FakeTextEmbedding:
-            def __init__(self, **kwargs: object) -> None:
-                calls.append(kwargs)
-
-        invalid_primary = tmp_path / "not-a-directory"
-        invalid_primary.write_text("x")
-        fallback = tmp_path / "fallback-fastembed-cache"
-
-        monkeypatch.setattr(generation, "_DEFAULT_FASTEMBED_CACHE_DIR", invalid_primary)
-        monkeypatch.setattr(generation, "_TEMP_FASTEMBED_CACHE_DIR", fallback)
-        monkeypatch.setattr(generation, "_fastembed_model_cache", {})
-        monkeypatch.setitem(sys.modules, "fastembed", SimpleNamespace(TextEmbedding=_FakeTextEmbedding))
-
-        runtime = generation._get_or_create_fastembed_model("BAAI/bge-small-en-v1.5", threads=None)
-
-        assert runtime is not None
-        assert len(calls) == 1
-        assert calls[0]["cache_dir"] == str(fallback)
-        assert fallback.exists()
-
-
 @pytest.mark.callout
 class TestEmbeddingGenerationIntegration:
     """Integration tests for embedding generation with real OpenAI API calls."""
@@ -1113,3 +1053,55 @@ class TestEmbeddingGenerationIntegration:
 
         assert len(results) == 3
         assert all(r is not None and len(r) == 512 for r in results)
+
+
+class TestReadEmbeddingProfileFromDb:
+    """Tests for read_embedding_profile_from_db utility."""
+
+    def test_returns_profile_when_table_exists(self, tmp_path: Path) -> None:
+        """Should return EmbeddingProfileSpec when embedding_profile table has data."""
+        from oidm_common.embeddings.config import EmbeddingProfileSpec, read_embedding_profile_from_db
+
+        db_path = tmp_path / "test.duckdb"
+        conn = duckdb.connect(str(db_path))
+        conn.execute("CREATE TABLE embedding_profile (provider VARCHAR, model VARCHAR, dimensions INTEGER)")
+        conn.execute("INSERT INTO embedding_profile VALUES ('openai', 'text-embedding-3-small', 512)")
+        conn.close()
+
+        result = read_embedding_profile_from_db(db_path)
+        assert result is not None
+        assert isinstance(result, EmbeddingProfileSpec)
+        assert result.provider == "openai"
+        assert result.model == "text-embedding-3-small"
+        assert result.dimensions == 512
+
+    def test_returns_none_when_table_missing(self, tmp_path: Path) -> None:
+        """Should return None when DB has no embedding_profile table."""
+        from oidm_common.embeddings.config import read_embedding_profile_from_db
+
+        db_path = tmp_path / "test.duckdb"
+        conn = duckdb.connect(str(db_path))
+        conn.execute("CREATE TABLE other_table (id INTEGER)")
+        conn.close()
+
+        result = read_embedding_profile_from_db(db_path)
+        assert result is None
+
+    def test_returns_none_when_table_empty(self, tmp_path: Path) -> None:
+        """Should return None when embedding_profile table exists but has no rows."""
+        from oidm_common.embeddings.config import read_embedding_profile_from_db
+
+        db_path = tmp_path / "test.duckdb"
+        conn = duckdb.connect(str(db_path))
+        conn.execute("CREATE TABLE embedding_profile (provider VARCHAR, model VARCHAR, dimensions INTEGER)")
+        conn.close()
+
+        result = read_embedding_profile_from_db(db_path)
+        assert result is None
+
+    def test_returns_none_when_file_missing(self, tmp_path: Path) -> None:
+        """Should return None for nonexistent file."""
+        from oidm_common.embeddings.config import read_embedding_profile_from_db
+
+        result = read_embedding_profile_from_db(tmp_path / "nonexistent.duckdb")
+        assert result is None

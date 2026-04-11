@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from anatomic_locations.config import AnatomicLocationSettings, ensure_anatomic_db, get_settings
-from pydantic import ValidationError
+from oidm_common.embeddings.config import EmbeddingProfileSpec
 
 
 class TestAnatomicLocationSettings:
@@ -21,13 +21,9 @@ class TestAnatomicLocationSettings:
         assert settings.remote_db_hash is None
         assert settings.manifest_url == "https://anatomiclocationsdata.t3.storage.dev/manifest.json"
         assert settings.openai_api_key is None
-        assert settings.embedding_profile == "openai"
-        assert settings.openai_embedding_model == "text-embedding-3-small"
-        assert settings.openai_embedding_dimensions == 512
 
     def test_environment_variable_loading_with_anatomic_prefix(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that environment variables with ANATOMIC_ prefix are loaded correctly."""
-        # Set environment variables
         monkeypatch.setenv("ANATOMIC_DB_PATH", "/custom/path/anatomic.duckdb")
         monkeypatch.setenv("ANATOMIC_REMOTE_DB_URL", "https://example.com/db.duckdb")
         monkeypatch.setenv("ANATOMIC_REMOTE_DB_HASH", "sha256:abc123")
@@ -42,15 +38,11 @@ class TestAnatomicLocationSettings:
 
     def test_partial_environment_overrides(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that only specified environment variables override defaults."""
-        # Only override manifest URL
         monkeypatch.setenv("ANATOMIC_MANIFEST_URL", "https://custom.example.com/manifest.json")
 
         settings = AnatomicLocationSettings()
 
-        # Overridden
         assert settings.manifest_url == "https://custom.example.com/manifest.json"
-
-        # Still defaults
         assert settings.db_path is None
         assert settings.remote_db_url is None
         assert settings.remote_db_hash is None
@@ -58,18 +50,13 @@ class TestAnatomicLocationSettings:
     # --- OpenAI API key fallback tests (AliasChoices) ---
 
     def test_openai_api_key_from_standard_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that OPENAI_API_KEY is picked up when ANATOMIC_OPENAI_API_KEY is not set.
-
-        This is the critical fallback that enables semantic search for users who only
-        have the standard OPENAI_API_KEY in their environment.
-        """
+        """Test that OPENAI_API_KEY is picked up when ANATOMIC_OPENAI_API_KEY is not set."""
         monkeypatch.setenv("OPENAI_API_KEY", "sk-standard-key")
 
         settings = AnatomicLocationSettings()
 
         assert settings.openai_api_key is not None
         assert settings.openai_api_key.get_secret_value() == "sk-standard-key"
-        assert settings.embedding_profile == "openai"
 
     def test_anatomic_api_key_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that ANATOMIC_OPENAI_API_KEY takes priority over OPENAI_API_KEY."""
@@ -80,48 +67,14 @@ class TestAnatomicLocationSettings:
 
         assert settings.openai_api_key is not None
         assert settings.openai_api_key.get_secret_value() == "sk-anatomic-key"
-        assert settings.embedding_profile == "openai"
 
     def test_openai_api_key_none_when_unset(self) -> None:
         """Test that openai_api_key is None when neither env var is set."""
         settings = AnatomicLocationSettings(_env_file=None)
-
         assert settings.openai_api_key is None
-        assert settings.embedding_profile == "openai"
-
-    def test_embedding_profile_auto_resolves_openai_when_openai_key_blank(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Auto profile should resolve to openai even when OPENAI_API_KEY is blank."""
-        monkeypatch.setenv("OPENAI_API_KEY", "   ")
-
-        settings = AnatomicLocationSettings(_env_file=None)
-
-        assert settings.embedding_profile == "openai"
-
-    def test_embedding_profile_auto_with_key_resolves_openai(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Explicit auto profile should resolve to openai when key is available."""
-        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "auto")
-        monkeypatch.setenv("OPENAI_API_KEY", "sk-standard-key")
-
-        settings = AnatomicLocationSettings(_env_file=None)
-
-        assert settings.embedding_profile == "openai"
-        assert settings.embedding_provider == "openai"
-
-    def test_invalid_embedding_profile_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Only supported runtime profiles should be accepted."""
-        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "local")
-
-        with pytest.raises(ValidationError, match="Invalid ANATOMIC_EMBEDDING_PROFILE"):
-            AnatomicLocationSettings(_env_file=None)
 
     def test_reads_dotenv_file(self, tmp_path: Path) -> None:
-        """Test that settings reads from a .env file.
-
-        This ensures users with OPENAI_API_KEY in .env get semantic search
-        without needing to export the variable in their shell.
-        """
+        """Test that settings reads from a .env file."""
         env_file = tmp_path / ".env"
         env_file.write_text("OPENAI_API_KEY=sk-from-dotenv\n")
 
@@ -129,7 +82,6 @@ class TestAnatomicLocationSettings:
 
         assert settings.openai_api_key is not None
         assert settings.openai_api_key.get_secret_value() == "sk-from-dotenv"
-        assert settings.embedding_profile == "openai"
 
     def test_env_var_overrides_dotenv_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that environment variables take priority over .env file values."""
@@ -148,7 +100,6 @@ class TestGetSettings:
 
     def test_singleton_behavior(self) -> None:
         """Test that get_settings() returns the same instance on multiple calls."""
-        # Clear the singleton before test
         import anatomic_locations.config as config_module
 
         config_module._settings = None
@@ -156,12 +107,10 @@ class TestGetSettings:
         settings1 = get_settings()
         settings2 = get_settings()
 
-        # Should be the exact same object
         assert settings1 is settings2
 
     def test_loads_from_environment_on_first_call(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that settings are loaded from environment on first get_settings() call."""
-        # Clear the singleton before test
         import anatomic_locations.config as config_module
 
         config_module._settings = None
@@ -178,42 +127,35 @@ class TestEnsureAnatomicDb:
 
     def test_calls_ensure_db_file_with_correct_parameters(self, tmp_path: Path) -> None:
         """Test that ensure_anatomic_db() calls ensure_db_file with correct parameters."""
-        # Clear singleton to ensure fresh settings
         import anatomic_locations.config as config_module
 
         config_module._settings = None
 
         with (
             patch("anatomic_locations.config.ensure_db_file") as mock_ensure_db_file,
-            patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=True),  # Clear environment
+            patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=True),
         ):
             mock_ensure_db_file.return_value = tmp_path / "anatomic_locations.duckdb"
 
             result = ensure_anatomic_db()
 
-            # Verify ensure_db_file was called with correct parameters
             mock_ensure_db_file.assert_called_once_with(
-                file_path=None,  # Default from settings
-                remote_url=None,  # Default from settings
-                remote_hash=None,  # Default from settings
+                file_path=None,
+                remote_url=None,
+                remote_hash=None,
                 manifest_key="anatomic_locations",
-                manifest_url="https://anatomiclocationsdata.t3.storage.dev/manifest.json",  # Default from settings
+                manifest_url="https://anatomiclocationsdata.t3.storage.dev/manifest.json",
                 app_name="anatomic-locations",
-                embedding_provider="openai",
-                embedding_model="text-embedding-3-small",
-                embedding_dimensions=512,
             )
 
             assert result == tmp_path / "anatomic_locations.duckdb"
 
     def test_uses_settings_values(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that ensure_anatomic_db() uses values from settings."""
-        # Clear singleton to ensure fresh settings
         import anatomic_locations.config as config_module
 
         config_module._settings = None
 
-        # Set environment variables
         monkeypatch.setenv("ANATOMIC_DB_PATH", "custom.duckdb")
         monkeypatch.setenv("ANATOMIC_REMOTE_DB_URL", "https://custom.example.com/db.duckdb")
         monkeypatch.setenv("ANATOMIC_REMOTE_DB_HASH", "sha256:custom123")
@@ -225,7 +167,6 @@ class TestEnsureAnatomicDb:
 
             result = ensure_anatomic_db()
 
-            # Verify ensure_db_file was called with settings values
             mock_ensure_db_file.assert_called_once_with(
                 file_path="custom.duckdb",
                 remote_url="https://custom.example.com/db.duckdb",
@@ -233,16 +174,12 @@ class TestEnsureAnatomicDb:
                 manifest_key="anatomic_locations",
                 manifest_url="https://custom.example.com/manifest.json",
                 app_name="anatomic-locations",
-                embedding_provider="openai",
-                embedding_model="text-embedding-3-small",
-                embedding_dimensions=512,
             )
 
             assert result == tmp_path / "custom.duckdb"
 
     def test_manifest_key_is_always_anatomic_locations(self, tmp_path: Path) -> None:
         """Test that manifest_key is always 'anatomic_locations' regardless of settings."""
-        # Clear singleton
         import anatomic_locations.config as config_module
 
         config_module._settings = None
@@ -255,13 +192,11 @@ class TestEnsureAnatomicDb:
 
             ensure_anatomic_db()
 
-            # Extract the manifest_key argument
             call_kwargs = mock_ensure_db_file.call_args.kwargs
             assert call_kwargs["manifest_key"] == "anatomic_locations"
 
     def test_app_name_is_always_anatomic_locations(self, tmp_path: Path) -> None:
         """Test that app_name is always 'anatomic-locations' regardless of settings."""
-        # Clear singleton
         import anatomic_locations.config as config_module
 
         config_module._settings = None
@@ -274,32 +209,11 @@ class TestEnsureAnatomicDb:
 
             ensure_anatomic_db()
 
-            # Extract the app_name argument
             call_kwargs = mock_ensure_db_file.call_args.kwargs
             assert call_kwargs["app_name"] == "anatomic-locations"
 
-    def test_profile_openai_resolves_to_supported_embedding_tuple(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """ANATOMIC_EMBEDDING_PROFILE=openai should drive manifest/query embedding tuple."""
-        import anatomic_locations.config as config_module
-
-        config_module._settings = None
-        monkeypatch.setenv("ANATOMIC_EMBEDDING_PROFILE", "openai")
-
-        with patch("anatomic_locations.config.ensure_db_file") as mock_ensure_db_file:
-            mock_ensure_db_file.return_value = tmp_path / "anatomic_openai.duckdb"
-            result = ensure_anatomic_db()
-
-            call_kwargs = mock_ensure_db_file.call_args.kwargs
-            assert call_kwargs["embedding_provider"] == "openai"
-            assert call_kwargs["embedding_model"] == "text-embedding-3-small"
-            assert call_kwargs["embedding_dimensions"] == 512
-            assert result == tmp_path / "anatomic_openai.duckdb"
-
     def test_returns_path_from_ensure_db_file(self, tmp_path: Path) -> None:
         """Test that ensure_anatomic_db() returns the path from ensure_db_file."""
-        # Clear singleton
         import anatomic_locations.config as config_module
 
         config_module._settings = None
@@ -327,7 +241,7 @@ class TestEnsureAnatomicDb:
             patch("anatomic_locations.config.ensure_db_file", return_value=db_path),
             patch(
                 "anatomic_locations.config.read_embedding_profile_from_db",
-                return_value=("openai", "text-embedding-3-small", 512),
+                return_value=EmbeddingProfileSpec(provider="openai", model="text-embedding-3-small", dimensions=512),
             ),
             patch.dict(os.environ, {"OPENAI_API_KEY": ""}, clear=True),
             pytest.raises(config_module.ConfigurationError, match="uses OpenAI embeddings"),
@@ -335,19 +249,19 @@ class TestEnsureAnatomicDb:
             ensure_anatomic_db()
 
     def test_errors_immediately_for_non_openai_profile_db(self, tmp_path: Path) -> None:
-        """Non-OpenAI profile DBs should fail fast for anatomic runtime."""
+        """Non-OpenAI profile DBs should fail fast."""
         import anatomic_locations.config as config_module
 
         config_module._settings = None
-        db_path = tmp_path / "anatomic_local.duckdb"
+        db_path = tmp_path / "anatomic_other.duckdb"
 
         with (
             patch("anatomic_locations.config.ensure_db_file", return_value=db_path),
             patch(
                 "anatomic_locations.config.read_embedding_profile_from_db",
-                return_value=("fastembed", "BAAI/bge-small-en-v1.5", 384),
+                return_value=EmbeddingProfileSpec(provider="unsupported-provider", model="some-model", dimensions=256),
             ),
             patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}, clear=True),
-            pytest.raises(config_module.ConfigurationError, match="currently supports only OpenAI embeddings"),
+            pytest.raises(config_module.ConfigurationError, match="supports only OpenAI embeddings"),
         ):
             ensure_anatomic_db()

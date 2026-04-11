@@ -1,34 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Final
 
 from oidm_common.distribution import ensure_db_file as oidm_ensure_db_file
-from oidm_common.distribution.profiles import read_embedding_profile_from_db
-from pydantic import AliasChoices, Field, SecretStr, model_validator
+from oidm_common.embeddings.config import read_embedding_profile_from_db
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class ConfigurationError(RuntimeError):
     pass
-
-
-_RUNTIME_EMBEDDING_PROFILES: Final[dict[str, tuple[str, str, int]]] = {
-    "openai": ("openai", "text-embedding-3-small", 512),
-    "local": ("fastembed", "BAAI/bge-small-en-v1.5", 384),
-}
-
-
-def _supported_profile_help(env_prefix: str) -> str:
-    openai_provider, openai_model, openai_dims = _RUNTIME_EMBEDDING_PROFILES["openai"]
-    local_provider, local_model, local_dims = _RUNTIME_EMBEDDING_PROFILES["local"]
-    return (
-        "Supported runtime embedding profiles are: "
-        "auto (default, resolves to openai when OpenAI API key is set, else local), "
-        f"openai ({openai_provider}/{openai_model}/{openai_dims}) and "
-        f"local ({local_provider}/{local_model}/{local_dims}). "
-        f"Set {env_prefix}_EMBEDDING_PROFILE to one of those values."
-    )
 
 
 class FindingModelConfig(BaseSettings):
@@ -39,10 +20,7 @@ class FindingModelConfig(BaseSettings):
     - FINDINGMODEL_REMOTE_DB_URL: URL to download database from
     - FINDINGMODEL_REMOTE_DB_HASH: Expected hash for database file
     - FINDINGMODEL_MANIFEST_URL: URL to JSON manifest for database versions
-
-    Embedding configuration:
-    - FINDINGMODEL_EMBEDDING_PROFILE: runtime embedding profile (`auto`, `openai`, or `local`)
-    - FINDINGMODEL_OPENAI_API_KEY or OPENAI_API_KEY: OpenAI API key (for provider=openai)
+    - FINDINGMODEL_OPENAI_API_KEY or OPENAI_API_KEY: OpenAI API key
     """
 
     model_config = SettingsConfigDict(env_prefix="FINDINGMODEL_", env_file=".env", extra="ignore")
@@ -53,53 +31,11 @@ class FindingModelConfig(BaseSettings):
     remote_db_hash: str | None = None
     manifest_url: str = "https://findingmodelsdata.t3.storage.dev/manifest.json"
 
-    # Embedding configuration
-    # AliasChoices: try package-specific env var first, fall back to standard name
+    # OpenAI API key for semantic search
     openai_api_key: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices("FINDINGMODEL_OPENAI_API_KEY", "OPENAI_API_KEY"),
     )
-    embedding_profile: str = Field(
-        default="auto",
-        validation_alias=AliasChoices("FINDINGMODEL_EMBEDDING_PROFILE"),
-    )
-
-    @model_validator(mode="after")
-    def _validate_embedding_profile(self) -> FindingModelConfig:
-        requested_profile = self.embedding_profile.strip().lower()
-        if requested_profile not in {"auto", *tuple(_RUNTIME_EMBEDDING_PROFILES.keys())}:
-            raise ValueError(
-                f"Invalid FINDINGMODEL_EMBEDDING_PROFILE: {self.embedding_profile!r}. "
-                f"{_supported_profile_help('FINDINGMODEL')}"
-            )
-        if requested_profile == "auto":
-            openai_key = self.openai_api_key.get_secret_value().strip() if self.openai_api_key else ""
-            self.embedding_profile = "openai" if openai_key else "local"
-        else:
-            self.embedding_profile = requested_profile
-        return self
-
-    @property
-    def embedding_provider(self) -> str:
-        return _RUNTIME_EMBEDDING_PROFILES[self.embedding_profile][0]
-
-    @property
-    def embedding_model(self) -> str:
-        return _RUNTIME_EMBEDDING_PROFILES[self.embedding_profile][1]
-
-    @property
-    def embedding_dimensions(self) -> int:
-        return _RUNTIME_EMBEDDING_PROFILES[self.embedding_profile][2]
-
-    @property
-    def openai_embedding_model(self) -> str:
-        """Alias for compatibility with existing call sites."""
-        return self.embedding_model
-
-    @property
-    def openai_embedding_dimensions(self) -> int:
-        """Alias for compatibility with existing call sites."""
-        return self.embedding_dimensions
 
 
 # Lazy singleton instance
@@ -135,17 +71,20 @@ def ensure_index_db() -> Path:
         manifest_key="finding_models",
         manifest_url=s.manifest_url,
         app_name="findingmodel",
-        embedding_provider=s.embedding_provider,
-        embedding_model=s.embedding_model,
-        embedding_dimensions=s.embedding_dimensions,
     )
     detected = read_embedding_profile_from_db(db_path)
-    if detected is not None and detected[0].strip().lower() == "openai":
+    if detected is not None:
+        if detected.provider.strip().lower() != "openai":
+            raise ConfigurationError(
+                "The selected findingmodel database is not OpenAI-embedded "
+                f"({detected.provider}/{detected.model}/{detected.dimensions}). "
+                "findingmodel supports only OpenAI embeddings."
+            )
         api_key = s.openai_api_key.get_secret_value().strip() if s.openai_api_key else ""
         if not api_key:
             raise ConfigurationError(
                 "The selected findingmodel database uses OpenAI embeddings "
-                f"({detected[1]}/{detected[2]}), but OPENAI_API_KEY is not set."
+                f"({detected.model}/{detected.dimensions}), but OPENAI_API_KEY is not set."
             )
     return db_path
 
