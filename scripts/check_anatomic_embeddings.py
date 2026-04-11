@@ -44,15 +44,11 @@ def check_one_db(db_path: Path, min_nonzero_ratio: float) -> tuple[bool, str]:
 
     conn = duckdb.connect(str(db_path), read_only=True)
     try:
-        profile = conn.execute(
-            "SELECT provider, model, dimensions FROM embedding_profile LIMIT 1"
-        ).fetchone()
+        profile = conn.execute("SELECT provider, model, dimensions FROM embedding_profile LIMIT 1").fetchone()
         if profile is None:
             return False, f"{db_path}: missing embedding_profile row"
 
-        total = conn.execute(
-            "SELECT COUNT(*) FROM anatomic_locations WHERE vector IS NOT NULL"
-        ).fetchone()[0]
+        total = conn.execute("SELECT COUNT(*) FROM anatomic_locations WHERE vector IS NOT NULL").fetchone()[0]
         nonzero = conn.execute(
             """
             SELECT COUNT(*)
@@ -68,10 +64,7 @@ def check_one_db(db_path: Path, min_nonzero_ratio: float) -> tuple[bool, str]:
         provider, model, dims = profile
         return (
             ok,
-            (
-                f"{status} {db_path} | profile={provider}/{model}/{dims} "
-                f"| nonzero={nonzero}/{total} ({ratio:.1%})"
-            ),
+            (f"{status} {db_path} | profile={provider}/{model}/{dims} | nonzero={nonzero}/{total} ({ratio:.1%})"),
         )
     finally:
         conn.close()

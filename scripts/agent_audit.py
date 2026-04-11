@@ -26,7 +26,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +41,7 @@ sys.path.insert(0, str(REPO_ROOT / "packages" / "oidm-common" / "src"))
 # ---------------------------------------------------------------------------
 # Result data structures
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class RunResult:
@@ -109,45 +110,55 @@ def estimate_cost(model: str, tokens_in: int, tokens_out: int) -> float:
 # ---------------------------------------------------------------------------
 
 FINDINGS = [
-    {"name": "pneumothorax", "description": "Abnormal collection of air in the pleural space between the lung and chest wall."},
-    {"name": "hepatic steatosis", "description": "Abnormal accumulation of fat within hepatocytes, commonly known as fatty liver."},
+    {
+        "name": "pneumothorax",
+        "description": "Abnormal collection of air in the pleural space between the lung and chest wall.",
+    },
+    {
+        "name": "hepatic steatosis",
+        "description": "Abnormal accumulation of fat within hepatocytes, commonly known as fatty liver.",
+    },
     {"name": "meniscal tear", "description": "A tear in the meniscal cartilage of the knee joint."},
-    {"name": "subsegmental pulmonary embolism", "description": "A blood clot lodged in a subsegmental branch of the pulmonary artery."},
+    {
+        "name": "subsegmental pulmonary embolism",
+        "description": "A blood clot lodged in a subsegmental branch of the pulmonary artery.",
+    },
     {"name": "enostosis", "description": "A benign sclerotic bone lesion, also known as a bone island."},
 ]
 
 # Model configs for small-tier agents
 SMALL_CONFIGS = [
-    ("google-gla:gemini-3-flash-preview", "low"),       # S-A: Current default
-    ("google-gla:gemini-3-flash-preview", "minimal"),    # S-B: Less reasoning
-    ("google-gla:gemini-3-flash-preview", "medium"),     # S-C: More reasoning
-    ("openai:gpt-5-mini", "none"),                       # S-D: GPT-5 no reasoning
-    ("openai:gpt-5-mini", "low"),                        # S-E: GPT-5 light reasoning
-    ("openai:gpt-5-nano", "low"),                        # S-F: Budget floor
-    ("anthropic:claude-haiku-4-5", "low"),               # S-G: Anthropic fast
-    ("google-gla:gemini-3.1-flash-lite-preview", "low"), # S-H: Newest Google budget
+    ("google-gla:gemini-3-flash-preview", "low"),  # S-A: Current default
+    ("google-gla:gemini-3-flash-preview", "minimal"),  # S-B: Less reasoning
+    ("google-gla:gemini-3-flash-preview", "medium"),  # S-C: More reasoning
+    ("openai:gpt-5-mini", "none"),  # S-D: GPT-5 no reasoning
+    ("openai:gpt-5-mini", "low"),  # S-E: GPT-5 light reasoning
+    ("openai:gpt-5-nano", "low"),  # S-F: Budget floor
+    ("anthropic:claude-haiku-4-5", "low"),  # S-G: Anthropic fast
+    ("google-gla:gemini-3.1-flash-lite-preview", "low"),  # S-H: Newest Google budget
 ]
 
 # Model configs for base-tier agents
 BASE_CONFIGS = [
-    ("openai:gpt-5.4", "none"),                          # B-A: Current default
-    ("openai:gpt-5.4", "low"),                           # B-B: Light reasoning
-    ("openai:gpt-5.4", "medium"),                        # B-C: Medium reasoning
-    ("anthropic:claude-sonnet-4-6", "low"),               # B-D: Sonnet low
-    ("anthropic:claude-sonnet-4-6", "medium"),            # B-E: Sonnet medium
-    ("anthropic:claude-opus-4-6", "low"),                 # B-F: Opus low
-    ("anthropic:claude-opus-4-6", "medium"),              # B-G: Opus medium
-    ("google-gla:gemini-3.1-pro-preview", "low"),        # B-H: Gemini Pro low
-    ("google-gla:gemini-3.1-pro-preview", "medium"),     # B-I: Gemini Pro medium
-    ("openai:gpt-5-mini", "medium"),                     # B-J: Cheap + reasoning
-    ("openai:gpt-5-mini", "high"),                       # B-K: Cheap + high reasoning
-    ("google-gla:gemini-3-flash-preview", "medium"),     # B-L: Flash for base tasks
+    ("openai:gpt-5.4", "none"),  # B-A: Current default
+    ("openai:gpt-5.4", "low"),  # B-B: Light reasoning
+    ("openai:gpt-5.4", "medium"),  # B-C: Medium reasoning
+    ("anthropic:claude-sonnet-4-6", "low"),  # B-D: Sonnet low
+    ("anthropic:claude-sonnet-4-6", "medium"),  # B-E: Sonnet medium
+    ("anthropic:claude-opus-4-6", "low"),  # B-F: Opus low
+    ("anthropic:claude-opus-4-6", "medium"),  # B-G: Opus medium
+    ("google-gla:gemini-3.1-pro-preview", "low"),  # B-H: Gemini Pro low
+    ("google-gla:gemini-3.1-pro-preview", "medium"),  # B-I: Gemini Pro medium
+    ("openai:gpt-5-mini", "medium"),  # B-J: Cheap + reasoning
+    ("openai:gpt-5-mini", "high"),  # B-K: Cheap + high reasoning
+    ("google-gla:gemini-3-flash-preview", "medium"),  # B-L: Flash for base tasks
 ]
 
 
 # ---------------------------------------------------------------------------
 # Model override helpers
 # ---------------------------------------------------------------------------
+
 
 def set_model_override(agent_tag: str, model_spec: str, reasoning: str) -> None:
     """Set environment variables to override model for an agent tag."""
@@ -200,10 +211,12 @@ def get_config_with_overrides(model_spec: str, reasoning: str, tier: str = "base
 # Agent test runners
 # ---------------------------------------------------------------------------
 
+
 async def run_ontology_query_gen(finding: dict[str, str], model: str, reasoning: str) -> RunResult:
     """Test the ontology query generator agent."""
     # Monkey-patch the settings module to use our config
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "small")
 
@@ -247,6 +260,7 @@ async def run_ontology_query_gen(finding: dict[str, str], model: str, reasoning:
 async def run_anatomic_query_gen(finding: dict[str, str], model: str, reasoning: str) -> RunResult:
     """Test the anatomic query generator agent."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "small")
 
@@ -290,6 +304,7 @@ async def run_anatomic_query_gen(finding: dict[str, str], model: str, reasoning:
 async def run_similar_term_gen(finding: dict[str, str], model: str, reasoning: str) -> RunResult:
     """Test the similar models term generation agent."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "small")
 
@@ -341,6 +356,7 @@ async def run_similar_term_gen(finding: dict[str, str], model: str, reasoning: s
 async def run_finding_description(finding: dict[str, str], model: str, reasoning: str) -> RunResult:
     """Test the finding description agent."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "small")
 
@@ -381,9 +397,12 @@ async def run_finding_description(finding: dict[str, str], model: str, reasoning
         config_mod.settings = old_settings
 
 
-async def run_ontology_categorization(finding: dict[str, str], search_results: list, query_terms: list[str], model: str, reasoning: str) -> RunResult:
+async def run_ontology_categorization(
+    finding: dict[str, str], search_results: list, query_terms: list[str], model: str, reasoning: str
+) -> RunResult:
     """Test the ontology categorization agent with pre-fetched search results."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "base")
 
@@ -433,15 +452,19 @@ async def run_ontology_categorization(finding: dict[str, str], search_results: l
         config_mod.settings = old_settings
 
 
-async def run_anatomic_selection(finding: dict[str, str], search_results: list, model: str, reasoning: str) -> RunResult:
+async def run_anatomic_selection(
+    finding: dict[str, str], search_results: list, model: str, reasoning: str
+) -> RunResult:
     """Test the anatomic location selection agent with pre-fetched search results."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "small")
 
     try:
-        from findingmodel_ai.search.anatomic import create_location_selection_agent
         import json as json_mod
+
+        from findingmodel_ai.search.anatomic import create_location_selection_agent
 
         agent = create_location_selection_agent()
         prompt = f"""
@@ -492,9 +515,12 @@ Select the best primary anatomic location and 2-3 good alternates.
         config_mod.settings = old_settings
 
 
-async def run_similar_analysis(finding: dict[str, str], search_results_data: list[dict], model: str, reasoning: str) -> RunResult:
+async def run_similar_analysis(
+    finding: dict[str, str], search_results_data: list[dict], model: str, reasoning: str
+) -> RunResult:
     """Test the similar models analysis agent with pre-fetched search results."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "base")
 
@@ -561,11 +587,12 @@ Analyze and determine if any existing definitions are similar enough that editin
 async def run_nl_editor(model_json: str, command: str, model: str, reasoning: str) -> RunResult:
     """Test the natural language editor agent."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "base")
 
     try:
-        from findingmodel.finding_model import FindingModelFull
+        from findingmodel import FindingModelFull
         from findingmodel_ai.authoring.editor import edit_model_natural_language
 
         fm = FindingModelFull.model_validate_json(model_json)
@@ -611,6 +638,7 @@ async def run_nl_editor(model_json: str, command: str, model: str, reasoning: st
 async def run_markdown_import(finding_name: str, markdown_text: str, model: str, reasoning: str) -> RunResult:
     """Test the markdown import agent."""
     import findingmodel_ai.config as config_mod
+
     old_settings = config_mod.settings
     config_mod.settings = get_config_with_overrides(model, reasoning, "base")
 
@@ -694,12 +722,15 @@ PNEUMOTHORAX_OUTLINE = """## Attributes
 # Orchestration
 # ---------------------------------------------------------------------------
 
+
 def print_result(result: RunResult) -> None:
     """Print a single result in a readable format."""
     status = "OK" if not result.errors else "FAIL"
-    print(f"  [{status}] {result.agent_name} | {result.input_name[:30]:30s} | "
-          f"{result.model:45s} | reason={result.reasoning:7s} | "
-          f"{result.latency_ms:8.0f}ms | {result.output_summary}")
+    print(
+        f"  [{status}] {result.agent_name} | {result.input_name[:30]:30s} | "
+        f"{result.model:45s} | reason={result.reasoning:7s} | "
+        f"{result.latency_ms:8.0f}ms | {result.output_summary}"
+    )
     if result.errors:
         for err in result.errors:
             print(f"         ERROR: {err[:120]}")
@@ -743,8 +774,11 @@ async def run_base_tier_agents_needing_context(
             # Ontology categorization
             if ctx.get("ontology_results") and ctx.get("query_terms"):
                 result = await run_ontology_categorization(
-                    finding, ctx["ontology_results"], ctx["query_terms"],
-                    config_model, config_reasoning,
+                    finding,
+                    ctx["ontology_results"],
+                    ctx["query_terms"],
+                    config_model,
+                    config_reasoning,
                 )
                 print_result(result)
                 results.append(result)
@@ -752,8 +786,10 @@ async def run_base_tier_agents_needing_context(
             # Anatomic selection
             if ctx.get("anatomic_results"):
                 result = await run_anatomic_selection(
-                    finding, ctx["anatomic_results"],
-                    config_model, config_reasoning,
+                    finding,
+                    ctx["anatomic_results"],
+                    config_model,
+                    config_reasoning,
                 )
                 print_result(result)
                 results.append(result)
@@ -761,8 +797,10 @@ async def run_base_tier_agents_needing_context(
             # Similar models analysis
             if ctx.get("similar_results"):
                 result = await run_similar_analysis(
-                    finding, ctx["similar_results"],
-                    config_model, config_reasoning,
+                    finding,
+                    ctx["similar_results"],
+                    config_model,
+                    config_reasoning,
                 )
                 print_result(result)
                 results.append(result)
@@ -803,7 +841,7 @@ async def prefetch_contexts(findings: list[dict[str, str]]) -> dict[str, dict[st
 
         # Ontology search
         try:
-            from findingmodel_ai.search.ontology import generate_finding_query_terms, execute_ontology_search
+            from findingmodel_ai.search.ontology import execute_ontology_search, generate_finding_query_terms
 
             query_terms = await generate_finding_query_terms(finding["name"], finding.get("description"))
             ctx["query_terms"] = query_terms
@@ -815,8 +853,8 @@ async def prefetch_contexts(findings: list[dict[str, str]]) -> dict[str, dict[st
 
         # Anatomic search
         try:
-            from findingmodel_ai.search.anatomic import generate_anatomic_query_terms, execute_anatomic_search
             from anatomic_locations import AnatomicLocationIndex
+            from findingmodel_ai.search.anatomic import execute_anatomic_search, generate_anatomic_query_terms
 
             query_info = await generate_anatomic_query_terms(finding["name"], finding.get("description"))
             async with AnatomicLocationIndex() as index:
@@ -857,17 +895,18 @@ async def load_test_model_json() -> str:
 # Main entry points
 # ---------------------------------------------------------------------------
 
+
 async def run_full_audit() -> None:
     """Run the complete audit: all agents, all configs, all inputs."""
     output_dir = REPO_ROOT / "scripts" / "audit_results"
     output_dir.mkdir(exist_ok=True)
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     all_results: list[RunResult] = []
 
     print("=" * 80)
     print("AGENT PERFORMANCE AUDIT")
-    print(f"Started: {datetime.now(timezone.utc).isoformat()}")
+    print(f"Started: {datetime.now(UTC).isoformat()}")
     print("=" * 80)
 
     # Step 1: Pre-fetch contexts for downstream agents
@@ -930,7 +969,9 @@ def main() -> None:
     parser.add_argument("--agent", type=str, help="Run specific agent only")
     parser.add_argument("--model", type=str, help="Model override (e.g., 'openai:gpt-5-mini')")
     parser.add_argument("--reasoning", type=str, default="low", help="Reasoning level override")
-    parser.add_argument("--group", type=str, choices=["search", "authoring", "all"], default="all", help="Agent group to test")
+    parser.add_argument(
+        "--group", type=str, choices=["search", "authoring", "all"], default="all", help="Agent group to test"
+    )
     args = parser.parse_args()
 
     if args.full:
