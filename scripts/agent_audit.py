@@ -2,7 +2,7 @@
 """Agent Performance Audit Script.
 
 Systematically tests all findingmodel-ai agents (except enrichment) across
-multiple model × reasoning configurations to compare quality, latency, and cost.
+multiple model x reasoning configurations to compare quality, latency, and cost.
 
 Usage:
     # Run all agents with current defaults
@@ -26,9 +26,9 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # Add packages to path for imports
 REPO_ROOT = Path(__file__).parent.parent
@@ -36,6 +36,9 @@ sys.path.insert(0, str(REPO_ROOT / "packages" / "findingmodel-ai" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "packages" / "findingmodel" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "packages" / "anatomic-locations" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "packages" / "oidm-common" / "src"))
+
+if TYPE_CHECKING:
+    from findingmodel_ai.config import FindingModelAIConfig
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +166,7 @@ def clear_model_overrides() -> None:
             del os.environ[key]
 
 
-def get_config_with_overrides(model_spec: str, reasoning: str, tier: str = "base"):
+def get_config_with_overrides(model_spec: str, reasoning: str, tier: str = "base") -> "FindingModelAIConfig":
     """Create a fresh config with the specified model and reasoning."""
     from findingmodel_ai.config import FindingModelAIConfig
 
@@ -440,8 +443,9 @@ async def run_anatomic_selection(finding: dict[str, str], search_results: list, 
     config_mod.settings = get_config_with_overrides(model, reasoning, "small")
 
     try:
-        from findingmodel_ai.search.anatomic import create_location_selection_agent
         import json as json_mod
+
+        from findingmodel_ai.search.anatomic import create_location_selection_agent
 
         agent = create_location_selection_agent()
         prompt = f"""
@@ -718,7 +722,7 @@ async def run_small_tier_agents(findings: list[dict[str, str]], configs: list[tu
 
     for config_model, config_reasoning in configs:
         print(f"\n--- Config: {config_model} / reasoning={config_reasoning} ---")
-        for agent_name, runner in runners:
+        for _agent_name, runner in runners:
             for finding in findings:
                 result = await runner(finding, config_model, config_reasoning)
                 print_result(result)
@@ -803,7 +807,7 @@ async def prefetch_contexts(findings: list[dict[str, str]]) -> dict[str, dict[st
 
         # Ontology search
         try:
-            from findingmodel_ai.search.ontology import generate_finding_query_terms, execute_ontology_search
+            from findingmodel_ai.search.ontology import execute_ontology_search, generate_finding_query_terms
 
             query_terms = await generate_finding_query_terms(finding["name"], finding.get("description"))
             ctx["query_terms"] = query_terms
@@ -815,8 +819,8 @@ async def prefetch_contexts(findings: list[dict[str, str]]) -> dict[str, dict[st
 
         # Anatomic search
         try:
-            from findingmodel_ai.search.anatomic import generate_anatomic_query_terms, execute_anatomic_search
             from anatomic_locations import AnatomicLocationIndex
+            from findingmodel_ai.search.anatomic import execute_anatomic_search, generate_anatomic_query_terms
 
             query_info = await generate_anatomic_query_terms(finding["name"], finding.get("description"))
             async with AnatomicLocationIndex() as index:
@@ -847,7 +851,7 @@ async def prefetch_contexts(findings: list[dict[str, str]]) -> dict[str, dict[st
     return contexts
 
 
-async def load_test_model_json() -> str:
+def load_test_model_json() -> str:
     """Load a test FindingModelFull JSON for editing tests."""
     test_data = REPO_ROOT / "packages" / "findingmodel" / "tests" / "data" / "defs" / "pulmonary_embolism.fm.json"
     return test_data.read_text(encoding="utf-8")
@@ -862,12 +866,12 @@ async def run_full_audit() -> None:
     output_dir = REPO_ROOT / "scripts" / "audit_results"
     output_dir.mkdir(exist_ok=True)
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     all_results: list[RunResult] = []
 
     print("=" * 80)
     print("AGENT PERFORMANCE AUDIT")
-    print(f"Started: {datetime.now(timezone.utc).isoformat()}")
+    print(f"Started: {datetime.now(UTC).isoformat()}")
     print("=" * 80)
 
     # Step 1: Pre-fetch contexts for downstream agents
@@ -886,7 +890,7 @@ async def run_full_audit() -> None:
 
     # Step 4: Authoring agents
     print("\n### PHASE 4: Authoring agents (editor, markdown import) ###")
-    model_json = await load_test_model_json()
+    model_json = load_test_model_json()
     authoring_results = await run_authoring_agents(BASE_CONFIGS, model_json)
     all_results.extend(authoring_results)
 
@@ -909,10 +913,7 @@ async def run_quick_test(agent_name: str | None = None, model: str | None = None
     """Run a quick test for a single agent with current defaults or specified override."""
     findings = FINDINGS[:2]  # Just first 2 for quick test
 
-    if model and reasoning:
-        configs = [(model, reasoning)]
-    else:
-        configs = [("google-gla:gemini-3-flash-preview", "low")]  # Current small default
+    configs = [(model, reasoning)] if model and reasoning else [("google-gla:gemini-3-flash-preview", "low")]
 
     print(f"Quick test: agent={agent_name or 'all'}, configs={configs}")
 

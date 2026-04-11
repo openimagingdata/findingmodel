@@ -165,10 +165,9 @@ METADATA_FINDINGS = {
 # Single-run mode: called as subprocess with env vars already set
 # ---------------------------------------------------------------------------
 
-def run_one(agent_tag: str, model: str, reasoning: str, finding_name: str) -> None:
+def run_one(agent_tag: str, model: str, reasoning: str, finding_name: str) -> None:  # noqa: C901
     """Execute a single agent call. Env vars must be set BEFORE this process starts."""
     import asyncio
-    import os
 
     # Set path for imports
     sys.path.insert(0, str(REPO_ROOT / "packages" / "findingmodel-ai" / "src"))
@@ -292,7 +291,7 @@ def run_one(agent_tag: str, model: str, reasoning: str, finding_name: str) -> No
                              w=len(result.review.warnings))
 
             elif agent_tag == "similar_plan":
-                from findingmodel_ai.search.similar import create_planning_agent, _build_finding_description
+                from findingmodel_ai.search.similar import _build_finding_description, create_planning_agent
                 agent = create_planning_agent()
                 finding_desc = _build_finding_description(finding_name, description)
                 prompt = f"Generate search terms and metadata hypotheses for this proposed finding:\n\n{finding_desc}"
@@ -358,6 +357,7 @@ def run_comparison(name: str) -> None:
                         capture_output=True,
                         text=True,
                         timeout=180,
+                        check=False,
                     )
                     if result.returncode == 0:
                         for line in result.stdout.strip().splitlines():
