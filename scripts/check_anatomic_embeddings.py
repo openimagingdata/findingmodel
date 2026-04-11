@@ -55,9 +55,7 @@ def check_one_db(db_path: Path, min_nonzero_ratio: float) -> tuple[bool, str]:
             if profile is not None:
                 profile_label = f"{profile[0]}/{profile[1]}/{profile[2]}"
 
-        total = conn.execute(
-            "SELECT COUNT(*) FROM anatomic_locations WHERE vector IS NOT NULL"
-        ).fetchone()[0]
+        total = conn.execute("SELECT COUNT(*) FROM anatomic_locations WHERE vector IS NOT NULL").fetchone()[0]
         nonzero = conn.execute(
             """
             SELECT COUNT(*)

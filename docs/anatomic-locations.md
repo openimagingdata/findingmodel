@@ -2,6 +2,8 @@
 
 Query and navigate anatomic locations with hierarchy traversal, laterality variants, and semantic search.
 
+See also: [Anatomic Location Properties Review](./anatomic-location-properties-review.md) for a field-by-field summary of the `AnatomicLocation` model, allowed enum values, and current source/DB coverage.
+
 ## Quick Start
 
 The database auto-downloads on first use. No setup required.

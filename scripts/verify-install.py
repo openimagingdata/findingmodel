@@ -25,7 +25,14 @@ console = Console()
 PACKAGES = [
     ("oidm-common", "0.2.0", "oidm_common", None, None, None),
     ("findingmodel", "1.0.0", "findingmodel", "findingmodel", "findingmodel", "finding_models.duckdb"),
-    ("anatomic-locations", "0.2.0", "anatomic_locations", "anatomic-locations", "anatomic-locations", "anatomic_locations.duckdb"),
+    (
+        "anatomic-locations",
+        "0.2.0",
+        "anatomic_locations",
+        "anatomic-locations",
+        "anatomic-locations",
+        "anatomic_locations.duckdb",
+    ),
     ("findingmodel-ai", "0.2.0", "findingmodel_ai", "findingmodel-ai", None, None),
 ]
 
@@ -101,10 +108,17 @@ def test_imports() -> None:
     console.print("\n[bold]=== Testing package imports ===[/bold]")
     for pkg_name, version, import_name, _, _, _ in PACKAGES:
         result = run_capture([
-            "uv", "run", "--no-project", "--find-links", "dist/",
-            "--with", f"{pkg_name}=={version}",
-            "--", "python", "-c",
-            f"import {import_name}; print(f'{import_name} {{{import_name}.__version__}}')"
+            "uv",
+            "run",
+            "--no-project",
+            "--find-links",
+            "dist/",
+            "--with",
+            f"{pkg_name}=={version}",
+            "--",
+            "python",
+            "-c",
+            f"import {import_name}; print(f'{import_name} {{{import_name}.__version__}}')",
         ])
         if result.returncode != 0:
             console.print(f"[red]Failed to import {import_name}[/red]")
@@ -119,9 +133,16 @@ def test_cli_entry_points() -> None:
     for pkg_name, version, _, cli_cmd, _, _ in PACKAGES:
         if cli_cmd:
             result = run_capture([
-                "uv", "run", "--no-project", "--find-links", "dist/",
-                "--with", f"{pkg_name}=={version}",
-                "--", cli_cmd, "--help"
+                "uv",
+                "run",
+                "--no-project",
+                "--find-links",
+                "dist/",
+                "--with",
+                f"{pkg_name}=={version}",
+                "--",
+                cli_cmd,
+                "--help",
             ])
             if result.returncode != 0:
                 console.print(f"[red]Failed: {cli_cmd} --help[/red]")
@@ -139,17 +160,32 @@ def test_database_access() -> None:
     # Test findingmodel
     console.print("\n[dim]findingmodel:[/dim]")
     run([
-        "uv", "run", "--no-project", "--find-links", "dist/",
-        "--with", "findingmodel==1.0.0",
-        "--", "findingmodel", "index", "stats"
+        "uv",
+        "run",
+        "--no-project",
+        "--find-links",
+        "dist/",
+        "--with",
+        "findingmodel==1.0.0",
+        "--",
+        "findingmodel",
+        "index",
+        "stats",
     ])
 
     # Test anatomic-locations
     console.print("\n[dim]anatomic-locations:[/dim]")
     run([
-        "uv", "run", "--no-project", "--find-links", "dist/",
-        "--with", "anatomic-locations==0.2.0",
-        "--", "anatomic-locations", "stats"
+        "uv",
+        "run",
+        "--no-project",
+        "--find-links",
+        "dist/",
+        "--with",
+        "anatomic-locations==0.2.0",
+        "--",
+        "anatomic-locations",
+        "stats",
     ])
 
 
