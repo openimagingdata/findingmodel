@@ -2,17 +2,18 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from findingmodel import Index, logger
-from findingmodel.finding_info import FindingInfo
-from findingmodel.finding_model import (
+from findingmodel import (
     ChoiceAttribute,
     ChoiceAttributeIded,
     ChoiceValue,
     ChoiceValueIded,
+    FindingInfo,
     FindingModelBase,
     FindingModelFull,
+    Index,
     NumericAttribute,
     NumericAttributeIded,
+    logger,
 )
 
 # =============================================================================

@@ -18,7 +18,7 @@
     }
   ],
   "body_regions": ["chest"],
-  "subspecialties": ["CH", "ER"],
+  "subspecialties": ["CH", "ER", "VA"],
   "etiologies": ["vascular:thrombotic"],
   "entity_type": "diagnosis",
   "applicable_modalities": ["CT", "XR"],

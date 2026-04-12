@@ -16,7 +16,7 @@ import pytest_asyncio
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-from findingmodel.finding_model import AttributeType, FindingModelBase, FindingModelFull
+from findingmodel import AttributeType, FindingModelBase, FindingModelFull
 from findingmodel.index import FindingModelIndex, IndexEntry
 
 # ============================================================================
@@ -793,7 +793,7 @@ def test_add_ids_to_model_existing_oifm_id(index: FindingModelIndex, full_model:
 
 def test_add_ids_to_model_multiple_attributes(index: FindingModelIndex) -> None:
     """Test add_ids_to_model assigns unique IDs to multiple attributes."""
-    from findingmodel.finding_model import NumericAttribute
+    from findingmodel import NumericAttribute
 
     model = FindingModelBase(
         name="Test Model",
@@ -885,7 +885,7 @@ def test_add_ids_to_model_concurrent_id_generation(prebuilt_db_path: Path, base_
 
 def test_finalize_placeholder_single_placeholder(index: FindingModelIndex) -> None:
     """Test finalize_placeholder_attribute_ids with single placeholder."""
-    from findingmodel.finding_model import NumericAttributeIded
+    from findingmodel import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 
     model = FindingModelFull(
@@ -909,7 +909,7 @@ def test_finalize_placeholder_single_placeholder(index: FindingModelIndex) -> No
 
 def test_finalize_placeholder_multiple_placeholders(index: FindingModelIndex) -> None:
     """Test finalize_placeholder_attribute_ids with multiple placeholders."""
-    from findingmodel.finding_model import NumericAttributeIded
+    from findingmodel import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 
     model = FindingModelFull(
@@ -950,7 +950,7 @@ def test_finalize_placeholder_no_placeholders(index: FindingModelIndex, full_mod
 
 def test_finalize_placeholder_source_inference(index: FindingModelIndex) -> None:
     """Test that source is inferred from model ID."""
-    from findingmodel.finding_model import NumericAttributeIded
+    from findingmodel import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 
     model = FindingModelFull(
@@ -973,7 +973,7 @@ def test_finalize_placeholder_source_inference(index: FindingModelIndex) -> None
 
 def test_finalize_placeholder_explicit_source_override(index: FindingModelIndex) -> None:
     """Test that explicit source overrides inferred source."""
-    from findingmodel.finding_model import NumericAttributeIded
+    from findingmodel import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 
     model = FindingModelFull(
@@ -997,7 +997,7 @@ def test_finalize_placeholder_explicit_source_override(index: FindingModelIndex)
 
 def test_finalize_placeholder_choice_value_codes(index: FindingModelIndex) -> None:
     """Test that choice value codes are updated when placeholder is replaced."""
-    from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded
+    from findingmodel import ChoiceAttributeIded, ChoiceValueIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 
     model = FindingModelFull(
@@ -1027,7 +1027,7 @@ def test_finalize_placeholder_choice_value_codes(index: FindingModelIndex) -> No
 
 def test_finalize_placeholder_invalid_source(index: FindingModelIndex) -> None:
     """Test that invalid source raises error."""
-    from findingmodel.finding_model import NumericAttributeIded
+    from findingmodel import NumericAttributeIded
     from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 
     model = FindingModelFull(

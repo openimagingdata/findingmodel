@@ -4,8 +4,7 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
-from findingmodel.contributor import Organization, Person
-from findingmodel.finding_model import (
+from findingmodel import (
     AttributeType,
     ChoiceAttribute,
     ChoiceValue,
@@ -13,6 +12,7 @@ from findingmodel.finding_model import (
     FindingModelFull,
     NumericAttribute,
 )
+from findingmodel.contributor import Organization, Person
 from pydantic import ValidationError
 
 # ============================================================================
@@ -265,7 +265,7 @@ def test_real_model_markdown_with_codes(tn_fm_json: str, tn_markdown: str) -> No
 
 
 def test_base_model_markdown_with_metadata() -> None:
-    from findingmodel.facets import (
+    from findingmodel import (
         AgeProfile,
         BodyRegion,
         EntityType,
@@ -307,15 +307,16 @@ def test_base_model_markdown_with_metadata() -> None:
 
 
 def test_full_model_markdown_with_metadata() -> None:
-    from findingmodel.facets import (
+    from findingmodel import (
         BodyRegion,
+        ChoiceAttributeIded,
+        ChoiceValueIded,
         EntityType,
         ExpectedDuration,
         ExpectedTimeCourse,
         Modality,
         SexSpecificity,
     )
-    from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded
 
     model = FindingModelFull(
         oifm_id="OIFM_TEST_000001",
@@ -351,10 +352,12 @@ def test_full_model_markdown_with_metadata() -> None:
 
 def test_canary_roundtrip_metadata_survives() -> None:
     """Canary test: model with metadata survives JSON -> model -> markdown -> JSON -> model round-trip."""
-    from findingmodel.facets import (
+    from findingmodel import (
         AgeProfile,
         AgeStage,
         BodyRegion,
+        ChoiceAttributeIded,
+        ChoiceValueIded,
         EntityType,
         EtiologyCode,
         ExpectedDuration,
@@ -364,7 +367,6 @@ def test_canary_roundtrip_metadata_survives() -> None:
         Subspecialty,
         TimeCourseModifier,
     )
-    from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded
 
     original = FindingModelFull(
         oifm_id="OIFM_TEST_000001",

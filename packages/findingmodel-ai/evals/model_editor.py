@@ -28,7 +28,7 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 
 from pathlib import Path
 
-from findingmodel.finding_model import FindingModelFull
+from findingmodel import FindingModelFull
 from findingmodel_ai.authoring import editor as model_editor
 from pydantic import BaseModel
 from pydantic_evals import Case, Dataset

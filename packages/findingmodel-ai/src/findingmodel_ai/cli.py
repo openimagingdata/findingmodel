@@ -2,9 +2,8 @@ import asyncio
 from pathlib import Path
 
 import click
+from findingmodel import FindingInfo, FindingModelBase, FindingModelFull
 from findingmodel.config import ConfigurationError
-from findingmodel.finding_info import FindingInfo
-from findingmodel.finding_model import FindingModelBase, FindingModelFull
 from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
 from rich.console import Console
 

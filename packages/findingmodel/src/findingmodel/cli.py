@@ -9,8 +9,8 @@ from rich.console import Console
 from rich.table import Table
 
 from .config import get_settings
-from .finding_model import FindingModelBase, FindingModelFull
 from .index import Index
+from .types.models import FindingModelBase, FindingModelFull
 
 
 @click.group()

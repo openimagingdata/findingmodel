@@ -2,8 +2,7 @@ from types import SimpleNamespace
 
 import findingmodel.tools
 import pytest
-from findingmodel import FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
-from findingmodel.finding_model import ChoiceAttributeIded
+from findingmodel import ChoiceAttributeIded, FindingInfo, FindingModelBase, FindingModelFull, IndexCode, logger
 from findingmodel_ai.authoring import description as finding_description
 from findingmodel_ai.config import settings as ai_settings
 from pydantic_ai import models
@@ -446,7 +445,7 @@ async def test_create_model_from_markdown_with_test_model() -> None:
     """
     from unittest.mock import patch
 
-    from findingmodel.finding_model import ChoiceAttribute, ChoiceValue, FindingModelBase
+    from findingmodel import ChoiceAttribute, ChoiceValue, FindingModelBase
     from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
     from findingmodel_ai.config import FindingModelAIConfig
     from pydantic_ai.models.test import TestModel
@@ -517,7 +516,7 @@ async def test_create_model_from_markdown_basic_wiring() -> None:
     if not ai_settings.google_api_key or not ai_settings.google_api_key.get_secret_value():
         pytest.skip("GOOGLE_API_KEY not configured (required for small-tier model)")
 
-    from findingmodel.finding_model import FindingModelBase
+    from findingmodel import FindingModelBase
     from findingmodel_ai.authoring.description import create_info_from_name
     from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
 

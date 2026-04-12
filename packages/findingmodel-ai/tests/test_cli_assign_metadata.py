@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
-from findingmodel.finding_model import FindingModelFull
+from findingmodel import FindingModelFull
 from findingmodel_ai.cli import cli
 from findingmodel_ai.metadata.types import MetadataAssignmentResult, MetadataAssignmentReview
 

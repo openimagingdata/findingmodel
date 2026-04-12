@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import TypeVar
 
-from findingmodel.finding_model import FindingModelFull
+from findingmodel import FindingModelFull
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel_ai.authoring.editor import (
     EditResult,

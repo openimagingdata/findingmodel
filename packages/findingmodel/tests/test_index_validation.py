@@ -5,7 +5,7 @@ This module tests the protocol-based validation functions that work with any ind
 """
 
 import pytest
-from findingmodel.finding_model import (
+from findingmodel import (
     ChoiceAttributeIded,
     ChoiceValueIded,
     FindingModelFull,

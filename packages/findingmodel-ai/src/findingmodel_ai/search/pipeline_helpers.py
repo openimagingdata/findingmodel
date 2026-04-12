@@ -9,7 +9,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from findingmodel.facets import BodyRegion, EntityType, Modality, Subspecialty
+from findingmodel import BodyRegion, EntityType, Modality, Subspecialty
 from findingmodel.index import IndexEntry
 from pydantic import BaseModel, Field
 
