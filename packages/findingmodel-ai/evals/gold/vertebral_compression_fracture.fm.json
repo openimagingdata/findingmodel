@@ -1,0 +1,91 @@
+{
+  "oifm_id": "OIFM_GOLD_604829",
+  "name": "vertebral compression fracture",
+  "description": "A vertebral compression fracture is a collapse of a vertebral body, most commonly in the thoracic or lumbar spine, typically resulting from osteoporosis or trauma, visible as loss of vertebral height on imaging.",
+  "synonyms": ["VCF", "compression fracture", "vertebral fracture"],
+  "body_regions": ["spine"],
+  "subspecialties": ["MK", "NR", "ER"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["XR", "CT", "MR"],
+  "etiologies": ["traumatic:acute", "degenerative"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adolescent", "adult", "middle_aged", "aged"],
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "permanent",
+    "modifiers": ["stable"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "42942008",
+      "display": "Compression fracture of vertebral column"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID4658",
+      "display": "compression fracture"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID7741",
+      "display": "spine"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_715930",
+      "name": "presence",
+      "description": "Presence or absence of vertebral compression fracture",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Vertebral compression fracture is absent"
+        },
+        {
+          "name": "present",
+          "description": "Vertebral compression fracture is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of vertebral compression fracture cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_826041",
+      "name": "acuity",
+      "description": "Acuity of the vertebral compression fracture",
+      "type": "choice",
+      "values": [
+        {
+          "name": "acute",
+          "description": "Acute compression fracture"
+        },
+        {
+          "name": "chronic",
+          "description": "Chronic compression fracture"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Acuity of compression fracture cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_937152",
+      "name": "height loss percentage",
+      "description": "Estimated percentage of vertebral body height loss",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 100
+    }
+  ]
+}

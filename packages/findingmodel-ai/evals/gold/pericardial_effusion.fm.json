@@ -1,0 +1,92 @@
+{
+  "oifm_id": "OIFM_GOLD_729415",
+  "name": "pericardial effusion",
+  "description": "Pericardial effusion is the accumulation of fluid within the pericardial sac surrounding the heart, which may be serous, hemorrhagic, or exudative, and can range from a small physiologic amount to a large hemodynamically significant collection.",
+  "synonyms": ["fluid around heart", "pericardial fluid collection"],
+  "body_regions": ["chest"],
+  "subspecialties": ["CA", "CH"],
+  "entity_type": "finding",
+  "applicable_modalities": ["CT", "US", "MR"],
+  "etiologies": ["inflammatory", "neoplastic:malignant"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages",
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "weeks",
+    "modifiers": ["evolving"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "373945007",
+      "display": "Pericardial effusion"
+    },
+    {
+      "system": "LOINC",
+      "code": "93664-1",
+      "display": "Pericardial effusion"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID38588",
+      "display": "pericardial effusion"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID1407",
+      "display": "pericardium"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_318492",
+      "name": "presence",
+      "description": "Presence or absence of pericardial effusion",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Pericardial effusion is absent"
+        },
+        {
+          "name": "present",
+          "description": "Pericardial effusion is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of pericardial effusion cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_427361",
+      "name": "size",
+      "description": "Size of pericardial effusion",
+      "type": "choice",
+      "values": [
+        {
+          "name": "trace",
+          "description": "Trace pericardial effusion"
+        },
+        {
+          "name": "small",
+          "description": "Small pericardial effusion"
+        },
+        {
+          "name": "moderate",
+          "description": "Moderate pericardial effusion"
+        },
+        {
+          "name": "large",
+          "description": "Large pericardial effusion"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

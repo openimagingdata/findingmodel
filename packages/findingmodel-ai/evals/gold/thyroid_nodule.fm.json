@@ -1,0 +1,106 @@
+{
+  "oifm_id": "OIFM_GOLD_619473",
+  "name": "thyroid nodule",
+  "description": "A thyroid nodule is a discrete lesion within the thyroid gland that is radiologically distinct from the surrounding thyroid parenchyma, commonly detected incidentally on imaging and evaluated by ultrasound for malignancy risk.",
+  "synonyms": ["thyroid mass", "thyroid lesion"],
+  "body_regions": ["neck"],
+  "subspecialties": ["HN"],
+  "entity_type": "finding",
+  "applicable_modalities": ["US", "CT", "MR"],
+  "etiologies": ["neoplastic:benign", "neoplastic:potential"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["stable"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID7578",
+      "display": "thyroid gland"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "237495005",
+      "display": "Thyroid nodule"
+    },
+    {
+      "system": "LOINC",
+      "code": "LA14304-2",
+      "display": "Thyroid nodule"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID50509",
+      "display": "thyroid nodule"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_730584",
+      "name": "presence",
+      "description": "Presence or absence of thyroid nodule",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Thyroid nodule is absent"
+        },
+        {
+          "name": "present",
+          "description": "Thyroid nodule is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of thyroid nodule cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_841695",
+      "name": "size",
+      "description": "The maximum diameter of the thyroid nodule in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 80,
+      "unit": "mm",
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_952706",
+      "name": "TI-RADS category",
+      "description": "The ACR TI-RADS risk stratification category of the thyroid nodule",
+      "type": "choice",
+      "values": [
+        {
+          "name": "TR1",
+          "description": "Benign"
+        },
+        {
+          "name": "TR2",
+          "description": "Not suspicious"
+        },
+        {
+          "name": "TR3",
+          "description": "Mildly suspicious"
+        },
+        {
+          "name": "TR4",
+          "description": "Moderately suspicious"
+        },
+        {
+          "name": "TR5",
+          "description": "Highly suspicious"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

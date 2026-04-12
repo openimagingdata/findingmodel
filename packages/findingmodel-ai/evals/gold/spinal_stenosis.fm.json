@@ -1,0 +1,108 @@
+{
+  "oifm_id": "OIFM_GOLD_718493",
+  "name": "spinal stenosis",
+  "description": "Spinal stenosis is the narrowing of the spinal canal, lateral recesses, or neural foramina, typically from degenerative changes including disc bulging, facet hypertrophy, and ligamentum flavum thickening, resulting in compression of neural structures.",
+  "synonyms": ["central canal stenosis", "spinal canal narrowing"],
+  "body_regions": ["spine"],
+  "subspecialties": ["NR", "MK"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["MR", "CT"],
+  "etiologies": ["degenerative"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "76107001",
+      "display": "Spinal stenosis"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID5028",
+      "display": "spinal stenosis"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID7741",
+      "display": "spine"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_829604",
+      "name": "presence",
+      "description": "Presence or absence of spinal stenosis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Spinal stenosis is absent"
+        },
+        {
+          "name": "present",
+          "description": "Spinal stenosis is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of spinal stenosis cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_930715",
+      "name": "severity",
+      "description": "Severity of spinal stenosis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "mild",
+          "description": "Mild spinal stenosis"
+        },
+        {
+          "name": "moderate",
+          "description": "Moderate spinal stenosis"
+        },
+        {
+          "name": "severe",
+          "description": "Severe spinal stenosis"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_041826",
+      "name": "region",
+      "description": "Spinal region of stenosis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "cervical",
+          "description": "Spinal stenosis in the cervical spine"
+        },
+        {
+          "name": "thoracic",
+          "description": "Spinal stenosis in the thoracic spine"
+        },
+        {
+          "name": "lumbar",
+          "description": "Spinal stenosis in the lumbar spine"
+        },
+        {
+          "name": "multilevel",
+          "description": "Spinal stenosis involving more than one spinal region"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "oifm_id": "OIFM_GOLD_846215",
+  "name": "subdural hematoma",
+  "description": "A subdural hematoma is a collection of blood in the subdural space between the dura mater and arachnoid membrane, typically resulting from tearing of bridging veins due to trauma or in the setting of coagulopathy.",
+  "synonyms": ["SDH", "subdural hemorrhage"],
+  "body_regions": ["head"],
+  "subspecialties": ["NR", "ER"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "MR"],
+  "etiologies": ["traumatic:acute", "vascular:hemorrhagic"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages",
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "weeks",
+    "modifiers": ["evolving"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID6383_RID5824",
+      "display": "intracranial head"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "95453001",
+      "display": "Subdural intracranial hematoma"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_694031",
+      "name": "presence",
+      "description": "Presence or absence of subdural hematoma",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Subdural hematoma is absent"
+        },
+        {
+          "name": "present",
+          "description": "Subdural hematoma is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of subdural hematoma cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_705142",
+      "name": "acuity",
+      "description": "The temporal acuity of the subdural hematoma",
+      "type": "choice",
+      "values": [
+        {
+          "name": "acute",
+          "description": "Acute subdural hematoma"
+        },
+        {
+          "name": "subacute",
+          "description": "Subacute subdural hematoma"
+        },
+        {
+          "name": "chronic",
+          "description": "Chronic subdural hematoma"
+        },
+        {
+          "name": "mixed",
+          "description": "Mixed acuity subdural hematoma"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_816253",
+      "name": "laterality",
+      "description": "The side of the subdural hematoma",
+      "type": "choice",
+      "values": [
+        {
+          "name": "right",
+          "description": "Right-sided subdural hematoma"
+        },
+        {
+          "name": "left",
+          "description": "Left-sided subdural hematoma"
+        },
+        {
+          "name": "bilateral",
+          "description": "Bilateral subdural hematoma"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

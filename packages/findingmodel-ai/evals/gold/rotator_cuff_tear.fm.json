@@ -1,0 +1,99 @@
+{
+  "oifm_id": "OIFM_GOLD_829504",
+  "name": "rotator cuff tear",
+  "description": "A rotator cuff tear is a partial or complete disruption of one or more tendons of the rotator cuff muscles, most commonly the supraspinatus, resulting in shoulder pain and weakness, diagnosed by MRI or ultrasound.",
+  "synonyms": ["torn rotator cuff", "rotator cuff rupture"],
+  "body_regions": ["upper_extremity"],
+  "subspecialties": ["MK"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["MR", "US"],
+  "etiologies": ["degenerative", "traumatic:acute"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adolescent", "adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "permanent",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "926335004",
+      "display": "Rupture of rotator cuff of shoulder"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID39518",
+      "display": "shoulder"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_940615",
+      "name": "presence",
+      "description": "Presence or absence of rotator cuff tear",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Rotator cuff tear is absent"
+        },
+        {
+          "name": "present",
+          "description": "Rotator cuff tear is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of rotator cuff tear cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_051726",
+      "name": "completeness",
+      "description": "Completeness of the rotator cuff tear",
+      "type": "choice",
+      "values": [
+        {
+          "name": "partial",
+          "description": "Partial-thickness rotator cuff tear"
+        },
+        {
+          "name": "full-thickness",
+          "description": "Full-thickness rotator cuff tear"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_162837",
+      "name": "tendon",
+      "description": "Affected rotator cuff tendon",
+      "type": "choice",
+      "values": [
+        {
+          "name": "supraspinatus",
+          "description": "Supraspinatus tendon tear"
+        },
+        {
+          "name": "infraspinatus",
+          "description": "Infraspinatus tendon tear"
+        },
+        {
+          "name": "subscapularis",
+          "description": "Subscapularis tendon tear"
+        },
+        {
+          "name": "teres minor",
+          "description": "Teres minor tendon tear"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "oifm_id": "OIFM_GOLD_482935",
+  "name": "lumbar disc herniation",
+  "description": "Lumbar disc herniation is the displacement of disc material beyond the intervertebral disc space in the lumbar spine, which may result in compression of adjacent neural structures and associated radiculopathy.",
+  "synonyms": ["herniated lumbar disc", "lumbar disc protrusion", "lumbar HNP", "slipped disc"],
+  "body_regions": ["spine"],
+  "subspecialties": ["NR", "MK"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["MR", "CT"],
+  "etiologies": ["degenerative", "mechanical"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["young_adult", "adult", "middle_aged", "aged"],
+    "more_common_in": ["adult", "middle_aged"]
+  },
+  "expected_time_course": {
+    "duration": "months",
+    "modifiers": ["evolving"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "448591000124106",
+      "display": "Herniation of nucleus pulposus of lumbar intervertebral disc"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID34573",
+      "display": "lumbar vertebral column"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_593046",
+      "name": "presence",
+      "description": "Presence or absence of lumbar disc herniation",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Lumbar disc herniation is absent"
+        },
+        {
+          "name": "present",
+          "description": "Lumbar disc herniation is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of lumbar disc herniation cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_604157",
+      "name": "level",
+      "description": "Spinal level of the disc herniation",
+      "type": "choice",
+      "values": [
+        {
+          "name": "L1-L2",
+          "description": "Herniation at L1-L2 level"
+        },
+        {
+          "name": "L2-L3",
+          "description": "Herniation at L2-L3 level"
+        },
+        {
+          "name": "L3-L4",
+          "description": "Herniation at L3-L4 level"
+        },
+        {
+          "name": "L4-L5",
+          "description": "Herniation at L4-L5 level"
+        },
+        {
+          "name": "L5-S1",
+          "description": "Herniation at L5-S1 level"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_715268",
+      "name": "type",
+      "description": "Type of disc herniation",
+      "type": "choice",
+      "values": [
+        {
+          "name": "protrusion",
+          "description": "Disc protrusion with broad base"
+        },
+        {
+          "name": "extrusion",
+          "description": "Disc extrusion with narrow neck"
+        },
+        {
+          "name": "sequestration",
+          "description": "Free disc fragment separated from parent disc"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

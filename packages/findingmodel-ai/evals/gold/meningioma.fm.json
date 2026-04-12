@@ -1,0 +1,72 @@
+{
+  "oifm_id": "OIFM_GOLD_391624",
+  "name": "meningioma",
+  "description": "A meningioma is a typically benign, slow-growing tumor arising from the meningeal coverings of the brain or spinal cord, commonly appearing as an extra-axial, homogeneously enhancing, dural-based mass on imaging.",
+  "synonyms": ["meningeal tumor", "intracranial meningioma"],
+  "body_regions": ["head"],
+  "subspecialties": ["NR"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["MR", "CT"],
+  "etiologies": ["neoplastic:benign"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adolescent", "adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["progressive"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID7091",
+      "display": "meningeal cluster"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "302820008",
+      "display": "Intracranial meningioma"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID4088",
+      "display": "meningioma"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_472819",
+      "name": "presence",
+      "description": "Presence or absence of meningioma",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Meningioma is absent"
+        },
+        {
+          "name": "present",
+          "description": "Meningioma is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of meningioma cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_583920",
+      "name": "size",
+      "description": "The maximum diameter of the meningioma in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 150,
+      "unit": "mm",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "oifm_id": "OIFM_GOLD_845291",
+  "name": "coronary artery calcification",
+  "description": "Coronary artery calcification is the deposition of calcium within the walls of the coronary arteries, a marker of atherosclerotic disease, commonly quantified by Agatston score on non-contrast CT.",
+  "synonyms": ["coronary calcification", "CAC", "coronary artery calcium"],
+  "body_regions": ["chest"],
+  "subspecialties": ["CA"],
+  "entity_type": "finding",
+  "applicable_modalities": ["CT"],
+  "etiologies": ["degenerative"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "permanent",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "445512009",
+      "display": "Calcification of coronary artery"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID50146",
+      "display": "coronary artery calcification"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID28727",
+      "display": "set of coronary arteries"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_639281",
+      "name": "presence",
+      "description": "Presence or absence of coronary artery calcification",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Coronary artery calcification is absent"
+        },
+        {
+          "name": "present",
+          "description": "Coronary artery calcification is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of coronary artery calcification cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_748392",
+      "name": "Agatston score",
+      "description": "Agatston calcium score quantifying coronary artery calcification",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 10000
+    }
+  ]
+}

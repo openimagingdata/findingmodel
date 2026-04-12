@@ -1,0 +1,79 @@
+{
+  "oifm_id": "OIFM_GOLD_051726",
+  "name": "anterior cruciate ligament tear",
+  "description": "An anterior cruciate ligament (ACL) tear is a partial or complete disruption of the ACL of the knee, typically resulting from a pivoting or hyperextension injury, and is a common cause of knee instability.",
+  "synonyms": ["ACL tear", "ACL rupture", "torn ACL"],
+  "body_regions": ["lower_extremity"],
+  "subspecialties": ["MK", "ER"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["MR"],
+  "etiologies": ["traumatic:acute", "traumatic:sequela"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adolescent", "young_adult", "adult", "middle_aged", "aged"],
+    "more_common_in": ["adolescent", "young_adult", "adult"]
+  },
+  "expected_time_course": {
+    "duration": "months",
+    "modifiers": ["evolving"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "239725005",
+      "display": "Rupture of anterior cruciate ligament"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID34594",
+      "display": "anterior cruciate ligament tear"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID2781",
+      "display": "anterior cruciate ligament"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_162948",
+      "name": "presence",
+      "description": "Presence or absence of anterior cruciate ligament tear",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "ACL tear is absent"
+        },
+        {
+          "name": "present",
+          "description": "ACL tear is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of ACL tear cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_274059",
+      "name": "completeness",
+      "description": "Completeness of the ACL tear",
+      "type": "choice",
+      "values": [
+        {
+          "name": "partial",
+          "description": "Partial ACL tear"
+        },
+        {
+          "name": "complete",
+          "description": "Complete ACL tear"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

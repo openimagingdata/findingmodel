@@ -1,0 +1,91 @@
+{
+  "oifm_id": "OIFM_GOLD_814726",
+  "name": "ovarian cyst",
+  "description": "An ovarian cyst is a fluid-filled sac within or on the surface of an ovary, which may be physiologic (follicular or corpus luteum) or pathologic, commonly detected incidentally on pelvic imaging in women of reproductive age.",
+  "synonyms": ["ovarian follicular cyst", "adnexal cyst"],
+  "body_regions": ["pelvis"],
+  "subspecialties": ["GU", "OB"],
+  "entity_type": "finding",
+  "applicable_modalities": ["US", "CT", "MR"],
+  "sex_specificity": "female-specific",
+  "age_profile": {
+    "applicability": ["adolescent", "young_adult", "adult", "middle_aged", "aged"],
+    "more_common_in": ["young_adult", "adult"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["recurrent"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "79883001",
+      "display": "Cyst of ovary"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID34656",
+      "display": "ovarian cyst"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID290",
+      "display": "ovary"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_925837",
+      "name": "presence",
+      "description": "Presence or absence of ovarian cyst",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Ovarian cyst is absent"
+        },
+        {
+          "name": "present",
+          "description": "Ovarian cyst is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of ovarian cyst cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_036948",
+      "name": "laterality",
+      "description": "Side of the ovarian cyst",
+      "type": "choice",
+      "values": [
+        {
+          "name": "right",
+          "description": "Right ovarian cyst"
+        },
+        {
+          "name": "left",
+          "description": "Left ovarian cyst"
+        },
+        {
+          "name": "bilateral",
+          "description": "Bilateral ovarian cysts"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_147059",
+      "name": "size",
+      "description": "Maximum diameter of ovarian cyst in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 300,
+      "unit": "mm"
+    }
+  ]
+}

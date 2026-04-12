@@ -1,0 +1,83 @@
+{
+  "oifm_id": "OIFM_GOLD_258160",
+  "name": "uterine leiomyoma",
+  "description": "Uterine leiomyoma (fibroid) is a benign smooth muscle tumor of the uterus, the most common pelvic tumor in women, appearing as a well-circumscribed mass with variable signal intensity on MRI depending on cellularity and degeneration.",
+  "synonyms": ["uterine fibroid", "fibroid", "myoma"],
+  "body_regions": ["pelvis"],
+  "subspecialties": ["GU", "OB"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["US", "CT", "MR"],
+  "etiologies": ["neoplastic:benign"],
+  "sex_specificity": "female-specific",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged"],
+    "more_common_in": ["adult", "middle_aged"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "95315005",
+      "display": "Uterine leiomyoma"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID302",
+      "display": "uterus"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_369271",
+      "name": "presence",
+      "description": "Presence or absence of uterine leiomyoma",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Uterine leiomyoma is absent"
+        },
+        {
+          "name": "present",
+          "description": "Uterine leiomyoma is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of uterine leiomyoma cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_480382",
+      "name": "number",
+      "description": "Whether uterine leiomyoma is solitary or multiple",
+      "type": "choice",
+      "values": [
+        {
+          "name": "solitary",
+          "description": "Single uterine leiomyoma"
+        },
+        {
+          "name": "multiple",
+          "description": "Multiple uterine leiomyomas"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_591493",
+      "name": "largest diameter",
+      "description": "Maximum diameter of the largest uterine leiomyoma in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 200,
+      "unit": "mm"
+    }
+  ]
+}

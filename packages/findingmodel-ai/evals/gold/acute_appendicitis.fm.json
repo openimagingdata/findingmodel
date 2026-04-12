@@ -1,0 +1,82 @@
+{
+  "oifm_id": "OIFM_GOLD_271834",
+  "name": "acute appendicitis",
+  "description": "Acute appendicitis is inflammation of the vermiform appendix, typically presenting with right lower quadrant pain, and diagnosed on imaging by an enlarged, thick-walled, hyperenhancing appendix with surrounding inflammatory changes.",
+  "synonyms": ["appendicitis", "inflamed appendix"],
+  "body_regions": ["abdomen", "pelvis"],
+  "subspecialties": ["GI", "ER"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "US", "MR"],
+  "etiologies": ["inflammatory"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages"
+  },
+  "expected_time_course": {
+    "duration": "days",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "85189001",
+      "display": "Acute appendicitis"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID168",
+      "display": "appendix"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_382917",
+      "name": "presence",
+      "description": "Presence or absence of acute appendicitis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Acute appendicitis is absent"
+        },
+        {
+          "name": "present",
+          "description": "Acute appendicitis is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of acute appendicitis cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_491826",
+      "name": "diameter",
+      "description": "Maximum outer diameter of the appendix in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 30,
+      "unit": "mm"
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_502738",
+      "name": "perforation",
+      "description": "Whether the appendix is perforated",
+      "type": "choice",
+      "values": [
+        {
+          "name": "no",
+          "description": "No perforation"
+        },
+        {
+          "name": "yes",
+          "description": "Appendiceal perforation present"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

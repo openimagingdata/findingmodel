@@ -1,0 +1,100 @@
+{
+  "oifm_id": "OIFM_GOLD_537284",
+  "name": "primary lung malignancy",
+  "description": "Primary lung malignancy is a malignant neoplasm arising from the lung parenchyma or bronchial tree, most commonly non-small cell carcinoma, presenting as a mass, nodule, or infiltrate on imaging.",
+  "synonyms": ["lung cancer", "bronchogenic carcinoma", "primary lung cancer"],
+  "body_regions": ["chest"],
+  "subspecialties": ["CH", "OI", "MI"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "PET", "XR"],
+  "etiologies": ["neoplastic:malignant"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["progressive"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID1301",
+      "display": "lung"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "93880001",
+      "display": "Primary malignant neoplasm of lung"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_648395",
+      "name": "presence",
+      "description": "Presence or absence of primary lung malignancy",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Primary lung malignancy is absent"
+        },
+        {
+          "name": "present",
+          "description": "Primary lung malignancy is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of primary lung malignancy cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_759406",
+      "name": "size",
+      "description": "The maximum diameter of the primary lung malignancy in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 200,
+      "unit": "mm",
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_860517",
+      "name": "location",
+      "description": "The lobar location of the primary lung malignancy",
+      "type": "choice",
+      "values": [
+        {
+          "name": "right upper lobe",
+          "description": "Located in the right upper lobe"
+        },
+        {
+          "name": "right middle lobe",
+          "description": "Located in the right middle lobe"
+        },
+        {
+          "name": "right lower lobe",
+          "description": "Located in the right lower lobe"
+        },
+        {
+          "name": "left upper lobe",
+          "description": "Located in the left upper lobe"
+        },
+        {
+          "name": "left lower lobe",
+          "description": "Located in the left lower lobe"
+        },
+        {
+          "name": "central",
+          "description": "Located centrally"
+        }
+      ],
+      "required": false
+    }
+  ]
+}
