@@ -1,0 +1,83 @@
+{
+  "oifm_id": "OIFM_GOLD_215963",
+  "name": "rib fracture",
+  "description": "A rib fracture is a break in the continuity of one or more ribs, typically resulting from trauma, visible on imaging as a cortical disruption or lucent line through the rib.",
+  "synonyms": ["broken rib", "fractured rib"],
+  "body_regions": ["chest"],
+  "subspecialties": ["CH", "ER", "MK"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["XR", "CT", "MR"],
+  "etiologies": ["traumatic:acute"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages"
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["resolving"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID28591",
+      "display": "set of ribs"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "33737001",
+      "display": "Fracture of rib"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_326074",
+      "name": "presence",
+      "description": "Presence or absence of rib fracture",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Rib fracture is absent"
+        },
+        {
+          "name": "present",
+          "description": "Rib fracture is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of rib fracture cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_437185",
+      "name": "number of fractures",
+      "description": "The total number of rib fractures identified",
+      "type": "numeric",
+      "minimum": 1,
+      "maximum": 24,
+      "unit": null,
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_548296",
+      "name": "displacement",
+      "description": "Whether the rib fracture is displaced or nondisplaced",
+      "type": "choice",
+      "values": [
+        {
+          "name": "nondisplaced",
+          "description": "Nondisplaced rib fracture"
+        },
+        {
+          "name": "displaced",
+          "description": "Displaced rib fracture"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

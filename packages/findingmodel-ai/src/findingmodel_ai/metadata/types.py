@@ -68,6 +68,7 @@ class MetadataAssignmentReview(BaseModel):
     finding_name: str
     assignment_timestamp: datetime
     model_used: str
+    assignment_mode: str = "reassess"  # "reassess" or "fill_blanks_only"
     logfire_trace_id: str | None = None
     ontology_candidates: OntologyCandidateReport = Field(default_factory=OntologyCandidateReport)
     anatomic_candidates: list[AnatomicCandidate] = Field(default_factory=list)

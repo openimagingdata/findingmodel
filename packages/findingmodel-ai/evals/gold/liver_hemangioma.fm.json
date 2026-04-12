@@ -1,0 +1,82 @@
+{
+  "oifm_id": "OIFM_GOLD_394718",
+  "name": "hepatic hemangioma",
+  "description": "Hepatic hemangioma is the most common benign tumor of the liver, composed of vascular channels lined by endothelium, characteristically demonstrating peripheral nodular enhancement with progressive centripetal fill-in on contrast-enhanced imaging.",
+  "synonyms": ["liver hemangioma", "cavernous hemangioma of liver"],
+  "body_regions": ["abdomen"],
+  "subspecialties": ["GI"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "MR", "US"],
+  "etiologies": ["congenital"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "permanent",
+    "modifiers": ["stable"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "93469006",
+      "display": "Hemangioma of liver"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID58",
+      "display": "liver"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_617293",
+      "name": "presence",
+      "description": "Presence or absence of hepatic hemangioma",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Hepatic hemangioma is absent"
+        },
+        {
+          "name": "present",
+          "description": "Hepatic hemangioma is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of hepatic hemangioma cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_728394",
+      "name": "size",
+      "description": "Maximum diameter of hepatic hemangioma in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 200,
+      "unit": "mm"
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_839472",
+      "name": "number",
+      "description": "Whether hepatic hemangioma is solitary or multiple",
+      "type": "choice",
+      "values": [
+        {
+          "name": "solitary",
+          "description": "Single hepatic hemangioma"
+        },
+        {
+          "name": "multiple",
+          "description": "Multiple hepatic hemangiomas"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

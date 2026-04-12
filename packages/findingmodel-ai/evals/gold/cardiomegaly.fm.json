@@ -1,0 +1,65 @@
+{
+  "oifm_id": "OIFM_GOLD_163849",
+  "name": "cardiomegaly",
+  "description": "Cardiomegaly is the enlargement of the cardiac silhouette on imaging, typically defined as a cardiothoracic ratio greater than 0.5 on a PA chest radiograph, and may reflect chamber enlargement, pericardial effusion, or myocardial disease.",
+  "synonyms": ["enlarged heart", "cardiac enlargement"],
+  "body_regions": ["chest"],
+  "subspecialties": ["CA", "CH"],
+  "entity_type": "finding",
+  "applicable_modalities": ["XR", "CT"],
+  "etiologies": null,
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages",
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "months",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "8186001",
+      "display": "Cardiomegaly"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID1385",
+      "display": "heart"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_529174",
+      "name": "presence",
+      "description": "Presence or absence of cardiomegaly",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Cardiomegaly is absent"
+        },
+        {
+          "name": "present",
+          "description": "Cardiomegaly is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of cardiomegaly cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_618293",
+      "name": "cardiothoracic ratio",
+      "description": "Ratio of the maximum transverse cardiac diameter to the maximum transverse thoracic diameter",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 1.0
+    }
+  ]
+}

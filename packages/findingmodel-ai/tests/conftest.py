@@ -164,3 +164,29 @@ def use_findingmodel_test_db(monkeypatch: pytest.MonkeyPatch, findingmodel_test_
 
     config_module._settings = None
     return findingmodel_test_db_path
+
+
+# =============================================================================
+# Shared metadata-assignment test fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def finding_model() -> FindingModelFull:
+    return FindingModelFull(
+        oifm_id="OIFM_TEST_000001",
+        name="pneumonia",
+        description="Inflammation of the lung parenchyma visible on imaging.",
+        synonyms=["lung infection"],
+        tags=["chest"],
+        attributes=[
+            ChoiceAttributeIded(
+                oifma_id="OIFMA_TEST_000001",
+                name="severity",
+                values=[
+                    ChoiceValueIded(value_code="OIFMA_TEST_000001.0", name="mild"),
+                    ChoiceValueIded(value_code="OIFMA_TEST_000001.1", name="severe"),
+                ],
+            )
+        ],
+    )

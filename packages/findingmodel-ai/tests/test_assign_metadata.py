@@ -11,8 +11,6 @@ from findingmodel import (
     AgeProfile,
     AgeStage,
     BodyRegion,
-    ChoiceAttributeIded,
-    ChoiceValueIded,
     EntityType,
     EtiologyCode,
     ExpectedDuration,
@@ -43,27 +41,6 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
 models.ALLOW_MODEL_REQUESTS = False
-
-
-@pytest.fixture
-def finding_model() -> FindingModelFull:
-    return FindingModelFull(
-        oifm_id="OIFM_TEST_000001",
-        name="pneumonia",
-        description="Inflammation of the lung parenchyma visible on imaging.",
-        synonyms=["lung infection"],
-        tags=["chest"],
-        attributes=[
-            ChoiceAttributeIded(
-                oifma_id="OIFMA_TEST_000001",
-                name="severity",
-                values=[
-                    ChoiceValueIded(value_code="OIFMA_TEST_000001.0", name="mild"),
-                    ChoiceValueIded(value_code="OIFMA_TEST_000001.1", name="severe"),
-                ],
-            )
-        ],
-    )
 
 
 def _ontology_results() -> CategorizedOntologyConcepts:
@@ -137,13 +114,13 @@ async def test_assign_metadata_assembles_canonical_result(
         applicable_modalities=[Modality.CT, Modality.XR],
         ontology_decisions=[
             OntologyCandidateDecision(
-                candidate_id="RID5350",
+                candidate_id="RADLEX:RID5350",
                 relationship=OntologyCandidateRelationship.CLINICALLY_SUBSTITUTABLE,
                 selected_as_canonical=True,
                 rationale="RadLex near-equivalent for the same finding.",
             ),
             OntologyCandidateDecision(
-                candidate_id="RID9999",
+                candidate_id="RADLEX:RID9999",
                 relationship=OntologyCandidateRelationship.RELATED,
                 selected_as_canonical=False,
                 rationale="Describes a broader imaging appearance.",
@@ -167,19 +144,26 @@ async def test_assign_metadata_assembles_canonical_result(
         ("SNOMEDCT", "233604007"),
         ("RADLEX", "RID5350"),
     ]
+    assert [code.display for code in result.model.index_codes] == ["Pneumonia", "pneumonia"]
     assert result.model.anatomic_locations is not None
     assert [(code.system, code.code) for code in result.model.anatomic_locations] == [("ANATOMICLOCATIONS", "RID1301")]
+    assert [code.display for code in result.model.anatomic_locations] == ["lung"]
 
     assert result.review.logfire_trace_id == "trace-123"
     assert result.review.field_confidence["body_regions"] == FieldConfidence.HIGH
     assert len(result.review.ontology_candidates.canonical_codes) == 2
     assert len(result.review.ontology_candidates.review_candidates) == 1
+    assert result.review.ontology_candidates.canonical_codes[0].code.display == "Pneumonia"
+    assert result.review.ontology_candidates.canonical_codes[1].code.display == "pneumonia"
     assert result.review.ontology_candidates.review_candidates[0].code.code == "RID9999"
+    assert result.review.ontology_candidates.review_candidates[0].code.display == "lung opacity"
     assert (
         result.review.ontology_candidates.review_candidates[0].rejection_reason
         == OntologyCandidateRejectionReason.OVERLAPPING_SCOPE
     )
     assert len(result.review.anatomic_candidates) == 2
+    assert result.review.anatomic_candidates[0].location.display == "lung"
+    assert result.review.anatomic_candidates[1].location.display == "lower respiratory tract"
     assert result.review.classification_rationale
 
 
@@ -212,7 +196,12 @@ async def test_assign_metadata_function_model_receives_candidate_context(
             parts=[
                 ToolCallPart(
                     info.output_tools[0].name,
-                    {"classification_rationale": "No metadata changes required."},
+                    {
+                        "classification_rationale": "No metadata changes required.",
+                        "body_regions": ["chest"],
+                        "entity_type": "finding",
+                        "applicable_modalities": ["CT"],
+                    },
                     tool_call_id="pyd_ai_tool_call_id__output",
                 )
             ]
@@ -226,14 +215,16 @@ async def test_assign_metadata_function_model_receives_candidate_context(
     assert "RID5350" in captured["prompt"]
     assert "RID1301" in captured["prompt"]
     assert "lung infection" in captured["prompt"]
-    assert result.model.body_regions is None
+    assert '"display": "Pneumonia"' in captured["prompt"]
+    assert '"display": "lung"' in captured["prompt"]
+    assert result.model.entity_type == EntityType.FINDING
     assert result.model.index_codes is not None
     assert [(code.system, code.code) for code in result.model.index_codes] == [("SNOMEDCT", "233604007")]
     assert result.review.classification_rationale == "No metadata changes required."
 
 
 @pytest.mark.asyncio
-async def test_assign_metadata_fast_path_skips_classifier_when_model_is_complete(
+async def test_assign_metadata_reassesses_populated_model(
     finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     complete_model = finding_model.model_copy(
@@ -252,23 +243,51 @@ async def test_assign_metadata_fast_path_skips_classifier_when_model_is_complete
     )
     monkeypatch.setattr(
         "findingmodel_ai.metadata.assignment.match_ontology_concepts",
-        AsyncMock(side_effect=AssertionError("ontology gathering should be skipped")),
+        AsyncMock(return_value=_ontology_results()),
     )
     monkeypatch.setattr(
         "findingmodel_ai.metadata.assignment.find_anatomic_locations",
-        AsyncMock(side_effect=AssertionError("anatomic gathering should be skipped")),
+        AsyncMock(return_value=_anatomic_results()),
     )
-    monkeypatch.setattr(
-        "findingmodel_ai.metadata.assignment.create_metadata_assignment_agent",
-        lambda **_: (_ for _ in ()).throw(AssertionError("classifier should be skipped")),
+    monkeypatch.setattr("findingmodel_ai.metadata.assignment._get_trace_id", lambda: None)
+
+    classifier_called = False
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        subspecialties=[Subspecialty.CH],
+        etiologies=[EtiologyCode.INFLAMMATORY_INFECTIOUS],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.XR],
+        sex_specificity=SexSpecificity.SEX_NEUTRAL,
+        ontology_decisions=[
+            OntologyCandidateDecision(
+                candidate_id="SNOMEDCT:233604007",
+                relationship=OntologyCandidateRelationship.EXACT_MATCH,
+                selected_as_canonical=True,
+                rationale="Existing SNOMED code confirmed.",
+            ),
+        ],
+        classification_rationale="Confirmed existing metadata is correct.",
+        field_confidence={"body_regions": FieldConfidence.HIGH, "entity_type": FieldConfidence.HIGH},
     )
+
+    original_create = create_metadata_assignment_agent
+
+    def tracking_create(**kwargs: Any) -> Any:
+        nonlocal classifier_called
+        classifier_called = True
+        return original_create(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
+
+    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", tracking_create)
 
     result = await assign_metadata(complete_model)
 
-    assert result.model == complete_model
-    assert result.review.classification_rationale == "Fast-path: existing canonical data was sufficient."
+    assert classifier_called, "Classifier should always be called (no fast-path skip)"
+    assert result.review.assignment_mode == "reassess"
+    assert result.model.body_regions == [BodyRegion.CHEST]
+    assert result.model.entity_type == EntityType.FINDING
     assert result.review.ontology_candidates.canonical_codes[0].code.code == "233604007"
-    assert result.review.anatomic_candidates[0].selected is True
 
 
 @pytest.mark.asyncio
@@ -287,8 +306,14 @@ async def test_assign_metadata_surfaces_gathering_failures_as_warnings(
 
     decision = MetadataAssignmentDecision(
         body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
         classification_rationale="Applied metadata despite missing ontology candidates.",
-        field_confidence={"body_regions": FieldConfidence.MEDIUM},
+        field_confidence={
+            "body_regions": FieldConfidence.MEDIUM,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+        },
     )
     agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
     monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
@@ -339,8 +364,14 @@ async def test_assign_metadata_gathers_ontology_and_anatomic_in_parallel(
 
     decision = MetadataAssignmentDecision(
         body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
         classification_rationale="Parallel gather test.",
-        field_confidence={"body_regions": FieldConfidence.HIGH},
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+        },
     )
     agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
     monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)

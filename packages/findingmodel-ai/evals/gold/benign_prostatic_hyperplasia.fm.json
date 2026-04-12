@@ -1,0 +1,76 @@
+{
+  "oifm_id": "OIFM_GOLD_371592",
+  "name": "benign prostatic hyperplasia",
+  "description": "Benign prostatic hyperplasia (BPH) is the non-neoplastic enlargement of the prostate gland due to stromal and glandular hyperplasia, commonly seen in older men, resulting in lower urinary tract symptoms and visible as an enlarged prostate on imaging.",
+  "synonyms": ["BPH", "prostate enlargement", "enlarged prostate"],
+  "body_regions": ["pelvis"],
+  "subspecialties": ["GU"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["US", "MR", "CT"],
+  "etiologies": ["neoplastic:benign"],
+  "sex_specificity": "male-specific",
+  "age_profile": {
+    "applicability": ["middle_aged", "aged"],
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "266569009",
+      "display": "Benign prostatic hyperplasia"
+    },
+    {
+      "system": "LOINC",
+      "code": "LA27844-2",
+      "display": "Benign prostatic hyperplasia"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID3784",
+      "display": "benign prostatic hyperplasia"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID343",
+      "display": "prostate"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_482603",
+      "name": "presence",
+      "description": "Presence or absence of benign prostatic hyperplasia",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Benign prostatic hyperplasia is absent"
+        },
+        {
+          "name": "present",
+          "description": "Benign prostatic hyperplasia is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of benign prostatic hyperplasia cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_593714",
+      "name": "prostate volume",
+      "description": "Estimated prostate volume in milliliters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 300,
+      "unit": "mL"
+    }
+  ]
+}

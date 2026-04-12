@@ -1,0 +1,65 @@
+{
+  "oifm_id": "OIFM_GOLD_384059",
+  "name": "motion artifact",
+  "description": "Motion artifact is image degradation caused by patient movement during acquisition, resulting in blurring, ghosting, or misregistration that may limit diagnostic interpretation.",
+  "synonyms": ["motion blur", "patient motion", "movement artifact"],
+  "body_regions": ["whole_body"],
+  "subspecialties": ["SQ"],
+  "entity_type": "technique_issue",
+  "applicable_modalities": ["XR", "CT", "MR", "MG"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages"
+  },
+  "index_codes": [
+    {
+      "system": "RADLEX",
+      "code": "RID11423",
+      "display": "motion related artifact"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_941826",
+      "name": "severity",
+      "description": "Severity of motion artifact",
+      "type": "choice",
+      "values": [
+        {
+          "name": "mild",
+          "description": "Mild motion artifact"
+        },
+        {
+          "name": "moderate",
+          "description": "Moderate motion artifact"
+        },
+        {
+          "name": "severe",
+          "description": "Severe motion artifact"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_052937",
+      "name": "diagnostic quality",
+      "description": "Impact of motion artifact on diagnostic quality",
+      "type": "choice",
+      "values": [
+        {
+          "name": "diagnostic",
+          "description": "Study remains diagnostic despite motion artifact"
+        },
+        {
+          "name": "limited",
+          "description": "Motion artifact limits diagnostic evaluation"
+        },
+        {
+          "name": "nondiagnostic",
+          "description": "Motion artifact renders study nondiagnostic"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

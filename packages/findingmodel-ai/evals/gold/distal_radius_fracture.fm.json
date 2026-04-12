@@ -1,0 +1,91 @@
+{
+  "oifm_id": "OIFM_GOLD_940615",
+  "name": "distal radius fracture",
+  "description": "A distal radius fracture is a break in the distal end of the radius bone near the wrist joint, one of the most common fractures in clinical practice, typically resulting from a fall on an outstretched hand.",
+  "synonyms": ["wrist fracture", "broken wrist"],
+  "body_regions": ["upper_extremity"],
+  "subspecialties": ["MK", "ER"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["XR", "CT", "MR"],
+  "etiologies": ["traumatic:acute"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages",
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "weeks",
+    "modifiers": ["resolving"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "263199001",
+      "display": "Fracture of distal end of radius"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID2109",
+      "display": "radius"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_273948",
+      "name": "presence",
+      "description": "Presence or absence of distal radius fracture",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Distal radius fracture is absent"
+        },
+        {
+          "name": "present",
+          "description": "Distal radius fracture is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of distal radius fracture cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_384059",
+      "name": "displacement",
+      "description": "Displacement status of the fracture",
+      "type": "choice",
+      "values": [
+        {
+          "name": "nondisplaced",
+          "description": "Nondisplaced fracture"
+        },
+        {
+          "name": "displaced",
+          "description": "Displaced fracture"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_495160",
+      "name": "comminution",
+      "description": "Comminution status of the fracture",
+      "type": "choice",
+      "values": [
+        {
+          "name": "simple",
+          "description": "Simple fracture pattern"
+        },
+        {
+          "name": "comminuted",
+          "description": "Comminuted fracture"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

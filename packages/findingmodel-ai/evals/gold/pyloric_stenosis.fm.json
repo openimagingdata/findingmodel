@@ -1,0 +1,75 @@
+{
+  "oifm_id": "OIFM_GOLD_273948",
+  "name": "hypertrophic pyloric stenosis",
+  "description": "Hypertrophic pyloric stenosis is a condition of infancy characterized by hypertrophy of the pyloric muscle, resulting in gastric outlet obstruction and projectile nonbilious vomiting, diagnosed by ultrasound demonstrating increased pyloric muscle thickness and channel length.",
+  "synonyms": ["pyloric stenosis", "infantile hypertrophic pyloric stenosis", "IHPS"],
+  "body_regions": ["abdomen"],
+  "subspecialties": ["PD", "GI"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["US"],
+  "etiologies": ["congenital"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["newborn", "infant"],
+    "more_common_in": ["infant"]
+  },
+  "expected_time_course": {
+    "duration": "weeks",
+    "modifiers": []
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "48644003",
+      "display": "Congenital hypertrophic pyloric stenosis"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID122",
+      "display": "pylorus"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_618493",
+      "name": "presence",
+      "description": "Presence or absence of hypertrophic pyloric stenosis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Hypertrophic pyloric stenosis is absent"
+        },
+        {
+          "name": "present",
+          "description": "Hypertrophic pyloric stenosis is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of hypertrophic pyloric stenosis cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_729604",
+      "name": "pyloric muscle thickness",
+      "description": "Pyloric muscle thickness in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 10,
+      "unit": "mm"
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_830715",
+      "name": "pyloric channel length",
+      "description": "Pyloric channel length in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 30,
+      "unit": "mm"
+    }
+  ]
+}

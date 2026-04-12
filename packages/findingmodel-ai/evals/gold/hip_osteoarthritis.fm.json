@@ -1,0 +1,99 @@
+{
+  "oifm_id": "OIFM_GOLD_162837",
+  "name": "hip osteoarthritis",
+  "description": "Hip osteoarthritis is a degenerative joint disease characterized by progressive cartilage loss, osteophyte formation, subchondral sclerosis, and joint space narrowing of the hip joint.",
+  "synonyms": ["hip OA", "degenerative joint disease of hip", "hip arthritis"],
+  "body_regions": ["lower_extremity"],
+  "subspecialties": ["MK"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["XR", "CT", "MR"],
+  "etiologies": ["degenerative"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages",
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "years",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "239872002",
+      "display": "Osteoarthritis of hip"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID2640",
+      "display": "hip joint"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_385160",
+      "name": "presence",
+      "description": "Presence or absence of hip osteoarthritis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Hip osteoarthritis is absent"
+        },
+        {
+          "name": "present",
+          "description": "Hip osteoarthritis is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of hip osteoarthritis cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_496271",
+      "name": "laterality",
+      "description": "Side of hip osteoarthritis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "right",
+          "description": "Right hip osteoarthritis"
+        },
+        {
+          "name": "left",
+          "description": "Left hip osteoarthritis"
+        },
+        {
+          "name": "bilateral",
+          "description": "Bilateral hip osteoarthritis"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_507382",
+      "name": "severity",
+      "description": "Severity of hip osteoarthritis",
+      "type": "choice",
+      "values": [
+        {
+          "name": "mild",
+          "description": "Mild hip osteoarthritis"
+        },
+        {
+          "name": "moderate",
+          "description": "Moderate hip osteoarthritis"
+        },
+        {
+          "name": "severe",
+          "description": "Severe hip osteoarthritis"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

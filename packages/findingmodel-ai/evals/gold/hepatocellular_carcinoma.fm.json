@@ -1,0 +1,99 @@
+{
+  "oifm_id": "OIFM_GOLD_582641",
+  "name": "hepatocellular carcinoma",
+  "description": "Hepatocellular carcinoma (HCC) is the most common primary malignant tumor of the liver, typically arising in the setting of chronic liver disease and cirrhosis, characterized on imaging by arterial hyperenhancement with washout in the portal venous or delayed phases.",
+  "synonyms": ["HCC", "liver cancer", "hepatoma"],
+  "body_regions": ["abdomen"],
+  "subspecialties": ["GI", "OI"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "MR"],
+  "etiologies": ["neoplastic:malignant"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "months",
+    "modifiers": ["progressive"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "25370001",
+      "display": "Hepatocellular carcinoma"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID58",
+      "display": "liver"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_493817",
+      "name": "presence",
+      "description": "Presence or absence of hepatocellular carcinoma",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Hepatocellular carcinoma is absent"
+        },
+        {
+          "name": "present",
+          "description": "Hepatocellular carcinoma is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of hepatocellular carcinoma cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_504928",
+      "name": "size",
+      "description": "Maximum diameter of hepatocellular carcinoma in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 300,
+      "unit": "mm"
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_615039",
+      "name": "LI-RADS category",
+      "description": "Liver Imaging Reporting and Data System category",
+      "type": "choice",
+      "values": [
+        {
+          "name": "LR-1",
+          "description": "Definitely benign"
+        },
+        {
+          "name": "LR-2",
+          "description": "Probably benign"
+        },
+        {
+          "name": "LR-3",
+          "description": "Intermediate probability of malignancy"
+        },
+        {
+          "name": "LR-4",
+          "description": "Probably HCC"
+        },
+        {
+          "name": "LR-5",
+          "description": "Definitely HCC"
+        },
+        {
+          "name": "LR-M",
+          "description": "Probably or definitely malignant, not HCC specific"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

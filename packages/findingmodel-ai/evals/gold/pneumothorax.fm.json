@@ -1,0 +1,105 @@
+{
+  "oifm_id": "OIFM_GOLD_427385",
+  "name": "pneumothorax",
+  "description": "Pneumothorax is the presence of air in the pleural space, which may be spontaneous, traumatic, or iatrogenic, and is identified on imaging as a visceral pleural line with absent lung markings peripherally.",
+  "synonyms": ["collapsed lung", "PTX"],
+  "body_regions": ["chest"],
+  "subspecialties": ["CH", "ER"],
+  "entity_type": "finding",
+  "applicable_modalities": ["XR", "CT", "US"],
+  "etiologies": ["traumatic:acute", "iatrogenic:post-operative"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages",
+    "more_common_in": ["young_adult"]
+  },
+  "expected_time_course": {
+    "duration": "days",
+    "modifiers": ["resolving"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID1363",
+      "display": "pleural space"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "36118008",
+      "display": "Pneumothorax"
+    },
+    {
+      "system": "LOINC",
+      "code": "LA7466-1",
+      "display": "Pneumothorax"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID5352",
+      "display": "pneumothorax"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_538496",
+      "name": "presence",
+      "description": "Presence or absence of pneumothorax",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Pneumothorax is absent"
+        },
+        {
+          "name": "present",
+          "description": "Pneumothorax is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of pneumothorax cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_649507",
+      "name": "laterality",
+      "description": "The side of the pneumothorax",
+      "type": "choice",
+      "values": [
+        {
+          "name": "right",
+          "description": "Right-sided pneumothorax"
+        },
+        {
+          "name": "left",
+          "description": "Left-sided pneumothorax"
+        },
+        {
+          "name": "bilateral",
+          "description": "Bilateral pneumothorax"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_750618",
+      "name": "tension",
+      "description": "Whether the pneumothorax is simple or under tension",
+      "type": "choice",
+      "values": [
+        {
+          "name": "simple",
+          "description": "Simple pneumothorax without tension"
+        },
+        {
+          "name": "tension",
+          "description": "Tension pneumothorax with mediastinal shift"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

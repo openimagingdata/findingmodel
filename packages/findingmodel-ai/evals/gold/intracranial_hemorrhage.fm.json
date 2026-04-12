@@ -1,0 +1,86 @@
+{
+  "oifm_id": "OIFM_GOLD_738291",
+  "name": "intracranial hemorrhage",
+  "description": "Intracranial hemorrhage is the presence of blood within the cranial vault, which may occur in the epidural, subdural, subarachnoid, intraparenchymal, or intraventricular compartments.",
+  "synonyms": ["ICH", "intracranial bleed", "brain hemorrhage"],
+  "body_regions": ["head"],
+  "subspecialties": ["NR", "ER"],
+  "entity_type": "finding",
+  "applicable_modalities": ["CT", "MR"],
+  "etiologies": ["vascular:hemorrhagic", "traumatic:acute"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages",
+    "more_common_in": ["aged"]
+  },
+  "expected_time_course": {
+    "duration": "weeks",
+    "modifiers": ["evolving"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID6434",
+      "display": "brain"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "1386000",
+      "display": "Intracranial hemorrhage"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_182736",
+      "name": "presence",
+      "description": "Presence or absence of intracranial hemorrhage",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Intracranial hemorrhage is absent"
+        },
+        {
+          "name": "present",
+          "description": "Intracranial hemorrhage is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of intracranial hemorrhage cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_293847",
+      "name": "compartment",
+      "description": "The intracranial compartment in which the hemorrhage is located",
+      "type": "choice",
+      "values": [
+        {
+          "name": "epidural",
+          "description": "Hemorrhage in the epidural space"
+        },
+        {
+          "name": "subdural",
+          "description": "Hemorrhage in the subdural space"
+        },
+        {
+          "name": "subarachnoid",
+          "description": "Hemorrhage in the subarachnoid space"
+        },
+        {
+          "name": "intraparenchymal",
+          "description": "Hemorrhage within the brain parenchyma"
+        },
+        {
+          "name": "intraventricular",
+          "description": "Hemorrhage within the ventricles"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

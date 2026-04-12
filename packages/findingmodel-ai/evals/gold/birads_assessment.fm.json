@@ -1,0 +1,67 @@
+{
+  "oifm_id": "OIFM_GOLD_482917",
+  "name": "BI-RADS assessment",
+  "description": "The Breast Imaging Reporting and Data System (BI-RADS) assessment is a standardized classification system for mammographic, ultrasound, and MRI breast findings, assigning a category from 0 to 6 to guide clinical management.",
+  "synonyms": ["BIRADS", "breast imaging assessment", "ACR BI-RADS"],
+  "body_regions": ["breast"],
+  "subspecialties": ["BR"],
+  "entity_type": "assessment",
+  "applicable_modalities": ["MG", "US", "MR"],
+  "sex_specificity": "female-specific",
+  "age_profile": {
+    "applicability": ["adult", "middle_aged", "aged"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "1348266008",
+      "display": "Breast Imaging and Reporting and Data System"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID29895",
+      "display": "female breast"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_591273",
+      "name": "category",
+      "description": "BI-RADS assessment category",
+      "type": "choice",
+      "values": [
+        {
+          "name": "0 - Incomplete",
+          "description": "Need additional imaging evaluation"
+        },
+        {
+          "name": "1 - Negative",
+          "description": "No findings to report"
+        },
+        {
+          "name": "2 - Benign",
+          "description": "Definitively benign finding"
+        },
+        {
+          "name": "3 - Probably benign",
+          "description": "Finding with high probability of being benign"
+        },
+        {
+          "name": "4 - Suspicious",
+          "description": "Finding suspicious for malignancy"
+        },
+        {
+          "name": "5 - Highly suggestive",
+          "description": "Finding highly suggestive of malignancy"
+        },
+        {
+          "name": "6 - Known biopsy-proven",
+          "description": "Known biopsy-proven malignancy"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

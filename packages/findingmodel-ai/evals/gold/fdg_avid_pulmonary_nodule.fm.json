@@ -1,0 +1,82 @@
+{
+  "oifm_id": "OIFM_GOLD_874152",
+  "name": "FDG-avid pulmonary nodule",
+  "description": "An FDG-avid pulmonary nodule is a lung nodule demonstrating elevated fluorodeoxyglucose uptake on PET imaging, raising concern for malignancy and requiring further characterization or tissue sampling.",
+  "synonyms": ["hypermetabolic lung nodule", "PET-positive lung nodule", "FDG-avid lung lesion"],
+  "body_regions": ["chest"],
+  "subspecialties": ["MI", "OI", "CH"],
+  "entity_type": "finding",
+  "applicable_modalities": ["PET", "CT"],
+  "etiologies": ["neoplastic:malignant", "neoplastic:metastatic", "inflammatory:infectious"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["young_adult", "adult", "middle_aged", "aged"],
+    "more_common_in": ["middle_aged", "aged"]
+  },
+  "expected_time_course": {
+    "duration": "months",
+    "modifiers": ["progressive"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID1301",
+      "display": "lung"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "786838002",
+      "display": "Nodule of lung"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID50149",
+      "display": "pulmonary nodule"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_985263",
+      "name": "presence",
+      "description": "Presence or absence of FDG-avid pulmonary nodule",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "FDG-avid pulmonary nodule is absent"
+        },
+        {
+          "name": "present",
+          "description": "FDG-avid pulmonary nodule is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of FDG-avid pulmonary nodule cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_096374",
+      "name": "SUVmax",
+      "description": "The maximum standardized uptake value of the nodule on PET imaging",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 50,
+      "unit": null,
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_107485",
+      "name": "size",
+      "description": "The maximum diameter of the pulmonary nodule in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 100,
+      "unit": "mm",
+      "required": false
+    }
+  ]
+}

@@ -98,6 +98,7 @@ tasks:
       - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.anatomic_search
       - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.markdown_in
       - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.finding_description
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_assignment
     silent: true
 
   evals:model_editor:
@@ -140,6 +141,13 @@ tasks:
     cmds:
       - echo "Running finding_description evaluations..."
       - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.finding_description
+    silent: true
+
+  evals:metadata_assignment:
+    desc: "Run metadata_assignment evaluation suite"
+    cmds:
+      - echo "Running metadata_assignment evaluations..."
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_assignment
     silent: true
 
   check:

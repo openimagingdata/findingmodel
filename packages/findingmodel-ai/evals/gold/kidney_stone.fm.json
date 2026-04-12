@@ -1,0 +1,113 @@
+{
+  "oifm_id": "OIFM_GOLD_693847",
+  "name": "kidney stone",
+  "description": "A kidney stone (renal calculus) is a solid concretion formed from crystallized minerals and salts within the renal collecting system, visible on CT as a hyperdense focus within the kidney or ureter.",
+  "synonyms": ["renal calculus", "nephrolithiasis", "renal stone", "urolithiasis"],
+  "body_regions": ["abdomen"],
+  "subspecialties": ["GU", "ER"],
+  "entity_type": "diagnosis",
+  "applicable_modalities": ["CT", "US", "XR"],
+  "etiologies": ["metabolic"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": ["young_adult", "adult", "middle_aged", "aged"],
+    "more_common_in": ["adult", "middle_aged"]
+  },
+  "expected_time_course": {
+    "duration": "months",
+    "modifiers": ["stable"]
+  },
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "95570007",
+      "display": "Kidney stone"
+    },
+    {
+      "system": "LOINC",
+      "code": "LP232215-6",
+      "display": "Renal calculus"
+    },
+    {
+      "system": "RADLEX",
+      "code": "RID38586",
+      "display": "renal calculus"
+    }
+  ],
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID205",
+      "display": "kidney"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_704928",
+      "name": "presence",
+      "description": "Presence or absence of kidney stone",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Kidney stone is absent"
+        },
+        {
+          "name": "present",
+          "description": "Kidney stone is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of kidney stone cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_815039",
+      "name": "size",
+      "description": "Maximum diameter of kidney stone in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 50,
+      "unit": "mm"
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_926140",
+      "name": "location",
+      "description": "Location of the kidney stone within the collecting system",
+      "type": "choice",
+      "values": [
+        {
+          "name": "renal pelvis",
+          "description": "Stone in the renal pelvis"
+        },
+        {
+          "name": "upper calyx",
+          "description": "Stone in the upper calyx"
+        },
+        {
+          "name": "mid calyx",
+          "description": "Stone in the mid calyx"
+        },
+        {
+          "name": "lower calyx",
+          "description": "Stone in the lower calyx"
+        },
+        {
+          "name": "proximal ureter",
+          "description": "Stone in the proximal ureter"
+        },
+        {
+          "name": "distal ureter",
+          "description": "Stone in the distal ureter"
+        },
+        {
+          "name": "UVJ",
+          "description": "Stone at the ureterovesical junction"
+        }
+      ],
+      "required": false
+    }
+  ]
+}

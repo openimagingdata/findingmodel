@@ -1,0 +1,87 @@
+{
+  "oifm_id": "OIFM_GOLD_253917",
+  "name": "cervical lymphadenopathy",
+  "description": "Cervical lymphadenopathy is the enlargement of lymph nodes in the neck region, which may be reactive, infectious, or neoplastic in origin, and is evaluated by size, morphology, and enhancement pattern on imaging.",
+  "synonyms": ["enlarged cervical lymph nodes", "neck lymphadenopathy"],
+  "body_regions": ["neck"],
+  "subspecialties": ["HN", "OI"],
+  "entity_type": "finding",
+  "applicable_modalities": ["CT", "MR", "US"],
+  "etiologies": ["inflammatory:infectious", "neoplastic:malignant", "neoplastic:metastatic"],
+  "sex_specificity": "sex-neutral",
+  "age_profile": {
+    "applicability": "all_ages"
+  },
+  "expected_time_course": {
+    "duration": "weeks",
+    "modifiers": ["evolving"]
+  },
+  "anatomic_locations": [
+    {
+      "system": "ANATOMICLOCATIONS",
+      "code": "RID28848",
+      "display": "cervical lymph node group"
+    }
+  ],
+  "index_codes": [
+    {
+      "system": "SNOMEDCT",
+      "code": "127086001",
+      "display": "Cervical lymphadenopathy"
+    }
+  ],
+  "attributes": [
+    {
+      "oifma_id": "OIFMA_GOLD_364028",
+      "name": "presence",
+      "description": "Presence or absence of cervical lymphadenopathy",
+      "type": "choice",
+      "values": [
+        {
+          "name": "absent",
+          "description": "Cervical lymphadenopathy is absent"
+        },
+        {
+          "name": "present",
+          "description": "Cervical lymphadenopathy is present"
+        },
+        {
+          "name": "indeterminate",
+          "description": "Presence of cervical lymphadenopathy cannot be determined"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_475139",
+      "name": "laterality",
+      "description": "The side of the cervical lymphadenopathy",
+      "type": "choice",
+      "values": [
+        {
+          "name": "right",
+          "description": "Right-sided cervical lymphadenopathy"
+        },
+        {
+          "name": "left",
+          "description": "Left-sided cervical lymphadenopathy"
+        },
+        {
+          "name": "bilateral",
+          "description": "Bilateral cervical lymphadenopathy"
+        }
+      ],
+      "required": false
+    },
+    {
+      "oifma_id": "OIFMA_GOLD_586240",
+      "name": "short axis diameter",
+      "description": "The short axis diameter of the largest abnormal lymph node in millimeters",
+      "type": "numeric",
+      "minimum": 0,
+      "maximum": 100,
+      "unit": "mm",
+      "required": false
+    }
+  ]
+}
