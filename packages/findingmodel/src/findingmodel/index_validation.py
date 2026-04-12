@@ -7,7 +7,8 @@ This module provides protocol-based validation that works with any index backend
 from typing import Protocol
 
 from findingmodel.common import normalize_name
-from findingmodel.finding_model import FindingModelFull
+
+from .types.models import FindingModelFull
 
 
 class ValidationContext(Protocol):

@@ -11,9 +11,9 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import duckdb
+from findingmodel import FindingModelFull
 from findingmodel.common import normalize_name
 from findingmodel.contributor import Organization, Person
-from findingmodel.finding_model import FindingModelFull
 from oidm_common.duckdb import create_fts_index, create_hnsw_index, setup_duckdb_connection
 from oidm_common.embeddings import get_embeddings_batch
 from oidm_common.models import IndexCode

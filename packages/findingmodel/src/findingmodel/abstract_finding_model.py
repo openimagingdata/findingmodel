@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Literal, Protocol
 
-from findingmodel.finding_model import AttributeType
+from .types.attributes import AttributeType
 
 
 class AbstractNumericAttribute(Protocol):

@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from findingmodel.finding_model import FindingModelFull
+from findingmodel import FindingModelFull
 
 if TYPE_CHECKING:
     from findingmodel_ai.authoring import editor as model_editor

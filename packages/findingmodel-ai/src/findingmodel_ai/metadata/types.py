@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum
 
-from findingmodel.finding_model import FindingModelFull
+from findingmodel import FindingModelFull
 from oidm_common.models import IndexCode
 from pydantic import BaseModel, Field
 

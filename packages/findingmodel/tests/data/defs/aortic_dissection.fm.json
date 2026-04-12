@@ -14,7 +14,7 @@
     }
   ],
   "body_regions": ["chest"],
-  "subspecialties": ["CA", "VI", "ER"],
+  "subspecialties": ["CA", "CH", "VA", "ER"],
   "entity_type": "diagnosis",
   "applicable_modalities": ["CT", "MR", "XR"],
   "sex_specificity": "sex-neutral",

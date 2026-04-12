@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 import pytest
-from findingmodel.finding_model import ChoiceAttributeIded, ChoiceValueIded, FindingModelFull
+from findingmodel import ChoiceAttributeIded, ChoiceValueIded, FindingModelFull
 from findingmodel_ai.metadata.types import (
     AnatomicCandidate,
     FieldConfidence,

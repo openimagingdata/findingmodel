@@ -1,9 +1,7 @@
 """Tests for create_stub module."""
 
 import pytest
-from findingmodel.create_stub import create_model_stub_from_info
-from findingmodel.finding_info import FindingInfo
-from findingmodel.finding_model import FindingModelBase
+from findingmodel import FindingInfo, FindingModelBase, create_model_stub_from_info
 
 
 @pytest.fixture

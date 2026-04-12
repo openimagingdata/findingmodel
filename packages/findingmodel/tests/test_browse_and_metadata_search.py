@@ -4,12 +4,12 @@ Tests the metadata WHERE clause builder, browse with metadata filters,
 and search/search_batch with metadata filtering against a populated fixture DB.
 
 Test data reference (6 models in test_index.duckdb):
-- abdominal aortic aneurysm: abdomen, diagnosis, [AB,VI,ER], [CT,US,MR], aorta+abdominal_aorta, SNOMEDCT:233985008
-- aortic dissection:          chest,   diagnosis, [CA,VI,ER], [CT,MR,XR], aorta
-- breast density:             breast,  measurement,[BR],       [MG],       female_breast
-- mammographic malignancy:    breast,  assessment, [BR],       [MG],       female_breast
-- pulmonary embolism:         chest,   diagnosis, [CH,ER],    [CT,XR],    lung, SNOMEDCT:59282003
-- ventricular diameters:      chest,   measurement,[CA],       [US,CT,MR], heart
+    - abdominal aortic aneurysm: abdomen, diagnosis, [VA,ER],     [CT,US,MR], aorta+abdominal_aorta, SNOMEDCT:233985008
+    - aortic dissection:          chest,   diagnosis, [CA,CH,VA,ER], [CT,MR,XR], aorta
+    - breast density:             breast,  measurement,[BR],       [MG],       female_breast
+    - mammographic malignancy:    breast,  assessment, [BR],       [MG],       female_breast
+    - pulmonary embolism:         chest,   diagnosis, [CH,ER,VA], [CT,XR],    lung, SNOMEDCT:59282003
+    - ventricular diameters:      chest,   measurement,[CA],       [US,CT,MR], heart
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ import pytest_asyncio
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-from findingmodel.facets import BodyRegion, EntityType, EtiologyCode, Modality, SexSpecificity, Subspecialty
+from findingmodel import BodyRegion, EntityType, EtiologyCode, Modality, SexSpecificity, Subspecialty
 from findingmodel.index import FindingModelIndex
 
 # ============================================================================

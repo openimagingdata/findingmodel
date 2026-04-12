@@ -4,8 +4,8 @@ Tests score calculation, threshold filtering, self-exclusion, empty facets,
 and integration tests against the populated fixture DB.
 
 Test data reference (6 models in test_index.duckdb):
-- OIFM_MSFT_134126 abdominal aortic aneurysm: abdomen, diagnosis, [AB,VI,ER], [CT,US,MR], aorta+abdominal_aorta
-- OIFM_MSFT_573630 aortic dissection:          chest,   diagnosis, [CA,VI,ER], [CT,MR,XR], aorta
+    - OIFM_MSFT_134126 abdominal aortic aneurysm: abdomen, diagnosis, [VA,ER], [CT,US,MR], aorta+abdominal_aorta
+    - OIFM_MSFT_573630 aortic dissection:          chest,   diagnosis, [CA,CH,VA,ER], [CT,MR,XR], aorta
 - OIFM_MSFT_356221 breast density:             breast,  measurement,[BR],       [MG],       female_breast
 - OIFM_MSFT_156954 mammographic malignancy:    breast,  assessment, [BR],       [MG],       female_breast
 - OIFM_MSFT_932618 pulmonary embolism:         chest,   diagnosis, [CH,ER],    [CT,XR],    lung
@@ -23,7 +23,7 @@ import pytest_asyncio
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-from findingmodel.facets import (
+from findingmodel import (
     AgeProfile,
     AgeStage,
     BodyRegion,
@@ -241,7 +241,7 @@ class TestRelatedModelsIntegration:
     @pytest.mark.asyncio
     async def test_aaa_related_to_aortic_dissection(self, index: FindingModelIndex) -> None:
         """AAA and aortic dissection share aorta (anatomic), diagnosis (entity_type),
-        VI+ER (subspecialties), CT+MR (modalities). Should be top related."""
+        VA+ER (subspecialties), CT+MR (modalities). Should be top related."""
         results = await index.related_models("OIFM_MSFT_134126", min_score=1.0)
         ids = [entry.oifm_id for entry, _ in results]
         assert "OIFM_MSFT_573630" in ids  # aortic dissection

@@ -65,7 +65,7 @@ def _facet_rich_model() -> dict[str, object]:
         "synonyms": ["facet check"],
         "tags": ["storage-check"],
         "body_regions": ["pelvis", "abdomen"],
-        "subspecialties": ["GU", "AB"],
+        "subspecialties": ["GU", "GI"],
         "etiologies": ["toxic", "mechanical"],
         "entity_type": "finding",
         "applicable_modalities": ["US", "MR"],
@@ -1068,7 +1068,7 @@ class TestDataCorrectness:
             ).fetchone()
             assert result is not None
             assert list(result[0]) == ["pelvis", "abdomen"]
-            assert list(result[1]) == ["GU", "AB"]
+            assert list(result[1]) == ["GU", "GI"]
             assert list(result[2]) == ["toxic", "mechanical"]
             assert result[3] == "finding"
             assert list(result[4]) == ["US", "MR"]
@@ -1102,7 +1102,7 @@ class TestDataCorrectness:
             entry = await index.get("OIFM_TEST_000100")
             assert entry is not None
             assert entry.body_regions == [BodyRegion.PELVIS, BodyRegion.ABDOMEN]
-            assert entry.subspecialties == [Subspecialty.GU, Subspecialty.AB]
+            assert entry.subspecialties == [Subspecialty.GU, Subspecialty.GI]
             assert entry.etiologies == [EtiologyCode.TOXIC, EtiologyCode.MECHANICAL]
             assert entry.entity_type == EntityType.FINDING
             assert entry.applicable_modalities == [Modality.US, Modality.MR]
@@ -1149,7 +1149,7 @@ class TestDataCorrectness:
 
     def test_text_builders_exclude_structured_metadata_labels(self) -> None:
         """FTS and embedding text stay focused on free-text clinical content."""
-        from findingmodel.finding_model import FindingModelFull
+        from findingmodel import FindingModelFull
         from oidm_maintenance.findingmodel.build import _build_embedding_text, _build_search_text
 
         model = FindingModelFull.model_validate(_facet_rich_model())

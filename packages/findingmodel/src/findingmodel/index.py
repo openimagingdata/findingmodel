@@ -19,7 +19,7 @@ from findingmodel import logger
 from findingmodel.common import normalize_name
 from findingmodel.config import ConfigurationError, get_settings
 from findingmodel.contributor import Organization, Person
-from findingmodel.facets import (
+from findingmodel.types.metadata import (
     AgeProfile,
     AgeStage,
     BodyRegion,
@@ -32,7 +32,7 @@ from findingmodel.facets import (
     Subspecialty,
     TimeCourseModifier,
 )
-from findingmodel.finding_model import FindingModelBase, FindingModelFull
+from findingmodel.types.models import FindingModelBase, FindingModelFull
 
 PLACEHOLDER_ATTRIBUTE_ID: str = "OIFMA_XXXX_000000"
 TEnum = TypeVar("TEnum", bound=Enum)
@@ -1029,7 +1029,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             raise ValueError(f"Source must be 3-4 uppercase letters, got: {source_upper}")
 
         # Load existing IDs for source (cached)
-        from findingmodel.finding_model import _random_digits
+        from findingmodel._id_gen import _random_digits
 
         existing_ids = self._load_oifm_ids_for_source(source_upper)
 
@@ -1102,7 +1102,7 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             raise ValueError(f"Source must be 3-4 uppercase letters, got: {resolved_source}")
 
         # Load existing attribute IDs for source (cached)
-        from findingmodel.finding_model import _random_digits
+        from findingmodel._id_gen import _random_digits
 
         existing_ids = self._load_oifma_ids_for_source(resolved_source)
 

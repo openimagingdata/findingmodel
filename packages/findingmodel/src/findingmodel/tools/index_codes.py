@@ -3,7 +3,8 @@ from typing import Protocol
 
 from oidm_common.models import IndexCode
 
-from findingmodel.finding_model import ChoiceAttributeIded, FindingModelFull, IndexCodeList
+from findingmodel.types.attributes import ChoiceAttributeIded, IndexCodeList
+from findingmodel.types.models import FindingModelFull
 
 
 class Codeable(Protocol):

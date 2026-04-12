@@ -33,7 +33,7 @@
     }
   ],
   "body_regions": ["abdomen"],
-  "subspecialties": ["AB", "VI", "ER"],
+  "subspecialties": ["VA", "ER"],
   "etiologies": ["vascular:aneurysmal"],
   "entity_type": "diagnosis",
   "applicable_modalities": ["CT", "US", "MR"],

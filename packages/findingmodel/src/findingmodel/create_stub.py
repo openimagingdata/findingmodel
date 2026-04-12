@@ -1,9 +1,7 @@
 from findingmodel.finding_info import FindingInfo
-from findingmodel.finding_model import (
-    ChoiceAttribute,
-    ChoiceValue,
-    FindingModelBase,
-)
+
+from .types.attributes import ChoiceAttribute, ChoiceValue
+from .types.models import FindingModelBase
 
 
 def create_model_stub_from_info(finding_info: FindingInfo, tags: list[str] | None = None) -> FindingModelBase:

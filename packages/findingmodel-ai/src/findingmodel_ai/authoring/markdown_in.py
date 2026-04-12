@@ -2,8 +2,7 @@
 
 from pathlib import Path
 
-from findingmodel.finding_info import FindingInfo
-from findingmodel.finding_model import FindingModelBase
+from findingmodel import FindingInfo, FindingModelBase
 from pydantic_ai import Agent
 
 from findingmodel_ai._internal.common import get_markdown_text_from_path_or_text

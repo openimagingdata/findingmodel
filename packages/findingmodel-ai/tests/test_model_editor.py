@@ -1,8 +1,7 @@
 from collections.abc import Iterator
 
 import pytest
-from findingmodel import Index
-from findingmodel.finding_model import FindingModelFull
+from findingmodel import FindingModelFull, Index
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from findingmodel_ai.authoring import editor as model_editor
 from pydantic_ai import models
@@ -124,7 +123,7 @@ def test_export_model_for_editing_attributes_only(real_model: FindingModelFull) 
 
 def test_export_model_for_editing_with_metadata(real_model: FindingModelFull) -> None:
     """Model with structured metadata should include metadata lines in exported markdown."""
-    from findingmodel.facets import (
+    from findingmodel import (
         BodyRegion,
         EntityType,
         ExpectedDuration,

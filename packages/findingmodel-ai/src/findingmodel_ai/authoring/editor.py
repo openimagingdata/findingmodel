@@ -2,9 +2,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast
 
-from findingmodel import Index
-from findingmodel.facets import format_age_profile, format_time_course
-from findingmodel.finding_model import FindingModelFull
+from findingmodel import FindingModelFull, Index, format_age_profile, format_time_course
 from findingmodel.index import PLACEHOLDER_ATTRIBUTE_ID
 from pydantic import BaseModel, Field
 from pydantic_ai import ModelRetry, RunContext

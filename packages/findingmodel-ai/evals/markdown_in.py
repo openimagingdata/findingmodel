@@ -64,8 +64,7 @@ See: https://ai.pydantic.dev/evals/#integration-with-logfire
 
 import time
 
-from findingmodel.finding_info import FindingInfo
-from findingmodel.finding_model import FindingModelBase
+from findingmodel import FindingInfo, FindingModelBase
 from findingmodel_ai.authoring.markdown_in import create_model_from_markdown
 from findingmodel_ai.evaluators import PerformanceEvaluator
 from pydantic import BaseModel, Field
