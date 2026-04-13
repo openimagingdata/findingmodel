@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### findingmodel
 
+#### Changed
+
+- **Breaking: Internal type modules reorganized.** `findingmodel.facets` and `findingmodel.finding_model` are removed. All public types are now available via top-level `from findingmodel import ...`. New exports: `AttributeType`, `IndexCodeList`, `format_age_profile`, `format_time_course`.
+
+### findingmodel-ai
+
+#### Changed
+
+- **`assign_metadata()` now reassesses by default.** Previously, fully-populated models skipped ontology gathering, anatomic gathering, and classification. Now all three stages always run, ensuring metadata stays current. Use `fill_blanks_only=True` to preserve existing fields and only populate empty ones.
+- **`SYSTEM:CODE` candidate IDs.** Ontology and anatomic candidate IDs in prompts and decisions now use `SYSTEM:CODE` format (e.g., `SNOMEDCT:233604007`, `RADLEX:RID5350`) for consistency.
+- **Output validation.** The metadata classifier now validates candidate IDs and required field coverage, retrying on hallucinated IDs or missing required fields.
+- `MetadataAssignmentReview` includes `assignment_mode` (`"reassess"` or `"fill_blanks_only"`).
+- `MetadataAssignmentDecision` supports `clear_fields` to explicitly null out metadata fields in reassess mode.
+
+#### Added
+
+- **Metadata assignment eval suite** (`evals/metadata_assignment.py`): 7 cases across 4 fixture stems, 5 evaluators (execution success, required field coverage, gold metadata match, preservation semantics, candidate integrity), plus span assertions for pipeline stage execution.
+
+---
+
+## Previous
+
+### findingmodel
+
 #### Added
 
 - **`browse()` API**: Filter finding models by structured metadata (body region, subspecialty, entity type, modality, etiology, age, sex specificity, time course, and tags) with pagination. Pure SQL — no text or embedding search.

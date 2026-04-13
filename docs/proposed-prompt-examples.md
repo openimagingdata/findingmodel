@@ -164,13 +164,12 @@ Anatomic locations: aorta, coronary arteries, carotid arteries, iliac arteries
 body_regions: ["ALL"]
 etiologies: ["degenerative", "metabolic", "vascular:ischemic"]
 modalities: ["CT", "US", "MR"]
-subspecialties: ["CA", "VI", "NR", "AB"]
+subspecialties: ["CA", "VA", "NR"]
 reasoning: Atherosclerosis is a TRUE SYSTEMIC disease affecting arteries
 throughout the entire body - coronary (Chest), carotid (Head/Neck), aorta
 (Chest/Abdomen), iliac/femoral (Leg). "ALL" is correct because no single
 region captures this disease. Multiple subspecialties involved: Cardiac for
-coronary disease, Vascular for peripheral vessels, Neuro for carotid,
-Abdominal for aortic/mesenteric involvement.
+coronary disease, Vascular for peripheral vessels, and Neuro for carotid involvement.
 </classification>
 </example>
 ```
@@ -264,7 +263,7 @@ TRAUMATIC/OTHER:
 
 3. **Should thoracic spine include Neck as well as Chest/Abdomen?** I only included Chest and Abdomen based on the ground truth.
 
-4. **For atherosclerosis, are 4 subspecialties (CA, VI, NR, AB) appropriate?** Or is this over-selection?
+4. **For atherosclerosis, are 3 subspecialties (CA, VA, NR) appropriate?** Or is this over-selection?
 
 5. **Are there other edge cases we should include?** Possibilities:
    - Fracture (traumatic etiology)

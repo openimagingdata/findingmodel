@@ -3,6 +3,7 @@
 ## Status
 
 - In progress — core schema, retrieval APIs, related-model scoring, metadata-assignment types, canonical `assign_metadata(...)`, and the rewritten `find_similar_models()` are implemented in the worktree
+- `docs/plans/metadata-pipeline-polish.md` completed the public-surface migration, reassess-by-default metadata assignment, and metadata-assignment eval wiring on 2026-03-24
 - Slices 9–10 remain for public-surface migration, backfill, and final docs cleanup
 - Supersedes the old enrichment implementation plan now archived at `docs/archive/finding-enrichment-implementation-plan.md`
 - Supersedes the older enrichment PRD now archived at `docs/archive/finding-enrichment-prd.md`
@@ -47,7 +48,7 @@ Add these optional fields to `FindingModelBase` and `FindingModelFull`:
 Canonical facet values:
 
 - `BodyRegion = {head, neck, chest, breast, abdomen, pelvis, spine, upper_extremity, lower_extremity, whole_body}`
-- `Subspecialty = {AB, BR, CA, CH, ER, GI, GU, HN, IR, MI, MK, NR, OB, OI, PD, VI}`
+- `Subspecialty = {BR, CA, CH, ER, GI, GU, HN, IR, MI, MK, NM, NR, OB, OI, PD, SQ, VA}`
 - `Modality = {XR, CT, MR, US, PET, NM, MG, RF, DSA}`, with `CR` and `DX` normalized to `XR`
 - `EntityType = {finding, diagnosis, grouping, measurement, assessment, recommendation, technique_issue}`
 - `SexSpecificity = {male-specific, female-specific, sex-neutral}`
