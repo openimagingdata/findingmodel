@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from findingmodel import IndexCode
 from findingmodel.finding_model import FindingModelFull
 from findingmodel.protocols import OntologySearchResult
 from findingmodel_ai.enrichment.unified import (
@@ -26,8 +27,6 @@ from findingmodel_ai.enrichment.unified import (
 )
 from pydantic import ValidationError
 from pydantic_ai import models
-
-from findingmodel import IndexCode
 
 # Import test model constants (defined in conftest.py)
 from .conftest import TEST_ANTHROPIC_MODEL, TEST_OPENAI_MODEL

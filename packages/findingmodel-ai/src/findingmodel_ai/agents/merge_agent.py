@@ -8,8 +8,8 @@ from typing import Any, Dict
 from findingmodel import Index
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.models.openai import OpenAIResponsesModel, OpenAIResponsesModelSettings
 from pydantic_ai.exceptions import ModelRetry
+from pydantic_ai.models.openai import OpenAIResponsesModel, OpenAIResponsesModelSettings
 
 from findingmodel_ai.agents.prompts import CONTRIBUTORS_BLOCK, load_instructions
 
@@ -49,4 +49,4 @@ async def get_full_model(ctx: RunContext[MergeContext], oifm_id: str) -> dict[st
         model = await ctx.deps.index.get_full(oifm_id)
         return model.model_dump(exclude_none=False)
     except Exception as e:
-        raise ModelRetry(f"Failed to retrieve model {oifm_id}: {e}")
+        raise ModelRetry(f"Failed to retrieve model {oifm_id}: {e}") from e

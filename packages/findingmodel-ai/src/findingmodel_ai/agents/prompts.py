@@ -54,6 +54,7 @@ def load_single_agent_instructions() -> str:
 
     return "\n\n".join(parts)
 
+
 # Contributor blocks for merge agent template substitution.
 CONTRIBUTORS_BLOCK = """\
 ```json
@@ -69,10 +70,9 @@ CONTRIBUTORS_BLOCK = """\
 }
 ```"""
 
+
 def _load(name: str) -> str:
-    return _strip_frontmatter(
-        (PROMPTS_DIR / name).read_text(encoding="utf-8")
-    )
+    return _strip_frontmatter((PROMPTS_DIR / name).read_text(encoding="utf-8"))
 
 
 def load_instructions(agent_name: str, **template_vars: str) -> str:

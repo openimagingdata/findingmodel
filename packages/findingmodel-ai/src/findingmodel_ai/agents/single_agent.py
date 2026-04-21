@@ -11,19 +11,17 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict
 
-#import findingmodel.compat  # noqa: F401 - patch findingmodel.index for findingmodel-ai
 from dotenv import load_dotenv
-from findingmodel import FindingModelFull, FindingModelBase, Index
+from findingmodel import FindingModelBase, FindingModelFull, Index
 from findingmodel.tools import add_ids_to_model, add_standard_codes_to_model
-from findingmodel_ai.authoring import create_info_from_name, create_model_from_markdown
-from findingmodel_ai.search import find_anatomic_locations
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIResponsesModel
 
-from findingmodels.hood.hood_json_adapter import HoodJsonAdapter
-
 from findingmodel_ai.agents.prompts import load_single_agent_instructions
+from findingmodel_ai.authoring import create_info_from_name, create_model_from_markdown
+from findingmodel_ai.hood_json_adapter import HoodJsonAdapter
+from findingmodel_ai.search import find_anatomic_locations
 
 load_dotenv()
 
@@ -75,9 +73,7 @@ single_agent = Agent(
 
 
 @single_agent.tool
-async def search_finding_models(
-    ctx: RunContext[AgentContext], query: str, limit: int = 10
-) -> str:
+async def search_finding_models(ctx: RunContext[AgentContext], query: str, limit: int = 10) -> str:
     """
     Search for existing finding models in the index.
 
@@ -176,7 +172,7 @@ async def adapt_hood_json(
 
 
 @single_agent.tool
-async def add_ids_to_finding_model(
+async def add_ids_to_finding_model(  # noqa: RUF029
     ctx: RunContext[AgentContext],
     model_json: str,
     source: str | None = None,
@@ -202,7 +198,7 @@ async def add_ids_to_finding_model(
 
 
 @single_agent.tool
-async def add_standard_codes(ctx: RunContext[AgentContext], model_json: str) -> str:
+async def add_standard_codes(ctx: RunContext[AgentContext], model_json: str) -> str:  # noqa: RUF029
     """
     Add standard RadLex/SNOMED index codes to a finding model.
 
@@ -237,13 +233,11 @@ async def find_anatomic_locations_tool(
             description=description,
         )
         locations = []
-        for loc in [result.primary_location] + result.alternate_locations:
+        for loc in (result.primary_location, *result.alternate_locations):
             if loc.concept_id != "NO_RESULTS":
                 index_code = loc.as_index_code().model_dump()
                 locations.append(index_code)
-        return json.dumps(
-            {"anatomic_locations": locations if locations else None, "reasoning": result.reasoning}
-        )
+        return json.dumps({"anatomic_locations": locations if locations else None, "reasoning": result.reasoning})
     except Exception as e:
         return json.dumps({"anatomic_locations": None, "reasoning": str(e), "error": str(e)})
 
