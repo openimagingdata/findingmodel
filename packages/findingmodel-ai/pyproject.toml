@@ -26,6 +26,7 @@ keywords = [
 dependencies = [
     "oidm-common",
     "findingmodel",
+    "python-dotenv>=1.0",
     "anatomic-locations",
     "pydantic[email]>=2.0",
     "pydantic-settings>=2.9",
