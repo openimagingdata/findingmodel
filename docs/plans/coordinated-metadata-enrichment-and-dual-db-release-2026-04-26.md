@@ -555,6 +555,8 @@ Follow-up test audit:
 
 ## Phase 3: Build Local Wheels for Data-Repo Iteration
 
+Status: Completed (2026-04-26).
+
 ### Why This Phase Exists
 
 The `findingmodels` scripts need to run against metadata-aware packages before those packages are
@@ -576,6 +578,87 @@ users will eventually get, without committing local paths or prematurely publish
 - A `findingmodels` script can run with those wheels without editing committed dependency files.
 - The script reports/imports the expected local package versions.
 - No machine-specific local path wiring is committed to either repository.
+
+### Phase 3 Execution Update (2026-04-26)
+
+Initial wheelhouse path:
+
+```bash
+/tmp/findingmodel-metadata-wheelhouse/a8b21b0
+```
+
+Build command run from `/Users/talkasab/repos/findingmodel-metadata`:
+
+```bash
+uv build --all-packages --wheel --out-dir /tmp/findingmodel-metadata-wheelhouse/a8b21b0 --no-create-gitignore
+```
+
+Built wheels:
+
+```text
+anatomic_locations-0.2.5-py3-none-any.whl
+findingmodel-1.0.4-py3-none-any.whl
+findingmodel_ai-0.2.1-py3-none-any.whl
+oidm_common-0.2.7-py3-none-any.whl
+oidm_maintenance-0.2.5-py3-none-any.whl
+```
+
+`uv build` emitted a warning that `build_system.requires = ["uv-build>=0.10,<0.11"]` does not
+contain the current `uv` version `0.11.7`, but all wheels were built successfully.
+
+Follow-up packaging correction:
+
+- Official uv build-backend documentation now recommends `uv_build>=0.11.7,<0.12` for the current uv
+  release line.
+- Updated every package `[build-system].requires` entry from `uv_build>=0.10,<0.11` to
+  `uv_build>=0.11.7,<0.12`.
+- Rebuilt the wheelhouse after the update with no `uv_build` compatibility warning.
+
+Final wheelhouse path:
+
+```bash
+/tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7
+```
+
+Final build command run from `/Users/talkasab/repos/findingmodel-metadata`:
+
+```bash
+uv build --all-packages --wheel --out-dir /tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7 --no-create-gitignore
+```
+
+Publish-readiness build check:
+
+```bash
+uv build --all-packages --wheel --no-sources --out-dir /tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7-no-sources --no-create-gitignore
+```
+
+The `--no-sources` build also completed successfully with no `uv_build` compatibility warning.
+
+Verification command pattern, run from `/Users/talkasab/repos/findingmodels-metadata`:
+
+```bash
+uv run --no-project --isolated \
+  --with /tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7/anatomic_locations-0.2.5-py3-none-any.whl \
+  --with /tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7/findingmodel-1.0.4-py3-none-any.whl \
+  --with /tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7/findingmodel_ai-0.2.1-py3-none-any.whl \
+  --with /tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7/oidm_common-0.2.7-py3-none-any.whl \
+  --with /tmp/findingmodel-metadata-wheelhouse/phase3-uvbuild-0.11.7/oidm_maintenance-0.2.5-py3-none-any.whl \
+  python -c '...'
+```
+
+Verification results:
+
+- Imports resolved successfully for `findingmodel`, `findingmodel-ai`, `oidm-common`,
+  `oidm-maintenance`, and `anatomic-locations`.
+- Installed package provenance confirmed `direct_url.json` entries pointing to the local wheelhouse
+  file URLs for all five wheels.
+- Verified metadata-aware behavior from the wheel environment:
+  - `FindingModelConfig().db_manifest_key == "finding_models"`
+  - `findingmodel_ai.metadata.OntologyLookupCache` is importable
+  - `findingmodel_ai.metadata.audit_enrichment` is importable
+  - `oidm_maintenance.findingmodel.build.build_findingmodel_database` exposes `schema_name`,
+    `schema_version`, and `source_commit` parameters
+- No committed dependency file, lockfile, or local path wiring was changed in either repository.
 
 ## Phase 4: Prepare the `findingmodels-metadata` Branch
 

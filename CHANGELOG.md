@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Findingmodel database builds record artifact provenance in a `database_metadata` table.
 - Findingmodel build/publish commands support metadata rollout options for schema name/version, source commit, manifest key, S3 prefix, and artifact name.
 
+### Packaging
+
+#### Changed
+
+- Updated package build-backend requirements to `uv_build>=0.11.7,<0.12` to match current uv build tooling.
+
 ---
 
 ## Previous
