@@ -212,7 +212,7 @@ def run_one(agent_tag: str, model: str, reasoning: str, finding_name: str) -> No
     chain = settings.resolve_agent_config(config_tag)  # type: ignore[arg-type]
     resolved = chain[0]
 
-    async def _run() -> None:
+    async def _run() -> None:  # noqa: C901
         description = FINDINGS.get(finding_name, "")
 
         with logfire.span(

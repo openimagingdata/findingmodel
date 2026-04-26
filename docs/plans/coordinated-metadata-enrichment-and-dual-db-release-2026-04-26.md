@@ -1,6 +1,6 @@
 # Plan: Coordinated Metadata Enrichment and Dual-Database Release
 
-Status: Draft (2026-04-26)
+Status: In Progress (2026-04-26)
 
 ## Summary
 
@@ -207,8 +207,11 @@ tooling and database decisions are made against the current development baseline
    - `packages/findingmodel-ai`
    - `packages/oidm-common`
    - `packages/oidm-maintenance`
-5. Run the metadata assignment eval suite with Logfire enabled.
-6. Inspect representative Logfire traces, not just aggregate scores.
+5. Run the metadata assignment eval suite with Logfire enabled only if the rebase resolution changes
+   enrichment-affecting code, such as assignment prompts, metadata assignment behavior, eval fixtures,
+   eval harness code, or metadata model-routing configuration.
+6. If no enrichment-affecting code changed, explicitly document why full evals and Logfire trace
+   checks are deferred until the next enrichment/prompt/tooling change or the pre-pilot gate.
 7. Verify the current published DB schema by downloading the live manifest artifact and running schema
    inspection against the actual DuckDB file.
 8. Create the checked-in legacy schema contract artifact from the verified current-compatible DB
@@ -221,9 +224,61 @@ tooling and database decisions are made against the current development baseline
 - No unresolved conflicts remain.
 - OpenAI-only behavior from `dev` is preserved.
 - Focused package tests pass or any failures are understood and resolved in this workstream.
-- Metadata evals run successfully with Logfire traces available for inspection.
+- Metadata evals either run successfully with Logfire traces available for inspection, or are
+  explicitly deferred because no enrichment-affecting code changed during the rebase resolution.
 - The legacy/current-compatible DB schema contract artifact is checked in.
 - Any changed assumptions are documented in this plan before proceeding.
+
+### Phase 1 Execution Update (2026-04-26)
+
+Rebase status:
+
+- `feature/metadata-cleanup` was rebased onto local `dev`.
+- Conflict resolution preserved `dev`'s OpenAI-only embedding baseline.
+- Manual conflict resolutions were limited to:
+  - `scripts/check_anatomic_embeddings.py`
+  - `scripts/benchmark_models.py`
+- The metadata assignment prompt, assignment implementation, eval harness, eval fixtures, and
+  `metadata_assign` model-routing configuration were not manually changed as part of conflict
+  resolution.
+
+Verification completed:
+
+- `uv run ruff check scripts/check_anatomic_embeddings.py scripts/benchmark_models.py`
+  - passed
+- `uv run pytest packages/findingmodel/tests`
+  - `387 passed, 2 skipped`
+- `uv run pytest packages/oidm-common/tests`
+  - `142 passed`
+- `uv run pytest packages/oidm-maintenance/tests`
+  - `154 passed`
+- `uv run pytest packages/findingmodel-ai/tests`
+  - `247 passed, 10 skipped`
+  - one expected-style warning was emitted because a unit test entered a Logfire span without global
+    Logfire configuration; this does not indicate a rebase regression.
+
+Metadata eval / Logfire decision:
+
+- Full metadata assignment evals were not run during this Phase 1 rebase verification because the
+  conflict resolution did not change enrichment-affecting code.
+- A Logfire smoke run was also not run. There is no specific reason from this rebase to doubt Logfire
+  plumbing, and running Logfire only to prove it still emits traces would not test the actual
+  enrichment behavior we care about.
+- Traced metadata evals remain required before pilot enrichment or after any prompt, assignment,
+  ontology, auditor, or model-routing change that could affect enrichment outputs.
+
+Remaining Phase 1 work:
+
+- Review the Phase 1 changes and commit them before starting Phase 2.
+
+Legacy schema contract:
+
+- The current published DB schema was verified from the live `finding_models` DuckDB artifact listed
+  in the manifest as version `2026-01-28`.
+- The legacy/current-compatible schema contract artifact has been added in the working tree at
+  `docs/database-schemas/finding_models_legacy_2026-01-28.schema.json`.
+- Future legacy DB build validation should compare table names, column names/types/nullability,
+  primary keys, and indexes against that artifact.
 
 ## Phase 2: Finalize Package Capabilities in This Repository
 

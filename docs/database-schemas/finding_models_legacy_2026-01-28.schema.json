@@ -1,0 +1,415 @@
+{
+  "schema_contract": "finding_models_legacy",
+  "schema_version": "2026-01-28",
+  "description": "Exact current-compatible DuckDB schema contract for the non-metadata finding_models artifact. Keep this file while publishing the current-compatible database during the metadata transition.",
+  "source_artifact": {
+    "manifest_key": "finding_models",
+    "version": "2026-01-28",
+    "url": "https://findingmodelsdata.fly.storage.tigris.dev/findingmodel/2026-01-28/findingmodels.duckdb",
+    "sha256": "fc71ae12cdd29d8c012c9bd81e8eec2e50fba648166d894995e49177043c453b",
+    "size_bytes": 49033216,
+    "record_count": 2149
+  },
+  "validation_expectation": {
+    "purpose": "Legacy/current-compatible DB builders must produce this exact table, column, primary-key, and index shape.",
+    "metadata_policy": "No metadata-specific columns or helper tables are permitted in this artifact.",
+    "embedding_column": "finding_models.embedding must remain FLOAT[512]."
+  },
+  "tables": {
+    "attributes": {
+      "columns": [
+        {
+          "name": "attribute_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "oifm_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "model_name",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "attribute_name",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "attribute_type",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        }
+      ]
+    },
+    "finding_model_json": {
+      "columns": [
+        {
+          "name": "oifm_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "model_json",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        }
+      ]
+    },
+    "finding_models": {
+      "columns": [
+        {
+          "name": "oifm_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "slug_name",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "filename",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "file_hash_sha256",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR",
+          "nullable": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "search_text",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "embedding",
+          "type": "FLOAT[512]",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ]
+    },
+    "model_organizations": {
+      "columns": [
+        {
+          "name": "oifm_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "organization_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": "'contributor'",
+          "primary_key": true
+        },
+        {
+          "name": "display_order",
+          "type": "INTEGER",
+          "nullable": true,
+          "default": null,
+          "primary_key": false
+        }
+      ]
+    },
+    "model_people": {
+      "columns": [
+        {
+          "name": "oifm_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "person_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": "'contributor'",
+          "primary_key": true
+        },
+        {
+          "name": "display_order",
+          "type": "INTEGER",
+          "nullable": true,
+          "default": null,
+          "primary_key": false
+        }
+      ]
+    },
+    "organizations": {
+      "columns": [
+        {
+          "name": "code",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "url",
+          "type": "VARCHAR",
+          "nullable": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ]
+    },
+    "people": {
+      "columns": [
+        {
+          "name": "github_username",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "organization_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "url",
+          "type": "VARCHAR",
+          "nullable": true,
+          "default": null,
+          "primary_key": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "primary_key": false
+        }
+      ]
+    },
+    "synonyms": {
+      "columns": [
+        {
+          "name": "oifm_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "synonym",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        }
+      ]
+    },
+    "tags": {
+      "columns": [
+        {
+          "name": "oifm_id",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        },
+        {
+          "name": "tag",
+          "type": "VARCHAR",
+          "nullable": false,
+          "default": null,
+          "primary_key": true
+        }
+      ]
+    }
+  },
+  "indexes": [
+    {
+      "name": "idx_attributes_model",
+      "table": "attributes",
+      "sql": "CREATE INDEX idx_attributes_model ON attributes(oifm_id);"
+    },
+    {
+      "name": "idx_attributes_name",
+      "table": "attributes",
+      "sql": "CREATE INDEX idx_attributes_name ON attributes(attribute_name);"
+    },
+    {
+      "name": "finding_models_embedding_hnsw",
+      "table": "finding_models",
+      "sql": "CREATE INDEX finding_models_embedding_hnsw ON finding_models USING HNSW (embedding);"
+    },
+    {
+      "name": "idx_finding_models_filename",
+      "table": "finding_models",
+      "sql": "CREATE INDEX idx_finding_models_filename ON finding_models(filename);"
+    },
+    {
+      "name": "idx_finding_models_name",
+      "table": "finding_models",
+      "sql": "CREATE INDEX idx_finding_models_name ON finding_models(\"name\");"
+    },
+    {
+      "name": "idx_finding_models_slug_name",
+      "table": "finding_models",
+      "sql": "CREATE INDEX idx_finding_models_slug_name ON finding_models(slug_name);"
+    },
+    {
+      "name": "idx_model_orgs_model",
+      "table": "model_organizations",
+      "sql": "CREATE INDEX idx_model_orgs_model ON model_organizations(oifm_id);"
+    },
+    {
+      "name": "idx_model_orgs_org",
+      "table": "model_organizations",
+      "sql": "CREATE INDEX idx_model_orgs_org ON model_organizations(organization_id);"
+    },
+    {
+      "name": "idx_model_people_model",
+      "table": "model_people",
+      "sql": "CREATE INDEX idx_model_people_model ON model_people(oifm_id);"
+    },
+    {
+      "name": "idx_model_people_person",
+      "table": "model_people",
+      "sql": "CREATE INDEX idx_model_people_person ON model_people(person_id);"
+    },
+    {
+      "name": "idx_synonyms_model",
+      "table": "synonyms",
+      "sql": "CREATE INDEX idx_synonyms_model ON synonyms(oifm_id);"
+    },
+    {
+      "name": "idx_synonyms_synonym",
+      "table": "synonyms",
+      "sql": "CREATE INDEX idx_synonyms_synonym ON synonyms(synonym);"
+    },
+    {
+      "name": "idx_tags_model",
+      "table": "tags",
+      "sql": "CREATE INDEX idx_tags_model ON tags(oifm_id);"
+    },
+    {
+      "name": "idx_tags_tag",
+      "table": "tags",
+      "sql": "CREATE INDEX idx_tags_tag ON tags(tag);"
+    }
+  ]
+}
