@@ -412,6 +412,118 @@ class TestFindingModelPublishCommand:
         _args, kwargs = mock_publish.call_args
         assert kwargs["version"] == "2025-01-15"
 
+    def test_findingmodel_publish_accepts_metadata_artifact_target(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+        findingmodel_source_dir: Path,
+    ) -> None:
+        """Publish command can target the metadata manifest artifact."""
+        db_path = tmp_path / "test.duckdb"
+
+        build_result = runner.invoke(
+            main,
+            [
+                "findingmodel",
+                "build",
+                "-s",
+                str(findingmodel_source_dir),
+                "-o",
+                str(db_path),
+                "--no-embeddings",
+            ],
+        )
+
+        assert build_result.exit_code == 0
+
+        with patch("oidm_maintenance.findingmodel.publish.publish_findingmodel_database") as mock_publish:
+            mock_publish.return_value = True
+
+            result = runner.invoke(
+                main,
+                [
+                    "findingmodel",
+                    "publish",
+                    str(db_path),
+                    "--dry-run",
+                    "--manifest-key",
+                    "finding_models_metadata",
+                    "--s3-prefix",
+                    "findingmodel-metadata",
+                    "--artifact-name",
+                    "findingmodels-metadata.duckdb",
+                ],
+            )
+
+        assert result.exit_code == 0
+        _args, kwargs = mock_publish.call_args
+        assert kwargs["manifest_key"] == "finding_models_metadata"
+        assert kwargs["s3_prefix"] == "findingmodel-metadata"
+        assert kwargs["artifact_name"] == "findingmodels-metadata.duckdb"
+
+    def test_findingmodel_publish_function_uses_custom_artifact_target(self, tmp_path: Path) -> None:
+        """Publish function uses custom S3 path and manifest key, not only CLI pass-through."""
+        from oidm_maintenance.findingmodel.publish import (
+            DatabaseStats,
+            SanityCheckResult,
+            publish_findingmodel_database,
+        )
+
+        db_path = tmp_path / "metadata.duckdb"
+        db_path.write_text("fake db bytes")
+        mock_s3_client = MagicMock()
+        mock_s3_client.meta.endpoint_url = "https://fly.storage.tigris.dev"
+        sanity_result = SanityCheckResult(
+            success=True,
+            sample_count=1,
+            matched_count=1,
+            errors=[],
+            stats=DatabaseStats(
+                model_count=7,
+                synonyms_count=2,
+                tags_count=3,
+                size_bytes=1234,
+                database_path=db_path,
+            ),
+        )
+        settings = MaintenanceSettings(
+            aws_access_key_id=SecretStr("test-key"),
+            aws_secret_access_key=SecretStr("test-secret"),
+        )
+
+        with (
+            patch("oidm_maintenance.findingmodel.publish.get_settings", return_value=settings),
+            patch("oidm_maintenance.findingmodel.publish.create_s3_client", return_value=mock_s3_client),
+            patch("oidm_maintenance.findingmodel.publish.verify_bucket_access"),
+            patch("oidm_maintenance.findingmodel.publish.run_sanity_check", return_value=sanity_result),
+            patch("oidm_maintenance.findingmodel.publish.compute_file_hash", return_value="sha256:abc"),
+            patch("oidm_maintenance.findingmodel.publish.console.input", return_value="yes"),
+            patch("oidm_maintenance.findingmodel.publish.upload_file_to_s3", return_value="https://example/db.duckdb")
+            as mock_upload,
+            patch("oidm_maintenance.findingmodel.publish.load_manifest_from_s3", return_value={"databases": {}}),
+            patch("oidm_maintenance.findingmodel.publish.backup_manifest", return_value="https://example/backup.json"),
+            patch("oidm_maintenance.findingmodel.publish.update_manifest_entry", return_value={"databases": {}})
+            as mock_update,
+            patch("oidm_maintenance.findingmodel.publish.save_manifest_to_s3"),
+        ):
+            success = publish_findingmodel_database(
+                db_path,
+                version="2026-04-26",
+                manifest_key="finding_models_metadata",
+                s3_prefix="findingmodel-metadata",
+                artifact_name="findingmodels-metadata.duckdb",
+            )
+
+        assert success is True
+        mock_upload.assert_called_once_with(
+            mock_s3_client,
+            settings.s3_bucket,
+            "findingmodel-metadata/2026-04-26/findingmodels-metadata.duckdb",
+            db_path,
+        )
+        mock_update.assert_called_once()
+        assert mock_update.call_args.args[1] == "finding_models_metadata"
+
     def test_findingmodel_publish_fails_with_missing_db(
         self,
         runner: CliRunner,
@@ -1004,6 +1116,9 @@ class TestCLIMetadata:
         assert "--source" in result.output
         assert "--output" in result.output
         assert "--no-embeddings" in result.output
+        assert "--schema-name" in result.output
+        assert "--schema-version" in result.output
+        assert "--source-commit" in result.output
 
     def test_anatomic_build_help(self, runner: CliRunner) -> None:
         """Anatomic build command shows help text."""

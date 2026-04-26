@@ -168,11 +168,17 @@ def markdown_to_fm(finding_path: Path, with_ids: bool, source: str | None, outpu
     is_flag=True,
     help="Opt in to Logfire instrumentation for this run, including outbound HTTP calls.",
 )
+@click.option(
+    "--ontology-cache",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Optional DuckDB cache path for ontology lookup evidence.",
+)
 def assign_metadata_command(
     finding_path: Path,
     output: Path | None,
     review_output: Path | None,
     logfire: bool,
+    ontology_cache: Path | None,
 ) -> None:
     """Assign canonical structured metadata to an existing .fm.json model."""
 
@@ -183,7 +189,7 @@ def assign_metadata_command(
         finding_model = FindingModelFull.model_validate_json(finding_path.read_text())
 
         with console.status("[bold green]Assigning canonical metadata..."):
-            result = await assign_metadata(finding_model)
+            result = await assign_metadata(finding_model, ontology_cache=ontology_cache)
 
         model_json = result.model.model_dump_json(indent=2, exclude_none=True)
         review_json = result.review.model_dump_json(indent=2, exclude_none=True)

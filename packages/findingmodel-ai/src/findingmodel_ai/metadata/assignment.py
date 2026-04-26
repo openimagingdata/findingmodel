@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 from time import perf_counter
 from typing import Any
 
@@ -29,6 +30,7 @@ from pydantic_ai.models import Model
 
 from findingmodel_ai import logger
 from findingmodel_ai.config import settings
+from findingmodel_ai.metadata.ontology_cache import OntologyEvidenceUsage, OntologyLookupCache
 from findingmodel_ai.metadata.types import (
     AnatomicCandidate,
     FieldConfidence,
@@ -655,6 +657,29 @@ def _selected_anatomic_locations(states: dict[str, _AnatomicCandidateState]) -> 
     return _dedupe_index_codes([state.result.as_index_code() for state in states.values() if state.selected])
 
 
+def _record_ontology_cache(
+    cache: OntologyLookupCache | None,
+    states: dict[str, _OntologyCandidateState],
+) -> None:
+    if cache is None:
+        return
+    for state in states.values():
+        usage: OntologyEvidenceUsage
+        if state.selected_as_canonical:
+            usage = "canonical_selected"
+        elif state.rejection_reason is not None:
+            usage = "rejected_candidate"
+        else:
+            usage = "related_candidate"
+        cache.record_ontology_result(
+            state.result,
+            usage=usage,
+            query=state.result.concept_text,
+            relationship=state.relationship.value,
+            rejection_reason=state.rejection_reason.value if state.rejection_reason is not None else None,
+        )
+
+
 STRUCTURED_METADATA_FIELDS = (
     "body_regions",
     "subspecialties",
@@ -690,7 +715,7 @@ def _project_structured_field_value(
     field_name: str,
     *,
     fill_blanks_only: bool,
-) -> Any:
+) -> object:
     existing_value = getattr(finding_model, field_name)
     decision_value = getattr(decision, field_name)
 
@@ -944,6 +969,7 @@ async def assign_metadata(
     finding_model: FindingModelFull,
     *,
     fill_blanks_only: bool = False,
+    ontology_cache: OntologyLookupCache | Path | str | None = None,
 ) -> MetadataAssignmentResult:
     """Assign canonical structured metadata to a finding model.
 
@@ -951,10 +977,16 @@ async def assign_metadata(
         finding_model: The finding model to assign metadata to.
         fill_blanks_only: When True, only populate currently-empty fields.
             When False (default, "reassess" mode), always re-evaluate all fields.
+        ontology_cache: Optional durable cache or cache path for ontology candidate evidence.
     """
     warnings: list[str] = []
     timings: dict[str, float] = {}
     assignment_mode = "fill_blanks_only" if fill_blanks_only else "reassess"
+    resolved_ontology_cache = (
+        ontology_cache
+        if isinstance(ontology_cache, OntologyLookupCache) or ontology_cache is None
+        else OntologyLookupCache(ontology_cache)
+    )
 
     with logfire.span(
         "assign_metadata",
@@ -995,6 +1027,9 @@ async def assign_metadata(
 
         _apply_ontology_decisions(ontology_states, decision.ontology_decisions, warnings)
         _apply_anatomic_decisions(anatomic_states, decision.anatomic_decisions, warnings)
+        _record_ontology_cache(resolved_ontology_cache, ontology_states)
+        if resolved_ontology_cache is not None and not isinstance(ontology_cache, OntologyLookupCache):
+            resolved_ontology_cache.close()
 
         start = perf_counter()
         with logfire.span("assign_metadata.assemble", finding_name=finding_model.name, mode=assignment_mode):

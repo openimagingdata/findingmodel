@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Sequence
+from datetime import UTC, datetime
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import duckdb
@@ -24,6 +26,7 @@ from oidm_maintenance.config import get_settings
 
 console = Console()
 DEFAULT_CONTRIBUTOR_ROLE = "contributor"
+DEFAULT_SCHEMA_NAME = "finding_models_metadata"
 
 # Schema statements copied from findingmodel.index.FindingModelIndex
 _SCHEMA_STATEMENTS: tuple[str, ...] = (
@@ -121,6 +124,21 @@ _SCHEMA_STATEMENTS: tuple[str, ...] = (
         model_json TEXT NOT NULL
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS database_metadata (
+        schema_name VARCHAR NOT NULL,
+        schema_version VARCHAR NOT NULL,
+        source_commit VARCHAR,
+        build_timestamp TIMESTAMP NOT NULL,
+        findingmodel_version VARCHAR NOT NULL,
+        oidm_common_version VARCHAR NOT NULL,
+        oidm_maintenance_version VARCHAR NOT NULL,
+        embedding_provider VARCHAR NOT NULL,
+        embedding_model VARCHAR NOT NULL,
+        embedding_dimensions INTEGER NOT NULL,
+        PRIMARY KEY (schema_name)
+    )
+    """,
 )
 
 # Index statements copied from findingmodel.index.FindingModelIndex
@@ -145,6 +163,9 @@ async def build_findingmodel_database(
     source_dir: Path,
     output_path: Path,
     generate_embeddings: bool = True,
+    schema_name: str = DEFAULT_SCHEMA_NAME,
+    schema_version: str = "2.0.0",
+    source_commit: str | None = None,
 ) -> Path:
     """Build the findingmodel DuckDB database from .fm.json files.
 
@@ -152,6 +173,9 @@ async def build_findingmodel_database(
         source_dir: Directory containing .fm.json files.
         output_path: Path for output DuckDB file.
         generate_embeddings: Whether to generate OpenAI embeddings.
+        schema_name: Logical schema/artifact name recorded in database_metadata.
+        schema_version: Logical schema version recorded in database_metadata.
+        source_commit: Optional source-data repository commit recorded in database_metadata.
 
     Returns:
         Path to the created database file.
@@ -240,6 +264,16 @@ async def build_findingmodel_database(
             # Insert models
             task = progress.add_task(f"Inserting {len(models_data)} models...", total=None)
             _insert_models(conn, models_data, embeddings)
+            progress.update(task, completed=1)
+
+            # Record build metadata
+            task = progress.add_task("Recording database metadata...", total=None)
+            _insert_database_metadata(
+                conn,
+                schema_name=schema_name,
+                schema_version=schema_version,
+                source_commit=source_commit,
+            )
             progress.update(task, completed=1)
 
             # Create indexes
@@ -606,6 +640,53 @@ def _insert_batch(
             """,
             json_rows,
         )
+
+
+def _package_version(package_name: str) -> str:
+    try:
+        return version(package_name)
+    except PackageNotFoundError:
+        return "unknown"
+
+
+def _insert_database_metadata(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    schema_name: str,
+    schema_version: str,
+    source_commit: str | None,
+) -> None:
+    """Record build provenance for metadata-aware findingmodel databases."""
+    from oidm_common.embeddings.config import ACTIVE_EMBEDDING_CONFIG
+
+    conn.execute(
+        """
+        INSERT INTO database_metadata (
+            schema_name,
+            schema_version,
+            source_commit,
+            build_timestamp,
+            findingmodel_version,
+            oidm_common_version,
+            oidm_maintenance_version,
+            embedding_provider,
+            embedding_model,
+            embedding_dimensions
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            schema_name,
+            schema_version,
+            source_commit,
+            datetime.now(tz=UTC),
+            _package_version("findingmodel"),
+            _package_version("oidm-common"),
+            _package_version("oidm-maintenance"),
+            ACTIVE_EMBEDDING_CONFIG.provider,
+            ACTIVE_EMBEDDING_CONFIG.model,
+            ACTIVE_EMBEDDING_CONFIG.dimensions,
+        ],
+    )
 
 
 def _build_search_text(model: FindingModelFull) -> str:

@@ -276,6 +276,9 @@ def publish_findingmodel_database(  # noqa: C901
     db_path: Path,
     version: str | None = None,
     dry_run: bool = False,
+    manifest_key: str = "finding_models",
+    s3_prefix: str = "findingmodel",
+    artifact_name: str = "findingmodels.duckdb",
 ) -> bool:
     """Publish findingmodel database to S3.
 
@@ -286,6 +289,9 @@ def publish_findingmodel_database(  # noqa: C901
         db_path: Path to the DuckDB file to publish.
         version: Version string (default: YYYY-MM-DD today's date).
         dry_run: If True, show what would happen without uploading.
+        manifest_key: Manifest database key to update.
+        s3_prefix: S3 prefix under which the versioned artifact is uploaded.
+        artifact_name: Artifact filename in the versioned S3 prefix.
 
     Returns:
         True if publish succeeded, False if cancelled or failed.
@@ -306,6 +312,9 @@ def publish_findingmodel_database(  # noqa: C901
     console.print("\n[bold cyan]Publishing FindingModel Database[/bold cyan]")
     console.print(f"Version: {version}")
     console.print(f"Database: {db_path}")
+    console.print(f"Manifest key: {manifest_key}")
+    console.print(f"S3 prefix: {s3_prefix}")
+    console.print(f"Artifact name: {artifact_name}")
     console.print(f"Dry run: {dry_run}\n")
 
     # Step 1: Verify bucket access (validates credentials early)
@@ -375,7 +384,7 @@ def publish_findingmodel_database(  # noqa: C901
         console.print("\n[yellow]Uploading to S3...[/yellow]")
         try:
             # Construct S3 key
-            s3_key = f"findingmodel/{version}/findingmodels.duckdb"
+            s3_key = f"{s3_prefix.strip('/')}/{version}/{artifact_name}"
 
             # Upload database file
             db_url = upload_file_to_s3(s3_client, settings.s3_bucket, s3_key, db_path)
@@ -401,7 +410,7 @@ def publish_findingmodel_database(  # noqa: C901
                 "description": f"FindingModel index with {sanity_result.stats.model_count} models, "
                 f"{sanity_result.stats.synonyms_count} synonyms, {sanity_result.stats.tags_count} tags",
             }
-            updated_manifest = update_manifest_entry(manifest, "finding_models", entry)
+            updated_manifest = update_manifest_entry(manifest, manifest_key, entry)
 
             # Save updated manifest
             save_manifest_to_s3(s3_client, settings.s3_bucket, settings.manifest_key, updated_manifest)
@@ -418,9 +427,11 @@ def publish_findingmodel_database(  # noqa: C901
     else:
         # Dry run - just show what would happen
         console.print("\n[bold]Would perform:[/bold]")
-        console.print(f"  1. Upload database to s3://{settings.s3_bucket}/findingmodel/{version}/findingmodels.duckdb")
+        console.print(
+            f"  1. Upload database to s3://{settings.s3_bucket}/{s3_prefix.strip('/')}/{version}/{artifact_name}"
+        )
         console.print(f"  2. Backup current manifest to s3://{settings.s3_bucket}/{settings.manifest_backup_prefix}...")
-        console.print(f"  3. Update manifest entry for 'finding_models' with version {version}")
+        console.print(f"  3. Update manifest entry for '{manifest_key}' with version {version}")
         console.print(f"  4. Upload updated manifest to s3://{settings.s3_bucket}/{settings.manifest_key}")
         console.print("\n[bold green]Dry run complete![/bold green]")
         return True

@@ -88,3 +88,34 @@ def test_assign_metadata_cli_enables_logfire_and_writes_outputs(runner: CliRunne
         assert output_path.exists()
         assert review_path.exists()
         assert "Logfire trace_id: trace-123" in result.stderr
+
+
+def test_assign_metadata_cli_passes_ontology_cache_path(runner: CliRunner, sample_model_path: Path) -> None:
+    model = FindingModelFull.model_validate_json(sample_model_path.read_text())
+    result_obj = _result_for(model)
+
+    with runner.isolated_filesystem():
+        cache_path = Path("ontology-cache.duckdb")
+
+        with (
+            patch("findingmodel_ai.cli.settings") as mock_settings,
+            patch("findingmodel_ai.cli.assign_metadata") as mock_assign_metadata,
+            patch("findingmodel_ai.cli.ensure_logfire_configured"),
+        ):
+            mock_settings.validate_default_model_keys = MagicMock()
+            mock_assign_metadata.return_value = result_obj
+
+            result = runner.invoke(
+                cli,
+                [
+                    "assign-metadata",
+                    str(sample_model_path),
+                    "--ontology-cache",
+                    str(cache_path),
+                ],
+            )
+
+        assert result.exit_code == 0
+        mock_assign_metadata.assert_awaited_once()
+        _, kwargs = mock_assign_metadata.await_args
+        assert kwargs["ontology_cache"] == cache_path

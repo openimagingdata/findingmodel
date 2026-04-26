@@ -228,6 +228,58 @@ class TestBuildOperations:
         finally:
             conn.close()
 
+    async def test_build_records_database_metadata(self, tmp_path: Path, source_data_dir: Path) -> None:
+        """Build records schema and provenance metadata for metadata-aware artifacts."""
+        db_path = tmp_path / "test.duckdb"
+
+        await build_findingmodel_database(
+            source_data_dir,
+            db_path,
+            generate_embeddings=False,
+            schema_name="finding_models_metadata",
+            schema_version="2.0.0-test",
+            source_commit="abc123",
+        )
+
+        conn = duckdb.connect(str(db_path), read_only=True)
+        try:
+            row = conn.execute(
+                """
+                SELECT
+                    schema_name,
+                    schema_version,
+                    source_commit,
+                    findingmodel_version,
+                    oidm_common_version,
+                    oidm_maintenance_version,
+                    embedding_provider,
+                    embedding_model,
+                    embedding_dimensions
+                FROM database_metadata
+                """
+            ).fetchone()
+            assert row is not None
+            assert row[0] == "finding_models_metadata"
+            assert row[1] == "2.0.0-test"
+            assert row[2] == "abc123"
+            assert all(row[i] for i in (3, 4, 5))
+            assert row[6] == "openai"
+            assert row[7] == "text-embedding-3-small"
+            assert row[8] == 512
+        finally:
+            conn.close()
+
+    async def test_build_database_metadata_defaults_to_metadata_schema(self, tmp_path: Path) -> None:
+        """Default build provenance targets the metadata-aware artifact schema."""
+        db_path = await _build_db_from_models(tmp_path, [_facet_rich_model()])
+
+        conn = duckdb.connect(str(db_path), read_only=True)
+        try:
+            row = conn.execute("SELECT schema_name, schema_version FROM database_metadata").fetchone()
+            assert row == ("finding_models_metadata", "2.0.0")
+        finally:
+            conn.close()
+
     async def test_build_idempotent(self, tmp_path: Path, source_data_dir: Path) -> None:
         """Rebuilding produces same result."""
         db_path = tmp_path / "test.duckdb"

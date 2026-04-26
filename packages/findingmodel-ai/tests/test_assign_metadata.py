@@ -28,6 +28,7 @@ from findingmodel_ai.metadata.assignment import (
     assign_metadata,
     create_metadata_assignment_agent,
 )
+from findingmodel_ai.metadata.ontology_cache import OntologyLookupCache
 from findingmodel_ai.metadata.types import (
     FieldConfidence,
     OntologyCandidateRejectionReason,
@@ -165,6 +166,54 @@ async def test_assign_metadata_assembles_canonical_result(
     assert result.review.anatomic_candidates[0].location.display == "lung"
     assert result.review.anatomic_candidates[1].location.display == "lower respiratory tract"
     assert result.review.classification_rationale
+
+
+@pytest.mark.asyncio
+async def test_assign_metadata_records_ontology_cache(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    """Assignment can write durable ontology evidence without changing the model output."""
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        ontology_decisions=[
+            OntologyCandidateDecision(
+                candidate_id="RADLEX:RID9999",
+                relationship=OntologyCandidateRelationship.RELATED,
+                selected_as_canonical=False,
+                rejection_reason=OntologyCandidateRejectionReason.OVERLAPPING_SCOPE,
+            ),
+        ],
+        classification_rationale="Cache evidence test.",
+    )
+    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
+    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+
+    cache_path = tmp_path / "ontology-cache.duckdb"
+    result = await assign_metadata(finding_model, ontology_cache=cache_path)
+
+    assert result.model.index_codes is not None
+    cache = OntologyLookupCache(cache_path)
+    exact = cache.get("SNOMEDCT", "233604007")
+    rejected = cache.get("RADLEX", "RID9999")
+    assert exact is not None
+    assert exact.preferred_display == "Pneumonia"
+    assert exact.usage == "canonical_selected"
+    assert rejected is not None
+    assert rejected.preferred_display == "lung opacity"
+    assert rejected.usage == "rejected_candidate"
+    assert rejected.relationship == "related"
+    assert rejected.rejection_reason == "overlapping_scope"
 
 
 @pytest.mark.asyncio

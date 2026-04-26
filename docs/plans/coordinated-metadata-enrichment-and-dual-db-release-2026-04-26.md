@@ -282,11 +282,221 @@ Legacy schema contract:
 
 ## Phase 2: Finalize Package Capabilities in This Repository
 
+Status: Implemented locally and package-suite validation passing (2026-04-26); awaiting review and
+commit.
+
 ### Why This Phase Exists
 
 The `findingmodels` branch will depend on package behavior from this repository. Before enriching
 canonical data, we need the model schema, assignment behavior, DB builders, and publish primitives to
 be coherent enough that the data repo scripts can call them reliably.
+
+### Phase 2 Execution Approach
+
+Start with an audit against the checklist below before making substantive implementation changes.
+This avoids assuming package capabilities that may not actually exist after the rebase.
+
+Initial audit targets:
+
+- optional metadata fields and generated JSON Schema support in `findingmodel`
+- markdown/schema rendering behavior expected by the `findingmodels` validator
+- stable external metadata assignment API and review artifacts in `findingmodel-ai`
+- metadata-aware DuckDB build and manifest-key targeting in `oidm-maintenance`
+- durable ontology lookup cache support
+- enrichment auditor agent support
+
+Full metadata evals and Logfire trace review are not part of the opening audit unless the audit leads
+to prompt, assignment, ontology, auditor, model-routing, or eval-harness changes. They remain required
+before pilot enrichment or after any enrichment-affecting implementation change.
+
+Any implementation work in this phase should update this plan with the changed status and should
+identify whether focused tests, full metadata evals, or traced Logfire inspection are required by the
+kind of change made.
+
+### Phase 2 Execution Update (2026-04-26)
+
+Initial audit findings:
+
+- `FindingModelFull` and `FindingModelBase` include the planned optional metadata fields.
+- `FindingModelFull.model_json_schema()` includes the metadata fields and supporting enum/model
+  definitions.
+- `FindingModelFull.as_markdown()` and the shared markdown template render model-level codes and
+  structured metadata fields.
+- `findingmodel-ai` exposes `assign_metadata()` as a package-level callable, and the result includes
+  updated model JSON plus review provenance.
+- Metadata assignment review output already includes model used, assignment mode, Logfire trace ID,
+  ontology candidates, anatomic candidates, rationale, field confidence, timings, and warnings.
+- The metadata-aware DB builder already stores structured metadata columns and hydrates them through
+  `FindingModelIndex`.
+- Concrete gaps found in the opening audit:
+  - no metadata-aware DB build provenance/version table existed
+  - findingmodel publish tooling still hardcoded the `finding_models` manifest key and artifact path
+  - durable ontology lookup evidence caching did not exist
+  - no dedicated enrichment auditor agent existed
+
+Implemented during this phase:
+
+- Added a `database_metadata` table to metadata-aware findingmodel DB builds.
+- Recorded schema name, schema version, source commit, package versions, build timestamp, and
+  embedding profile in `database_metadata`.
+- Parameterized findingmodel publish tooling with `manifest_key`, `s3_prefix`, and `artifact_name`
+  while preserving current defaults for the existing `finding_models` artifact.
+- Added CLI options for metadata DB build provenance and metadata artifact publishing targets.
+- Added focused tests for DB metadata recording and metadata manifest targeting.
+
+Verification completed:
+
+- `uv run ruff check packages/oidm-maintenance/src/oidm_maintenance/findingmodel/build.py packages/oidm-maintenance/src/oidm_maintenance/findingmodel/publish.py packages/oidm-maintenance/src/oidm_maintenance/cli.py packages/oidm-maintenance/tests/test_findingmodel_build.py packages/oidm-maintenance/tests/test_cli.py`
+  - passed
+- `uv run pytest packages/oidm-maintenance/tests/test_findingmodel_build.py packages/oidm-maintenance/tests/test_cli.py`
+  - `76 passed`
+
+Metadata eval / Logfire decision:
+
+- Full metadata assignment evals and Logfire trace review were not run for the DB/publish changes
+  because they do not alter assignment prompts, assignment behavior, ontology selection logic,
+  auditor behavior, eval fixtures, eval harness code, or metadata model routing.
+
+Additional Phase 2 design decisions:
+
+- The ontology lookup cache should use DuckDB, not SQLite.
+  Rationale: this project already uses DuckDB for durable local artifacts and embedding caches, and
+  the ontology cache is a durable evidence dataset we will inspect, query, export, and include in
+  review workflows. Introducing SQLite for this one cache would add another persistence technology
+  without a meaningful advantage.
+- The enrichment auditor should remain a lightweight Pydantic AI wrapper, not a large workflow
+  system. Most of the engineering value should be in a careful prompt that gives the auditor a clear
+  understanding of its task.
+- The auditor prompt must be detailed enough to explain that the agent is reviewing an already
+  enriched finding model, not re-enriching it or proposing broad alternatives. It should flag likely
+  problems, not every arguable metadata judgment.
+- The auditor should focus on high-impact sanity checks:
+  - nonexistent or hallucinated ontology codes
+  - code/display mismatches against lookup evidence
+  - merely related, broader, narrower, or wrong ontology concepts stored as canonical `index_codes`
+  - obvious anatomy/body-region/modality/subspecialty contradictions
+  - impossible age, sex-specificity, or time-course assignments
+  - over-broad or unsupported etiologies
+- The auditor needs deterministic ontology-code evidence lookup. It should query the DuckDB ontology
+  cache for every `index_codes` entry before calling the LLM. The prompt should receive the lookup
+  evidence, including preferred display, labels/synonyms when available, concept URI/source, and raw
+  normalized response or structured equivalent.
+- If cache evidence is missing for an `index_codes` entry, the wrapper should emit or pass through a
+  concrete missing-evidence warning/flag. The LLM should not invent ontology facts or browse for them.
+
+Second implementation chunk completed:
+
+- Added a DuckDB-backed ontology lookup evidence cache in `findingmodel-ai`.
+- Added optional ontology-cache recording to `assign_metadata()` without changing assignment
+  decisions or prompts.
+- Added `--ontology-cache` to the `findingmodel-ai assign-metadata` CLI.
+- Added a lightweight enrichment auditor wrapper with:
+  - deterministic cache lookup for every canonical `index_codes` entry
+  - deterministic flags for missing ontology evidence
+  - deterministic flags for code/display mismatches against cached preferred display
+  - a small Pydantic AI sanity-check pass for additional likely issues
+- Kept auditor routing intentionally simple by using the existing `metadata_assign` model route
+  rather than introducing a new benchmark/model-routing surface.
+
+Additional verification completed:
+
+- `uv run ruff check` on the touched `findingmodel-ai` and `oidm-maintenance` files
+  - passed
+- `uv run pytest packages/findingmodel-ai/tests/test_enrichment_auditor.py packages/findingmodel-ai/tests/test_ontology_cache.py packages/findingmodel-ai/tests/test_assign_metadata.py packages/oidm-maintenance/tests/test_findingmodel_build.py packages/oidm-maintenance/tests/test_cli.py`
+  - `86 passed`
+  - one Logfire-not-configured warning was emitted by an assignment unit test that enters a Logfire
+    span without global Logfire configuration.
+
+Metadata eval / Logfire decision after second chunk:
+
+- Full metadata assignment evals were still not run because these changes do not alter assignment
+  prompt text, assignment decision behavior, ontology candidate selection, eval fixtures, eval
+  harness code, or metadata model routing.
+- The auditor prompt is new, but it is not part of the assignment path and is covered here by
+  focused unit tests. Traced Logfire evals remain required before pilot enrichment or after any
+  change that affects actual enrichment outputs.
+
+Third implementation chunk completed:
+
+- Added `FINDINGMODEL_DB_MANIFEST_KEY` so callers can override the manifest database key.
+- Preserved the current runtime default manifest key as `finding_models` for the active package line.
+- Added explicit opt-in test coverage for `FINDINGMODEL_DB_MANIFEST_KEY=finding_models_metadata` so
+  metadata-aware artifact testing does not require changing the current default.
+- Deferred the default flip to `finding_models_metadata` until the `findingmodel 2.0.0` release gate.
+- Updated configuration docs to describe the manifest-key setting and metadata-aware opt-in behavior.
+- Kept package version-number bumps out of this implementation chunk. The code is being prepared for
+  the metadata-aware line, but actual release version changes belong at the release gate after pilot,
+  full enrichment, dual-DB proof, and final package review.
+
+Additional verification completed:
+
+- `uv run ruff check packages/findingmodel/src/findingmodel/config.py packages/findingmodel/tests/test_config.py`
+  - passed
+- `uv run pytest packages/findingmodel/tests/test_config.py`
+  - `16 passed`
+
+Final focused verification for this Phase 2 pass:
+
+- `uv run ruff check` on all touched `findingmodel`, `findingmodel-ai`, and `oidm-maintenance`
+  Python files
+  - passed
+- `uv run pytest packages/findingmodel/tests/test_config.py packages/findingmodel-ai/tests/test_enrichment_auditor.py packages/findingmodel-ai/tests/test_ontology_cache.py packages/findingmodel-ai/tests/test_assign_metadata.py packages/oidm-maintenance/tests/test_findingmodel_build.py packages/oidm-maintenance/tests/test_cli.py`
+  - `102 passed`
+  - one Logfire-not-configured warning was emitted by an assignment unit test that enters a Logfire
+    span without global Logfire configuration.
+
+Broader package-scope validation completed after review concern about blast radius:
+
+- `uv run ruff check packages/findingmodel packages/findingmodel-ai packages/oidm-maintenance packages/oidm-common`
+  - passed
+- `uv run pytest packages/findingmodel/tests`
+  - initially exposed manifest integration coverage that needed to distinguish the current
+    `finding_models` default from explicit `finding_models_metadata` opt-in behavior.
+  - rerun result after the do-now pass: `388 passed, 2 skipped`
+- `uv run pytest packages/findingmodel-ai/tests`
+  - `253 passed, 10 skipped`
+  - one Logfire-not-configured warning was emitted by the assignment unit test described above.
+- `uv run pytest packages/oidm-common/tests`
+  - `142 passed`
+- `uv run pytest packages/oidm-maintenance/tests`
+  - `158 passed`
+
+Follow-up test audit:
+
+- The audit found that the new `assign-metadata --ontology-cache` option was not directly asserted
+  by CLI tests and that one assignment test still used a misleading `.sqlite` cache filename.
+- Added a CLI assertion that `--ontology-cache` is passed through to `assign_metadata()`.
+- Renamed the assignment test cache path to `.duckdb` to match the implementation.
+- Added a test that default DB build provenance records `schema_name="finding_models_metadata"`.
+- Added a function-level publish test that verifies custom metadata artifact target values control
+  the S3 upload key and manifest key, not just CLI argument pass-through.
+- Refactored the ontology lookup cache onto the shared DuckDB connection helper and a held
+  connection/context-manager lifecycle, instead of raw per-operation connections.
+- Added `relationship` and `rejection_reason` columns to ontology cache evidence while the cache
+  schema is still uncommitted, preserving why a considered ontology code was selected or rejected.
+- Documented the `database_metadata` provenance table in the database management guide.
+- Updated package READMEs for `findingmodel-ai` ontology-cache/auditor usage and `oidm-maintenance`
+  metadata build/publish options.
+- Added concise user-facing changelog entries for the manifest-key override, ontology cache/auditor,
+  DB provenance table, and metadata build/publish options.
+- Reran package-scope Ruff and the full `findingmodel-ai` suite on the current code:
+  - Ruff passed.
+  - `findingmodel-ai`: `253 passed, 10 skipped`, with the same Logfire-not-configured warning.
+- Reran relevant `oidm-maintenance` and `findingmodel-ai` tests after the follow-up additions:
+  - `uv run pytest packages/oidm-maintenance/tests/test_findingmodel_build.py packages/oidm-maintenance/tests/test_cli.py packages/findingmodel-ai/tests/test_cli_assign_metadata.py packages/findingmodel-ai/tests/test_assign_metadata.py`
+  - `87 passed`
+  - one Logfire-not-configured warning was emitted by the assignment unit test described above.
+- Reran `oidm-maintenance` build/CLI tests after the publish/default-provenance additions:
+  - `78 passed`
+- Final do-now validation after restoring the current default manifest key, refactoring the cache
+  connection lifecycle, adding cache relationship/rejection fields, and updating docs/changelog:
+  - `uv run ruff check packages/findingmodel packages/findingmodel-ai packages/oidm-maintenance packages/oidm-common`
+    passed.
+  - `uv run pytest packages/findingmodel/tests`: `388 passed, 2 skipped`.
+  - `uv run pytest packages/findingmodel-ai/tests`: `253 passed, 10 skipped`, with the same
+    Logfire-not-configured warning.
+  - `uv run pytest packages/oidm-common/tests`: `142 passed`.
+  - `uv run pytest packages/oidm-maintenance/tests`: `158 passed`.
 
 ### Required Work
 
@@ -326,7 +536,8 @@ be coherent enough that the data repo scripts can call them reliably.
 9. Add ontology cache/database support that can persist lookup evidence for index-code selection and
    fact-checking.
 10. Add the enrichment auditor agent and structured auditor output models.
-11. Prepare package versioning for the metadata-aware line, targeting `findingmodel 2.0.0`.
+11. Prepare package versioning for the metadata-aware line, targeting `findingmodel 2.0.0`, but do
+    not change the active package-line default manifest key before the release gate.
 
 ### Done Criteria
 
@@ -339,7 +550,8 @@ be coherent enough that the data repo scripts can call them reliably.
   `finding_models`.
 - Ontology lookup evidence can be cached and re-used.
 - Auditor agent can run on enriched model JSON and produce structured review flags.
-- Documentation and changelog updates needed for package users are identified.
+- Documentation and changelog updates needed for package users are identified and updated for the
+  completed Phase 2 package changes.
 
 ## Phase 3: Build Local Wheels for Data-Repo Iteration
 
@@ -388,12 +600,15 @@ index files. It must stay internally synchronized.
    - auditor-run script or auditor integration in the enrichment/review workflow
    - legacy DB build/publish script
    - metadata DB build/publish script
-7. Keep detailed run outputs under `.metadata-runs/`, untracked.
-8. Add a guard or dependency pin so `scripts/validator.py` cannot silently run with
+7. If the repo-local scripts duplicate assignment-then-audit orchestration, add a small package-level
+   helper in this repository, such as `assign_and_audit()`, and have the scripts call that instead of
+   maintaining a second workflow implementation.
+8. Keep detailed run outputs under `.metadata-runs/`, untracked.
+9. Add a guard or dependency pin so `scripts/validator.py` cannot silently run with
    `findingmodel<2.0.0` once enriched metadata fields are present.
-9. Regenerate `schema/finding_model.schema.json` using the metadata-aware package.
-10. Manually update `schema/finding_model_schema.md` to document the new optional metadata fields.
-11. Run the existing validator so generated `text/*.md`, `index.md`, and `ids.json` are synchronized.
+10. Regenerate `schema/finding_model.schema.json` using the metadata-aware package.
+11. Manually update `schema/finding_model_schema.md` to document the new optional metadata fields.
+12. Run the existing validator so generated `text/*.md`, `index.md`, and `ids.json` are synchronized.
 
 ### Script Requirements
 
@@ -427,6 +642,8 @@ The enrichment batch script must:
 - support resuming or skipping already-completed files
 - write or update ontology cache entries for ontology concepts used or considered during enrichment
 - run or enqueue the auditor agent for enriched files
+- preserve ontology candidate relationship and rejection-reason evidence in the cache so later review
+  can distinguish selected codes from rejected related/broader/narrower candidates
 
 The HTML review-package script must:
 
@@ -434,6 +651,7 @@ The HTML review-package script must:
 - generate a static review package for pilot and full-run review sets
 - include original model metadata state, enriched model metadata state, and concise before/after diffs
 - include selected `index_codes`, anatomic locations, and ontology lookup evidence from the cache
+- show cache preferred-display terms alongside source JSON displays for index-code fact checking
 - include auditor flags and severity
 - include assignment review warnings and confidence fields
 - capture human reviewer status and comments in a structured review JSON file
@@ -444,6 +662,8 @@ The human-review ingestion script must:
 - summarize accepted, rejected, corrected, deferred, and needs-discussion items
 - produce a concrete fix list for prompts, package code, ontology cache corrections, or source model
   edits
+- treat repeated hallucinated ontology codes, missing cache evidence, and code/display mismatches as
+  prompt/tooling issues to resolve before expanding the run
 - block progression from pilot to full enrichment until every pilot review item is accepted, fixed, or
   explicitly deferred with rationale
 
@@ -490,7 +710,8 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
 ### Required Work
 
 1. Use the pilot selection script to choose about 150 representative models.
-2. Run enrichment on the selected files using concurrency `3`.
+2. Run enrichment on real `findingmodels/defs/*.fm.json` files selected by the pilot manifest, using
+   concurrency `3`.
 3. Use bounded retries:
    - allow assignment-internal validation retries
    - retry the whole file once for transient/API failures
@@ -498,7 +719,7 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
 5. Continue the batch after failures.
 6. Write all review artifacts to `.metadata-runs/`.
 7. Populate or update the ontology cache with lookup evidence used during enrichment.
-8. Run the enrichment auditor agent on pilot outputs.
+8. Run the enrichment auditor agent on real enriched pilot outputs and review every resulting flag.
 9. Generate the static HTML human-review package.
 10. Complete human review through the HTML package and export the structured review JSON.
 11. Ingest the review JSON and produce the concrete fix list.
@@ -506,6 +727,11 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
 13. Review all failure records, warnings, low-confidence outputs, auditor flags, and representative
     Logfire traces.
 14. Update prompts/tooling only for systematic issues.
+15. If auditor output is too noisy or too weak during pilot review, first improve the auditor prompt;
+    add a separate `metadata_audit` model-routing tag only if the existing `metadata_assign` route is
+    a demonstrated bottleneck.
+16. If ontology-code fact checking reveals missing cache coverage, add cache-first lookup/fill steps
+    before expanding to the full corpus rather than asking the auditor to infer ontology facts.
 
 ### Done Criteria
 
@@ -514,6 +740,7 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
 - Ontology cache entries exist for pilot ontology evidence.
 - Auditor output exists for pilot enriched files.
 - HTML review package exists and includes auditor flags plus ontology evidence.
+- Human review was performed from the HTML package, not by ad hoc inspection of raw JSON alone.
 - Human review JSON has been exported and ingested.
 - Every successfully enriched pilot file validates.
 - Generated files are synchronized after validation.
@@ -522,6 +749,8 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
 - Every pilot review item is accepted, fixed, or explicitly deferred with rationale.
 - Any prompt/tooling changes are justified by concrete pilot findings, not by overfitting to a single
   example.
+- Auditor prompt/model-routing changes are based on pilot findings and do not introduce avoidable
+  workflow complexity.
 
 ## Phase 6: Mixed-Source Dual DB Proof
 
@@ -535,7 +764,8 @@ operate from the same canonical source layout before full enrichment.
 
 1. Build the current-compatible `finding_models` DB from the mixed `defs/` directory using the legacy
    script.
-2. Compare its table/column schema to the current published DB schema.
+2. Compare its table/column schema to
+   `docs/database-schemas/finding_models_legacy_2026-01-28.schema.json`.
 3. Confirm an old/current `findingmodel` runtime can open and query the artifact.
 4. Build the `finding_models_metadata` DB from the same mixed `defs/` directory using the metadata
    script.
@@ -549,7 +779,7 @@ operate from the same canonical source layout before full enrichment.
 ### Done Criteria
 
 - Legacy mixed-source DB builds successfully.
-- Legacy mixed-source DB has the exact current published table/column schema.
+- Legacy mixed-source DB matches `docs/database-schemas/finding_models_legacy_2026-01-28.schema.json`.
 - Current `findingmodel` runtime can read the legacy mixed-source DB.
 - Metadata mixed-source DB builds successfully.
 - Metadata-aware runtime can read/query the metadata mixed-source DB.
@@ -574,8 +804,8 @@ artifacts for risk-based review.
 7. Run the validator after the full batch.
 8. Populate/update the ontology cache for full-run ontology evidence.
 9. Run the enrichment auditor over full-run outputs.
-10. Generate a review package for all failures, warnings, low-confidence outputs, auditor flags, and
-    a seeded sample of clean outputs.
+10. Generate the HTML review package for all failures, warnings, low-confidence outputs, auditor
+    flags, and a seeded sample of clean outputs.
 11. Ingest human review JSON and produce a fix list.
 12. Re-run metadata evals in this repository and inspect representative Logfire traces.
 13. Update schema/docs/generated files as needed after fixes.
@@ -611,7 +841,9 @@ can use normal version pins.
 3. Bump/release `findingmodel` as `2.0.0`.
 4. Release any matching package versions needed by `findingmodels` scripts.
 5. Update `findingmodels` metadata scripts from local wheelhouse usage to released package pins.
-6. Re-run the relevant `findingmodels` scripts with released pins.
+6. Change the `findingmodel 2.0.0` runtime default manifest key to `finding_models_metadata` in the
+   same release-preparation commit as the package version bump and documentation updates.
+7. Re-run the relevant `findingmodels` scripts with released pins.
 
 ### Done Criteria
 
@@ -632,7 +864,7 @@ manual for now, and the manifest must carry enough metadata to identify source/b
 1. From the final `findingmodels` source state, build the current-compatible DB using the legacy script.
 2. From the same source state, build the metadata-aware DB using the metadata script.
 3. Validate the current-compatible DB:
-   - exact current published table/column schema
+   - table/column schema matches `docs/database-schemas/finding_models_legacy_2026-01-28.schema.json`
    - record count matches source scope
    - current `findingmodel` runtime can open/query it
    - stored full model JSON is old/current-compatible through old tooling
@@ -652,7 +884,10 @@ manual for now, and the manifest must carry enough metadata to identify source/b
    - hash
    - build timestamp
 9. Back up the manifest before update.
-10. Verify post-publish download and hash validation.
+10. Before publishing, rehearse the manifest update shape locally and confirm it contains both
+    artifact keys without overwriting either entry.
+11. Verify post-publish download, hash validation, runtime open/query behavior, and representative
+    search/browse behavior for both artifacts.
 
 ### Done Criteria
 
@@ -660,7 +895,8 @@ manual for now, and the manifest must carry enough metadata to identify source/b
 - `finding_models` remains compatible with current users.
 - `finding_models_metadata` works with the metadata-aware package.
 - Manifest contains both entries with correct provenance metadata.
-- Manual post-publish download/read checks pass.
+- Manual post-publish download, hash, runtime query, and representative search/browse checks pass for
+  both artifacts.
 
 ## Phase 10: Documentation Review and Plan Closeout
 

@@ -13,6 +13,7 @@ import contextlib
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from findingmodel.config import get_settings
 from findingmodel.index import FindingModelIndex
 from oidm_common.distribution import clear_manifest_cache
@@ -30,10 +31,12 @@ def test_duckdb_index_uses_manifest_when_no_db_path_provided() -> None:
 
     This validates that FindingModelIndex.__init__ (already fixed) properly uses manifest.
     """
-    # Clear manifest cache to ensure fresh fetch
+    import findingmodel.config as config_module
+
+    config_module._settings = None
     clear_manifest_cache()
 
-    # Create a test manifest with a different hash than the config default
+    # Create a test manifest with a different hash than the config default.
     test_manifest = {
         "databases": {
             "finding_models": {
@@ -85,6 +88,40 @@ def test_duckdb_index_uses_manifest_when_no_db_path_provided() -> None:
         actual_url = call_kwargs.get("url")
         expected_url = test_manifest["databases"]["finding_models"]["url"]
         assert actual_url == expected_url, f"Should use manifest URL {expected_url}, but got {actual_url}"
+
+
+def test_duckdb_index_can_opt_into_metadata_manifest_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that FindingModelIndex can opt into the metadata-aware manifest key."""
+    import findingmodel.config as config_module
+
+    config_module._settings = None
+    clear_manifest_cache()
+    monkeypatch.setenv("FINDINGMODEL_DB_MANIFEST_KEY", "finding_models_metadata")
+
+    test_manifest = {
+        "databases": {
+            "finding_models_metadata": {
+                "version": "2025-01-26",
+                "url": "https://findingmodelsdata.t3.storage.dev/finding_models_metadata_20250126_TEST.duckdb",
+                "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+                "date": "2025-01-26",
+            }
+        }
+    }
+
+    with (
+        patch("oidm_common.distribution.manifest.fetch_manifest", return_value=test_manifest),
+        patch("pooch.retrieve") as mock_retrieve,
+        patch("pathlib.Path.exists", return_value=False),
+    ):
+        mock_retrieve.return_value = "/fake/path/finding_models_metadata.duckdb"
+
+        with contextlib.suppress(Exception):
+            FindingModelIndex(db_path=None)
+
+        call_kwargs = mock_retrieve.call_args.kwargs
+        assert call_kwargs.get("known_hash") == test_manifest["databases"]["finding_models_metadata"]["hash"]
+        assert call_kwargs.get("url") == test_manifest["databases"]["finding_models_metadata"]["url"]
 
 
 def test_ensure_db_file_with_manifest_key_fetches_manifest() -> None:

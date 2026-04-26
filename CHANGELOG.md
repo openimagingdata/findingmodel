@@ -10,11 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### findingmodel
 
+#### Added
+
+- `FINDINGMODEL_DB_MANIFEST_KEY` can select an alternate findingmodel database artifact from a manifest; the default remains `finding_models`.
+
 #### Changed
 
 - **Breaking: Internal type modules reorganized.** `findingmodel.facets` and `findingmodel.finding_model` are removed. All public types are now available via top-level `from findingmodel import ...`. New exports: `AttributeType`, `IndexCodeList`, `format_age_profile`, `format_time_course`.
 
 ### findingmodel-ai
+
+#### Added
+
+- `assign_metadata()` can record ontology lookup evidence to a DuckDB cache for review and later auditing.
+- Added enrichment audit models and an auditor entrypoint for checking enriched finding models, including ontology-code evidence checks.
+- **Metadata assignment eval suite** (`evals/metadata_assignment.py`): 7 cases across 4 fixture stems, 5 evaluators (execution success, required field coverage, gold metadata match, preservation semantics, candidate integrity), plus span assertions for pipeline stage execution.
 
 #### Changed
 
@@ -24,9 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MetadataAssignmentReview` includes `assignment_mode` (`"reassess"` or `"fill_blanks_only"`).
 - `MetadataAssignmentDecision` supports `clear_fields` to explicitly null out metadata fields in reassess mode.
 
+### oidm-maintenance
+
 #### Added
 
-- **Metadata assignment eval suite** (`evals/metadata_assignment.py`): 7 cases across 4 fixture stems, 5 evaluators (execution success, required field coverage, gold metadata match, preservation semantics, candidate integrity), plus span assertions for pipeline stage execution.
+- Findingmodel database builds record artifact provenance in a `database_metadata` table.
+- Findingmodel build/publish commands support metadata rollout options for schema name/version, source commit, manifest key, S3 prefix, and artifact name.
 
 ---
 

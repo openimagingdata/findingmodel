@@ -27,11 +27,17 @@ pip install oidm-maintenance
 # Build findingmodel database
 oidm-maintain findingmodel build --source /path/to/fm-json/ --output /tmp/finding_models.duckdb
 
+# Build metadata-aware findingmodel database with provenance
+oidm-maintain findingmodel build --source /path/to/fm-json/ --output /tmp/finding_models_metadata.duckdb \
+  --schema-name finding_models_metadata --schema-version 2.0.0 --source-commit abc123
+
 # Build anatomic location database
 oidm-maintain anatomic build --source /path/to/anatomic.json --output /tmp/anatomic_locations.duckdb
 
 # Publish databases
 oidm-maintain findingmodel publish /tmp/finding_models.duckdb --dry-run
+oidm-maintain findingmodel publish /tmp/finding_models_metadata.duckdb --dry-run \
+  --manifest-key finding_models_metadata --s3-prefix findingmodel-metadata --artifact-name findingmodels_metadata.duckdb
 oidm-maintain anatomic publish /tmp/anatomic_locations.duckdb --dry-run
 
 # Migrate embedding cache into current oidm-common namespace
@@ -50,6 +56,11 @@ oidm-maintain embeddings import-cache /path/to/embeddings.cache
 Embedding import commands report `written/new/updated/skipped/total` counts.
 They exit non-zero if the current cache directory cannot be opened for writes.
 `import-cache` expects a diskcache directory; copy the entire directory when transferring between machines.
+
+Findingmodel database builds record artifact provenance in a `database_metadata` table, including
+schema name/version, source commit, package versions, build timestamp, and embedding profile.
+Publishing defaults to the current `finding_models` manifest key; use `--manifest-key` and related
+artifact options when intentionally publishing a metadata-aware artifact.
 
 ## Documentation
 

@@ -80,6 +80,11 @@ oidm-maintain findingmodel build /path/to/defs/ --index /custom/path/index.duckd
 
 Creates a new DuckDB index by scanning a directory tree for `*.fm.json` files.
 
+Metadata-aware findingmodel database builds also include a `database_metadata` table. This table
+records the schema name/version, source commit, build timestamp, package versions, and embedding
+provider/model/dimensions for the artifact. It is intended as artifact provenance for release checks
+and for confirming which schema a downloaded database implements.
+
 #### Publish to Remote Storage
 
 ```bash

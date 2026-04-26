@@ -25,9 +25,12 @@ OPENAI_API_KEY=your_key_here
 
 # Optional: Custom database path
 FINDINGMODEL_DB_PATH=/mnt/data/finding_models.duckdb
+
+# Optional: Select a manifest database key
+FINDINGMODEL_DB_MANIFEST_KEY=finding_models
 ```
 
-The finding model database is automatically downloaded on first use. An `OPENAI_API_KEY` is required for semantic search.
+The finding model database is automatically downloaded on first use. An `OPENAI_API_KEY` is required for semantic search. Set `FINDINGMODEL_DB_MANIFEST_KEY=finding_models_metadata` only when intentionally opting into a metadata-aware artifact.
 
 ## CLI (`findingmodel`)
 

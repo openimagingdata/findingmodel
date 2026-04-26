@@ -130,7 +130,17 @@ def findingmodel() -> None:
     help="Output DuckDB file path",
 )
 @click.option("--no-embeddings", is_flag=True, help="Skip embedding generation")
-def findingmodel_build(source: Path, output: Path, no_embeddings: bool) -> None:
+@click.option("--schema-name", default="finding_models_metadata", show_default=True, help="Schema/artifact name to record.")
+@click.option("--schema-version", default="2.0.0", show_default=True, help="Schema version to record.")
+@click.option("--source-commit", default=None, help="Optional source-data repository commit to record.")
+def findingmodel_build(
+    source: Path,
+    output: Path,
+    no_embeddings: bool,
+    schema_name: str,
+    schema_version: str,
+    source_commit: str | None,
+) -> None:
     """Build findingmodel database from source models."""
     import asyncio
 
@@ -145,6 +155,9 @@ def findingmodel_build(source: Path, output: Path, no_embeddings: bool) -> None:
             source_dir=source,
             output_path=output,
             generate_embeddings=not no_embeddings,
+            schema_name=schema_name,
+            schema_version=schema_version,
+            source_commit=source_commit,
         )
     )
     console.print(f"\n[bold green]✓ Created:[/bold green] {result}")
@@ -154,11 +167,28 @@ def findingmodel_build(source: Path, output: Path, no_embeddings: bool) -> None:
 @click.argument("db_path", type=click.Path(exists=True, path_type=Path))
 @click.option("--version", "-v", help="Version string (default: YYYY-MM-DD)")
 @click.option("--dry-run", is_flag=True, help="Show what would happen without uploading")
-def findingmodel_publish(db_path: Path, version: str | None, dry_run: bool) -> None:
+@click.option("--manifest-key", default="finding_models", show_default=True, help="Manifest database key to update.")
+@click.option("--s3-prefix", default="findingmodel", show_default=True, help="Versioned S3 artifact prefix.")
+@click.option("--artifact-name", default="findingmodels.duckdb", show_default=True, help="Uploaded artifact filename.")
+def findingmodel_publish(
+    db_path: Path,
+    version: str | None,
+    dry_run: bool,
+    manifest_key: str,
+    s3_prefix: str,
+    artifact_name: str,
+) -> None:
     """Publish findingmodel database to S3."""
     from oidm_maintenance.findingmodel.publish import publish_findingmodel_database
 
-    success = publish_findingmodel_database(db_path, version=version, dry_run=dry_run)
+    success = publish_findingmodel_database(
+        db_path,
+        version=version,
+        dry_run=dry_run,
+        manifest_key=manifest_key,
+        s3_prefix=s3_prefix,
+        artifact_name=artifact_name,
+    )
     if not success:
         raise SystemExit(1)
 

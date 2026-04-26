@@ -52,6 +52,9 @@ findingmodel-ai markdown-to-fm outline.md
 # Assign structured metadata to an existing model
 findingmodel-ai assign-metadata pneumonia.fm.json --output pneumonia.updated.fm.json --review-output pneumonia.metadata-review.json
 
+# Also record ontology evidence considered during assignment
+findingmodel-ai assign-metadata pneumonia.fm.json --ontology-cache ontology-cache.duckdb
+
 # Search BioOntology.org for ontology concepts
 findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results 10
 ```
@@ -184,6 +187,8 @@ asyncio.run(main())
 
 For executable paths that opt into Logfire, `findingmodel_ai.observability.ensure_logfire_configured()` instruments both Pydantic AI and outbound `httpx` calls, so BioOntology and similar non-LLM requests appear in the same trace as the agent run.
 
+Pass `ontology_cache=` to record selected, related, and rejected ontology-code evidence in a DuckDB cache. The cache preserves preferred display text, lookup response details, candidate relationship, and rejection reason so later review can fact-check canonical `index_codes`.
+
 ```python
 import asyncio
 from findingmodel import FindingModelFull
@@ -194,11 +199,33 @@ async def main():
     with open("pneumonia.fm.json") as f:
         model = FindingModelFull.model_validate_json(f.read())
 
-    result = await assign_metadata(model)
+    result = await assign_metadata(model, ontology_cache="ontology-cache.duckdb")
 
     print(result.model.body_regions)
     print(result.model.index_codes)
     print(result.review.logfire_trace_id)
+
+
+asyncio.run(main())
+```
+
+### Enrichment Audit
+
+`audit_enrichment()` is a lightweight sanity checker for already-enriched models. It uses ontology-cache evidence for deterministic checks such as missing code evidence or code/display mismatches, then asks an auditor agent to flag likely metadata issues. It reports structured flags; it does not rewrite canonical model JSON.
+
+```python
+import asyncio
+from findingmodel import FindingModelFull
+from findingmodel_ai.metadata import audit_enrichment
+
+
+async def main():
+    with open("pneumonia.updated.fm.json") as f:
+        model = FindingModelFull.model_validate_json(f.read())
+
+    result = await audit_enrichment(model, ontology_cache="ontology-cache.duckdb")
+    for flag in result.flags:
+        print(f"{flag.severity}: {flag.field} - {flag.message}")
 
 
 asyncio.run(main())

@@ -333,6 +333,7 @@ Lock to specific database versions:
 FINDINGMODEL_REMOTE_DB_URL=https://your-host/finding_models.duckdb
 FINDINGMODEL_REMOTE_DB_HASH=sha256:abc123...
 FINDINGMODEL_MANIFEST_URL=https://your-host/manifest.json
+FINDINGMODEL_DB_MANIFEST_KEY=finding_models
 
 ANATOMIC_REMOTE_DB_URL=https://your-host/anatomic_locations.duckdb
 ANATOMIC_REMOTE_DB_HASH=sha256:def456...
@@ -405,6 +406,7 @@ findingmodel-ai ontology search "pneumothorax" --ontology SNOMEDCT --max-results
 | `ANATOMIC_DB_PATH` | No | Auto-download | Path to anatomic database |
 | `FINDINGMODEL_REMOTE_DB_URL` | With hash | - | Custom index download URL |
 | `FINDINGMODEL_REMOTE_DB_HASH` | With URL | - | SHA256 hash for index |
+| `FINDINGMODEL_DB_MANIFEST_KEY` | No | `finding_models` | Manifest database key for findingmodel artifacts; set to `finding_models_metadata` to opt into the metadata-aware artifact during rollout |
 | `FINDINGMODEL_MANIFEST_URL` | No | Hosted manifest | Manifest URL for findingmodel database artifacts |
 | `ANATOMIC_REMOTE_DB_URL` | With hash | - | Custom anatomic download URL |
 | `ANATOMIC_REMOTE_DB_HASH` | With URL | - | SHA256 hash for anatomic |

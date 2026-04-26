@@ -29,6 +29,7 @@ class FindingModelConfig(BaseSettings):
     db_path: str | None = None
     remote_db_url: str | None = None
     remote_db_hash: str | None = None
+    db_manifest_key: str = "finding_models"
     manifest_url: str = "https://findingmodelsdata.t3.storage.dev/manifest.json"
 
     # OpenAI API key for semantic search
@@ -68,7 +69,7 @@ def ensure_index_db() -> Path:
         file_path=s.db_path,
         remote_url=s.remote_db_url,
         remote_hash=s.remote_db_hash,
-        manifest_key="finding_models",
+        manifest_key=s.db_manifest_key,
         manifest_url=s.manifest_url,
         app_name="findingmodel",
     )

@@ -174,6 +174,7 @@ class TestEnsureIndexDb:
         monkeypatch.setenv("FINDINGMODEL_DB_PATH", "custom.duckdb")
         monkeypatch.setenv("FINDINGMODEL_REMOTE_DB_URL", "https://custom.example.com/db.duckdb")
         monkeypatch.setenv("FINDINGMODEL_REMOTE_DB_HASH", "sha256:custom123")
+        monkeypatch.setenv("FINDINGMODEL_DB_MANIFEST_KEY", "finding_models_metadata")
         monkeypatch.setenv("FINDINGMODEL_MANIFEST_URL", "https://custom.example.com/manifest.json")
         monkeypatch.setenv("OPENAI_API_KEY", "")
 
@@ -186,7 +187,7 @@ class TestEnsureIndexDb:
                 file_path="custom.duckdb",
                 remote_url="https://custom.example.com/db.duckdb",
                 remote_hash="sha256:custom123",
-                manifest_key="finding_models",
+                manifest_key="finding_models_metadata",
                 manifest_url="https://custom.example.com/manifest.json",
                 app_name="findingmodel",
             )
