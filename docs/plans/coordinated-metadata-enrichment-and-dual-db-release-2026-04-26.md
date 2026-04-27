@@ -564,11 +564,25 @@ The metadata DB build/publish script must:
 - Validator runs cleanly with local metadata-aware package wheels.
 - Generated files are synchronized with `defs/`.
 
-### Phase 4 Implementation Status
+### Phase 4 Completion and Phase 5 Handoff
 
-Status: in progress on the `findingmodels-metadata` branch of the `findingmodels-metadata` repository.
+Status: completed locally on the `findingmodels-metadata` branch of the `findingmodels-metadata`
+repository.
 Detailed smoke commands, local artifact paths, validation output, and review-generator cleanup notes
 are in `docs/plans/coordinated-metadata-enrichment-implementation-log-2026-04-26.md`.
+
+Relevant local commits:
+
+- `findingmodels-metadata`: `04c8ba5 feat: add metadata enrichment workflow tooling`
+- `findingmodels-metadata`: `6700a8c chore: pin metadata-aware schema and validation tooling`
+- `findingmodels-metadata`: `fce7966 chore: regenerate finding markdown with stable filenames`
+- `findingmodel-metadata`: `5af26a8 docs: split metadata enrichment plan and implementation log`
+
+Phase 5 should primarily run in `/Users/talkasab/repos/findingmodels-metadata` on branch
+`findingmodels-metadata`. It uses local metadata-aware wheels built from
+`/Users/talkasab/repos/findingmodel-metadata`; see
+`/Users/talkasab/repos/findingmodels-metadata/docs/metadata-enrichment-setup.md` for wheelhouse and
+environment setup.
 
 Implemented scripts:
 
@@ -631,11 +645,54 @@ Validation and smoke status:
   audit safety, stable review IDs, review export paths, schema guard coverage, metadata DB provenance,
   and setup documentation.
 
-Remaining before Phase 4 commit:
+Phase 5 command shape:
 
-- Review the complete unstaged diff in `findingmodels-metadata`, including generated schema,
-  generated markdown/index changes, and the new repo-local scripts.
-- Re-run the current Phase 4 smoke checks after the follow-up review fixes.
+```bash
+uv run scripts/metadata_select_pilot.py \
+  --defs-dir defs \
+  --target-count 150 \
+  --output-dir .metadata-runs/pilot
+```
+
+```bash
+uv run --env-file .env scripts/metadata_assign_batch.py \
+  --manifest .metadata-runs/pilot/pilot_manifest.json \
+  --run-dir .metadata-runs/pilot-enrichment \
+  --ontology-cache .metadata-runs/pilot-ontology-cache.duckdb \
+  --concurrency 3 \
+  --logfire
+```
+
+```bash
+uv run --env-file .env scripts/metadata_review_package.py \
+  --run-dir .metadata-runs/pilot-enrichment
+```
+
+Open `.metadata-runs/review-current/index.html` for human review. Export the review JSON from that
+page, then ingest it:
+
+```bash
+uv run scripts/metadata_ingest_review.py <exported-review-json> \
+  --output .metadata-runs/pilot-review-ingest.json
+```
+
+Then run:
+
+```bash
+uv run scripts/validator.py
+```
+
+Important handoff rules:
+
+- Pilot-enriched source files are branch working state for review and iteration, not publishable
+  release artifacts.
+- Do not proceed to Phase 6 only because scripts ran successfully. The human review export must be
+  ingested, every feedback item must be triaged, and every pilot item must be accepted, fixed, or
+  explicitly deferred with rationale.
+- Use `.metadata-runs/review-current/index.html` as the reviewer-facing page. Do not make raw run
+  artifacts the primary review surface.
+- `IndexCode.code.minLength == 2` in the regenerated schema is expected; it comes from the current
+  `oidm-common` `IndexCode` model.
 
 ## Phase 5: Pilot Enrichment
 
