@@ -728,6 +728,190 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
 16. If ontology-code fact checking reveals missing cache coverage, add cache-first lookup/fill steps
     before expanding to the full corpus rather than asking the auditor to infer ontology facts.
 
+### Current Phase 5 Status (2026-05-01)
+
+Phase 5 remains active. Pilot enrichment, validator execution, review-app generation, human review,
+and review-export ingestion are complete. The pilot is not ready to advance to Phase 6 because the
+complete review surfaced systematic assignment and review-signal problems that must be addressed
+before mixed-source DB proof or broader enrichment.
+
+Current pilot state:
+
+- 150 pilot items enriched and reviewed.
+- Review export complete: 46 approved, 104 feedback, 0 drafts, 0 remaining.
+- Review export copied in the data repo to
+  `.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json`.
+- Review ingestion summary written to `.metadata-runs/pilot-review-ingest.json`.
+- Phase 6 is blocked until every feedback item is fixed, explicitly deferred with rationale, or
+  marked not applicable with rationale; package/tool hardening is complete; and a targeted rerun
+  shows the systematic issues are controlled.
+
+### Phase 5 Recovery Plan
+
+The pilot review showed that the toolchain is useful but not yet safe for full-corpus enrichment.
+Most feedback clusters around expected time course, anatomic location selection, age/sex specificity,
+and ontology/index-code quality. The full run must wait for a recovery pass.
+
+#### 1. Track Recovery State
+
+- Keep this umbrella plan as the decision source for Phase 5 recovery.
+- Keep execution facts, artifact paths, review counts, and observed feedback themes in
+  `docs/plans/coordinated-metadata-enrichment-implementation-log-2026-04-26.md`.
+- Keep data-repo operational status in
+  `findingmodels-metadata/docs/plans/metadata-enrichment-phase-5-pilot-2026-04-27.md`.
+- Do not treat raw `.metadata-runs/` files as the primary review surface; use them as supporting
+  artifacts behind the review app and ingestion summary.
+
+#### 2. Harden Validation and Confidence Output
+
+- Add a shared `ConfidenceFieldKey` type for real metadata fields only:
+  `body_regions`, `subspecialties`, `etiologies`, `entity_type`, `applicable_modalities`,
+  `expected_time_course`, `age_profile`, `sex_specificity`, `anatomic_locations`, and `index_codes`.
+- Use that type for `MetadataAssignmentDecision.field_confidence` and
+  `MetadataAssignmentReview.field_confidence`; unknown keys must fail Pydantic validation and trigger
+  agent retry during assignment.
+- In the assignment output validator, require confidence for every field the decision sets, clears,
+  or materially changes:
+  - structured metadata fields with non-null decision values;
+  - `index_codes` when ontology decisions affect canonical code selection;
+  - `anatomic_locations` when anatomic decisions select locations.
+- Add a final assembly warning if a changed field somehow lacks confidence so the review UI can flag
+  the item.
+- Add a targeted `FindingModelFull` validator requiring non-empty `display` on model-level
+  `index_codes` and `anatomic_locations`, after scanning package fixtures and data-repo `defs/` for
+  migration needs.
+
+#### 3. Improve Assignment Semantics
+
+- Expand expected-time-course guidance using pilot-derived patterns:
+  - congenital/fixed anomalies and calcifications are usually permanent and often stable unless the
+    finding is biologically progressive;
+  - masses and neoplasms are usually months/years and often progressive;
+  - acute injuries and inflammatory findings are often weeks/months and resolving or evolving;
+  - devices, tubes, lines, and catheters are not permanent; choose weeks/months or months/years based
+    on the device class;
+  - measurements, classifications, and assessments should have null time course unless the modeled
+    finding itself has temporal behavior.
+- Strengthen age/sex defaults:
+  - default to `sex-neutral` unless the anatomy or finding identity is intrinsically sex-specific;
+  - default to `all_ages` unless the finding identity truly constrains age applicability;
+  - handle fetal and pregnancy findings explicitly without conflating fetal applicability with patient
+    sex specificity.
+- Tighten ontology guidance:
+  - do not store broader, narrower, related, procedure, exam, or modality-specific codes as canonical
+    unless they are true equivalents for the modeled finding;
+  - preserve non-canonical candidates in review output rather than `index_codes`.
+
+#### 4. Improve Anatomic Candidate Generation
+
+- Extend anatomic search to use explicit context from finding name, description, synonyms, and
+  attribute/locality labels, not only model-generated query terms.
+- Attempt exact/synonym resolution for obvious anatomy terms before semantic search.
+- Include useful parent/common-ancestor candidates from the anatomic hierarchy so broad findings are
+  not forced into overly specific locations.
+- Prefer clinically useful scope over the most specific matched code.
+- Emit warnings and low confidence when explicit anatomy appears present but no plausible anatomic
+  location is selected.
+- Add optional shared `AnatomicLocationIndex` parameters through `find_anatomic_locations()` and
+  `assign_metadata()` so batch runs do not reopen the index per item.
+
+#### 5. Expand Auditor Deterministic Checks
+
+- Rename the deterministic auditor helper from ontology-only language to a general deterministic flag
+  pass.
+- Keep the existing ontology evidence checks.
+- Add deterministic flags for:
+  - anatomy implies body region;
+  - anatomy implies sex specificity;
+  - measurement, assessment, and technique issue entities should usually not have etiologies or
+    intrinsic time course;
+  - PET modality should align with `MI`, and `MI` should align with PET/NM when appropriate.
+- Do not make `audit_enrichment()` silently open an anatomic DB. F1/F2 anatomy checks require a
+  caller-supplied `AnatomicLocationIndex`; otherwise they are skipped.
+- Update the data repo batch script to open one shared `AnatomicLocationIndex` and pass it to both
+  assignment and audit.
+
+#### 6. Resolve Pilot Feedback
+
+- Extend or supplement `metadata_ingest_review.py` to produce a tracked resolution worksheet grouped
+  by field/theme.
+- For each of the 104 feedback items, mark exactly one outcome:
+  - fixed in source;
+  - explicitly deferred with rationale;
+  - not applicable with rationale.
+- Store rationale in a tracked data-repo plan or review-resolution document, not only ignored
+  `.metadata-runs` output.
+- After fixes, run the data repo validator and regenerate source-derived files.
+
+#### 7. Targeted Rerun Before Full Corpus
+
+- Rebuild local wheels and refresh the data repo wheelhouse after package changes.
+- Run a dry-run targeted rerun through the normal batch/review pipeline on a subset covering the
+  pilot failure modes:
+  - anatomy-heavy: `abnormal_right_paratracheal_stripe`, `air_in_esophagus`, `axillary_mass`,
+    `basal_cistern_effacement`, `aortic_measurements`, `disrupted_epiphyseal_metaphyseal_junction`,
+    `sacroiliac_joint_disease`, `vertebral_coronal_cleft`;
+  - time-course-heavy: `arterial_tortuosity`, `breast_calcification_cluster`, `fracture`,
+    `pulmonary_artery_catheterization`, `tunneled_catheter`, `striated_nephrogram`,
+    `early_intrauterine_pregnancy`;
+  - age/sex/fetal: `acute_lung_injury_and_ards_in_children`, `fetal_chest_mass`,
+    `intrauterine_growth_retardation`, `posterior_fossa_cystic_lesion`, `t2_hyperintense_renal_mass`;
+  - ontology/modality/entity: `breast_malignancy_risk`, `breast_soft_tissue_lesion`,
+    `mastectomy_breast_implant`, `osseous_lucent_lesion`, `traumatic_pneumatocele`,
+    `focal_shadowing_pancreatic_lesion`, `increased_resistance_index_of_renal_transplant`,
+    `pulmonary_vascular_engorgement`, `radiolucent_urinary_calculus`, `soft_tissue_abnormality`.
+- Generate the review app for the targeted rerun and inspect it there, not from raw JSON.
+- Proceed only if confidence keys are valid, changed fields have confidence, anatomy/time-course
+  regressions are materially reduced, and no new systematic class of failures appears.
+
+#### 8. Incorporate Mechanistic-Check Work
+
+The pilot run produced useful mechanistic-check work in the data repo, but that work should not
+remain as a separate post-hoc script or a parallel review artifact. Fold useful rules into the normal
+package pipeline before broader enrichment:
+
+1. Treat `findingmodels-metadata/scripts/metadata_mechanistic_check.py` and its hints TOML as a
+   temporary analysis aid, not a production pipeline step.
+2. Keep only the high-signal rules:
+   - `field_confidence` keys must be real metadata field names.
+   - `FindingModelFull.index_codes` and `FindingModelFull.anatomic_locations` entries must have
+     non-empty `display` values.
+   - Deterministic auditor flags should cover anatomy-to-body-region alignment,
+     anatomy-to-sex-specificity alignment, non-disease entity constraints, and PET/MI pairing.
+3. Drop the regex name-pattern hint family unless pilot reviewers identify a concrete need for it.
+4. Put hard schema constraints in Pydantic:
+   - tighten `MetadataAssignmentReview.field_confidence` and `MetadataAssignmentDecision.field_confidence`
+     to reject unknown keys at parse time;
+   - add a targeted `FindingModelFull` validator for missing displays on model-level canonical codes,
+     after scanning package fixtures and data-repo `defs/` for migration needs.
+5. Put soft or data-dependent checks in the package auditor:
+   - rename the deterministic helper from ontology-only language to a general deterministic flag pass;
+   - keep the current ontology evidence checks;
+   - add deterministic flag helpers for the four retained mechanistic rule families;
+   - refine the LLM auditor prompt so it focuses on semantic judgment not already covered by
+     deterministic checks.
+6. Do not make `audit_enrichment()` silently open an anatomic-locations database when no index is
+   passed. F1/F2 anatomy checks should require a supplied `AnatomicLocationIndex`; callers that do not
+   pass one simply skip those deterministic checks. Batch enrichment should open one shared index and
+   pass it through explicitly.
+7. Add focused tests before deleting the temporary script:
+   - unit tests for every new deterministic flag helper, using stubbed anatomic-index responses;
+   - schema tests for invalid `field_confidence` keys;
+   - schema tests for missing displays on model-level `index_codes` and `anatomic_locations`;
+   - a small pilot-output verification run to confirm the new flags are useful and not noisy.
+8. Update the data repo batch script to pass a shared `AnatomicLocationIndex` into `audit_enrichment()`
+   once the package signature supports it.
+9. Delete the standalone mechanistic checker and hints TOML only after replacement package behavior is
+   verified against pilot outputs.
+10. Preserve the new `py.typed` package markers if they were added during this work; they are useful
+    packaging hygiene independent of the temporary script.
+11. Update package documentation, the package CHANGELOG, and this implementation log with the final
+    validation/auditor behavior and any breaking validation changes.
+
+This recovery work is a Phase 5 gate before Phase 6. Do not advance to mixed-source DB proof while
+mechanistic findings are only captured in a data-repo script or ignored raw JSONL output, or while
+the complete human review remains unresolved.
+
 ### Done Criteria
 
 - Pilot selection manifest exists.
@@ -746,6 +930,17 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
   example.
 - Auditor prompt/model-routing changes are based on pilot findings and do not introduce avoidable
   workflow complexity.
+- All 104 feedback items from the complete pilot review are fixed, explicitly deferred with
+  rationale, or marked not applicable with rationale.
+- The assignment confidence schema rejects non-metadata keys and changed fields have confidence.
+- The package assignment, anatomic search, and auditor changes from the Phase 5 recovery plan are
+  implemented and validated.
+- The targeted rerun review app shows no unresolved systematic anatomy, time-course, age/sex, or
+  ontology-code failure pattern.
+- Useful mechanistic-check findings have been incorporated into Pydantic validation and the package
+  auditor, or explicitly deferred with rationale in this plan.
+- The temporary standalone mechanistic checker is deleted or clearly retained only as a documented
+  diagnostic aid outside the enrichment gate.
 
 ## Phase 6: Mixed-Source Dual DB Proof
 

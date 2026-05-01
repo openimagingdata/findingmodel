@@ -270,3 +270,119 @@ Known cleanup after log split:
     defaults to `2.0.0-dev`.
   - `IndexCode.code.minLength == 2` was confirmed from `oidm-common` source and is expected in the
     regenerated schema.
+
+## Phase 5: Pilot Enrichment Support Fixes
+
+During the first 150-item pilot run, three package-level issues surfaced before human review:
+
+- DuckDB extension cache writes defaulted to the user home in sandboxed local runs. The pilot command
+  now sets `HOME` to the data repo's ignored `.metadata-runs/home` directory.
+- Ontology lookup/cache paths could open unnecessary DuckDB FTS/VSS extensions and could leave
+  path-owned cache connections open if assignment or audit failed. The ontology cache now opens
+  without search/vector extensions, and assignment/audit close path-owned cache connections in
+  `finally` blocks.
+- Ontology labels such as `T1` and `T2` are valid ontology text but invalid `IndexCode.display`
+  values because `display` has `minLength == 3`. `OntologySearchResult.as_index_code()` now omits
+  too-short displays rather than failing validation.
+
+Verification:
+
+- `uv run ruff check packages/findingmodel/src/findingmodel/protocols.py
+  packages/findingmodel/tests/test_protocols.py
+  packages/findingmodel-ai/src/findingmodel_ai/metadata/assignment.py
+  packages/findingmodel-ai/src/findingmodel_ai/metadata/auditor.py
+  packages/findingmodel-ai/src/findingmodel_ai/metadata/ontology_cache.py
+  packages/oidm-common/src/oidm_common/duckdb/connection.py`: passed.
+- `uv run pytest packages/findingmodel/tests/test_protocols.py`: `1 passed`.
+- `uv run pytest packages/oidm-common/tests/test_duckdb.py`: `36 passed`.
+- `uv run pytest packages/findingmodel-ai/tests/test_ontology_cache.py
+  packages/findingmodel-ai/tests/test_assign_metadata.py
+  packages/findingmodel-ai/tests/test_enrichment_auditor.py`: `10 passed`.
+- Broader package verification after the pilot fixes:
+  - `uv run pytest packages/findingmodel/tests`: `389 passed, 2 skipped`.
+  - `uv run pytest packages/oidm-common/tests`: `142 passed`.
+  - `uv run pytest packages/findingmodel-ai/tests`: `253 passed, 10 skipped`.
+- Local wheels were rebuilt into `/tmp/findingmodel-metadata-wheelhouse/current` and recopied into
+  the data repo wheelhouse.
+
+Pilot status after fixes:
+
+- All 150 pilot items have completed enrichment artifacts.
+- `.metadata-runs/review-current/index.html` was regenerated from the completed pilot run.
+- The data repo validator completed successfully after pilot enrichment.
+- Human review export ingestion is complete, but Phase 6 remains blocked until the actionable
+  feedback is either fixed or explicitly deferred with rationale and the required tool hardening is
+  complete.
+
+Pilot human review received 2026-05-01:
+
+- Review export copied in the data repo to
+  `.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json`.
+- Review ingestion summary written to `.metadata-runs/pilot-review-ingest.json`.
+- The export is complete: 150 total, 150 done, 46 approved, 104 feedback, 0 drafts, 0 remaining.
+- The review is therefore sufficient as a complete pilot review artifact, but the feedback rate is
+  high enough that broader enrichment should not proceed before tool changes.
+
+Feedback themes from the 104 actionable comments:
+
+- Expected time course is the dominant issue. About half of feedback comments mention missing or
+  incorrect duration/progression/resolution. The prompt needs stronger defaults and examples for
+  congenital/permanent findings, masses/neoplasms, acute injuries, calcifications, devices/tubes, and
+  measurements/classifications.
+- Anatomic location selection is the next largest issue. Reviewers repeatedly flagged missing obvious
+  anatomy, wrong anatomy, or overly specific anatomy. Examples include missing esophagus, mediastinum,
+  axilla, aorta, hippocampus, sacroiliac joints, spine, larynx, kidney/renal cortex, and urinary tract;
+  over-specific selections such as head of fibula, right atrium, and sacrum were also flagged.
+- Age and sex specificity are often too restrictive or omitted. The prompt should default to
+  sex-neutral and all/any age unless the finding itself, not just a common demographic, truly
+  constrains applicability. Pregnancy/fetal findings need explicit handling so fetal applicability is
+  not conflated with patient sex specificity.
+- Ontology/index-code issues remain meaningful. Feedback called out missing expected codes, codes that
+  were too broad or too specific, modality-specific codes stored on multi-modality findings, and
+  inappropriate BI-RADS/classification codes.
+- Etiology, modality, and subspecialty issues were less common but still systematic enough to require
+  prompt and auditor attention before full-corpus enrichment.
+
+Tooling implications before larger corpus:
+
+- Tighten `field_confidence` to actual metadata fields only. The pilot review data contains invalid
+  confidence keys such as `ontology_decisions` and `anatomic_decisions`, while reviewer comments on
+  `anatomic_locations` were not represented as low/non-high confidence on that field.
+- Require confidence entries for every metadata field the agent sets, clears, or materially changes;
+  the review UI should flag changed fields with missing confidence as needing attention.
+- Improve anatomic candidate generation and selection:
+  - search explicit anatomy terms from the finding name, description, synonyms, and attribute/locality
+    labels before relying on model-generated query terms alone;
+  - include parent/common-ancestor locations from the anatomic hierarchy so broad findings do not get
+    forced into too-specific locations;
+  - if an explicit anatomy term cannot be resolved, emit a warning and low confidence rather than
+    silently leaving `anatomic_locations` empty;
+  - prefer clinically useful scope over the most specific matched code.
+- Strengthen ontology candidate handling:
+  - do not store broader/narrower/related or modality-specific codes as canonical `index_codes`;
+  - improve recall for RadElement/RadLex/SNOMED/LOINC candidates where the finding name strongly
+    implies an available code;
+  - surface "no plausible code found" as a warning when reviewer-facing terminology strongly suggests
+    an ontology concept should exist.
+- Fold the useful mechanistic-check rules into package validation/auditing before Phase 6:
+  field-confidence key validation, model-level display validation for canonical codes, deterministic
+  anatomy/body-region and anatomy/sex checks, non-disease entity constraints, and PET/MI pairing.
+- Expand the auditor and review UI around the patterns the pilot actually exposed. The auditor raised
+  warnings for 51 items, but 64 feedback items had no run warning and 11 approved items did have a
+  warning, so auditor output is useful triage but not yet a reliable substitute for human review.
+- After changes, rerun a smaller targeted pilot subset containing anatomy-heavy, time-course-heavy,
+  device/tube, breast, spine, vascular, and pediatric/fetal findings before running the full corpus.
+
+Recovery planning decisions recorded 2026-05-01:
+
+- Current phase remains Phase 5. Phase 6 and full-corpus enrichment remain blocked.
+- Approved gate: harden tooling, fix or defer all pilot feedback, then rerun a targeted subset before
+  any full-corpus enrichment.
+- Approved pilot-feedback policy: each of the 104 actionable feedback items must be fixed, explicitly
+  deferred with rationale, or marked not applicable with rationale.
+- Approved time-course strategy: improve prompt guidance plus auditor flags; do not add broad
+  deterministic time-course defaults that silently overwrite model judgment.
+- The targeted rerun should cover anatomy-heavy, time-course-heavy, device/tube, breast, spine,
+  vascular, ontology/modality, and pediatric/fetal cases before broader enrichment resumes.
+- The larger coordinated plan now contains the authoritative Phase 5 recovery plan; this log records
+  the facts and decisions that motivated it.
