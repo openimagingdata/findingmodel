@@ -254,7 +254,7 @@ class OntologyLookupCache:
 
     def _connect(self) -> duckdb.DuckDBPyConnection:
         if self._conn is None:
-            self._conn = setup_duckdb_connection(self.path, read_only=False)
+            self._conn = setup_duckdb_connection(self.path, read_only=False, extensions=())
         return self._conn
 
 

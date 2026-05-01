@@ -33,11 +33,12 @@ def setup_duckdb_connection(
     """
     connection = duckdb.connect(str(db_path), read_only=read_only)
 
-    for extension in extensions:
+    requested_extensions = tuple(extensions)
+    for extension in requested_extensions:
         connection.execute(f"INSTALL {extension}")
         connection.execute(f"LOAD {extension}")
 
-    if not read_only:
+    if not read_only and "vss" in requested_extensions:
         connection.execute("SET hnsw_enable_experimental_persistence = true")
 
     return connection

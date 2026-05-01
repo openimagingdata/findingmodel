@@ -88,10 +88,11 @@ class OntologySearchResult(BaseModel):
 
     def as_index_code(self) -> IndexCode:
         """Convert to IndexCode format"""
+        display = normalize_concept(self.concept_text)
         return IndexCode(
             system=TABLE_TO_INDEX_CODE_SYSTEM.get(self.table_name, self.table_name),
             code=self.concept_id,
-            display=normalize_concept(self.concept_text),
+            display=display if len(display) >= 3 else None,
         )
 
 

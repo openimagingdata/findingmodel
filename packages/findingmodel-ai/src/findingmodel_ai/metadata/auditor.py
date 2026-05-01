@@ -72,11 +72,15 @@ async def audit_enrichment(
         if isinstance(ontology_cache, OntologyLookupCache) or ontology_cache is None
         else OntologyLookupCache(ontology_cache)
     )
-    deterministic_flags = _ontology_evidence_flags(finding_model, cache)
-    prompt = _audit_prompt(finding_model, cache, deterministic_flags)
-    agent = create_enrichment_auditor_agent()
-    result = await agent.run(prompt)
-    return EnrichmentAuditResult(flags=[*deterministic_flags, *result.output.flags])
+    try:
+        deterministic_flags = _ontology_evidence_flags(finding_model, cache)
+        prompt = _audit_prompt(finding_model, cache, deterministic_flags)
+        agent = create_enrichment_auditor_agent()
+        result = await agent.run(prompt)
+        return EnrichmentAuditResult(flags=[*deterministic_flags, *result.output.flags])
+    finally:
+        if cache is not None and not isinstance(ontology_cache, OntologyLookupCache):
+            cache.close()
 
 
 def _ontology_evidence_flags(

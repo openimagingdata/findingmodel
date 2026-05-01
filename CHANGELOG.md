@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Changed
 
 - **Breaking: Internal type modules reorganized.** `findingmodel.facets` and `findingmodel.finding_model` are removed. All public types are now available via top-level `from findingmodel import ...`. New exports: `AttributeType`, `IndexCodeList`, `format_age_profile`, `format_time_course`.
+- Ontology search results with ontology labels shorter than `IndexCode.display` allows now omit
+  `display` rather than producing invalid `IndexCode` objects.
 
 ### findingmodel-ai
 
@@ -33,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Output validation.** The metadata classifier now validates candidate IDs and required field coverage, retrying on hallucinated IDs or missing required fields.
 - `MetadataAssignmentReview` includes `assignment_mode` (`"reassess"` or `"fill_blanks_only"`).
 - `MetadataAssignmentDecision` supports `clear_fields` to explicitly null out metadata fields in reassess mode.
+- Ontology evidence cache writes no longer load DuckDB search/vector extensions and path-owned cache
+  connections are closed after assignment and audit calls.
+
+### oidm-common
+
+#### Changed
+
+- DuckDB connection setup only enables HNSW persistence when the VSS extension is requested.
 
 ### oidm-maintenance
 

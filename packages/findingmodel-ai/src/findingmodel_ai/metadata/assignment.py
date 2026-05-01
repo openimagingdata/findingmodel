@@ -1027,9 +1027,11 @@ async def assign_metadata(
 
         _apply_ontology_decisions(ontology_states, decision.ontology_decisions, warnings)
         _apply_anatomic_decisions(anatomic_states, decision.anatomic_decisions, warnings)
-        _record_ontology_cache(resolved_ontology_cache, ontology_states)
-        if resolved_ontology_cache is not None and not isinstance(ontology_cache, OntologyLookupCache):
-            resolved_ontology_cache.close()
+        try:
+            _record_ontology_cache(resolved_ontology_cache, ontology_states)
+        finally:
+            if resolved_ontology_cache is not None and not isinstance(ontology_cache, OntologyLookupCache):
+                resolved_ontology_cache.close()
 
         start = perf_counter()
         with logfire.span("assign_metadata.assemble", finding_name=finding_model.name, mode=assignment_mode):
