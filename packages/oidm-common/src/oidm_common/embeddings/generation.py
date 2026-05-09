@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from openai import AsyncOpenAI
 
 _UNSET = object()
+_OPENAI_EMBEDDING_TIMEOUT_SECONDS = 20.0
 _default_cache: EmbeddingCache | None = None
 
 # Module-level client cache
@@ -111,7 +112,7 @@ def _get_or_create_client(api_key: str) -> AsyncOpenAI | None:
         logger.debug("openai not installed - semantic search disabled")
         return None
 
-    client = AsyncOpenAI(api_key=api_key)
+    client = AsyncOpenAI(api_key=api_key, timeout=_OPENAI_EMBEDDING_TIMEOUT_SECONDS, max_retries=1)
     _client_cache[api_key] = client
     return client
 
@@ -272,7 +273,7 @@ def create_openai_client(api_key: str) -> AsyncOpenAI:
             "openai package required for embeddings. Install with: pip install oidm-common[openai]"
         ) from e
 
-    return AsyncOpenAI(api_key=api_key)
+    return AsyncOpenAI(api_key=api_key, timeout=_OPENAI_EMBEDDING_TIMEOUT_SECONDS, max_retries=1)
 
 
 __all__ = [

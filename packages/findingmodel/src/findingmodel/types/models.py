@@ -7,7 +7,8 @@ import re
 from collections.abc import Sequence
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from oidm_common.models import IndexCode
+from pydantic import BaseModel, Field, model_validator
 
 from findingmodel._id_gen import ID_LENGTH
 from findingmodel.contributor import Organization, Person
@@ -145,6 +146,17 @@ class FindingModelFull(BaseModel):
     # Canonical index_codes: exact matches or clinically substitutable near-equivalents only.
     # Non-exact ontology candidates belong in the enrichment review artifact.
     index_codes: IndexCodeList | None = None
+
+    @model_validator(mode="after")
+    def require_model_level_code_displays(self) -> "FindingModelFull":
+        missing: list[str] = []
+        for field_name in ("index_codes", "anatomic_locations"):
+            for code in getattr(self, field_name) or []:
+                if isinstance(code, IndexCode) and not (code.display or "").strip():
+                    missing.append(f"{field_name}.{code.system}:{code.code}")
+        if missing:
+            raise ValueError("Model-level index_codes and anatomic_locations require display values: " + ", ".join(missing))
+        return self
 
     def as_markdown(self, hide_ids: bool = False) -> str:
         footer: str | None = None

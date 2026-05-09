@@ -13,9 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - `FINDINGMODEL_DB_MANIFEST_KEY` can select an alternate findingmodel database artifact from a manifest; the default remains `finding_models`.
+- Added `cardiac` and generic `vascular` structured etiology values for findings driven by heart
+  failure/cardiac physiology or non-specific vascular mechanisms.
 
 #### Changed
 
+- Model-level `index_codes` and `anatomic_locations` now require display values when present.
 - **Breaking: Internal type modules reorganized.** `findingmodel.facets` and `findingmodel.finding_model` are removed. All public types are now available via top-level `from findingmodel import ...`. New exports: `AttributeType`, `IndexCodeList`, `format_age_profile`, `format_time_course`.
 - Ontology search results with ontology labels shorter than `IndexCode.display` allows now omit
   `display` rather than producing invalid `IndexCode` objects.
@@ -26,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `assign_metadata()` can record ontology lookup evidence to a DuckDB cache for review and later auditing.
 - Added enrichment audit models and an auditor entrypoint for checking enriched finding models, including ontology-code evidence checks.
+- `audit_enrichment()` can run deterministic checks without the LLM auditor pass.
 - **Metadata assignment eval suite** (`evals/metadata_assignment.py`): 7 cases across 4 fixture stems, 5 evaluators (execution success, required field coverage, gold metadata match, preservation semantics, candidate integrity), plus span assertions for pipeline stage execution.
 
 #### Changed
@@ -33,6 +37,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`assign_metadata()` now reassesses by default.** Previously, fully-populated models skipped ontology gathering, anatomic gathering, and classification. Now all three stages always run, ensuring metadata stays current. Use `fill_blanks_only=True` to preserve existing fields and only populate empty ones.
 - **`SYSTEM:CODE` candidate IDs.** Ontology and anatomic candidate IDs in prompts and decisions now use `SYSTEM:CODE` format (e.g., `SNOMEDCT:233604007`, `RADLEX:RID5350`) for consistency.
 - **Output validation.** The metadata classifier now validates candidate IDs and required field coverage, retrying on hallucinated IDs or missing required fields.
+- `field_confidence` now accepts only real metadata fields and reviewer warnings identify changed
+  fields that lack confidence.
+- Assignment now gives stronger guidance for time course, age/sex defaults, canonical ontology
+  selection, and measurement/classification handling.
+- Metadata assignment now uses focused ontology, anatomy, identity, and usage decision agents behind
+  the existing `assign_metadata()` API, improving reviewed-case stability while keeping orchestration
+  limited to assembly and sanity validation.
+- Anatomic candidate search now uses finding synonyms and attribute labels, adds normalized exact
+  anatomy terms, includes hierarchy parents, and can reuse a caller-supplied `AnatomicLocationIndex`.
+- Anatomic candidate search now retains explicit anatomic term hits in the candidate set, improving
+  parent-location selection for findings that span multiple child locations.
+- Anatomic candidate search now labels why each location was offered, and metadata assignment uses
+  those labels to avoid unsupported anatomy narrowing while preserving reviewed parent/location
+  choices.
+- Metadata assignment now validates system-level anatomy and body-region consistency, preventing
+  generic vascular/system findings from expanding into lists of named component locations.
+- Focused metadata agents now tolerate malformed `field_confidence` values from model output by
+  dropping the malformed confidence map instead of failing the assignment.
+- The enrichment auditor now keeps deterministic checks limited to structured evidence consistency,
+  anatomy/sex mismatch checks, non-disease entity checks, and PET/molecular-imaging pairing.
 - `MetadataAssignmentReview` includes `assignment_mode` (`"reassess"` or `"fill_blanks_only"`).
 - `MetadataAssignmentDecision` supports `clear_fields` to explicitly null out metadata fields in reassess mode.
 - Ontology evidence cache writes no longer load DuckDB search/vector extensions and path-owned cache
@@ -42,6 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Changed
 
+- OpenAI embedding clients now use explicit request timeout and retry settings so stalled embedding
+  calls fail promptly during batch metadata enrichment.
 - DuckDB connection setup only enables HNSW persistence when the VSS extension is requested.
 
 ### oidm-maintenance

@@ -14,9 +14,9 @@ from findingmodel_ai.search.bioontology import (
 from findingmodel_ai.search.ontology import (
     CategorizationContext,
     CategorizedConcepts,
+    _candidate_decision_results,
     create_categorization_agent,
     create_query_generator_agent,
-    ensure_exact_matches_post_process,
     execute_ontology_search,
     generate_finding_query_terms,
     match_ontology_concepts,
@@ -31,6 +31,25 @@ models.ALLOW_MODEL_REQUESTS = False
 # ==============================================================================
 # BioOntology Protocol & Client Tests
 # ==============================================================================
+
+
+def test_candidate_decision_results_uses_configured_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "metadata_candidate_decision_limit", 15)
+    results = [
+        OntologySearchResult(
+            concept_id=f"RID{i}",
+            concept_text=f"candidate {i}",
+            score=float(30 - i),
+            table_name="radlex",
+        )
+        for i in range(30)
+    ]
+
+    prompt_results = _candidate_decision_results(results)
+
+    assert len(prompt_results) == 15
+    assert prompt_results[0].concept_id == "RID0"
+    assert prompt_results[-1].concept_id == "RID14"
 
 
 @pytest.mark.callout
@@ -357,62 +376,6 @@ async def test_execute_ontology_search_missing_api_key() -> None:
         # Execute search should raise ValueError
         with pytest.raises(ValueError, match="BioOntology API key is required"):
             await execute_ontology_search(query_terms=["test"])
-
-
-# ==============================================================================
-# Exact Match Tests
-# ==============================================================================
-
-
-def test_ensure_exact_matches_adds_missing() -> None:
-    """Test that missing exact matches are added."""
-    # Create test data
-    output = CategorizedConcepts(
-        exact_matches=["RID5350"],
-        should_include=["RID5351"],
-        marginal=["SCTID-233604007"],  # This should be moved to exact
-        rationale="Initial categorization",
-    )
-
-    search_results = [
-        OntologySearchResult(concept_id="RID5350", concept_text="pneumonia", score=0.95, table_name="radlex"),
-        OntologySearchResult(concept_id="SCTID-233604007", concept_text="Pneumonia", score=0.93, table_name="snomedct"),
-        OntologySearchResult(concept_id="RID5351", concept_text="viral pneumonia", score=0.8, table_name="radlex"),
-    ]
-
-    query_terms = ["pneumonia"]
-
-    # Process
-    corrected = ensure_exact_matches_post_process(output, search_results, query_terms)
-
-    # Verify corrections
-    assert "RID5350" in corrected.exact_matches
-    assert "SCTID-233604007" in corrected.exact_matches
-    assert "SCTID-233604007" not in corrected.marginal
-    assert "Auto-corrected" in corrected.rationale
-
-
-def test_ensure_exact_matches_respects_limit() -> None:
-    """Test that max_length of 5 is respected."""
-    # Create output already at limit
-    output = CategorizedConcepts(
-        exact_matches=["1", "2", "3", "4", "5"],
-        should_include=[],
-        marginal=["6"],  # This is an exact match but can't be added
-        rationale="At limit",
-    )
-
-    search_results = [
-        OntologySearchResult(concept_id=str(i), concept_text="test", score=0.9, table_name="radlex")
-        for i in range(1, 7)
-    ]
-
-    query_terms = ["test"]
-
-    # Process - should not exceed limit
-    corrected = ensure_exact_matches_post_process(output, search_results, query_terms)
-
-    assert len(corrected.exact_matches) == 5
 
 
 # ==============================================================================

@@ -262,7 +262,7 @@ Defaults are declared in `supported_models.toml` under `[agents.<tag>]`. Each en
 | `ontology_match` | `gpt-5.4-mini` | none | gemini-3.1-pro, sonnet |
 | `anatomic_select` | `gpt-5.4-mini` | none | gemini-3.1-pro, sonnet |
 | `similar_select` | `gpt-5.4-mini` | low | gemini-3.1-pro, sonnet |
-| `metadata_assign` | `gpt-5.4-mini` | low | gemini-3.1-pro, sonnet |
+| `metadata_assign` | `gpt-5.4-mini` | none | gemini-3.1-flash-lite, sonnet |
 
 #### Complex Structured Output (gpt-5.4/opus — 6s+)
 

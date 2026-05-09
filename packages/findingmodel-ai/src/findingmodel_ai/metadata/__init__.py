@@ -15,6 +15,7 @@ from findingmodel_ai.metadata.auditor import (
 from findingmodel_ai.metadata.ontology_cache import OntologyEvidenceUsage, OntologyLookupCache, OntologyLookupEvidence
 from findingmodel_ai.metadata.types import (
     AnatomicCandidate,
+    ConfidenceFieldKey,
     FieldConfidence,
     MetadataAssignmentResult,
     MetadataAssignmentReview,
@@ -26,6 +27,7 @@ from findingmodel_ai.metadata.types import (
 
 __all__ = [
     "AnatomicCandidate",
+    "ConfidenceFieldKey",
     "EnrichmentAuditFlag",
     "EnrichmentAuditResult",
     "FieldConfidence",

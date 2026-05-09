@@ -10,6 +10,7 @@ from findingmodel import (
     ChoiceValue,
     FindingModelBase,
     FindingModelFull,
+    IndexCode,
     NumericAttribute,
 )
 from findingmodel.contributor import Organization, Person
@@ -161,6 +162,14 @@ def test_load_finding_model_with_contributors(tn_fm_json: str) -> None:
     assert jane.organization_code == "ACR"
     assert isinstance(oidm, Organization)
     assert oidm.code == "OIDM"
+
+
+def test_full_model_requires_model_level_code_displays(full_model: FindingModelFull) -> None:
+    data = full_model.model_dump(mode="json")
+    data["index_codes"] = [IndexCode(system="SNOMEDCT", code="233604007").model_dump()]
+
+    with pytest.raises(ValidationError, match="require display values"):
+        FindingModelFull.model_validate(data)
 
 
 # ============================================================================

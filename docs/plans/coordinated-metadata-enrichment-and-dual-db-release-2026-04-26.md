@@ -686,7 +686,7 @@ Important handoff rules:
 
 - Pilot-enriched source files are branch working state for review and iteration, not publishable
   release artifacts.
-- Do not proceed to Phase 6 only because scripts ran successfully. The human review export must be
+- Do not proceed to the tool-improvement phase only because scripts ran successfully. The human review export must be
   ingested, every feedback item must be triaged, and every pilot item must be accepted, fixed, or
   explicitly deferred with rationale.
 - Use `.metadata-runs/review-current/index.html` as the reviewer-facing page. Do not make raw run
@@ -731,9 +731,9 @@ source files. The pilot is a quality and workflow gate, not a publishable datase
 ### Current Phase 5 Status (2026-05-01)
 
 Phase 5 remains active. Pilot enrichment, validator execution, review-app generation, human review,
-and review-export ingestion are complete. The pilot is not ready to advance to Phase 6 because the
-complete review surfaced systematic assignment and review-signal problems that must be addressed
-before mixed-source DB proof or broader enrichment.
+and review-export ingestion are complete. The pilot is not ready for database-build testing or
+broader enrichment because the complete review surfaced systematic assignment and review-signal
+problems that must be used to improve the tool first.
 
 Current pilot state:
 
@@ -742,9 +742,10 @@ Current pilot state:
 - Review export copied in the data repo to
   `.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json`.
 - Review ingestion summary written to `.metadata-runs/pilot-review-ingest.json`.
-- Phase 6 is blocked until every feedback item is fixed, explicitly deferred with rationale, or
-  marked not applicable with rationale; package/tool hardening is complete; and a targeted rerun
-  shows the systematic issues are controlled.
+- The next phase is to turn the reviewed feedback into better automation: every feedback item
+  must be fixed, explicitly deferred with rationale, or marked not applicable with rationale;
+  package/tool hardening must be completed; and targeted reruns must show the systematic issues are
+  controlled before database-build testing or broader enrichment.
 
 ### Phase 5 Recovery Plan
 
@@ -864,6 +865,18 @@ and ontology/index-code quality. The full run must wait for a recovery pass.
 - Proceed only if confidence keys are valid, changed fields have confidence, anatomy/time-course
   regressions are materially reduced, and no new systematic class of failures appears.
 
+Status update after targeted v3 review and source patch pass:
+
+- The hardened v3 targeted run completed all 30 targeted items and human review was ingested.
+- The 30 targeted outputs were accepted into source working state, the 9 v3 reviewer feedback items
+  were corrected, and a broader 150-item pilot source-patch pass resolved or explicitly deferred the
+  remaining pilot feedback rows.
+- The current post-feedback targeted review app is source-derived at
+  `.metadata-runs/phase5-targeted-review-resolved-v1/index.html`; use it as the current local
+  review surface if the Phase 5 recovery gate needs visual confirmation.
+- The deterministic auditor now reports zero flags across the 150 pilot records when run with the
+  merged Phase 5 recovery ontology cache.
+
 #### 8. Incorporate Mechanistic-Check Work
 
 The pilot run produced useful mechanistic-check work in the data repo, but that work should not
@@ -908,9 +921,9 @@ package pipeline before broader enrichment:
 11. Update package documentation, the package CHANGELOG, and this implementation log with the final
     validation/auditor behavior and any breaking validation changes.
 
-This recovery work is a Phase 5 gate before Phase 6. Do not advance to mixed-source DB proof while
-mechanistic findings are only captured in a data-repo script or ignored raw JSONL output, or while
-the complete human review remains unresolved.
+This recovery work is a gate before any database-build testing or broader enrichment. Do not
+advance while mechanistic findings are only captured in a data-repo script or ignored raw JSONL
+output, or while the complete human review remains unresolved.
 
 ### Done Criteria
 
@@ -942,40 +955,109 @@ the complete human review remains unresolved.
 - The temporary standalone mechanistic checker is deleted or clearly retained only as a documented
   diagnostic aid outside the enrichment gate.
 
-## Phase 6: Mixed-Source Dual DB Proof
+
+## Phase 6: Improve the Enrichment Tool Using the 150 Reviewed Examples
 
 ### Why This Phase Exists
 
-After the pilot, the `defs/` directory is intentionally mixed: some files enriched, most untouched.
-This mixed state is not publishable, but it is useful for proving both database production paths can
-operate from the same canonical source layout before full enrichment.
+The 150-item pilot review was expensive evidence about how the enrichment tool fails on real finding
+models. The next step is not database building and not enriching the rest of the corpus. The next
+step is to use that review to make the automated tool better, and to prove the improvement from clean
+inputs before it is used more broadly.
+
+The detailed working plan for this phase lives in:
+
+```text
+docs/plans/pilot-feedback-tooling-hardening-subplan-2026-05-05.md
+```
+
+That document is the task-level plan for this phase.
 
 ### Required Work
 
-1. Build the current-compatible `finding_models` DB from the mixed `defs/` directory using the legacy
-   script.
+1. Build a comparison script that can distinguish true tool mistakes from reasonable differences,
+   source-data gaps, and cases needing human judgment.
+2. Triage the current clean-input differences from the reviewed pilot records using that comparison.
+3. Create a version-controlled regression set from reviewed examples so prompt/tool changes cannot
+   silently break cases that were already acceptable.
+4. Pin the assignment model for repeatable testing. The current target is `gpt-5.4-mini`, preferably
+   snapshot `gpt-5.4-mini-2026-03-17` if the current configuration supports that.
+5. Refactor the assignment prompt:
+   - correct the time-course rule so it uses the observable imaging duration, not the upper end of a
+     range by default;
+   - keep `field_confidence` guidance in one dedicated section;
+   - keep only 3-4 examples, chosen because they teach reviewed tricky distinctions;
+   - remove single-case patches and move those cases into tests or evals.
+6. Remove the prompt instruction that favors one ontology system. Relevant hits from every searched
+   ontology should remain available.
+7. Move reliable rules into validation or auditing code instead of depending on prompt memory:
+   - invalid confidence keys;
+   - missing confidence for changed fields;
+   - time course or etiology on measurements, scores, classifications, assessments,
+     recommendations, and technique issues;
+   - modality-language conflicts;
+   - parent/child anatomy conflicts;
+   - ontology cache display conflicts.
+8. Improve anatomy selection so classification, score, and assessment models use the anatomy at the
+   declared scope instead of mixing parent anatomy with component parts.
+9. Update the auditor prompt so it names the pilot-derived problems it should catch after
+   deterministic checks.
+10. Rerun targeted reviewed examples from clean inputs, plus the regression set, and compare against
+    reviewed outcomes.
+11. Update the feedback-to-tooling coverage document only when there is actual tool evidence, not
+    merely corrected source files.
+
+### Done Criteria
+
+- The comparison script exists, is repeatable, and writes reviewable output.
+- The reviewed pilot differences are triaged as true tool errors, reasonable differences,
+  source-data gaps, explicitly deferred items, or human-decision items.
+- The regression set exists in the repo and is used for prompt/tool changes.
+- The selected assignment model and reasoning setting are recorded in rerun output.
+- Prompt changes are backed by reviewed examples and current OpenAI guidance, not by one-off case
+  patches.
+- Validation and auditing catch reliable repeated problems without relying only on the LLM prompt.
+- Targeted clean-input reruns show the major reviewed failure patterns are controlled.
+- Remaining differences are documented as acceptable, deferred with rationale, source-data blocked,
+  or requiring human/domain decision.
+- The coverage matrix reflects tool evidence.
+- The larger corpus remains untouched during this phase.
+
+## Phase 7: Test Both Database Builders on the Pilot-Only Enriched Repository
+
+### Why This Phase Exists
+
+After the pilot and tool-improvement work, only the reviewed pilot files should be enriched. The
+repository is not publishable yet, but this partial state is useful for proving both database build
+paths before changing the rest of the corpus.
+
+### Required Work
+
+1. Build the current-compatible `finding_models` DB from the pilot-only enriched `defs/` directory
+   using the legacy script.
 2. Compare its table/column schema to
    `docs/database-schemas/finding_models_legacy_2026-01-28.schema.json`.
 3. Confirm an old/current `findingmodel` runtime can open and query the artifact.
-4. Build the `finding_models_metadata` DB from the same mixed `defs/` directory using the metadata
-   script.
+4. Build the `finding_models_metadata` DB from the same pilot-only enriched `defs/` directory using
+   the metadata script.
 5. Confirm metadata columns are populated for enriched pilot models and null/empty for untouched
    models.
 6. Confirm metadata-aware runtime can open, browse, search, and retrieve full models from the artifact.
 7. Confirm auditor-reviewed `index_codes` appear correctly in the metadata DB with preferred display
    terms where the ontology cache provides them.
-8. Do not publish either mixed-source artifact.
+8. Do not publish either pilot-state artifact.
 
 ### Done Criteria
 
-- Legacy mixed-source DB builds successfully.
-- Legacy mixed-source DB matches `docs/database-schemas/finding_models_legacy_2026-01-28.schema.json`.
-- Current `findingmodel` runtime can read the legacy mixed-source DB.
-- Metadata mixed-source DB builds successfully.
-- Metadata-aware runtime can read/query the metadata mixed-source DB.
-- The mixed-source DBs are explicitly marked as validation-only and not published.
+- Current-compatible pilot-state DB builds successfully.
+- Current-compatible pilot-state DB matches
+  `docs/database-schemas/finding_models_legacy_2026-01-28.schema.json`.
+- Current `findingmodel` runtime can read the current-compatible pilot-state DB.
+- Metadata-aware pilot-state DB builds successfully.
+- Metadata-aware runtime can read/query the metadata-aware pilot-state DB.
+- The pilot-state DBs are explicitly marked as validation-only and not published.
 
-## Phase 7: Full Corpus Enrichment
+## Phase 8: Enrich the Remaining Finding Models
 
 ### Why This Phase Exists
 
@@ -1012,7 +1094,7 @@ artifacts for risk-based review.
 - Risk-based review is complete.
 - Metadata evals still pass acceptable structural gates, and semantic misses are understood.
 
-## Phase 8: Release Package Line
+## Phase 9: Release Metadata-Aware Package Versions
 
 ### Why This Phase Exists
 
@@ -1042,7 +1124,7 @@ can use normal version pins.
 - Package docs and changelog describe the new metadata fields, DB key, and compatibility behavior.
 - Data repo validation still passes with released package pins.
 
-## Phase 9: Final DB Build and Manual Publish
+## Phase 10: Build and Publish Final Databases
 
 ### Why This Phase Exists
 
@@ -1088,7 +1170,7 @@ manual for now, and the manifest must carry enough metadata to identify source/b
 - Manual post-publish download, hash, runtime query, and representative search/browse checks pass for
   both artifacts.
 
-## Phase 10: Documentation Review and Plan Closeout
+## Phase 11: Documentation Review and Plan Closeout
 
 ### Why This Phase Exists
 

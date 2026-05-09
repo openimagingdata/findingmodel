@@ -310,9 +310,10 @@ Pilot status after fixes:
 - All 150 pilot items have completed enrichment artifacts.
 - `.metadata-runs/review-current/index.html` was regenerated from the completed pilot run.
 - The data repo validator completed successfully after pilot enrichment.
-- Human review export ingestion is complete, but Phase 6 remains blocked until the actionable
-  feedback is either fixed or explicitly deferred with rationale and the required tool hardening is
-  complete.
+- Human review export ingestion is complete. Later pilot-recovery work fixed or explicitly deferred
+  the actionable feedback and completed the first required tool hardening pass. The next gate is
+  proving, from clean inputs, that the tool learned enough from the human review before any broader
+  enrichment run.
 
 Pilot human review received 2026-05-01:
 
@@ -364,7 +365,8 @@ Tooling implications before larger corpus:
     implies an available code;
   - surface "no plausible code found" as a warning when reviewer-facing terminology strongly suggests
     an ontology concept should exist.
-- Fold the useful mechanistic-check rules into package validation/auditing before Phase 6:
+- Fold the useful mechanistic-check rules into package validation/auditing before any database-build
+  testing or broader enrichment:
   field-confidence key validation, model-level display validation for canonical codes, deterministic
   anatomy/body-region and anatomy/sex checks, non-disease entity constraints, and PET/MI pairing.
 - Expand the auditor and review UI around the patterns the pilot actually exposed. The auditor raised
@@ -375,9 +377,9 @@ Tooling implications before larger corpus:
 
 Recovery planning decisions recorded 2026-05-01:
 
-- Current phase remains Phase 5. Phase 6 and full-corpus enrichment remain blocked.
+- Current phase remains pilot recovery. Database-build testing and broader enrichment remain blocked.
 - Approved gate: harden tooling, fix or defer all pilot feedback, then rerun a targeted subset before
-  any full-corpus enrichment.
+  any broader enrichment.
 - Approved pilot-feedback policy: each of the 104 actionable feedback items must be fixed, explicitly
   deferred with rationale, or marked not applicable with rationale.
 - Approved time-course strategy: improve prompt guidance plus auditor flags; do not add broad
@@ -386,3 +388,177 @@ Recovery planning decisions recorded 2026-05-01:
   vascular, ontology/modality, and pediatric/fetal cases before broader enrichment resumes.
 - The larger coordinated plan now contains the authoritative Phase 5 recovery plan; this log records
   the facts and decisions that motivated it.
+
+Phase 5 recovery tooling hardening started 2026-05-01:
+
+- Added `ConfidenceFieldKey` so `MetadataAssignmentDecision.field_confidence` and
+  `MetadataAssignmentReview.field_confidence` accept only real metadata field keys.
+- Added classifier output validation for changed-field confidence coverage and final assembly
+  warnings for changed fields that somehow still lack confidence.
+- Expanded assignment guidance for expected time course, age/sex defaults, fetal/pregnancy cases,
+  devices/tubes/lines/catheters, measurements/classifications/assessments, and canonical
+  ontology-code selection.
+- Extended anatomic candidate generation to use finding synonyms and attribute labels, include
+  exact/synonym-friendly context terms, add normalized anatomy variants from names such as
+  `air_in_esophagus` and `aortic_measurements`, add hierarchy parents to the candidate set, and
+  support a shared caller-supplied `AnatomicLocationIndex`.
+- Expanded deterministic auditor checks beyond ontology evidence to cover anatomy/body-region
+  consistency, anatomy/sex consistency, non-disease entity constraints, and PET/molecular-imaging
+  pairing.
+- Updated the data repo batch assignment script to open one shared `AnatomicLocationIndex` and pass
+  it to both assignment and audit.
+- Added model-level validation requiring display values on `index_codes` and `anatomic_locations`.
+  A scan of the primary data repo found existing non-pilot defs with missing `index_codes.display`
+  values, so full-repo validation with rebuilt wheels will require a follow-up migration before it
+  can pass across the broader corpus.
+- Created the tracked primary-repo feedback worksheet at
+  `docs/plans/metadata-enrichment-phase-5-feedback-resolution-2026-05-01.md`.
+
+Verification:
+
+- `uv run ruff check packages/findingmodel/src/findingmodel/types/models.py
+  packages/findingmodel/tests/test_models.py
+  packages/findingmodel-ai/src/findingmodel_ai/metadata/types.py
+  packages/findingmodel-ai/src/findingmodel_ai/metadata/assignment.py
+  packages/findingmodel-ai/src/findingmodel_ai/metadata/auditor.py
+  packages/findingmodel-ai/src/findingmodel_ai/search/anatomic.py
+  packages/findingmodel-ai/tests/test_assign_metadata.py
+  packages/findingmodel-ai/tests/test_assign_metadata_modes.py
+  packages/findingmodel-ai/tests/test_enrichment_auditor.py`: passed.
+- `uv run pytest packages/findingmodel/tests/test_models.py
+  packages/findingmodel-ai/tests/test_anatomic_search.py
+  packages/findingmodel-ai/tests/test_assign_metadata.py
+  packages/findingmodel-ai/tests/test_assign_metadata_modes.py
+  packages/findingmodel-ai/tests/test_enrichment_auditor.py`: `55 passed, 1 warning`.
+- `uv run ruff check scripts/metadata_assign_batch.py` in the data repo: passed.
+
+Targeted rerun inspection 2026-05-01:
+
+- Rebuilt local wheels and refreshed the primary metadata repo wheelhouse after package changes.
+- A hardened targeted dry run over the documented 30-item subset after deterministic anatomy
+  exact-match expansion now has `30` targeted
+  successes and `0` batch failures after recovering `early_intrauterine_pregnancy` as a single-item
+  retry in the same run directory.
+- The regenerated v3 review app is `.metadata-runs/phase5-targeted-review-hardened-v3/index.html`
+  and contains all 30 targeted items.
+- Confidence-key validation is now behaving as intended: the v2/v3 review data has no
+  `Missing field_confidence` warnings.
+- Anatomy improved for several targeted cases, including `air_in_esophagus` selecting esophagus,
+  `aortic_measurements` including aorta/thoracic aorta/abdominal aorta, and
+  `vertebral_coronal_cleft` selecting vertebra rather than sacrum.
+- At this point in the run log, Phase 5 recovery still had open auditor flags and metadata issues.
+  The later 2026-05-04 source patch pass below resolved the item-level fixes or recorded explicit
+  deferrals before gate closure.
+
+Targeted v3 review feedback applied 2026-05-01:
+
+- Human review of the 30-item v3 app returned 21 approved items and 9 feedback items.
+- Accepted the v3 outputs into the primary repo for the 30 reviewed definitions, then applied the 9
+  reviewer corrections and regenerated the matching Markdown files.
+- Added `cardiac` and generic `vascular` etiology values so heart-failure/fluid-overload and
+  non-specific vascular mechanisms can be represented without misusing inflammatory etiologies.
+- Validated the corrected 30 targeted definitions with the rebuilt package wheel.
+
+Pilot feedback source patch pass 2026-05-04:
+
+- Applied the remaining unambiguous Phase 5 pilot feedback directly to the primary metadata source
+  records: age/sex defaults, time course, anatomy, modality, etiology, entity type, and several
+  index-code corrections.
+- Recorded explicit deferrals where the local anatomic index or source artifacts do not contain the
+  requested exact term/code, including `axilla`, `sacroiliac joint`, generic upper-extremity joint,
+  hippocampus anatomy, and missing RadElement codes for selected breast/axillary items.
+- Added a source-only review-package mode in the primary metadata repo so the HTML review app can be
+  regenerated from corrected source JSON without overwriting the v3 run or human review export.
+- Validated all 150 pilot JSON records and matching Markdown files with the rebuilt package wheel.
+  The current source-derived targeted review app is
+  `.metadata-runs/phase5-targeted-review-resolved-v1/index.html`.
+- Hardened the deterministic anatomy/body-region auditor so broad source anatomy such as spine,
+  thorax, upper/lower extremity, and musculoskeletal system is treated as compatible with the
+  model's clinical body region instead of forcing `whole_body`.
+- Reran the deterministic package auditor over the 150 pilot records using the merged recovery
+  ontology cache at `.metadata-runs/phase5-recovery-ontology-cache.duckdb`; the current summary
+  reports zero flags.
+
+Pilot feedback tooling hardening subplan started 2026-05-05:
+
+- Added `docs/plans/pilot-feedback-tooling-hardening-subplan-2026-05-05.md` to make the remaining
+  "learn from the human review" work explicit before any larger corpus run.
+- Added a primary-repo coverage generator,
+  `/Users/talkasab/repos/findingmodels-metadata/scripts/metadata_feedback_coverage.py`, and
+  generated `/Users/talkasab/repos/findingmodels-metadata/docs/plans/metadata-enrichment-feedback-tooling-coverage-2026-05-05.md`.
+  The initial matrix has 105 actionable review notes: 21 with targeted rerun evidence, 73
+  source-corrected but still needing clean-input tool evidence, 9 deferred with rationale, 1 not
+  applicable with rationale, and 1 source-verified but still needing a coverage decision.
+- Added explicit deterministic-only auditor support via `audit_enrichment(..., include_llm=False)`
+  and the primary repo's `scripts/metadata_audit.py --deterministic-only`, so the repeatable gate is
+  not conflated with LLM auditor triage.
+- Tightened prompt guidance for combined durations such as months/years and for separating cardiac
+  from generic vascular etiologies.
+- Expanded deterministic anatomy query variants for reviewed misses such as axillary, hippocampal,
+  renal, thyroid, mediastinal, supraglottic, pleural, pericardial, pancreatic, uterine, and related
+  terms.
+- Added regression tests for invalid confidence keys, missing confidence on changed ontology/anatomy
+  fields, related ontology candidates not being promoted to canonical index codes, deterministic-only
+  auditing, and reviewed anatomy variants.
+
+Verification:
+
+- `uv run ruff check packages/findingmodel-ai/src/findingmodel_ai/metadata/assignment.py
+  packages/findingmodel-ai/src/findingmodel_ai/metadata/auditor.py
+  packages/findingmodel-ai/src/findingmodel_ai/search/anatomic.py
+  packages/findingmodel-ai/tests/test_assign_metadata.py
+  packages/findingmodel-ai/tests/test_assign_metadata_modes.py
+  packages/findingmodel-ai/tests/test_enrichment_auditor.py
+  packages/findingmodel-ai/tests/test_anatomic_search.py`: passed.
+- `uv run pytest packages/findingmodel-ai/tests/test_assign_metadata.py
+  packages/findingmodel-ai/tests/test_assign_metadata_modes.py
+  packages/findingmodel-ai/tests/test_enrichment_auditor.py
+  packages/findingmodel-ai/tests/test_anatomic_search.py
+  packages/findingmodel/tests/test_models.py`: `63 passed, 1 warning`.
+- Primary repo `uv run ruff check scripts/metadata_audit.py scripts/metadata_feedback_coverage.py`:
+  passed.
+- Primary repo 150-pilot JSON/Markdown validation with rebuilt local wheels: passed.
+- Primary repo deterministic-only audit over the corrected 150 pilot records: 150 files, 0 flags.
+- A full audit command without `--deterministic-only` produced 90 LLM-auditor triage flags across
+  67 files. These are review signal, not deterministic gate failures, and should be analyzed
+  separately from the repeatable audit gate.
+
+Clean-input rerun evidence 2026-05-05:
+
+- Prepared a 73-record clean-input manifest from preserved pilot before-artifacts for feedback rows
+  marked `source corrected; needs clean-input tool evidence`.
+- Added `--audit-deterministic-only` to the primary repo batch assignment script so targeted reruns
+  can use deterministic audit output without adding LLM-auditor triage noise.
+- v1 clean-input rerun completed 73/73 with 0 failures, 0 assignment warnings, and 4 deterministic
+  audit flags. The flags exposed assessment/measurement outputs carrying etiologies and a
+  tracheostomy anatomy/body-region compatibility false positive.
+- Hardened the tool in response:
+  - reassess-mode output validation now retries when measurement, assessment, technique-issue, or
+    recommendation outputs carry etiologies;
+  - deterministic anatomy/body-region compatibility now accepts trachea for neck-centered
+    tracheostomy models;
+  - added regression tests for both changes.
+- v2 clean-input rerun completed 73/73 with 0 failures, 0 assignment warnings, and 3 deterministic
+  audit flags, all from extra anatomy selected for
+  `upper_cervical_spine_ao_injury_classification_in_ct`.
+- Field comparison against reviewed source corrections found 76 reviewed-field mismatches across 58
+  of the 73 clean-input records. The dominant mismatch is still expected time course, followed by
+  anatomy selection. This means the tool is improved but not yet tuned enough for a larger corpus
+  run.
+- The primary repo review artifact for v2 is
+  `.metadata-runs/phase5-clean-input-review-v2/index.html`.
+
+Planning refinement 2026-05-05:
+
+- Replaced the earlier tooling-hardening subplan with the final detailed plan at
+  `docs/plans/pilot-feedback-tooling-hardening-subplan-2026-05-05.md`.
+- Updated the umbrella plan so the next phase is explicitly:
+  `Phase 6: Improve the Enrichment Tool Using the 150 Reviewed Examples`.
+- Renumbered the later work so database-build testing, remaining-file enrichment, package release,
+  final database publishing, and documentation closeout happen after the tool-improvement phase.
+- Reworded the database-build testing phase in plain language: test both database builders on the
+  repository state where only the reviewed pilot files are enriched; do not publish those test
+  databases.
+- Added a `Start Here For Implementation` section to the tool-hardening subplan so the next agent
+  starts with the grading-aware comparison script and does not jump to another prompt rewrite,
+  database testing, or broader enrichment.

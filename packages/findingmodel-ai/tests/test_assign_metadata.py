@@ -95,6 +95,42 @@ def _anatomic_results() -> LocationSearchResponse:
     )
 
 
+def _air_in_esophagus_ontology_results() -> CategorizedOntologyConcepts:
+    return CategorizedOntologyConcepts(
+        exact_matches=[
+            OntologySearchResult(
+                concept_id="RID95",
+                concept_text="esophagus",
+                score=0.99,
+                table_name="radlex",
+            ),
+            OntologySearchResult(
+                concept_id="056",
+                concept_text="air in esophagus",
+                score=0.99,
+                table_name="gamuts",
+            ),
+        ],
+        should_include=[],
+        marginal_concepts=[],
+        search_summary="Test anatomy-filtering ontology summary",
+        excluded_anatomical=[],
+    )
+
+
+def _esophagus_anatomic_results() -> LocationSearchResponse:
+    return LocationSearchResponse(
+        primary_location=OntologySearchResult(
+            concept_id="RID95",
+            concept_text="esophagus",
+            score=0.0,
+            table_name="anatomic_locations",
+        ),
+        alternate_locations=[],
+        reasoning="Esophagus is the anatomic site.",
+    )
+
+
 @pytest.mark.asyncio
 async def test_assign_metadata_assembles_canonical_result(
     finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
@@ -129,7 +165,13 @@ async def test_assign_metadata_assembles_canonical_result(
             ),
         ],
         classification_rationale="Pneumonia is a chest finding usually seen on CT and radiography.",
-        field_confidence={"body_regions": FieldConfidence.HIGH, "entity_type": FieldConfidence.HIGH},
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
     )
     agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
     monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
@@ -151,7 +193,7 @@ async def test_assign_metadata_assembles_canonical_result(
     assert [code.display for code in result.model.anatomic_locations] == ["lung"]
 
     assert result.review.logfire_trace_id == "trace-123"
-    assert result.review.field_confidence["body_regions"] == FieldConfidence.HIGH
+    assert result.review.field_confidence["body_regions"] == 0.9
     assert len(result.review.ontology_candidates.canonical_codes) == 2
     assert len(result.review.ontology_candidates.review_candidates) == 1
     assert result.review.ontology_candidates.canonical_codes[0].code.display == "Pneumonia"
@@ -166,6 +208,80 @@ async def test_assign_metadata_assembles_canonical_result(
     assert result.review.anatomic_candidates[0].location.display == "lung"
     assert result.review.anatomic_candidates[1].location.display == "lower respiratory tract"
     assert result.review.classification_rationale
+
+
+@pytest.mark.asyncio
+async def test_assign_metadata_filters_ontology_candidates_that_duplicate_anatomy(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    air_model = finding_model.model_copy(
+        update={
+            "name": "air in esophagus",
+            "description": "Air visible in the esophagus.",
+            "anatomic_locations": None,
+        }
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_air_in_esophagus_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_esophagus_anatomic_results()),
+    )
+    monkeypatch.setattr("findingmodel_ai.metadata.assignment._get_trace_id", lambda: None)
+
+    captured: dict[str, str] = {}
+
+    def model_function(messages: list[Any], info: AgentInfo) -> ModelResponse:
+        prompt_parts: list[str] = []
+        for message in messages:
+            if isinstance(message, ModelRequest):
+                for part in message.parts:
+                    content = getattr(part, "content", None)
+                    if isinstance(content, str):
+                        prompt_parts.append(content)
+        captured["prompt"] = "\n".join(prompt_parts)
+        return ModelResponse(
+            parts=[
+                ToolCallPart(
+                    info.output_tools[0].name,
+                    {
+                        "body_regions": ["chest"],
+                        "entity_type": "finding",
+                        "applicable_modalities": ["XR"],
+                        "ontology_decisions": [
+                            {
+                                "candidate_id": "GAMUTS:056",
+                                "relationship": "exact_match",
+                                "selected_as_canonical": True,
+                            }
+                        ],
+                        "classification_rationale": "Anatomic duplicate ontology candidate is filtered.",
+                        "field_confidence": {
+                            "body_regions": "high",
+                            "entity_type": "high",
+                            "applicable_modalities": "high",
+                            "index_codes": "high",
+                            "anatomic_locations": "high",
+                        },
+                    },
+                    tool_call_id="pyd_ai_tool_call_id__output",
+                )
+            ]
+        )
+
+    agent = create_metadata_assignment_agent(model=FunctionModel(model_function))
+    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+
+    result = await assign_metadata(air_model)
+
+    assert "RADLEX:RID95" not in captured["prompt"]
+    assert "GAMUTS:056" in captured["prompt"]
+    assert result.model.index_codes is not None
+    assert [(code.system, code.code) for code in result.model.index_codes] == [("GAMUTS", "056")]
+    assert result.model.anatomic_locations is not None
+    assert [(code.system, code.code) for code in result.model.anatomic_locations] == [("ANATOMICLOCATIONS", "RID95")]
 
 
 @pytest.mark.asyncio
@@ -195,6 +311,13 @@ async def test_assign_metadata_records_ontology_cache(
             ),
         ],
         classification_rationale="Cache evidence test.",
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
     )
     agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
     monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
@@ -214,6 +337,105 @@ async def test_assign_metadata_records_ontology_cache(
     assert rejected.usage == "rejected_candidate"
     assert rejected.relationship == "related"
     assert rejected.rejection_reason == "overlapping_scope"
+
+
+@pytest.mark.asyncio
+async def test_assign_metadata_does_not_promote_related_ontology_candidate(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Related ontology candidates should stay review evidence, not canonical index codes."""
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        ontology_decisions=[
+            OntologyCandidateDecision(
+                candidate_id="RADLEX:RID9999",
+                relationship=OntologyCandidateRelationship.RELATED,
+                selected_as_canonical=True,
+                rationale="Incorrectly tried to promote a related broader appearance.",
+            )
+        ],
+        classification_rationale="Related ontology candidate guardrail test.",
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
+    )
+    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
+    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+
+    result = await assign_metadata(finding_model)
+
+    assert result.model.index_codes is not None
+    assert ("RADLEX", "RID9999") not in {(code.system, code.code) for code in result.model.index_codes}
+    assert any("Ignoring canonical ontology selection for RADLEX:RID9999" in warning for warning in result.review.warnings)
+    assert any(
+        candidate.code.system == "RADLEX" and candidate.code.code == "RID9999"
+        for candidate in result.review.ontology_candidates.review_candidates
+    )
+
+
+@pytest.mark.asyncio
+async def test_assign_metadata_promotes_canonical_relationship_without_boolean(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Exact/substitutable relationship should be canonical unless a rejection reason is present."""
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        ontology_decisions=[
+            OntologyCandidateDecision(
+                candidate_id="RADLEX:RID5350",
+                relationship=OntologyCandidateRelationship.CLINICALLY_SUBSTITUTABLE,
+                selected_as_canonical=False,
+            ),
+            OntologyCandidateDecision(
+                candidate_id="RADLEX:RID9999",
+                relationship=OntologyCandidateRelationship.EXACT_MATCH,
+                selected_as_canonical=False,
+                rejection_reason=OntologyCandidateRejectionReason.WRONG_CONCEPT,
+            ),
+        ],
+        classification_rationale="Canonical relationship consistency test.",
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
+    )
+    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
+    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+
+    result = await assign_metadata(finding_model)
+
+    assert result.model.index_codes is not None
+    assert ("RADLEX", "RID5350") in [(code.system, code.code) for code in result.model.index_codes]
+    assert ("RADLEX", "RID9999") not in [(code.system, code.code) for code in result.model.index_codes]
 
 
 @pytest.mark.asyncio
@@ -250,6 +472,13 @@ async def test_assign_metadata_function_model_receives_candidate_context(
                         "body_regions": ["chest"],
                         "entity_type": "finding",
                         "applicable_modalities": ["CT"],
+                        "field_confidence": {
+                            "body_regions": "high",
+                            "entity_type": "high",
+                            "applicable_modalities": "high",
+                            "index_codes": "high",
+                            "anatomic_locations": "high",
+                        },
                     },
                     tool_call_id="pyd_ai_tool_call_id__output",
                 )
@@ -318,7 +547,14 @@ async def test_assign_metadata_reassesses_populated_model(
             ),
         ],
         classification_rationale="Confirmed existing metadata is correct.",
-        field_confidence={"body_regions": FieldConfidence.HIGH, "entity_type": FieldConfidence.HIGH},
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "subspecialties": FieldConfidence.HIGH,
+            "etiologies": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "sex_specificity": FieldConfidence.HIGH,
+        },
     )
 
     original_create = create_metadata_assignment_agent
@@ -362,6 +598,7 @@ async def test_assign_metadata_surfaces_gathering_failures_as_warnings(
             "body_regions": FieldConfidence.MEDIUM,
             "entity_type": FieldConfidence.HIGH,
             "applicable_modalities": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.MEDIUM,
         },
     )
     agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
@@ -379,26 +616,22 @@ async def test_assign_metadata_surfaces_gathering_failures_as_warnings(
 
 
 @pytest.mark.asyncio
-async def test_assign_metadata_gathers_ontology_and_anatomic_in_parallel(
+async def test_assign_metadata_passes_ontology_labels_to_anatomic_search(
     finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    ontology_started = asyncio.Event()
-    anatomic_started = asyncio.Event()
-    release_both = asyncio.Event()
     starts: list[str] = []
+    captured_locality_labels: list[str] = []
 
     async def fake_match_ontology_concepts(**kwargs: Any) -> CategorizedOntologyConcepts:
         _ = kwargs
+        await asyncio.sleep(0)
         starts.append("ontology")
-        ontology_started.set()
-        await release_both.wait()
         return _ontology_results()
 
     async def fake_find_anatomic_locations(**kwargs: Any) -> LocationSearchResponse:
-        _ = kwargs
+        await asyncio.sleep(0)
         starts.append("anatomic")
-        anatomic_started.set()
-        await release_both.wait()
+        captured_locality_labels.extend(kwargs.get("locality_labels") or [])
         return _anatomic_results()
 
     monkeypatch.setattr(
@@ -415,23 +648,31 @@ async def test_assign_metadata_gathers_ontology_and_anatomic_in_parallel(
         body_regions=[BodyRegion.CHEST],
         entity_type=EntityType.FINDING,
         applicable_modalities=[Modality.CT],
-        classification_rationale="Parallel gather test.",
+            classification_rationale="Ontology-informed anatomy gather test.",
         field_confidence={
             "body_regions": FieldConfidence.HIGH,
             "entity_type": FieldConfidence.HIGH,
             "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
         },
     )
     agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
     monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
 
-    task = asyncio.create_task(assign_metadata(finding_model))
+    result = await assign_metadata(finding_model)
 
-    await asyncio.wait_for(ontology_started.wait(), timeout=1)
-    await asyncio.wait_for(anatomic_started.wait(), timeout=1)
-    assert starts == ["ontology", "anatomic"] or starts == ["anatomic", "ontology"]
-
-    release_both.set()
-    result = await task
-
+    assert starts == ["ontology", "anatomic"]
+    assert "Pneumonia" in captured_locality_labels
     assert result.model.body_regions == [BodyRegion.CHEST]
+
+
+def test_metadata_assignment_decision_ignores_invalid_confidence_key() -> None:
+    decision = MetadataAssignmentDecision.model_validate(
+        {
+            "classification_rationale": "Invalid confidence key.",
+            "field_confidence": {"ontology_decisions": "high", "body_regions": "95"},
+        }
+    )
+
+    assert decision.field_confidence == {"body_regions": 0.95}

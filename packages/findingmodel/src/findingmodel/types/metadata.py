@@ -176,6 +176,8 @@ class EtiologyCode(str, Enum):
     VASCULAR_HEMORRHAGIC = "vascular:hemorrhagic"
     VASCULAR_THROMBOTIC = "vascular:thrombotic"
     VASCULAR_ANEURYSMAL = "vascular:aneurysmal"
+    VASCULAR = "vascular"
+    CARDIAC = "cardiac"
     DEGENERATIVE = "degenerative"
     METABOLIC = "metabolic"
     CONGENITAL = "congenital"

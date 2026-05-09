@@ -82,6 +82,19 @@ def _filter_anatomical_concepts(search_results: list[OntologySearchResult]) -> l
     return filtered_results
 
 
+def _candidate_decision_limit() -> int:
+    limit = getattr(settings, "metadata_candidate_decision_limit", 15)
+    if not isinstance(limit, int):
+        limit = 15
+    return limit
+
+
+def _candidate_decision_results(search_results: list[OntologySearchResult]) -> list[OntologySearchResult]:
+    """Keep ontology candidate-list prompts within the configured decision limit."""
+    limit = _candidate_decision_limit()
+    return search_results[:limit]
+
+
 def _add_exact_matches(
     sorted_results: list[OntologySearchResult], query_terms: list[str], max_results: int, selected_ids: set[str]
 ) -> tuple[list[OntologySearchResult], int]:
@@ -96,6 +109,9 @@ def _add_exact_matches(
 
         # Check if this is an exact match for any query term
         if normalized_text in query_terms_lower and result.concept_id not in selected_ids:
+            if len(top_results) >= max_results:
+                removed = top_results.pop()
+                selected_ids.discard(removed.concept_id)
             top_results.append(result)
             selected_ids.add(result.concept_id)
             exact_matches_added += 1
@@ -224,7 +240,7 @@ Categories:
      exact same idea (or very nearly so), even if they use slightly different wording.
    - CRITICAL: Any concept with text that exactly equals the finding name MUST go here
    - Include concepts whose normalized text exactly matches the finding name or its synonyms
-   - **PRIORITIZE SNOMEDCT**: If multiple exact matches exist, include the SNOMEDCT version
+   - Do not prefer one ontology system by name; judge conceptual relevance
    - These are the most important - never miss an exact match!
    
 2. **should_include** (max 10): Highly relevant related concepts
@@ -249,79 +265,6 @@ IMPORTANT:
     )
 
 
-def ensure_exact_matches_post_process(
-    output: CategorizedConcepts,
-    search_results: list[OntologySearchResult],
-    query_terms: list[str],
-) -> CategorizedConcepts:
-    """Post-process categorization output to ensure exact matches are properly identified.
-
-    This function ensures that any concept whose normalized text exactly
-    matches any of the query terms is included in exact_matches.
-    If any are missing, it automatically corrects the categorization.
-
-    Args:
-        output: The categorization output from the agent
-        search_results: List of search results to check for exact matches
-        query_terms: List of search terms used for querying
-
-    Returns:
-        CategorizedConcepts with exact matches properly identified and corrected
-    """
-    # Get lowercase versions of query terms for comparison
-    query_terms_lower = [term.lower() for term in query_terms]
-
-    # Find concepts that should be exact matches
-    missing_exact_matches = []
-
-    for result in search_results:
-        # Normalize the concept text for comparison (already normalized in search)
-        normalized_text = result.concept_text.lower()
-
-        # Check if this is an exact match for any query term
-        if normalized_text in query_terms_lower and result.concept_id not in output.exact_matches:
-            matched_term = query_terms[query_terms_lower.index(normalized_text)]
-            missing_exact_matches.append((result.concept_id, result.concept_text, matched_term))
-
-    # If we found missing exact matches, auto-correct by adding them
-    if missing_exact_matches:
-        # Create corrected lists
-        corrected_exact_matches = list(output.exact_matches)
-        corrected_should_include = list(output.should_include)
-        corrected_marginal = list(output.marginal)
-
-        # Add missing exact matches and remove from other categories
-        # Respect the max_length constraint of 5
-        for concept_id, concept_text, matched_term in missing_exact_matches:
-            # Check if we've hit the limit
-            if len(corrected_exact_matches) >= 5:
-                logger.warning(f"Cannot add {concept_id} to exact_matches - already at limit of 5")
-                break
-
-            corrected_exact_matches.append(concept_id)
-
-            # Remove from other categories if present
-            if concept_id in corrected_should_include:
-                corrected_should_include.remove(concept_id)
-            if concept_id in corrected_marginal:
-                corrected_marginal.remove(concept_id)
-
-            logger.info(
-                f"Auto-corrected: Added {concept_id} ('{concept_text}') to exact_matches (matched '{matched_term}')"
-            )
-
-        # Return corrected categorization
-        return CategorizedConcepts(
-            exact_matches=corrected_exact_matches,
-            should_include=corrected_should_include,
-            marginal=corrected_marginal,
-            rationale=f"{output.rationale} [Auto-corrected: Added {min(len(missing_exact_matches), 5 - len(output.exact_matches))} missing exact matches]",
-        )
-
-    # No corrections needed - return original output
-    return output
-
-
 def create_query_generator_agent() -> Agent[None, list[str]]:
     """Create agent for generating alternative medical terms for ontology matching.
 
@@ -341,11 +284,13 @@ Generate a list of alternative terms that express the same medical concept. Incl
 - Common abbreviations (e.g., "PE" for "pulmonary embolism")
 - More general or specific variations
 - Parent/broader terms that might categorize this finding
+- Reordered formal ontology phrasing that preserves anatomy and qualifiers, such as converting
+  "[anatomic adjective] [finding]" into "[finding] of [anatomy]" when that keeps the same meaning
 
 Example for "quadriceps tendon rupture":
 ["quadriceps tendon tear", "quad tendon rupture", "quadriceps tendon disruption", "torn quadriceps tendon", "quadriceps tendon injury", "quadriceps tendinopathy", "quadriceps tendon abnormality"]
 
-Return 2-5 terms that would appear in formal medical ontologies. Keep it simple and practical.""",
+Return 3-7 terms that would appear in formal medical ontologies. Keep it simple and practical.""",
     )
 
 
@@ -406,16 +351,12 @@ async def categorize_with_validation(
     Returns:
         CategorizedConcepts with concept IDs in each relevance tier
     """
-    # Create categorization context
-    categorization_context = CategorizationContext(
-        finding_name=finding_name, search_results=search_results, query_terms=query_terms
-    )
-
     # Use the categorization agent
     categorization_agent = create_categorization_agent()
 
     # Create a compact representation of results for the prompt
-    compact_results = [{"id": r.concept_id, "text": r.concept_text} for r in search_results]
+    prompt_results = _candidate_decision_results(search_results)
+    compact_results = [{"id": r.concept_id, "text": r.concept_text} for r in prompt_results]
 
     categorize_prompt = (
         f"Categorize these ontology concepts for the imaging finding '{finding_name}':\n\n"
@@ -425,20 +366,22 @@ async def categorize_with_validation(
 
     # Run categorization
     try:
-        categorization_result = await categorization_agent.run(categorize_prompt, deps=categorization_context)
+        categorization_result = await categorization_agent.run(
+            categorize_prompt,
+            deps=CategorizationContext(
+                finding_name=finding_name,
+                search_results=prompt_results,
+                query_terms=query_terms,
+            ),
+        )
         categorized = categorization_result.output
 
-        # Apply post-processing to ensure exact matches are properly identified
-        corrected_categorized = ensure_exact_matches_post_process(
-            output=categorized, search_results=search_results, query_terms=query_terms
-        )
-
         logger.info(
-            f"Categorization complete: {len(corrected_categorized.exact_matches)} exact, "
-            f"{len(corrected_categorized.should_include)} should include, "
-            f"{len(corrected_categorized.marginal)} marginal"
+            f"Categorization complete: {len(categorized.exact_matches)} exact, "
+            f"{len(categorized.should_include)} should include, "
+            f"{len(categorized.marginal)} marginal"
         )
-        return corrected_categorized
+        return categorized
     except Exception as e:
         logger.error(f"Categorization failed: {e}")
         raise
@@ -555,7 +498,7 @@ async def match_ontology_concepts(
             query_terms=query_terms,
             exclude_anatomical=exclude_anatomical,
             base_limit=30,  # Cast wider net initially
-            max_results=7,  # Focus on top results (plus exact matches)
+            max_results=_candidate_decision_limit(),
             ontologies=ontologies,  # Pass through ontologies parameter
         )
 
@@ -588,7 +531,6 @@ __all__ = [
     "categorize_with_validation",
     "create_categorization_agent",
     "create_query_generator_agent",
-    "ensure_exact_matches_post_process",
     "execute_ontology_search",
     "generate_finding_query_terms",
     "match_ontology_concepts",

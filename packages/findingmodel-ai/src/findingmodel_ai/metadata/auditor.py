@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Literal
 
-from findingmodel import FindingModelFull
+from anatomic_locations import AnatomicLocationIndex
+from findingmodel import FindingModelFull, SexSpecificity
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.models import Model
@@ -65,6 +67,9 @@ async def audit_enrichment(
     finding_model: FindingModelFull,
     *,
     ontology_cache: OntologyLookupCache | Path | str | None = None,
+    anatomic_index: AnatomicLocationIndex | None = None,
+    anatomic_index_lock: asyncio.Lock | None = None,
+    include_llm: bool = True,
 ) -> EnrichmentAuditResult:
     """Audit an enriched finding model using deterministic ontology evidence plus a light LLM pass."""
     cache = (
@@ -73,7 +78,13 @@ async def audit_enrichment(
         else OntologyLookupCache(ontology_cache)
     )
     try:
-        deterministic_flags = _ontology_evidence_flags(finding_model, cache)
+        if anatomic_index_lock is not None:
+            async with anatomic_index_lock:
+                deterministic_flags = _deterministic_flags(finding_model, cache, anatomic_index)
+        else:
+            deterministic_flags = _deterministic_flags(finding_model, cache, anatomic_index)
+        if not include_llm:
+            return EnrichmentAuditResult(flags=deterministic_flags)
         prompt = _audit_prompt(finding_model, cache, deterministic_flags)
         agent = create_enrichment_auditor_agent()
         result = await agent.run(prompt)
@@ -83,9 +94,18 @@ async def audit_enrichment(
             cache.close()
 
 
-def _ontology_evidence_flags(
-    finding_model: FindingModelFull, cache: OntologyLookupCache | None
+def _deterministic_flags(
+    finding_model: FindingModelFull,
+    cache: OntologyLookupCache | None,
+    anatomic_index: AnatomicLocationIndex | None,
 ) -> list[EnrichmentAuditFlag]:
+    return [
+        *_ontology_evidence_flags(finding_model, cache),
+        *_anatomy_sex_specificity_flags(finding_model, anatomic_index),
+    ]
+
+
+def _ontology_evidence_flags(finding_model: FindingModelFull, cache: OntologyLookupCache | None) -> list[EnrichmentAuditFlag]:
     flags: list[EnrichmentAuditFlag] = []
     for code in finding_model.index_codes or []:
         evidence = cache.get(code.system, code.code) if cache else None
@@ -107,6 +127,36 @@ def _ontology_evidence_flags(
                     field="index_codes",
                     message=f"Canonical code {code_label} display does not match cached preferred display.",
                     evidence=f"model={code.display!r}; cache={evidence.preferred_display!r}",
+                )
+            )
+    return flags
+
+
+def _anatomy_sex_specificity_flags(
+    finding_model: FindingModelFull, anatomic_index: AnatomicLocationIndex | None
+) -> list[EnrichmentAuditFlag]:
+    if anatomic_index is None:
+        return []
+    flags: list[EnrichmentAuditFlag] = []
+    model_sex = finding_model.sex_specificity
+    for code in finding_model.anatomic_locations or []:
+        try:
+            location = anatomic_index.get(code.code)
+        except KeyError:
+            continue
+        sex_text = (location.sex_specific or "").lower()
+        expected: SexSpecificity | None = None
+        if "male" in sex_text:
+            expected = SexSpecificity.MALE_SPECIFIC
+        elif "female" in sex_text:
+            expected = SexSpecificity.FEMALE_SPECIFIC
+        if expected is not None and model_sex != expected:
+            flags.append(
+                EnrichmentAuditFlag(
+                    severity="high",
+                    field="sex_specificity",
+                    message="Selected anatomic location implies sex specificity inconsistent with the model.",
+                    evidence=f"{code.display or code.code} sex_specific={location.sex_specific}; expected={expected.value}",
                 )
             )
     return flags

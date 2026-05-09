@@ -132,13 +132,14 @@ class TestSerialization:
                 ),
             ],
             classification_rationale="Test rationale",
-            field_confidence={"description": FieldConfidence.HIGH},
+            field_confidence={"entity_type": FieldConfidence.HIGH},
             timings={"ontology_search": 1.23},
             warnings=["Something to note"],
         )
         json_str = review.model_dump_json()
         restored = MetadataAssignmentReview.model_validate_json(json_str)
         assert restored == review
+        assert restored.field_confidence["entity_type"] == 0.9
 
     def test_assign_metadata_result_json_serializable(self) -> None:
         """Both .model and .review can be serialized independently."""

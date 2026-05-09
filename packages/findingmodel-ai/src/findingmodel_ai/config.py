@@ -118,7 +118,11 @@ class FindingModelAIConfig(BaseSettings):
         default=False,
         description="Disable sending traces to Logfire cloud; local instrumentation still works.",
     )
-
+    metadata_candidate_decision_limit: int = Field(
+        default=15,
+        ge=5,
+        description="Maximum candidate records sent to any metadata-decision LLM prompt.",
+    )
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_nested_delimiter="__")
 
     # Private instance cache for Ollama available models
