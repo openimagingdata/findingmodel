@@ -1,6 +1,10 @@
 # Plan: Metadata Assignment Next Iteration
 
-Status: In Progress (2026-04-11)
+> Superseded for active execution by `docs/plans/metadata-enrichment-current-plan.md`. Keep this file as historical evidence only; pull any still-useful decisions into the active plan or a stable reference doc before acting on them.
+
+
+
+Status: Superseded for active execution; retained as historical evidence
 
 ## Goal
 

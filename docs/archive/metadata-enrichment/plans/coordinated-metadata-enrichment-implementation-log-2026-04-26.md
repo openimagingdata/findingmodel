@@ -1,5 +1,9 @@
 # Implementation Log: Coordinated Metadata Enrichment and Dual-Database Release
 
+> Superseded for active execution by `docs/plans/metadata-enrichment-current-plan.md`. Keep this file as historical evidence only; pull any still-useful decisions into the active plan or a stable reference doc before acting on them.
+
+
+
 This log records execution details for
 `docs/plans/coordinated-metadata-enrichment-and-dual-db-release-2026-04-26.md`.
 The plan should stay focused on decisions, phases, requirements, and gates. This file holds command

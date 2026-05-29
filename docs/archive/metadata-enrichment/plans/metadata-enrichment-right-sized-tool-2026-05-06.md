@@ -1,6 +1,10 @@
 # Plan: Right-Size Metadata Enrichment
 
-Status: Fresh-slice qualitative cleanup in progress
+> Superseded for active execution by `docs/plans/metadata-enrichment-current-plan.md`. Keep this file as historical evidence only; pull any still-useful decisions into the active plan or a stable reference doc before acting on them.
+
+
+
+Status: Superseded for active execution; retained as historical evidence
 Date: 2026-05-06
 
 ## Purpose
@@ -133,6 +137,62 @@ Go/no-go threshold for the next large dry run:
   records.
 - Any source-data validation failures are listed explicitly and are either repaired, excluded from
   the write pass, or handled by a preflight report.
+
+## Supervised Writeback Workflow
+
+The enrichment tool is not intended to write directly to source files without supervision. Use each
+larger dry run as a proposed metadata batch, then decide which records are safe to promote.
+
+Each subagent-reviewed record should receive one queue label:
+
+- `proposed_accept`: the source concept is in scope and the enriched metadata is supported well
+  enough to write back.
+- `proposed_skip`: the source concept is out of scope for this enrichment pass, such as a clinical scale,
+  laboratory/clinical-only concept, template/protocol/module, or other record that is not a single
+  imaging-observable finding model.
+- `needs_attention`: the source concept is probably in scope, but one or more fields need
+  domain judgment before writeback.
+- `suspected_tool_problem`: the record shows a repeated tool or prompt failure pattern that should
+  be fixed before similar records are promoted.
+
+Human review actions are deliberately smaller:
+
+- `approved`: eligible for source writeback.
+- `skipped`: excluded from this enrichment pass.
+- `feedback`: not applied yet; needs correction, domain input, or prompt/tool follow-up.
+
+First-pass review should classify records, not hand-edit every output. The reviewer should use
+field-level callouts for the reason a record is not immediately accepted:
+
+- `index_codes`: selected canonical codes are anatomy-only, procedure-only, broader/narrower,
+  qualifier-dropping, or otherwise not the modeled concept.
+- `anatomic_locations` / `body_regions`: selected anatomy is unsupported, too broad, too narrow, or
+  body region does not follow the selected anatomy.
+- `etiologies`: causal buckets are assigned from differential diagnosis, weak tags, or plausible
+  association rather than the modeled finding itself.
+- `applicable_modalities` / `subspecialties`: values come from routine-practice inference or source
+  workflow noise rather than direct support for the modeled finding.
+- `entity_type`, `expected_time_course`, `age_profile`, or `sex_specificity`: values need policy or
+  domain review.
+
+Promotion rule:
+
+- Only human `approved` records should be applied to `defs/*.fm.json`.
+- Human `skipped` records stay untouched and should be logged so they are not repeatedly re-reviewed in the
+  same pass.
+- Human `feedback` records stay untouched until corrections are made or a later review changes them
+  to `approved` or `skipped`.
+- `suspected_tool_problem` patterns feed the next focused prompt/tool improvement cycle.
+
+This review layer is separate from metadata assignment. It must not become brittle assignment code
+that forces metadata values from finding names, ontology IDs, or keyword lists. It is a supervised
+promotion contract: decide whether a generated artifact is safe to write, and use repeated failure
+patterns to improve the focused sub-agent prompts.
+
+The subagent prompt and its surrounding review context are maintained in
+`docs/plans/metadata-enrichment-supervised-review-prompt-2026-05-10.md`. That document is the source
+of truth for the review criteria, examples, output schema, and collation rules used for supervised
+batch review.
 
 ## Small-Batch Sanity Review Prompt
 
@@ -421,7 +481,7 @@ Readiness recommendation:
   `task test:findingmodel-ai -- -q` passed with 204 tests, 85 callouts deselected, and one Logfire
   no-config warning.
 
-## Current Status
+## Historical Status
 
 Source-support hardening, fresh-slice cleanup, and a 50-record random dry-run follow-up are
 implemented. The tool is ready to try a larger dry-run corpus slice. Source writes should still stay
@@ -588,7 +648,7 @@ Qualitative checks from the final focused run:
 - `axillary_mass`: `upper extremity`, no axillary lymph-node narrowing, no broad etiology list.
 - `breast_calcification_cluster`: exact `Calcification cluster` code, no neoplastic etiology.
 
-## Current Next Step
+## Superseded Next Step
 
 Prepare controlled promotion rather than continuing prompt tuning:
 
@@ -599,7 +659,7 @@ Prepare controlled promotion rather than continuing prompt tuning:
 - continue to use dry-run plus targeted qualitative review for larger source-write batches, but do
   not reopen prompt tuning unless a repeated failure class appears.
 
-Active review:
+Historical review:
 
 - 2026-05-07: Current state is ready for a larger dry-run slice, not for source writes. Mechanical
   readiness is good on the 200-record rerun, but qualitative review still needs to watch anatomy
@@ -918,3 +978,30 @@ Active review:
   `hyperphosphatasemia` failing again for the same required-modality reason. This confirms the
   transport/resource failures were operational noise, while `hyperphosphatasemia` is the only
   repeated product-shape failure from this pass.
+- 2026-05-10: The 400-record non-GMTS plus filtered-GMTS review pass exposed five remaining
+  assessment/measurement failures from the ontology sanity check that required every canonical
+  ontology decision on assessment/measurement models to be labeled `exact_match`. This check caught
+  real overreach in several CDE-style measurement modules, but it also failed valid cases such as
+  `pediatric_bone_age` where `RADLEX:RID39030` and `SNOMEDCT:123980006` are appropriate matches.
+  Implementation plan: keep the sanity behavior, but make it corrective instead of fatal. For
+  assessment/measurement outputs, downgrade non-exact canonical ontology decisions to review
+  candidates with warnings; preserve exact source codes and selected exact/substitutable candidates;
+  and let the record complete unless required fields are still missing.
+- 2026-05-10: Added the supervised writeback workflow to this plan. Larger dry runs should now be
+  treated as proposed metadata batches with subagent queue labels: `proposed_accept`,
+  `proposed_skip`, `needs_attention`, or `suspected_tool_problem`. Human reviewers choose only
+  `approved`, `skipped`, or `feedback`. Only human-approved artifacts should be promoted to source
+  files; skipped and feedback records remain untouched and feed either human review or the next
+  focused prompt-improvement cycle.
+- 2026-05-10: Added the standalone supervised-review prompt/context document at
+  `docs/plans/metadata-enrichment-supervised-review-prompt-2026-05-10.md`.
+- 2026-05-10: Implemented the supervised review handoff for the 400-record
+  non-GMTS plus filtered-GMTS batch. Eight subagent review batches were written as JSON artifacts
+  under `/tmp/metadata-review-subagent-outputs/`, collated into
+  `/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase6-nongmts-gmts-review-v1/review-decisions.json`,
+  and rendered into the human review app at
+  `/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase6-nongmts-gmts-review-v1/review/index.html`.
+  The collated triage is 252 `proposed_accept`, 100 `needs_attention`, 38 `proposed_skip`, and
+  10 `suspected_tool_problem`. No source metadata files should be promoted until the exported
+  human review decisions mark records as `approved`; `skipped` and `feedback` records remain
+  writeback-ineligible.

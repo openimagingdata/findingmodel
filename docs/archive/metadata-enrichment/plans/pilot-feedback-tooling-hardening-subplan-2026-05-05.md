@@ -1,5 +1,9 @@
 # Metadata Enrichment Tool Hardening Plan
 
+> Superseded for active execution by `docs/plans/metadata-enrichment-current-plan.md`. Keep this file as historical evidence only; pull any still-useful decisions into the active plan or a stable reference doc before acting on them.
+
+
+
 Date: 2026-05-05
 Status: Integrated revision with prompt-suite assessment incorporated
 

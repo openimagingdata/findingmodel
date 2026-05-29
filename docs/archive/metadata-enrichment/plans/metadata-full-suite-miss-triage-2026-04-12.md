@@ -1,5 +1,9 @@
 # Plan: Metadata Full-Suite Miss Triage
 
+> Superseded for active execution by `docs/plans/metadata-enrichment-current-plan.md`. Keep this file as historical evidence only; pull any still-useful decisions into the active plan or a stable reference doc before acting on them.
+
+
+
 ## Goal
 
 Identify the highest-leverage, lowest-complexity fixes for the remaining metadata-assignment eval misses after the targeted prompt-example update.

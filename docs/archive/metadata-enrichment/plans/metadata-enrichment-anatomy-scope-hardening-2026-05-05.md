@@ -1,5 +1,9 @@
 # Metadata Enrichment Anatomy-Scope Hardening
 
+> Superseded for active execution by `docs/plans/metadata-enrichment-current-plan.md`. Keep this file as historical evidence only; pull any still-useful decisions into the active plan or a stable reference doc before acting on them.
+
+
+
 Date: 2026-05-05
 Status: Special-case assignment code removed; general fix still needed
 
@@ -62,7 +66,7 @@ Primary repo run:
   assigned `US`; `osseous_lucent_lesion` no longer assigned `MR`, so the MR-overreach audit did not
   fire.
 
-## Next Step
+## Superseded Next Step
 
 Treat the v2 output as regression evidence, not as an accepted fix. The next engineering-local work
 is to add narrower deterministic validators or retry checks for regression-floor drift classes

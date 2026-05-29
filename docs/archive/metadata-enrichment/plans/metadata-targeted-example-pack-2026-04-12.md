@@ -1,5 +1,9 @@
 # Plan: Targeted Metadata Prompt Examples
 
+> Superseded for active execution by `docs/plans/metadata-enrichment-current-plan.md`. Keep this file as historical evidence only; pull any still-useful decisions into the active plan or a stable reference doc before acting on them.
+
+
+
 ## Goal
 
 Propose a compact set of field-focused prompt examples that teach the metadata-assignment model the

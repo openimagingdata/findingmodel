@@ -2,17 +2,25 @@
 
 ## Status
 
-- In progress — core schema, retrieval APIs, related-model scoring, metadata-assignment types, canonical `assign_metadata(...)`, and the rewritten `find_similar_models()` are implemented in the worktree
-- `docs/plans/metadata-pipeline-polish.md` completed the public-surface migration, reassess-by-default metadata assignment, and metadata-assignment eval wiring on 2026-03-24
-- Slices 9–10 remain for public-surface migration, backfill, and final docs cleanup
-- Supersedes the old enrichment implementation plan now archived at `docs/archive/finding-enrichment-implementation-plan.md`
-- Supersedes the older enrichment PRD now archived at `docs/archive/finding-enrichment-prd.md`
-- Implementation tracking lives in `tasks/canonical-structured-metadata-implementation-plan.md`
+This is an architecture/design reference for the canonical structured metadata rewrite. It is not
+the active metadata-enrichment cleanup plan.
+
+- Core schema, retrieval APIs, related-model scoring, metadata-assignment types, canonical
+  `assign_metadata(...)`, and the rewritten `find_similar_models()` are implemented in the worktree.
+- Current metadata field semantics live in `docs/metadata/fields.md`.
+- Current enrichment cleanup and commit-readiness work lives in
+  `docs/plans/metadata-enrichment-current-plan.md`.
+- Implementation tracking for the broader structured-metadata rewrite lives in
+  `tasks/canonical-structured-metadata-implementation-plan.md`.
+- Supersedes the old enrichment implementation plan now archived at
+  `docs/archive/finding-enrichment-implementation-plan.md`.
+- Supersedes the older enrichment PRD now archived at `docs/archive/finding-enrichment-prd.md`.
 
 ## Summary
 
 - The repo has two older enrichment pathways.
-- The original program-orchestrated pathway came first and better matches the repo's current AI workflow guidance.
+- The original program-orchestrated pathway came first and better matches the repo's current AI
+  process guidance.
 - The later agentic pathway was an alternate experiment.
 - Neither older pathway is acceptable as the canonical future implementation because both produce sidecar enrichment output instead of making structured metadata part of `FindingModel`.
 - The new direction is to build one new metadata-assignment tool from scratch around the model we actually want, salvage only the useful search/prompt pieces from the old work, and remove both older enrichment pathways with no compatibility shims.
@@ -59,7 +67,7 @@ Canonical facet values:
 - `ExpectedTimeCourse = {duration: ExpectedDuration | None, modifiers: list[TimeCourseModifier]}`
 - `ExpectedDuration = {hours, days, weeks, months, years, permanent}` — upper bound on how long the finding typically remains visible on imaging
 - `TimeCourseModifier = {progressive, stable, evolving, resolving, intermittent, fluctuating, recurrent}`
-- `EtiologyCode = {inflammatory, inflammatory:infectious, neoplastic:benign, neoplastic:malignant, neoplastic:metastatic, neoplastic:potential, traumatic:acute, traumatic:sequela, vascular:ischemic, vascular:hemorrhagic, vascular:thrombotic, vascular:aneurysmal, degenerative, metabolic, congenital, developmental, autoimmune, toxic, mechanical, iatrogenic:post-operative, iatrogenic:post-radiation, iatrogenic:device, iatrogenic:medication-related, idiopathic, normal-variant}`
+- `EtiologyCode = {inflammatory, inflammatory:infectious, neoplastic:benign, neoplastic:malignant, neoplastic:metastatic, neoplastic:potential, traumatic:acute, traumatic:sequela, vascular, vascular:ischemic, vascular:hemorrhagic, vascular:thrombotic, vascular:aneurysmal, cardiac, degenerative, metabolic, congenital, developmental, autoimmune, toxic, mechanical, iatrogenic:post-operative, iatrogenic:post-radiation, iatrogenic:device, iatrogenic:medication-related, idiopathic, normal-variant}`
 
 Keep these existing fields as the canonical standardized-code layer:
 
@@ -104,7 +112,7 @@ async def assign_metadata(
 `review` contract in v1:
 
 - Define a typed `MetadataAssignmentReview` Pydantic model in `findingmodel-ai`
-- Make it fully JSON-serializable so CLI/backfill workflows can persist it without ad hoc shaping
+- Make it fully JSON-serializable so CLI/backfill processes can persist it without ad hoc shaping
 - Return it from `assign_metadata(...)` directly; file writing stays outside the core function
 - Canonical CLI/backfill writes review JSON to a separate artifact location, not into `.fm.json`
 - Default bulk-backfill layout should be deterministic by model identity, e.g. `<artifact_root>/<oifm_id>.metadata-review.json`
@@ -206,7 +214,11 @@ Design note for `find_similar_models()`:
 - always preserve an unfiltered text-search path so incorrect facet guesses do not collapse recall
 - deterministic code merges and scores the union of exact-match checks, text-search candidates, facet-filtered candidates, and `related_models(...)` candidates before the final LLM judgment
 
-## Implementation Phases
+## Historical Implementation Phases
+
+These phases document the original structured-metadata rewrite sequence. They remain useful for
+architecture context, but they are not the active cleanup/commit-readiness plan. Current execution
+tracking lives in `docs/plans/metadata-enrichment-current-plan.md`.
 
 ### Phase 1: Write and align the docs
 
@@ -277,7 +289,8 @@ Design note for `find_similar_models()`:
 - Backfill the current corpus directly into `.fm.json` files with the new tool
 - Use file-by-file atomic writes
 - Rebuild DuckDB fixtures and published DB artifacts from the updated models
-- Run a final documentation review so the plan, READMEs, and `CHANGELOG.md` match the final shipped workflow
+- Run a final documentation review so the plan, READMEs, and `CHANGELOG.md` match the final shipped
+  process
 
 ## Test Plan
 
