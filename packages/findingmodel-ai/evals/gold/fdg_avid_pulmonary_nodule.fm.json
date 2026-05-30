@@ -7,7 +7,7 @@
   "subspecialties": ["MI", "OI", "CH"],
   "entity_type": "finding",
   "applicable_modalities": ["PET", "CT"],
-  "etiologies": ["neoplastic:malignant", "neoplastic:metastatic", "inflammatory:infectious"],
+  "etiologies": ["inflammatory", "neoplastic:malignant"],
   "sex_specificity": "sex-neutral",
   "age_profile": {
     "applicability": ["young_adult", "adult", "middle_aged", "aged"],

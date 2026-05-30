@@ -7,16 +7,13 @@
   "subspecialties": ["CH"],
   "entity_type": "finding",
   "applicable_modalities": ["XR", "CT", "US", "MR"],
-  "etiologies": ["inflammatory", "neoplastic:malignant"],
+  "etiologies": null,
   "sex_specificity": "sex-neutral",
   "age_profile": {
     "applicability": "all_ages",
     "more_common_in": ["aged"]
   },
-  "expected_time_course": {
-    "duration": "weeks",
-    "modifiers": ["evolving"]
-  },
+  "expected_time_course": null,
   "anatomic_locations": [
     {
       "system": "ANATOMICLOCATIONS",

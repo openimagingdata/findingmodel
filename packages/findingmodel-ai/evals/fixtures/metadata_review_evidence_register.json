@@ -1,0 +1,4182 @@
+{
+  "counts": {
+    "approved": 67,
+    "effective_approved": 67,
+    "effective_feedback": 83,
+    "effective_unresolved": 0,
+    "feedback": 113,
+    "total_review_events": 180,
+    "unique_items": 150,
+    "unresolved": 0
+  },
+  "dropped_records": [],
+  "generated_from": [
+    {
+      "dropped_record_count": 0,
+      "imported_record_count": 150,
+      "imported_status_counts": {
+        "approved": 46,
+        "feedback": 104,
+        "unresolved": 0
+      },
+      "input_response_count": 150,
+      "kind": "human_review_export",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "sha256": "13a3c7149cb29e29fb8b9874ed31ecd56c615b6f4c0aaeaa73062b0995332974",
+      "summary": {
+        "approved": 46,
+        "complete": true,
+        "done": 150,
+        "drafts": 0,
+        "feedback": 104,
+        "remaining": 0,
+        "total": 150
+      }
+    },
+    {
+      "dropped_record_count": 0,
+      "imported_record_count": 30,
+      "imported_status_counts": {
+        "approved": 21,
+        "feedback": 9,
+        "unresolved": 0
+      },
+      "input_response_count": 30,
+      "kind": "human_review_export",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "sha256": "81974c6cb72f6cb53b69e04a604ac304e5c3abc615bea087915e545f1b40ef56",
+      "summary": {
+        "approved": 21,
+        "complete": true,
+        "done": 30,
+        "drafts": 0,
+        "feedback": 9,
+        "remaining": 0,
+        "total": 30
+      }
+    }
+  ],
+  "provenance": {
+    "source_repo": {
+      "head": "c46545ddfc8b3d65f3bcc5d5cc8b39f0616ebbfa",
+      "repo_root": "/Users/talkasab/repos/findingmodels-metadata"
+    },
+    "sources": [
+      {
+        "app_version": "1.1",
+        "dataset": {
+          "id": "69ede7dd9df4",
+          "item_count": 150,
+          "title": "Metadata Enrichment Review"
+        },
+        "exported_at": "2026-05-01T14:01:11.304Z",
+        "reviewer": {
+          "identifier": "talkasab@mgh.harvard.edu"
+        },
+        "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json"
+      },
+      {
+        "app_version": "1.1",
+        "dataset": {
+          "id": "96bd0ace1aed",
+          "item_count": 30,
+          "title": "Metadata Enrichment Review"
+        },
+        "exported_at": "2026-05-01T20:30:56.930Z",
+        "reviewer": {
+          "identifier": "talkasab"
+        },
+        "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json"
+      }
+    ],
+    "tool_repo": {
+      "head": "392c783154a0c761007cf33c97fd2eb43e6576ec",
+      "repo_root": "/Users/talkasab/repos/findingmodel-metadata"
+    }
+  },
+  "records": [
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-27T20:57:39.585Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-27T20:57:39.585Z"
+      },
+      "id": "pilot_review:abdominal_clips",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/abdominal_clips.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "abdominal_clips",
+      "source_record_index": 1,
+      "superseded_by": null,
+      "title": "abdominal clips"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-27T20:58:15.693Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-27T20:58:15.693Z"
+      },
+      "id": "pilot_review:abnormal_proximal_femur",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/abnormal_proximal_femur.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "abnormal_proximal_femur",
+      "source_record_index": 2,
+      "superseded_by": null,
+      "title": "abnormal proximal femur"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Should have a anatomic location of \"mediastinum\"",
+        "first_reviewed_at": "2026-04-27T20:58:45.483Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-27T20:58:45.483Z"
+      },
+      "id": "pilot_review:abnormal_right_paratracheal_stripe",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/abnormal_right_paratracheal_stripe.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "abnormal_right_paratracheal_stripe",
+      "source_record_index": 3,
+      "superseded_by": "phase5_targeted_hardened_v3:abnormal_right_paratracheal_stripe",
+      "title": "abnormal right paratracheal stripe"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-27T20:59:01.291Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-27T20:59:01.291Z"
+      },
+      "id": "pilot_review:abnormal_sternomanubrial_synchondrosis",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/abnormal_sternomanubrial_synchondrosis.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "abnormal_sternomanubrial_synchondrosis",
+      "source_record_index": 4,
+      "superseded_by": null,
+      "title": "abnormal sternomanubrial synchondrosis"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Why no sex-neutral, all-ages, and why no timecourse?",
+        "first_reviewed_at": "2026-04-27T20:59:42.735Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-27T20:59:42.735Z"
+      },
+      "id": "pilot_review:acquired_posterior_neural_arch_defect",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/acquired_posterior_neural_arch_defect.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "acquired_posterior_neural_arch_defect",
+      "source_record_index": 5,
+      "superseded_by": null,
+      "title": "acquired posterior neural arch defect"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-27T21:00:30.883Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-27T21:00:30.883Z"
+      },
+      "id": "pilot_review:acute_clavicle_fracture",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/acute_clavicle_fracture.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "acute_clavicle_fracture",
+      "source_record_index": 6,
+      "superseded_by": null,
+      "title": "Acute Clavicle Fracture"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Not in adolescence",
+        "first_reviewed_at": "2026-04-27T21:00:58.759Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-27T21:00:58.759Z"
+      },
+      "id": "pilot_review:acute_lung_injury_and_ards_in_children",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/acute_lung_injury_and_ards_in_children.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "acute_lung_injury_and_ards_in_children",
+      "source_record_index": 7,
+      "superseded_by": "phase5_targeted_hardened_v3:acute_lung_injury_and_ards_in_children",
+      "title": "acute lung injury and ards in children"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Why no anatomic location of esophagus?",
+        "first_reviewed_at": "2026-04-27T21:01:23.175Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-27T21:01:23.175Z"
+      },
+      "id": "pilot_review:air_in_esophagus",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/air_in_esophagus.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "air_in_esophagus",
+      "source_record_index": 8,
+      "superseded_by": "phase5_targeted_hardened_v3:air_in_esophagus",
+      "title": "air in esophagus"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location code is wrong--can't localize to the arm, should be upper extremity, lower extremity.",
+        "first_reviewed_at": "2026-04-30T18:34:37.816Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:36:09.520Z"
+      },
+      "id": "pilot_review:amelia",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/amelia.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "amelia",
+      "source_record_index": 9,
+      "superseded_by": null,
+      "title": "amelia"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T18:35:39.150Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T18:35:39.150Z"
+      },
+      "id": "pilot_review:ao_spine_subaxial_cervical_spine_injury_classification",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/ao_spine_subaxial_cervical_spine_injury_classification.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "ao_spine_subaxial_cervical_spine_injury_classification",
+      "source_record_index": 10,
+      "superseded_by": null,
+      "title": "AO Spine Subaxial Cervical Spine injury Classification"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Location needs to be aorta, or at least thoracic and abdominal aorta",
+        "first_reviewed_at": "2026-05-01T14:00:38.779Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T14:00:38.779Z"
+      },
+      "id": "pilot_review:aortic_measurements",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/aortic_measurements.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "aortic_measurements",
+      "source_record_index": 11,
+      "superseded_by": "phase5_targeted_hardened_v3:aortic_measurements",
+      "title": "Aortic Measurements"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T18:36:58.455Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T18:36:58.455Z"
+      },
+      "id": "pilot_review:aortic_stent",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/aortic_stent.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "aortic_stent",
+      "source_record_index": 12,
+      "superseded_by": null,
+      "title": "aortic stent"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T18:37:20.531Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T18:37:20.531Z"
+      },
+      "id": "pilot_review:arterial_rupture",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/arterial_rupture.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "arterial_rupture",
+      "source_record_index": 13,
+      "superseded_by": null,
+      "title": "arterial rupture"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "age_profile",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Expected time course is permanent.\nAge applicability is all, but mroe common in elderly",
+        "first_reviewed_at": "2026-04-30T18:37:57.732Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:37:57.732Z"
+      },
+      "id": "pilot_review:arterial_tortuosity",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/arterial_tortuosity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "arterial_tortuosity",
+      "source_record_index": 14,
+      "superseded_by": "phase5_targeted_hardened_v3:arterial_tortuosity",
+      "title": "arterial tortuosity"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "age profile is all, more common in elderly.\nTime course is permanent progressive.",
+        "first_reviewed_at": "2026-04-30T18:38:41.103Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:38:41.103Z"
+      },
+      "id": "pilot_review:arthritis_with_swan_neck_deformity",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/arthritis_with_swan_neck_deformity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "arthritis_with_swan_neck_deformity",
+      "source_record_index": 15,
+      "superseded_by": null,
+      "title": "arthritis with swan-neck deformity"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "anatomic location here is just \"knee joint\", which encompasses the other codes given.",
+        "first_reviewed_at": "2026-04-30T18:39:32.396Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:39:32.396Z"
+      },
+      "id": "pilot_review:automated_insall_salvatti_index",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/automated_insall_salvatti_index.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "automated_insall_salvatti_index",
+      "source_record_index": 16,
+      "superseded_by": null,
+      "title": "Automated Insall-Salvatti Index"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "entity_type",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months, call it progressive without a real diagnosis.\nAnatomic locations should be axilla--do we not ahve that? I'm almost sure we do.",
+        "first_reviewed_at": "2026-04-30T18:40:26.655Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:40:26.655Z"
+      },
+      "id": "pilot_review:axillary_mass",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/axillary_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "axillary_mass",
+      "source_record_index": 17,
+      "superseded_by": "phase5_targeted_hardened_v3:axillary_mass",
+      "title": "axillary mass"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Why don't we have the RadElement codes here? I'm sure they were in the original--did they get dropped?",
+        "first_reviewed_at": "2026-04-30T18:41:14.717Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:41:14.717Z"
+      },
+      "id": "pilot_review:axillary_nodal_dissection",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/axillary_nodal_dissection.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "axillary_nodal_dissection",
+      "source_record_index": 18,
+      "superseded_by": null,
+      "title": "Axillary Nodal Dissection"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "THere must be SOMETHING about basal cisterns in anatomic locations--are you sure? At worst, we can do the intracranial head.\nAnd NOTHING in SNOMED or LOINC or RadLex? Really?",
+        "first_reviewed_at": "2026-04-30T18:42:27.412Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:42:27.412Z"
+      },
+      "id": "pilot_review:basal_cistern_effacement",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/basal_cistern_effacement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "basal_cistern_effacement",
+      "source_record_index": 19,
+      "superseded_by": "phase5_targeted_hardened_v3:basal_cistern_effacement",
+      "title": "basal cistern effacement"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity",
+        "subspecialties"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "At least GU imaging. Sex specificity is neutral Age profile is any age.\nTime course is years progressive, usually.",
+        "first_reviewed_at": "2026-04-30T18:43:06.000Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T18:43:31.831Z"
+      },
+      "id": "pilot_review:bilateral_adrenal_enlargement",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/bilateral_adrenal_enlargement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "bilateral_adrenal_enlargement",
+      "source_record_index": 20,
+      "superseded_by": null,
+      "title": "bilateral adrenal enlargement"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T18:43:54.660Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T18:43:54.660Z"
+      },
+      "id": "pilot_review:bilateral_basilar_lung_disease",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/bilateral_basilar_lung_disease.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "bilateral_basilar_lung_disease",
+      "source_record_index": 21,
+      "superseded_by": null,
+      "title": "bilateral basilar lung disease"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:06:28.568Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:06:28.568Z"
+      },
+      "id": "pilot_review:brain_ischemia_secondary_to_extracranial_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/brain_ischemia_secondary_to_extracranial_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "brain_ischemia_secondary_to_extracranial_lesion",
+      "source_record_index": 22,
+      "superseded_by": null,
+      "title": "brain ischemia secondary to extracranial lesion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is permanent",
+        "first_reviewed_at": "2026-04-30T19:06:49.864Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:06:49.864Z"
+      },
+      "id": "pilot_review:breast_calcification_cluster",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/breast_calcification_cluster.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_calcification_cluster",
+      "source_record_index": 23,
+      "superseded_by": "phase5_targeted_hardened_v3:breast_calcification_cluster",
+      "title": "breast calcification cluster"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time couirse is months/years, progressive",
+        "first_reviewed_at": "2026-04-30T19:07:06.592Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:07:06.592Z"
+      },
+      "id": "pilot_review:breast_focal_asymmetry",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/breast_focal_asymmetry.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_focal_asymmetry",
+      "source_record_index": 24,
+      "superseded_by": null,
+      "title": "Breast Focal Asymmetry"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "BI-RADS index code is NOT appropriate\n",
+        "first_reviewed_at": "2026-04-30T19:07:37.149Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:07:37.149Z"
+      },
+      "id": "pilot_review:breast_malignancy_risk",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/breast_malignancy_risk.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_malignancy_risk",
+      "source_record_index": 25,
+      "superseded_by": "phase5_targeted_hardened_v3:breast_malignancy_risk",
+      "title": "Mammographic malignancy assessment"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "This almost certainly came with a RadElement index code--what happened to it?",
+        "first_reviewed_at": "2026-04-30T19:08:11.426Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:08:11.426Z"
+      },
+      "id": "pilot_review:breast_skin_thickening",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/breast_skin_thickening.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_skin_thickening",
+      "source_record_index": 26,
+      "superseded_by": null,
+      "title": "Breast Skin Thickening"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "\"Breast mass\" is too specific as an index code. ",
+        "first_reviewed_at": "2026-04-30T19:08:44.517Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:08:44.517Z"
+      },
+      "id": "pilot_review:breast_soft_tissue_lesion",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/breast_soft_tissue_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_soft_tissue_lesion",
+      "source_record_index": 27,
+      "superseded_by": "phase5_targeted_hardened_v3:breast_soft_tissue_lesion",
+      "title": "breast soft tissue lesion"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is permanent. Anatomic location should be axilla. ",
+        "first_reviewed_at": "2026-04-30T19:13:05.378Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:13:05.378Z"
+      },
+      "id": "pilot_review:calcified_axillary_lymph_nodes",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/calcified_axillary_lymph_nodes.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "calcified_axillary_lymph_nodes",
+      "source_record_index": 28,
+      "superseded_by": null,
+      "title": "calcified axillary lymph nodes"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:13:29.213Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:13:29.213Z"
+      },
+      "id": "pilot_review:cardiac_valve_thickening",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/cardiac_valve_thickening.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "cardiac_valve_thickening",
+      "source_record_index": 29,
+      "superseded_by": null,
+      "title": "cardiac valve thickening"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "body_regions"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Should be upper extremity too for body region, and the locations should include the upper extremity joints a well.",
+        "first_reviewed_at": "2026-04-30T19:14:19.500Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:14:19.500Z"
+      },
+      "id": "pilot_review:chondromatosis",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/chondromatosis.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "chondromatosis",
+      "source_record_index": 30,
+      "superseded_by": null,
+      "title": "chondromatosis"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Why don't we have the actual names for these index codes? And why do we not have the hippocampus for the anatomic location?",
+        "first_reviewed_at": "2026-04-30T19:15:05.742Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:15:05.742Z"
+      },
+      "id": "pilot_review:composite_metrics_hippocampal_occupancy_score",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/composite_metrics_hippocampal_occupancy_score.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "composite_metrics_hippocampal_occupancy_score",
+      "source_record_index": 31,
+      "superseded_by": null,
+      "title": "composite metrics (hippocampal occupancy score)"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "applicable_modalities"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Could also be CT or MR. Anatomic locations needs to be the hand as well.",
+        "first_reviewed_at": "2026-04-30T19:15:51.791Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:15:51.791Z"
+      },
+      "id": "pilot_review:congenital_absence_of_phalanx__digit__hand__or_foot",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/congenital_absence_of_phalanx__digit__hand__or_foot.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "congenital_absence_of_phalanx__digit__hand__or_foot",
+      "source_record_index": 32,
+      "superseded_by": null,
+      "title": "congenital absence of phalanx, digit, hand, or foot"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Location can be at least spine, or cervical, thoracic, and lumbar spines.",
+        "first_reviewed_at": "2026-04-30T19:16:20.823Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:16:20.823Z"
+      },
+      "id": "pilot_review:congenital_fused_vertebrae",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/congenital_fused_vertebrae.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "congenital_fused_vertebrae",
+      "source_record_index": 33,
+      "superseded_by": null,
+      "title": "congenital fused vertebrae"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:16:41.779Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:16:41.779Z"
+      },
+      "id": "pilot_review:congenital_premature_craniosynostosis",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/congenital_premature_craniosynostosis.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "congenital_premature_craniosynostosis",
+      "source_record_index": 34,
+      "superseded_by": null,
+      "title": "congenital premature craniosynostosis"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Modality is also CT",
+        "first_reviewed_at": "2026-04-30T19:17:08.254Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:17:08.254Z"
+      },
+      "id": "pilot_review:cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/cystic_abdominal_mass_in_a_fetus_or_newborn.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "source_record_index": 35,
+      "superseded_by": null,
+      "title": "cystic abdominal mass in a fetus or newborn"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:17:28.672Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:17:28.672Z"
+      },
+      "id": "pilot_review:decreased_renal_cortical_echogenicity",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/decreased_renal_cortical_echogenicity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "decreased_renal_cortical_echogenicity",
+      "source_record_index": 36,
+      "superseded_by": null,
+      "title": "decreased renal cortical echogenicity"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:20:19.550Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:20:19.550Z"
+      },
+      "id": "pilot_review:dental_periapical_opacity",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/dental_periapical_opacity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "dental_periapical_opacity",
+      "source_record_index": 37,
+      "superseded_by": null,
+      "title": "dental periapical opacity"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location is NOT head of fibula, it's MUCH more general than that.",
+        "first_reviewed_at": "2026-04-30T19:20:43.547Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:20:43.547Z"
+      },
+      "id": "pilot_review:disrupted_epiphyseal_metaphyseal_junction",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/disrupted_epiphyseal_metaphyseal_junction.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "disrupted_epiphyseal_metaphyseal_junction",
+      "source_record_index": 38,
+      "superseded_by": "phase5_targeted_hardened_v3:disrupted_epiphyseal_metaphyseal_junction",
+      "title": "disrupted epiphyseal-metaphyseal junction"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "anatomic location should be esophagus",
+        "first_reviewed_at": "2026-04-30T19:21:06.889Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:21:06.889Z"
+      },
+      "id": "pilot_review:double_balloon_esophageal_catheter",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/double_balloon_esophageal_catheter.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "double_balloon_esophageal_catheter",
+      "source_record_index": 39,
+      "superseded_by": null,
+      "title": "double balloon esophageal catheter"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Can also be ultrasound in a newborn for modality",
+        "first_reviewed_at": "2026-04-30T19:21:36.544Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:21:36.544Z"
+      },
+      "id": "pilot_review:duodenal_narrowing_or_obstruction",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/duodenal_narrowing_or_obstruction.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "duodenal_narrowing_or_obstruction",
+      "source_record_index": 40,
+      "superseded_by": null,
+      "title": "duodenal narrowing or obstruction"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "age_profile"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Modality also CT, MR. Not \"more common\" in any age.",
+        "first_reviewed_at": "2026-04-30T19:21:55.784Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:21:55.784Z"
+      },
+      "id": "pilot_review:duplication_of_great_toe",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/duplication_of_great_toe.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "duplication_of_great_toe",
+      "source_record_index": 41,
+      "superseded_by": null,
+      "title": "duplication of great toe"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Expected time course is months, progressive.",
+        "first_reviewed_at": "2026-04-30T19:22:25.594Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:22:25.594Z"
+      },
+      "id": "pilot_review:early_intrauterine_pregnancy",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/early_intrauterine_pregnancy.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "early_intrauterine_pregnancy",
+      "source_record_index": 42,
+      "superseded_by": "phase5_targeted_hardened_v3:early_intrauterine_pregnancy",
+      "title": "early intrauterine pregnancy"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Sex neutral, all ages, months/years + progressive.",
+        "first_reviewed_at": "2026-04-30T19:22:51.471Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:22:51.471Z"
+      },
+      "id": "pilot_review:enhancing_mediastinal_mass",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/enhancing_mediastinal_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "enhancing_mediastinal_mass",
+      "source_record_index": 43,
+      "superseded_by": null,
+      "title": "enhancing mediastinal mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months/years",
+        "first_reviewed_at": "2026-04-30T19:23:10.298Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:23:10.298Z"
+      },
+      "id": "pilot_review:enlarged_nerve_roots",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/enlarged_nerve_roots.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "enlarged_nerve_roots",
+      "source_record_index": 44,
+      "superseded_by": null,
+      "title": "enlarged nerve roots"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months",
+        "first_reviewed_at": "2026-04-30T19:23:25.809Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:23:25.809Z"
+      },
+      "id": "pilot_review:esophageal_plaques",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/esophageal_plaques.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "esophageal_plaques",
+      "source_record_index": 45,
+      "superseded_by": null,
+      "title": "esophageal plaques"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location is chest.",
+        "first_reviewed_at": "2026-04-30T19:23:39.430Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:23:39.430Z"
+      },
+      "id": "pilot_review:fetal_chest_mass",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/fetal_chest_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "fetal_chest_mass",
+      "source_record_index": 46,
+      "superseded_by": "phase5_targeted_hardened_v3:fetal_chest_mass",
+      "title": "fetal chest mass"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location is cortex of kidney. ",
+        "first_reviewed_at": "2026-04-30T19:23:58.135Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:23:58.135Z"
+      },
+      "id": "pilot_review:focal_defect_in_nephrogram",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/focal_defect_in_nephrogram.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "focal_defect_in_nephrogram",
+      "source_record_index": 47,
+      "superseded_by": null,
+      "title": "focal defect in nephrogram"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "sex-neutral.\ntime course is months",
+        "first_reviewed_at": "2026-04-30T19:26:53.494Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:26:53.494Z"
+      },
+      "id": "pilot_review:focal_leptomeningeal_enhancement",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/focal_leptomeningeal_enhancement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "focal_leptomeningeal_enhancement",
+      "source_record_index": 48,
+      "superseded_by": null,
+      "title": "focal leptomeningeal enhancement"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "entity_type"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "This is an US finding.",
+        "first_reviewed_at": "2026-04-30T19:27:19.294Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:27:19.294Z"
+      },
+      "id": "pilot_review:focal_shadowing_pancreatic_lesion",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/focal_shadowing_pancreatic_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "focal_shadowing_pancreatic_lesion",
+      "source_record_index": 49,
+      "superseded_by": "phase5_targeted_hardened_v3:focal_shadowing_pancreatic_lesion",
+      "title": "focal shadowing pancreatic lesion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course months \u2192 years",
+        "first_reviewed_at": "2026-04-30T19:27:48.090Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:27:48.090Z"
+      },
+      "id": "pilot_review:fracture",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/fracture.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "fracture",
+      "source_record_index": 50,
+      "superseded_by": "phase5_targeted_hardened_v3:fracture",
+      "title": "fracture"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:28:07.113Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:28:07.113Z"
+      },
+      "id": "pilot_review:gastrostomy_tube",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/gastrostomy_tube.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "gastrostomy_tube",
+      "source_record_index": 51,
+      "superseded_by": null,
+      "title": "gastrostomy tube"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:28:25.953Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:28:25.953Z"
+      },
+      "id": "pilot_review:gyriform_cortical_subcortical_t1_hyperintensity",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/gyriform_cortical_subcortical_t1_hyperintensity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "gyriform_cortical_subcortical_t1_hyperintensity",
+      "source_record_index": 52,
+      "superseded_by": null,
+      "title": "gyriform cortical/subcortical t1 hyperintensity"
+    },
+    {
+      "affected_fields": [
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "sex-neutral",
+        "first_reviewed_at": "2026-04-30T19:28:43.085Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:28:43.085Z"
+      },
+      "id": "pilot_review:hair_on_end_skull",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/hair_on_end_skull.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "hair_on_end_skull",
+      "source_record_index": 53,
+      "superseded_by": null,
+      "title": "hair-on-end skull"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "the SNOMED heart-failure is too general for this.",
+        "first_reviewed_at": "2026-04-30T19:29:17.992Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:29:17.992Z"
+      },
+      "id": "pilot_review:heart_failure_in_the_first_week_of_life",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/heart_failure_in_the_first_week_of_life.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "heart_failure_in_the_first_week_of_life",
+      "source_record_index": 54,
+      "superseded_by": null,
+      "title": "heart failure in the first week of life"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "anatomic location is spine",
+        "first_reviewed_at": "2026-04-30T19:29:33.338Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:29:33.338Z"
+      },
+      "id": "pilot_review:hemivertebra",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/hemivertebra.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "hemivertebra",
+      "source_record_index": 55,
+      "superseded_by": null,
+      "title": "hemivertebra"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is years, progresive",
+        "first_reviewed_at": "2026-04-30T19:29:56.093Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:29:56.093Z"
+      },
+      "id": "pilot_review:hemorrhagic_liver_metastasis",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/hemorrhagic_liver_metastasis.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "hemorrhagic_liver_metastasis",
+      "source_record_index": 56,
+      "superseded_by": null,
+      "title": "hemorrhagic liver metastasis"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:39:28.903Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:39:28.903Z"
+      },
+      "id": "pilot_review:hypervascular_liver_metastasis",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/hypervascular_liver_metastasis.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "hypervascular_liver_metastasis",
+      "source_record_index": 57,
+      "superseded_by": null,
+      "title": "hypervascular liver metastasis"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is months/years progressive.",
+        "first_reviewed_at": "2026-04-30T19:39:50.420Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:39:50.420Z"
+      },
+      "id": "pilot_review:hypodense_supratentorial_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/hypodense_supratentorial_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "hypodense_supratentorial_lesion",
+      "source_record_index": 58,
+      "superseded_by": null,
+      "title": "hypodense supratentorial lesion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "sex-neutral. time course is years, progressive",
+        "first_reviewed_at": "2026-04-30T19:40:08.620Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:40:08.620Z"
+      },
+      "id": "pilot_review:hypoechoic_liver_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/hypoechoic_liver_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "hypoechoic_liver_lesion",
+      "source_record_index": 59,
+      "superseded_by": null,
+      "title": "hypoechoic liver lesion"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:40:32.796Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:40:32.796Z"
+      },
+      "id": "pilot_review:hypoplastic_fibula",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/hypoplastic_fibula.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "hypoplastic_fibula",
+      "source_record_index": 60,
+      "superseded_by": null,
+      "title": "hypoplastic fibula"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic locations is chest, not right atrium.",
+        "first_reviewed_at": "2026-04-30T19:41:11.919Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:41:11.919Z"
+      },
+      "id": "pilot_review:implantable_cardioverter_defibrillator_leads",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/implantable_cardioverter_defibrillator_leads.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "implantable_cardioverter_defibrillator_leads",
+      "source_record_index": 61,
+      "superseded_by": null,
+      "title": "implantable cardioverter defibrillator leads"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "age profile is all ages.\ntime course is years progressive.",
+        "first_reviewed_at": "2026-04-30T19:41:35.219Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:41:35.219Z"
+      },
+      "id": "pilot_review:incidental_pulmonary_nodules",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/incidental_pulmonary_nodules.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "incidental_pulmonary_nodules",
+      "source_record_index": 62,
+      "superseded_by": null,
+      "title": "Incidental Pulmonary Nodules"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:44:27.217Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:44:27.217Z"
+      },
+      "id": "pilot_review:increased_prevertebral_space_in_an_adult",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/increased_prevertebral_space_in_an_adult.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "increased_prevertebral_space_in_an_adult",
+      "source_record_index": 63,
+      "superseded_by": null,
+      "title": "increased prevertebral space in an adult"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months. Anatomic location is kidney.",
+        "first_reviewed_at": "2026-04-30T19:44:50.122Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:44:50.122Z"
+      },
+      "id": "pilot_review:increased_resistance_index_of_renal_transplant",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/increased_resistance_index_of_renal_transplant.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "increased_resistance_index_of_renal_transplant",
+      "source_record_index": 64,
+      "superseded_by": "phase5_targeted_hardened_v3:increased_resistance_index_of_renal_transplant",
+      "title": "increased resistance index of renal transplant"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is months, progressive. Anatomic locations is knee joint.",
+        "first_reviewed_at": "2026-04-30T19:45:13.073Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:45:13.073Z"
+      },
+      "id": "pilot_review:infrapatellar_mass_in_hoffa_fat_pad",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/infrapatellar_mass_in_hoffa_fat_pad.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "infrapatellar_mass_in_hoffa_fat_pad",
+      "source_record_index": 65,
+      "superseded_by": null,
+      "title": "infrapatellar mass in hoffa fat pad"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:45:43.645Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:45:43.645Z"
+      },
+      "id": "pilot_review:infratentorial_intracranial_tumor_in_a_child",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/infratentorial_intracranial_tumor_in_a_child.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "infratentorial_intracranial_tumor_in_a_child",
+      "source_record_index": 66,
+      "superseded_by": null,
+      "title": "infratentorial intracranial tumor in a child"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "applicable_modalities",
+        "age_profile",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "age profile is adolescent though adult. Time course is monhts. anatomic location is uterus.",
+        "first_reviewed_at": "2026-04-30T19:46:16.632Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:46:16.632Z"
+      },
+      "id": "pilot_review:intrauterine_growth_retardation",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/intrauterine_growth_retardation.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "intrauterine_growth_retardation",
+      "source_record_index": 67,
+      "superseded_by": "phase5_targeted_hardened_v3:intrauterine_growth_retardation",
+      "title": "intrauterine growth retardation"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "index_codes",
+        "subspecialties"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Is \"SQ\" subspeciality really indicated? Duration is months. Are you sure there's no SNOMED code for this?",
+        "first_reviewed_at": "2026-04-30T19:47:22.275Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T19:47:22.275Z"
+      },
+      "id": "pilot_review:intravascular_line",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/intravascular_line.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "intravascular_line",
+      "source_record_index": 68,
+      "superseded_by": null,
+      "title": "intravascular line"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:48:47.253Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:48:47.253Z"
+      },
+      "id": "pilot_review:large_orbit",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/large_orbit.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "large_orbit",
+      "source_record_index": 69,
+      "superseded_by": null,
+      "title": "large orbit"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:50:47.732Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:50:47.732Z"
+      },
+      "id": "pilot_review:large_vascular_grooves_of_skull",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/large_vascular_grooves_of_skull.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "large_vascular_grooves_of_skull",
+      "source_record_index": 70,
+      "superseded_by": null,
+      "title": "large vascular grooves of skull"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T19:51:06.122Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T19:51:06.122Z"
+      },
+      "id": "pilot_review:leadless_pacemaker",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/leadless_pacemaker.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "leadless_pacemaker",
+      "source_record_index": 71,
+      "superseded_by": null,
+      "title": "leadless pacemaker"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "all ages.\nmonths/years, progressive",
+        "first_reviewed_at": "2026-04-30T20:34:40.903Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:34:40.903Z"
+      },
+      "id": "pilot_review:localized_sunburst_pattern_in_skull",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/localized_sunburst_pattern_in_skull.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "localized_sunburst_pattern_in_skull",
+      "source_record_index": 72,
+      "superseded_by": null,
+      "title": "localized sunburst pattern in skull"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:34:55.934Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:34:55.934Z"
+      },
+      "id": "pilot_review:long_linear_lung_shadow",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/long_linear_lung_shadow.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "long_linear_lung_shadow",
+      "source_record_index": 73,
+      "superseded_by": null,
+      "title": "long linear lung shadow"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:35:09.661Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:35:09.661Z"
+      },
+      "id": "pilot_review:lower_lung_disease",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/lower_lung_disease.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "lower_lung_disease",
+      "source_record_index": 74,
+      "superseded_by": null,
+      "title": "lower lung disease"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:35:17.917Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:35:17.917Z"
+      },
+      "id": "pilot_review:lung_sutures",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/lung_sutures.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "lung_sutures",
+      "source_record_index": 75,
+      "superseded_by": null,
+      "title": "lung sutures"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "anatomic location musculoskeletal system, surely?",
+        "first_reviewed_at": "2026-04-30T20:35:55.727Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:35:55.727Z"
+      },
+      "id": "pilot_review:malignant_primary_bone_neoplasm",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/malignant_primary_bone_neoplasm.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "malignant_primary_bone_neoplasm",
+      "source_record_index": 76,
+      "superseded_by": null,
+      "title": "malignant primary bone neoplasm"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "index codes aren't specific enough--this is a implant after mastectomy, not an implant in general.\nAlso, surely this had a RadElement code that got dropped?",
+        "first_reviewed_at": "2026-04-30T20:36:36.093Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:37:01.335Z"
+      },
+      "id": "pilot_review:mastectomy_breast_implant",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/mastectomy_breast_implant.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "mastectomy_breast_implant",
+      "source_record_index": 77,
+      "superseded_by": "phase5_targeted_hardened_v3:mastectomy_breast_implant",
+      "title": "Mastectomy Breast Implant"
+    },
+    {
+      "affected_fields": [
+        "entity_type"
+      ],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Type should be \"assessment\", not measurement.",
+        "first_reviewed_at": "2026-04-30T20:39:34.096Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:52:23.818Z"
+      },
+      "id": "pilot_review:mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "source_record_index": 78,
+      "superseded_by": null,
+      "title": "MTA-Scale for Medial Temporal Lobe Atrophy (Scheltens Classification)"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "duration is months/years",
+        "first_reviewed_at": "2026-04-30T20:40:09.651Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:40:09.651Z"
+      },
+      "id": "pilot_review:mucocele_of_gallbladder",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/mucocele_of_gallbladder.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "mucocele_of_gallbladder",
+      "source_record_index": 79,
+      "superseded_by": null,
+      "title": "mucocele of gallbladder"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "all ages\n",
+        "first_reviewed_at": "2026-04-30T20:40:50.603Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:40:50.603Z"
+      },
+      "id": "pilot_review:multiple_duodenal_filling_defects",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/multiple_duodenal_filling_defects.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "multiple_duodenal_filling_defects",
+      "source_record_index": 80,
+      "superseded_by": null,
+      "title": "multiple duodenal filling defects"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is months years",
+        "first_reviewed_at": "2026-04-30T20:41:04.779Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:41:04.779Z"
+      },
+      "id": "pilot_review:multiple_intracranial_enhancing_lesions",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/multiple_intracranial_enhancing_lesions.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "multiple_intracranial_enhancing_lesions",
+      "source_record_index": 81,
+      "superseded_by": null,
+      "title": "multiple intracranial enhancing lesions"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is permanent",
+        "first_reviewed_at": "2026-04-30T20:41:35.060Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:41:35.060Z"
+      },
+      "id": "pilot_review:multiple_sclerotic_foci_in_an_infant_or_child",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/multiple_sclerotic_foci_in_an_infant_or_child.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "multiple_sclerotic_foci_in_an_infant_or_child",
+      "source_record_index": 82,
+      "superseded_by": null,
+      "title": "multiple sclerotic foci in an infant or child"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:41:57.968Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:41:57.968Z"
+      },
+      "id": "pilot_review:multiple_splenic_hypointensities",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/multiple_splenic_hypointensities.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "multiple_splenic_hypointensities",
+      "source_record_index": 83,
+      "superseded_by": null,
+      "title": "multiple splenic hypointensities"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:42:13.568Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:42:13.568Z"
+      },
+      "id": "pilot_review:omega_sella",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/omega_sella.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "omega_sella",
+      "source_record_index": 84,
+      "superseded_by": null,
+      "title": "omega sella"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "expected_time_course",
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is years/permanent. SNOMED code is too specific, specifying X-ray. MRi is not appropriatre for this--we don't call lucency on MR.",
+        "first_reviewed_at": "2026-04-30T20:43:06.263Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:43:06.263Z"
+      },
+      "id": "pilot_review:osseous_lucent_lesion",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/osseous_lucent_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "osseous_lucent_lesion",
+      "source_record_index": 85,
+      "superseded_by": "phase5_targeted_hardened_v3:osseous_lucent_lesion",
+      "title": "osseous lucent lesion"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "all ages\nmonths/years progressive",
+        "first_reviewed_at": "2026-04-30T20:44:01.720Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:44:01.720Z"
+      },
+      "id": "pilot_review:pancreatic_lesion_characterized_by_blood",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pancreatic_lesion_characterized_by_blood.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pancreatic_lesion_characterized_by_blood",
+      "source_record_index": 86,
+      "superseded_by": null,
+      "title": "pancreatic lesion characterized by blood"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "anatomic location should be kidney at worst, maybe renal collecting system if we have that.",
+        "first_reviewed_at": "2026-04-30T20:44:33.972Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:44:33.972Z"
+      },
+      "id": "pilot_review:parapelvic_renal_cyst",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/parapelvic_renal_cyst.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "parapelvic_renal_cyst",
+      "source_record_index": 87,
+      "superseded_by": null,
+      "title": "parapelvic renal cyst"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T14:01:07.434Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T14:01:07.434Z"
+      },
+      "id": "pilot_review:pediatric_chest_wall_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pediatric_chest_wall_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pediatric_chest_wall_lesion",
+      "source_record_index": 88,
+      "superseded_by": null,
+      "title": "pediatric chest wall lesion"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "etiologies",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "etiology could be degenerative. Time course could be years. Anatomic location is lung.",
+        "first_reviewed_at": "2026-04-30T20:47:26.819Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:47:26.819Z"
+      },
+      "id": "pilot_review:peribronchovascular_interstitial_thickening",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/peribronchovascular_interstitial_thickening.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "peribronchovascular_interstitial_thickening",
+      "source_record_index": 89,
+      "superseded_by": null,
+      "title": "peribronchovascular interstitial thickening"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is months years",
+        "first_reviewed_at": "2026-04-30T20:48:17.984Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:48:17.984Z"
+      },
+      "id": "pilot_review:pericardial_effusion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pericardial_effusion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pericardial_effusion",
+      "source_record_index": 90,
+      "superseded_by": null,
+      "title": "pericardial effusion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is years",
+        "first_reviewed_at": "2026-04-30T20:48:50.833Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:48:50.833Z"
+      },
+      "id": "pilot_review:pericoronal_mixed_radiopacity_jaw_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pericoronal_mixed_radiopacity_jaw_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pericoronal_mixed_radiopacity_jaw_lesion",
+      "source_record_index": 91,
+      "superseded_by": null,
+      "title": "pericoronal mixed-radiopacity jaw lesion"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "\"tibia\" is way off--musculoskeletal system. \"Periosteal reaction\" is NOT the same for the Radlex index code.",
+        "first_reviewed_at": "2026-04-30T20:49:49.289Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:49:49.289Z"
+      },
+      "id": "pilot_review:periosteal_new_bone_formation_in_a_child",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/periosteal_new_bone_formation_in_a_child.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "periosteal_new_bone_formation_in_a_child",
+      "source_record_index": 92,
+      "superseded_by": null,
+      "title": "periosteal new bone formation in a child"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months",
+        "first_reviewed_at": "2026-04-30T20:50:07.964Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:50:07.964Z"
+      },
+      "id": "pilot_review:peripheral_rim_enhancement_of_kidney",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/peripheral_rim_enhancement_of_kidney.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "peripheral_rim_enhancement_of_kidney",
+      "source_record_index": 93,
+      "superseded_by": null,
+      "title": "peripheral rim enhancement of kidney"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:52:43.652Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:52:43.652Z"
+      },
+      "id": "pilot_review:pfirrmann_spine_disc_degeneration_classification",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pfirrmann_spine_disc_degeneration_classification.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pfirrmann_spine_disc_degeneration_classification",
+      "source_record_index": 94,
+      "superseded_by": null,
+      "title": "Pfirrmann Spine Disc Degeneration Classification"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:52:55.579Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:52:55.579Z"
+      },
+      "id": "pilot_review:pleural_abnormality",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pleural_abnormality.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pleural_abnormality",
+      "source_record_index": 95,
+      "superseded_by": null,
+      "title": "pleural abnormality"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "etiologies"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Hey, where are my etiologies? Could be post-infectious, post-exposure, post-treatment.",
+        "first_reviewed_at": "2026-04-30T20:53:43.128Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:53:43.128Z"
+      },
+      "id": "pilot_review:pleural_calcification",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pleural_calcification.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pleural_calcification",
+      "source_record_index": 96,
+      "superseded_by": null,
+      "title": "pleural calcification"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months",
+        "first_reviewed_at": "2026-04-30T20:53:59.334Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:53:59.334Z"
+      },
+      "id": "pilot_review:pleural_effusion_with_disease_in_abdomen",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pleural_effusion_with_disease_in_abdomen.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pleural_effusion_with_disease_in_abdomen",
+      "source_record_index": 97,
+      "superseded_by": null,
+      "title": "pleural effusion with disease in abdomen"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T20:54:12.977Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T20:54:12.977Z"
+      },
+      "id": "pilot_review:pneumonia",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pneumonia.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pneumonia",
+      "source_record_index": 98,
+      "superseded_by": null,
+      "title": "Pneumonia"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is years",
+        "first_reviewed_at": "2026-04-30T20:54:24.920Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:54:24.920Z"
+      },
+      "id": "pilot_review:polyostotic_bone_lesions_in_children",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/polyostotic_bone_lesions_in_children.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "polyostotic_bone_lesions_in_children",
+      "source_record_index": 99,
+      "superseded_by": null,
+      "title": "polyostotic bone lesions in children"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "sex-neutral\nall ages\n",
+        "first_reviewed_at": "2026-04-30T20:54:45.275Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:54:45.275Z"
+      },
+      "id": "pilot_review:posterior_fossa_cystic_lesion",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/posterior_fossa_cystic_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "posterior_fossa_cystic_lesion",
+      "source_record_index": 100,
+      "superseded_by": "phase5_targeted_hardened_v3:posterior_fossa_cystic_lesion",
+      "title": "posterior fossa cystic lesion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is years progressive",
+        "first_reviewed_at": "2026-04-30T20:55:05.480Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T20:55:05.480Z"
+      },
+      "id": "pilot_review:primary_brain_tumor",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/primary_brain_tumor.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "primary_brain_tumor",
+      "source_record_index": 101,
+      "superseded_by": null,
+      "title": "primary brain tumor"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "age_profile",
+        "entity_type",
+        "etiologies",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "I think etiology is just vascular.\nsex-neutral. age profile is any age.\nThis is also a CT (CTA) finding--I don't think US applies.",
+        "first_reviewed_at": "2026-04-30T21:08:32.818Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:08:32.818Z"
+      },
+      "id": "pilot_review:prolonged_cerebral_vascular_transit_time",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/prolonged_cerebral_vascular_transit_time.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "prolonged_cerebral_vascular_transit_time",
+      "source_record_index": 102,
+      "superseded_by": null,
+      "title": "prolonged cerebral vascular transit time"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "NOT permanent stable, weeks and then removed.",
+        "first_reviewed_at": "2026-04-30T21:08:52.487Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:08:52.487Z"
+      },
+      "id": "pilot_review:pulmonary_artery_catheterization",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/pulmonary_artery_catheterization.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pulmonary_artery_catheterization",
+      "source_record_index": 103,
+      "superseded_by": "phase5_targeted_hardened_v3:pulmonary_artery_catheterization",
+      "title": "pulmonary artery catheterization"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:09:06.239Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:09:06.239Z"
+      },
+      "id": "pilot_review:pulmonary_contusion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pulmonary_contusion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pulmonary_contusion",
+      "source_record_index": 104,
+      "superseded_by": null,
+      "title": "pulmonary contusion"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "etiologies"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "NOT inflammatory infectious, more likely vascular. ",
+        "first_reviewed_at": "2026-04-30T21:11:13.392Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:11:13.392Z"
+      },
+      "id": "pilot_review:pulmonary_vascular_engorgement",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/pulmonary_vascular_engorgement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "pulmonary_vascular_engorgement",
+      "source_record_index": 105,
+      "superseded_by": "phase5_targeted_hardened_v3:pulmonary_vascular_engorgement",
+      "title": "pulmonary vascular engorgement"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "applicable_modalities",
+        "etiologies"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Not mechanical for etiology.\nAnatomic location is urinary tract.",
+        "first_reviewed_at": "2026-04-30T21:11:53.624Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:11:53.624Z"
+      },
+      "id": "pilot_review:radiolucent_urinary_calculus",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/radiolucent_urinary_calculus.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "radiolucent_urinary_calculus",
+      "source_record_index": 106,
+      "superseded_by": "phase5_targeted_hardened_v3:radiolucent_urinary_calculus",
+      "title": "radiolucent urinary calculus"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:12:12.274Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:12:12.274Z"
+      },
+      "id": "pilot_review:renal_ischemia",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/renal_ischemia.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "renal_ischemia",
+      "source_record_index": 107,
+      "superseded_by": null,
+      "title": "renal ischemia"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:12:32.093Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:12:32.093Z"
+      },
+      "id": "pilot_review:renal_parenchymal_gas",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/renal_parenchymal_gas.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "renal_parenchymal_gas",
+      "source_record_index": 108,
+      "superseded_by": null,
+      "title": "renal parenchymal gas"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "sex neutral, all ages, permanent",
+        "first_reviewed_at": "2026-04-30T21:12:49.534Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:12:49.534Z"
+      },
+      "id": "pilot_review:renal_pseudotumor",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/renal_pseudotumor.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "renal_pseudotumor",
+      "source_record_index": 109,
+      "superseded_by": null,
+      "title": "renal pseudotumor"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Doesn't really resolve. Not really more common in adult/aged.",
+        "first_reviewed_at": "2026-04-30T21:15:21.322Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:15:21.322Z"
+      },
+      "id": "pilot_review:rib_fracture",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/rib_fracture.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "rib_fracture",
+      "source_record_index": 110,
+      "superseded_by": null,
+      "title": "Rib Fracture"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Do we really not have SI joints in anatomic locations?",
+        "first_reviewed_at": "2026-04-30T21:15:48.643Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:15:48.643Z"
+      },
+      "id": "pilot_review:sacroiliac_joint_disease",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/sacroiliac_joint_disease.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "sacroiliac_joint_disease",
+      "source_record_index": 111,
+      "superseded_by": "phase5_targeted_hardened_v3:sacroiliac_joint_disease",
+      "title": "sacroiliac joint disease"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:16:03.192Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:16:03.192Z"
+      },
+      "id": "pilot_review:short_thin_distal_phalanx_of_thumb",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/short_thin_distal_phalanx_of_thumb.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "short_thin_distal_phalanx_of_thumb",
+      "source_record_index": 112,
+      "superseded_by": null,
+      "title": "short thin distal phalanx of thumb"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Don't we have first digit? Hand is OK.",
+        "first_reviewed_at": "2026-04-30T21:16:23.255Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:16:23.255Z"
+      },
+      "id": "pilot_review:short_thumb",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/short_thumb.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "short_thumb",
+      "source_record_index": 113,
+      "superseded_by": null,
+      "title": "short thumb"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:26:05.438Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:26:05.438Z"
+      },
+      "id": "pilot_review:single_maxillary_central_incisor",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/single_maxillary_central_incisor.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "single_maxillary_central_incisor",
+      "source_record_index": 114,
+      "superseded_by": null,
+      "title": "single maxillary central incisor"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "sex-neutral, all agents,",
+        "first_reviewed_at": "2026-04-30T21:26:28.884Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:26:28.884Z"
+      },
+      "id": "pilot_review:sinus_keros_classification_on_ct",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/sinus_keros_classification_on_ct.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "sinus_keros_classification_on_ct",
+      "source_record_index": 115,
+      "superseded_by": null,
+      "title": "Sinus Keros Classification on CT"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "anatomic location is at least skull\nduration is years",
+        "first_reviewed_at": "2026-04-30T21:26:52.430Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:26:52.430Z"
+      },
+      "id": "pilot_review:small_anterior_fontanelle",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/small_anterior_fontanelle.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "small_anterior_fontanelle",
+      "source_record_index": 116,
+      "superseded_by": null,
+      "title": "small anterior fontanelle"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:27:58.236Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:27:58.236Z"
+      },
+      "id": "pilot_review:small_gallbladder",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/small_gallbladder.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "small_gallbladder",
+      "source_record_index": 117,
+      "superseded_by": null,
+      "title": "small gallbladder"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Let's call it MK and OI.\nanatomic location is anywhere in the body--region is whole body. (The description information is a red herring.)",
+        "first_reviewed_at": "2026-04-30T21:28:54.193Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:28:54.193Z"
+      },
+      "id": "pilot_review:soft_tissue_abnormality",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/soft_tissue_abnormality.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "soft_tissue_abnormality",
+      "source_record_index": 118,
+      "superseded_by": "phase5_targeted_hardened_v3:soft_tissue_abnormality",
+      "title": "soft tissue abnormality"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is years. ",
+        "first_reviewed_at": "2026-04-30T21:29:18.107Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:29:18.107Z"
+      },
+      "id": "pilot_review:soft_tissue_tumor_with_prominent_vascularity",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/soft_tissue_tumor_with_prominent_vascularity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "soft_tissue_tumor_with_prominent_vascularity",
+      "source_record_index": 119,
+      "superseded_by": null,
+      "title": "soft-tissue tumor with prominent vascularity"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:29:38.938Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:29:38.938Z"
+      },
+      "id": "pilot_review:spine_instability_neuroplastic_score__sins_",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/spine_instability_neuroplastic_score__sins_.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "spine_instability_neuroplastic_score__sins_",
+      "source_record_index": 120,
+      "superseded_by": null,
+      "title": "Spine Instability Neuroplastic Score (SINS)"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-04-30T21:33:10.915Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-04-30T21:33:10.915Z"
+      },
+      "id": "pilot_review:sternal_fixation",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/sternal_fixation.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "sternal_fixation",
+      "source_record_index": 121,
+      "superseded_by": null,
+      "title": "sternal fixation"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "etiologies",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is weeks, resolving.\nEtiologies is inflammatory/infectious.",
+        "first_reviewed_at": "2026-04-30T21:33:32.537Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-04-30T21:33:32.537Z"
+      },
+      "id": "pilot_review:striated_nephrogram",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/striated_nephrogram.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "striated_nephrogram",
+      "source_record_index": 122,
+      "superseded_by": "phase5_targeted_hardened_v3:striated_nephrogram",
+      "title": "striated nephrogram"
+    },
+    {
+      "affected_fields": [
+        "etiologies",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Duration is months\nIt's just vascular, not ischemic",
+        "first_reviewed_at": "2026-05-01T12:51:38.046Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:51:38.046Z"
+      },
+      "id": "pilot_review:subsegmental_liver_perfusion_abnormality",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/subsegmental_liver_perfusion_abnormality.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "subsegmental_liver_perfusion_abnormality",
+      "source_record_index": 123,
+      "superseded_by": null,
+      "title": "subsegmental liver perfusion abnormality"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Expected time course is months/years\nAnatomic location s is larynx at worst, at least neck.",
+        "first_reviewed_at": "2026-05-01T12:52:12.290Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:52:12.290Z"
+      },
+      "id": "pilot_review:supraglottic_mass",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/supraglottic_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "supraglottic_mass",
+      "source_record_index": 124,
+      "superseded_by": null,
+      "title": "supraglottic mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course ins months to years",
+        "first_reviewed_at": "2026-05-01T12:55:21.407Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:55:21.407Z"
+      },
+      "id": "pilot_review:t1_hyperintense_adnexal_mass",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/t1_hyperintense_adnexal_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "t1_hyperintense_adnexal_mass",
+      "source_record_index": 125,
+      "superseded_by": null,
+      "title": "t1-hyperintense adnexal mass"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "sex-neutral\nall ages\nmonths to years",
+        "first_reviewed_at": "2026-05-01T12:55:33.187Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:55:33.187Z"
+      },
+      "id": "pilot_review:t2_hyperintense_renal_mass",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/t2_hyperintense_renal_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "t2_hyperintense_renal_mass",
+      "source_record_index": 126,
+      "superseded_by": "phase5_targeted_hardened_v3:t2_hyperintense_renal_mass",
+      "title": "t2-hyperintense renal mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months/years",
+        "first_reviewed_at": "2026-05-01T12:56:30.400Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:56:30.400Z"
+      },
+      "id": "pilot_review:t2_intermediate_endometrial_uterine_mass",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/t2_intermediate_endometrial_uterine_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "t2_intermediate_endometrial_uterine_mass",
+      "source_record_index": 127,
+      "superseded_by": null,
+      "title": "t2-intermediate endometrial uterine mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course is months/years",
+        "first_reviewed_at": "2026-05-01T12:57:09.233Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:57:09.233Z"
+      },
+      "id": "pilot_review:t2_isointense_intracranial_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/t2_isointense_intracranial_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "t2_isointense_intracranial_lesion",
+      "source_record_index": 128,
+      "superseded_by": null,
+      "title": "t2-isointense intracranial lesion"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Not neoplastic:benign",
+        "first_reviewed_at": "2026-05-01T12:57:37.744Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:57:37.744Z"
+      },
+      "id": "pilot_review:thin_walled_lung_cavity",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/thin_walled_lung_cavity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "thin_walled_lung_cavity",
+      "source_record_index": 129,
+      "superseded_by": null,
+      "title": "thin-walled lung cavity"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Location thoracicx and lumbar spines",
+        "first_reviewed_at": "2026-05-01T13:48:51.623Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:48:51.623Z"
+      },
+      "id": "pilot_review:thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/thoracolumbar_spine_ao_injury_classification_on_ct__tlics_.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "source_record_index": 130,
+      "superseded_by": null,
+      "title": "Thoracolumbar Spine AO Injury Classification on CT (TLICS)"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "entity_type"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "anatomic location is whole body\nWe should actually skip this one--not even an imaging finding.",
+        "first_reviewed_at": "2026-05-01T13:49:29.813Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:49:29.813Z"
+      },
+      "id": "pilot_review:thrombocytosis",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/thrombocytosis.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "thrombocytosis",
+      "source_record_index": 131,
+      "superseded_by": null,
+      "title": "thrombocytosis"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Expected time course is months/years",
+        "first_reviewed_at": "2026-05-01T13:49:55.212Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:49:55.212Z"
+      },
+      "id": "pilot_review:thymic_enlargement",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/thymic_enlargement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "thymic_enlargement",
+      "source_record_index": 132,
+      "superseded_by": null,
+      "title": "thymic enlargement"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Aren't there index codes for thyroid surgery? And the anatomic location is neck at least.",
+        "first_reviewed_at": "2026-05-01T13:50:22.752Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:50:22.752Z"
+      },
+      "id": "pilot_review:thyroid_bed_clips",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/thyroid_bed_clips.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "thyroid_bed_clips",
+      "source_record_index": 133,
+      "superseded_by": null,
+      "title": "thyroid bed clips"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is weeks/months\nLocation is ankle joint",
+        "first_reviewed_at": "2026-05-01T13:50:58.414Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:50:58.414Z"
+      },
+      "id": "pilot_review:tibiotalar_tilt",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/tibiotalar_tilt.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "tibiotalar_tilt",
+      "source_record_index": 134,
+      "superseded_by": null,
+      "title": "tibiotalar tilt"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course",
+        "subspecialties"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "subspecialty is also chest\nduration is months/years\nAnatomic locations is neck",
+        "first_reviewed_at": "2026-05-01T13:53:46.689Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:53:46.689Z"
+      },
+      "id": "pilot_review:tracheostomy_tube",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/tracheostomy_tube.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "tracheostomy_tube",
+      "source_record_index": 135,
+      "superseded_by": null,
+      "title": "Tracheostomy Tube"
+    },
+    {
+      "affected_fields": [
+        "etiologies",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "WHy no etiologies? Inflammation is the usual, but also vascular.\ntime course is weeks",
+        "first_reviewed_at": "2026-05-01T13:54:18.896Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:54:18.896Z"
+      },
+      "id": "pilot_review:transudative_pleural_effusion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/transudative_pleural_effusion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "transudative_pleural_effusion",
+      "source_record_index": 136,
+      "superseded_by": null,
+      "title": "transudative pleural effusion"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T13:54:27.552Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T13:54:27.552Z"
+      },
+      "id": "pilot_review:traumatic_brain_injury",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/traumatic_brain_injury.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "traumatic_brain_injury",
+      "source_record_index": 137,
+      "superseded_by": null,
+      "title": "Traumatic Brain Injury"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Don't we have a SNOMED and/or Radlex code for lung injury",
+        "first_reviewed_at": "2026-05-01T13:58:39.181Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:58:39.181Z"
+      },
+      "id": "pilot_review:traumatic_pneumatocele",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/traumatic_pneumatocele.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "traumatic_pneumatocele",
+      "source_record_index": 138,
+      "superseded_by": "phase5_targeted_hardened_v3:traumatic_pneumatocele",
+      "title": "traumatic pneumatocele"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T13:58:56.717Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T13:58:56.717Z"
+      },
+      "id": "pilot_review:tricuspid_annuloplasty_ring",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/tricuspid_annuloplasty_ring.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "tricuspid_annuloplasty_ring",
+      "source_record_index": 139,
+      "superseded_by": null,
+      "title": "tricuspid annuloplasty ring"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Not permanent--months, then removed.\nAnatomic location in this case is probably chest.",
+        "first_reviewed_at": "2026-05-01T13:59:39.219Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T13:59:39.219Z"
+      },
+      "id": "pilot_review:tunneled_catheter",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/tunneled_catheter.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "tunneled_catheter",
+      "source_record_index": 140,
+      "superseded_by": "phase5_targeted_hardened_v3:tunneled_catheter",
+      "title": "tunneled catheter"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T12:43:36.684Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T12:43:36.684Z"
+      },
+      "id": "pilot_review:unilateral_hilar_enlargement",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/unilateral_hilar_enlargement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "unilateral_hilar_enlargement",
+      "source_record_index": 141,
+      "superseded_by": null,
+      "title": "unilateral hilar enlargement"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location is SI joints.\nSex-neutral",
+        "first_reviewed_at": "2026-05-01T12:48:02.385Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:48:02.385Z"
+      },
+      "id": "pilot_review:unilateral_sacroiliac_joint_disease",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/unilateral_sacroiliac_joint_disease.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "unilateral_sacroiliac_joint_disease",
+      "source_record_index": 142,
+      "superseded_by": null,
+      "title": "unilateral sacroiliac joint disease"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course in months/years.",
+        "first_reviewed_at": "2026-05-01T12:48:41.319Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:48:41.319Z"
+      },
+      "id": "pilot_review:upper_abdominal_mass_in_a_neonate_or_child",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/upper_abdominal_mass_in_a_neonate_or_child.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "upper_abdominal_mass_in_a_neonate_or_child",
+      "source_record_index": 143,
+      "superseded_by": null,
+      "title": "upper abdominal mass in a neonate or child"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location is just cervical vertebral column.\nsex-neutral\nany age\nweeks to months for time course",
+        "first_reviewed_at": "2026-05-01T12:49:05.396Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:49:29.181Z"
+      },
+      "id": "pilot_review:upper_cervical_spine_ao_injury_classification_in_ct",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/upper_cervical_spine_ao_injury_classification_in_ct.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "upper_cervical_spine_ao_injury_classification_in_ct",
+      "source_record_index": 144,
+      "superseded_by": null,
+      "title": "Upper Cervical Spine AO Injury Classification in CT"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T12:41:09.291Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T12:41:09.291Z"
+      },
+      "id": "pilot_review:vapor_induced_lung_disease",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/vapor_induced_lung_disease.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "vapor_induced_lung_disease",
+      "source_record_index": 145,
+      "superseded_by": null,
+      "title": "vapor-induced lung disease"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T12:41:53.202Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T12:41:53.202Z"
+      },
+      "id": "pilot_review:vertebral_compression_fracture",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/vertebral_compression_fracture.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "vertebral_compression_fracture",
+      "source_record_index": 146,
+      "superseded_by": null,
+      "title": "vertebral compression fracture"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location sacrum is absolutely wrong\n",
+        "first_reviewed_at": "2026-05-01T12:42:57.158Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:42:57.158Z"
+      },
+      "id": "pilot_review:vertebral_coronal_cleft",
+      "is_latest": false,
+      "notes": [],
+      "path": "defs/vertebral_coronal_cleft.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "vertebral_coronal_cleft",
+      "source_record_index": 147,
+      "superseded_by": "phase5_targeted_hardened_v3:vertebral_coronal_cleft",
+      "title": "vertebral coronal cleft"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Anatomic location spine",
+        "first_reviewed_at": "2026-05-01T12:43:20.590Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:43:20.590Z"
+      },
+      "id": "pilot_review:vertical_trabeculation_of_vertebral_body",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/vertical_trabeculation_of_vertebral_body.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "vertical_trabeculation_of_vertebral_body",
+      "source_record_index": 148,
+      "superseded_by": null,
+      "title": "vertical trabeculation of vertebral body"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T12:40:50.215Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T12:40:50.215Z"
+      },
+      "id": "pilot_review:volumetric_breast_density",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/volumetric_breast_density.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "volumetric_breast_density",
+      "source_record_index": 149,
+      "superseded_by": null,
+      "title": "Volumetric Breast Density"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "time course in permanent\nanatomic locaiton should be spine\n",
+        "first_reviewed_at": "2026-05-01T12:40:30.872Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T12:40:30.872Z"
+      },
+      "id": "pilot_review:wedging_of_vertebral_body",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/wedging_of_vertebral_body.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "source_record_id": "wedging_of_vertebral_body",
+      "source_record_index": 150,
+      "superseded_by": null,
+      "title": "wedging of vertebral body"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:21:55.446Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:21:55.446Z"
+      },
+      "id": "phase5_targeted_hardened_v3:abnormal_right_paratracheal_stripe",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/abnormal_right_paratracheal_stripe.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "abnormal_right_paratracheal_stripe",
+      "source_record_index": 1,
+      "superseded_by": null,
+      "title": "abnormal right paratracheal stripe"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:22:04.920Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:22:04.920Z"
+      },
+      "id": "phase5_targeted_hardened_v3:acute_lung_injury_and_ards_in_children",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/acute_lung_injury_and_ards_in_children.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "acute_lung_injury_and_ards_in_children",
+      "source_record_index": 2,
+      "superseded_by": null,
+      "title": "acute lung injury and ards in children"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:22:13.205Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:22:13.205Z"
+      },
+      "id": "phase5_targeted_hardened_v3:air_in_esophagus",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/air_in_esophagus.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "air_in_esophagus",
+      "source_record_index": 3,
+      "superseded_by": null,
+      "title": "air in esophagus"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:22:23.309Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:22:23.309Z"
+      },
+      "id": "phase5_targeted_hardened_v3:aortic_measurements",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/aortic_measurements.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "aortic_measurements",
+      "source_record_index": 4,
+      "superseded_by": null,
+      "title": "Aortic Measurements"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:22:39.135Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:22:39.135Z"
+      },
+      "id": "phase5_targeted_hardened_v3:arterial_tortuosity",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/arterial_tortuosity.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "arterial_tortuosity",
+      "source_record_index": 5,
+      "superseded_by": null,
+      "title": "arterial tortuosity"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Mass is months/years",
+        "first_reviewed_at": "2026-05-01T20:22:59.790Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:22:59.790Z"
+      },
+      "id": "phase5_targeted_hardened_v3:axillary_mass",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/axillary_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "axillary_mass",
+      "source_record_index": 6,
+      "superseded_by": null,
+      "title": "axillary mass"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:23:12.838Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:23:12.838Z"
+      },
+      "id": "phase5_targeted_hardened_v3:basal_cistern_effacement",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/basal_cistern_effacement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "basal_cistern_effacement",
+      "source_record_index": 7,
+      "superseded_by": null,
+      "title": "basal cistern effacement"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:23:22.669Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:23:22.669Z"
+      },
+      "id": "phase5_targeted_hardened_v3:breast_calcification_cluster",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/breast_calcification_cluster.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_calcification_cluster",
+      "source_record_index": 8,
+      "superseded_by": null,
+      "title": "breast calcification cluster"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:23:35.670Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:23:35.670Z"
+      },
+      "id": "phase5_targeted_hardened_v3:breast_malignancy_risk",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/breast_malignancy_risk.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_malignancy_risk",
+      "source_record_index": 9,
+      "superseded_by": null,
+      "title": "Mammographic malignancy assessment"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:23:45.675Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:23:45.675Z"
+      },
+      "id": "phase5_targeted_hardened_v3:breast_soft_tissue_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/breast_soft_tissue_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "breast_soft_tissue_lesion",
+      "source_record_index": 10,
+      "superseded_by": null,
+      "title": "breast soft tissue lesion"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Totally inappropriate to localize this to the fibula.",
+        "first_reviewed_at": "2026-05-01T20:24:07.226Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:24:07.226Z"
+      },
+      "id": "phase5_targeted_hardened_v3:disrupted_epiphyseal_metaphyseal_junction",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/disrupted_epiphyseal_metaphyseal_junction.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "disrupted_epiphyseal_metaphyseal_junction",
+      "source_record_index": 11,
+      "superseded_by": null,
+      "title": "disrupted epiphyseal-metaphyseal junction"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:24:17.191Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:24:17.191Z"
+      },
+      "id": "phase5_targeted_hardened_v3:early_intrauterine_pregnancy",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/early_intrauterine_pregnancy.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "early_intrauterine_pregnancy",
+      "source_record_index": 12,
+      "superseded_by": null,
+      "title": "early intrauterine pregnancy"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:24:37.951Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:24:37.951Z"
+      },
+      "id": "phase5_targeted_hardened_v3:fetal_chest_mass",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/fetal_chest_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "fetal_chest_mass",
+      "source_record_index": 13,
+      "superseded_by": null,
+      "title": "fetal chest mass"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:24:53.148Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:24:53.148Z"
+      },
+      "id": "phase5_targeted_hardened_v3:focal_shadowing_pancreatic_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/focal_shadowing_pancreatic_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "focal_shadowing_pancreatic_lesion",
+      "source_record_index": 14,
+      "superseded_by": null,
+      "title": "focal shadowing pancreatic lesion"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:24:59.395Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:24:59.395Z"
+      },
+      "id": "phase5_targeted_hardened_v3:fracture",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/fracture.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "fracture",
+      "source_record_index": 15,
+      "superseded_by": null,
+      "title": "fracture"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:25:10.943Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:25:10.943Z"
+      },
+      "id": "phase5_targeted_hardened_v3:increased_resistance_index_of_renal_transplant",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/increased_resistance_index_of_renal_transplant.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "increased_resistance_index_of_renal_transplant",
+      "source_record_index": 16,
+      "superseded_by": null,
+      "title": "increased resistance index of renal transplant"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Adolescent, adult, middle-aged only",
+        "first_reviewed_at": "2026-05-01T20:25:38.342Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:25:38.342Z"
+      },
+      "id": "phase5_targeted_hardened_v3:intrauterine_growth_retardation",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/intrauterine_growth_retardation.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "intrauterine_growth_retardation",
+      "source_record_index": 17,
+      "superseded_by": null,
+      "title": "intrauterine growth retardation"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:26:08.235Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:26:08.235Z"
+      },
+      "id": "phase5_targeted_hardened_v3:mastectomy_breast_implant",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/mastectomy_breast_implant.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "mastectomy_breast_implant",
+      "source_record_index": 18,
+      "superseded_by": null,
+      "title": "Mastectomy Breast Implant"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is months/years",
+        "first_reviewed_at": "2026-05-01T20:26:23.286Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:26:23.286Z"
+      },
+      "id": "phase5_targeted_hardened_v3:osseous_lucent_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/osseous_lucent_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "osseous_lucent_lesion",
+      "source_record_index": 19,
+      "superseded_by": null,
+      "title": "osseous lucent lesion"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Etiologies should NOT be congenital.",
+        "first_reviewed_at": "2026-05-01T20:26:51.666Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:26:51.666Z"
+      },
+      "id": "phase5_targeted_hardened_v3:posterior_fossa_cystic_lesion",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/posterior_fossa_cystic_lesion.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "posterior_fossa_cystic_lesion",
+      "source_record_index": 20,
+      "superseded_by": null,
+      "title": "posterior fossa cystic lesion"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:27:02.679Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:27:02.679Z"
+      },
+      "id": "phase5_targeted_hardened_v3:pulmonary_artery_catheterization",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pulmonary_artery_catheterization.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "pulmonary_artery_catheterization",
+      "source_record_index": 21,
+      "superseded_by": null,
+      "title": "pulmonary artery catheterization"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Most likely cause is cardiovascular, heart failure, not inflammatory--that should be part of etiologies.",
+        "first_reviewed_at": "2026-05-01T20:27:34.325Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:27:34.325Z"
+      },
+      "id": "phase5_targeted_hardened_v3:pulmonary_vascular_engorgement",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/pulmonary_vascular_engorgement.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "pulmonary_vascular_engorgement",
+      "source_record_index": 22,
+      "superseded_by": null,
+      "title": "pulmonary vascular engorgement"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:27:43.342Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:27:43.342Z"
+      },
+      "id": "phase5_targeted_hardened_v3:radiolucent_urinary_calculus",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/radiolucent_urinary_calculus.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "radiolucent_urinary_calculus",
+      "source_record_index": 23,
+      "superseded_by": null,
+      "title": "radiolucent urinary calculus"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is years",
+        "first_reviewed_at": "2026-05-01T20:28:38.877Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:28:38.877Z"
+      },
+      "id": "phase5_targeted_hardened_v3:sacroiliac_joint_disease",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/sacroiliac_joint_disease.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "sacroiliac_joint_disease",
+      "source_record_index": 24,
+      "superseded_by": null,
+      "title": "sacroiliac joint disease"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "applicable_modalities",
+        "etiologies",
+        "subspecialties"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "This is OK because the description says \"chest radiograph\", but this should be fixed so the description is updated to be more general. Modalities are XR, CT, MR, US. Subspecialties are MK mostly. Region is whole body. No anatomic location.",
+        "first_reviewed_at": "2026-05-01T20:29:48.901Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:29:48.901Z"
+      },
+      "id": "phase5_targeted_hardened_v3:soft_tissue_abnormality",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/soft_tissue_abnormality.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "soft_tissue_abnormality",
+      "source_record_index": 25,
+      "superseded_by": null,
+      "title": "soft tissue abnormality"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "disposition": "unresolved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "Time course is weeks.",
+        "first_reviewed_at": "2026-05-01T20:29:57.955Z",
+        "raw_status": "feedback",
+        "status": "feedback",
+        "updated_at": "2026-05-01T20:29:57.955Z"
+      },
+      "id": "phase5_targeted_hardened_v3:striated_nephrogram",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/striated_nephrogram.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "striated_nephrogram",
+      "source_record_index": 26,
+      "superseded_by": null,
+      "title": "striated nephrogram"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:30:05.812Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:30:05.812Z"
+      },
+      "id": "phase5_targeted_hardened_v3:t2_hyperintense_renal_mass",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/t2_hyperintense_renal_mass.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "t2_hyperintense_renal_mass",
+      "source_record_index": 27,
+      "superseded_by": null,
+      "title": "t2-hyperintense renal mass"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:30:32.767Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:30:32.767Z"
+      },
+      "id": "phase5_targeted_hardened_v3:traumatic_pneumatocele",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/traumatic_pneumatocele.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "traumatic_pneumatocele",
+      "source_record_index": 28,
+      "superseded_by": null,
+      "title": "traumatic pneumatocele"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:30:40.399Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:30:40.399Z"
+      },
+      "id": "phase5_targeted_hardened_v3:tunneled_catheter",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/tunneled_catheter.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "tunneled_catheter",
+      "source_record_index": 29,
+      "superseded_by": null,
+      "title": "tunneled catheter"
+    },
+    {
+      "affected_fields": [],
+      "disposition": "baseline_approved",
+      "expected_metadata": null,
+      "human_review": {
+        "comment": "",
+        "first_reviewed_at": "2026-05-01T20:30:55.537Z",
+        "raw_status": "approved",
+        "status": "approved",
+        "updated_at": "2026-05-01T20:30:55.537Z"
+      },
+      "id": "phase5_targeted_hardened_v3:vertebral_coronal_cleft",
+      "is_latest": true,
+      "notes": [],
+      "path": "defs/vertebral_coronal_cleft.fm.json",
+      "source_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "source_record_id": "vertebral_coronal_cleft",
+      "source_record_index": 30,
+      "superseded_by": null,
+      "title": "vertebral coronal cleft"
+    }
+  ],
+  "usage": {
+    "authority": "human_review_only",
+    "latest_review_policy": "Use the latest event per path by human_review.updated_at.",
+    "machine_extraction_policy": "Derived summaries and candidate extraction are triage aids only; they are not gold until explicitly promoted by human review."
+  },
+  "version": 1
+}

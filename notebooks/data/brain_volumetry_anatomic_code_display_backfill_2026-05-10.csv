@@ -1,0 +1,23 @@
+system,code,display,lookup_source,notes
+RADLEX,RID6434,brain,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,12738006,Brain structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID7123,cerebral ventricle,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,35764002,Brain ventricle structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6510,cingulate gyrus,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,25221002,Structure of cingulate gyrus,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6476,temporal lobe,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,78277001,Temporal lobe structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6815,cerebellum,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,113305005,Cerebellar structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6677,brainstem,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,15926001,Brainstem structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6537,set of basal ganglia,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,32610002,Structure of basal nucleus,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6529,hippocampus,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,5366008,Hippocampal structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6493,parietal lobe,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,16630005,Parietal lobe structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6502,occipital lobe,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,31065004,Occipital lobe structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.
+RADLEX,RID6440,frontal lobe,BioOntology RADLEX label search,Used to backfill model-level display in findingmodels-metadata.
+SNOMEDCT,83251001,Frontal lobe structure,BioOntology exact code search,Used to backfill model-level display in findingmodels-metadata.

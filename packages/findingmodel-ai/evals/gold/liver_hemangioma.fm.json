@@ -7,7 +7,7 @@
   "subspecialties": ["GI"],
   "entity_type": "diagnosis",
   "applicable_modalities": ["CT", "MR", "US"],
-  "etiologies": ["congenital"],
+  "etiologies": ["neoplastic:benign"],
   "sex_specificity": "sex-neutral",
   "age_profile": {
     "applicability": ["adult", "middle_aged", "aged"]

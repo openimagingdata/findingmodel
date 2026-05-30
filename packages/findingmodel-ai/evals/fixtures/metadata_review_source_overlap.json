@@ -1,0 +1,975 @@
+{
+  "counts": {
+    "approved": 67,
+    "feedback": 83,
+    "not_in_register": 10,
+    "total_modified_defs": 160
+  },
+  "data_repo": "/Users/talkasab/repos/findingmodels-metadata",
+  "data_repo_head": "c46545ddfc8b3d65f3bcc5d5cc8b39f0616ebbfa",
+  "gate_a_policy": "This file audits generated source diffs against latest human review status. Approved overlap may be preserved for later approved-output application; feedback and unreviewed overlap must not be treated as approved source changes.",
+  "records": [
+    {
+      "item_id": "abdominal_clips",
+      "path": "defs/abdominal_clips.fm.json",
+      "review_id": "pilot_review:abdominal_clips",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "abnormal_proximal_femur",
+      "path": "defs/abnormal_proximal_femur.fm.json",
+      "review_id": "pilot_review:abnormal_proximal_femur",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "abnormal_right_paratracheal_stripe",
+      "path": "defs/abnormal_right_paratracheal_stripe.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:abnormal_right_paratracheal_stripe",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "abnormal_sternomanubrial_synchondrosis",
+      "path": "defs/abnormal_sternomanubrial_synchondrosis.fm.json",
+      "review_id": "pilot_review:abnormal_sternomanubrial_synchondrosis",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "acquired_posterior_neural_arch_defect",
+      "path": "defs/acquired_posterior_neural_arch_defect.fm.json",
+      "review_id": "pilot_review:acquired_posterior_neural_arch_defect",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "acute_clavicle_fracture",
+      "path": "defs/acute_clavicle_fracture.fm.json",
+      "review_id": "pilot_review:acute_clavicle_fracture",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "acute_lung_injury_and_ards_in_children",
+      "path": "defs/acute_lung_injury_and_ards_in_children.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:acute_lung_injury_and_ards_in_children",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "air_in_esophagus",
+      "path": "defs/air_in_esophagus.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:air_in_esophagus",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "amelia",
+      "path": "defs/amelia.fm.json",
+      "review_id": "pilot_review:amelia",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "ao_spine_subaxial_cervical_spine_injury_classification",
+      "path": "defs/ao_spine_subaxial_cervical_spine_injury_classification.fm.json",
+      "review_id": "pilot_review:ao_spine_subaxial_cervical_spine_injury_classification",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "aortic_measurements",
+      "path": "defs/aortic_measurements.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:aortic_measurements",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "aortic_stent",
+      "path": "defs/aortic_stent.fm.json",
+      "review_id": "pilot_review:aortic_stent",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "arterial_rupture",
+      "path": "defs/arterial_rupture.fm.json",
+      "review_id": "pilot_review:arterial_rupture",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "arterial_tortuosity",
+      "path": "defs/arterial_tortuosity.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:arterial_tortuosity",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "arthritis_with_swan_neck_deformity",
+      "path": "defs/arthritis_with_swan_neck_deformity.fm.json",
+      "review_id": "pilot_review:arthritis_with_swan_neck_deformity",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "automated_insall_salvatti_index",
+      "path": "defs/automated_insall_salvatti_index.fm.json",
+      "review_id": "pilot_review:automated_insall_salvatti_index",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "axillary_mass",
+      "path": "defs/axillary_mass.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:axillary_mass",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "axillary_nodal_dissection",
+      "path": "defs/axillary_nodal_dissection.fm.json",
+      "review_id": "pilot_review:axillary_nodal_dissection",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "basal_cistern_effacement",
+      "path": "defs/basal_cistern_effacement.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:basal_cistern_effacement",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "bilateral_adrenal_enlargement",
+      "path": "defs/bilateral_adrenal_enlargement.fm.json",
+      "review_id": "pilot_review:bilateral_adrenal_enlargement",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "bilateral_basilar_lung_disease",
+      "path": "defs/bilateral_basilar_lung_disease.fm.json",
+      "review_id": "pilot_review:bilateral_basilar_lung_disease",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "brain_ischemia_secondary_to_extracranial_lesion",
+      "path": "defs/brain_ischemia_secondary_to_extracranial_lesion.fm.json",
+      "review_id": "pilot_review:brain_ischemia_secondary_to_extracranial_lesion",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "breast_calcification_cluster",
+      "path": "defs/breast_calcification_cluster.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:breast_calcification_cluster",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "breast_focal_asymmetry",
+      "path": "defs/breast_focal_asymmetry.fm.json",
+      "review_id": "pilot_review:breast_focal_asymmetry",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "breast_malignancy_risk",
+      "path": "defs/breast_malignancy_risk.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:breast_malignancy_risk",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "breast_skin_thickening",
+      "path": "defs/breast_skin_thickening.fm.json",
+      "review_id": "pilot_review:breast_skin_thickening",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "breast_soft_tissue_lesion",
+      "path": "defs/breast_soft_tissue_lesion.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:breast_soft_tissue_lesion",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "calcified_axillary_lymph_nodes",
+      "path": "defs/calcified_axillary_lymph_nodes.fm.json",
+      "review_id": "pilot_review:calcified_axillary_lymph_nodes",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "cardiac_valve_thickening",
+      "path": "defs/cardiac_valve_thickening.fm.json",
+      "review_id": "pilot_review:cardiac_valve_thickening",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "cerebellum_and_brainstem_volumes",
+      "path": "defs/cerebellum_and_brainstem_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "chondromatosis",
+      "path": "defs/chondromatosis.fm.json",
+      "review_id": "pilot_review:chondromatosis",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "cingulate_cortex_volumes",
+      "path": "defs/cingulate_cortex_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "composite_metrics_hippocampal_occupancy_score",
+      "path": "defs/composite_metrics_hippocampal_occupancy_score.fm.json",
+      "review_id": "pilot_review:composite_metrics_hippocampal_occupancy_score",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "congenital_absence_of_phalanx__digit__hand__or_foot",
+      "path": "defs/congenital_absence_of_phalanx__digit__hand__or_foot.fm.json",
+      "review_id": "pilot_review:congenital_absence_of_phalanx__digit__hand__or_foot",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "congenital_fused_vertebrae",
+      "path": "defs/congenital_fused_vertebrae.fm.json",
+      "review_id": "pilot_review:congenital_fused_vertebrae",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "congenital_premature_craniosynostosis",
+      "path": "defs/congenital_premature_craniosynostosis.fm.json",
+      "review_id": "pilot_review:congenital_premature_craniosynostosis",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "path": "defs/cystic_abdominal_mass_in_a_fetus_or_newborn.fm.json",
+      "review_id": "pilot_review:cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "decreased_renal_cortical_echogenicity",
+      "path": "defs/decreased_renal_cortical_echogenicity.fm.json",
+      "review_id": "pilot_review:decreased_renal_cortical_echogenicity",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "deep_gray_nuclei_volumes",
+      "path": "defs/deep_gray_nuclei_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "dental_periapical_opacity",
+      "path": "defs/dental_periapical_opacity.fm.json",
+      "review_id": "pilot_review:dental_periapical_opacity",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "disrupted_epiphyseal_metaphyseal_junction",
+      "path": "defs/disrupted_epiphyseal_metaphyseal_junction.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:disrupted_epiphyseal_metaphyseal_junction",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "double_balloon_esophageal_catheter",
+      "path": "defs/double_balloon_esophageal_catheter.fm.json",
+      "review_id": "pilot_review:double_balloon_esophageal_catheter",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "duodenal_narrowing_or_obstruction",
+      "path": "defs/duodenal_narrowing_or_obstruction.fm.json",
+      "review_id": "pilot_review:duodenal_narrowing_or_obstruction",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "duplication_of_great_toe",
+      "path": "defs/duplication_of_great_toe.fm.json",
+      "review_id": "pilot_review:duplication_of_great_toe",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "early_intrauterine_pregnancy",
+      "path": "defs/early_intrauterine_pregnancy.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:early_intrauterine_pregnancy",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "enhancing_mediastinal_mass",
+      "path": "defs/enhancing_mediastinal_mass.fm.json",
+      "review_id": "pilot_review:enhancing_mediastinal_mass",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "enlarged_nerve_roots",
+      "path": "defs/enlarged_nerve_roots.fm.json",
+      "review_id": "pilot_review:enlarged_nerve_roots",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "esophageal_plaques",
+      "path": "defs/esophageal_plaques.fm.json",
+      "review_id": "pilot_review:esophageal_plaques",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "fetal_chest_mass",
+      "path": "defs/fetal_chest_mass.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:fetal_chest_mass",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "focal_defect_in_nephrogram",
+      "path": "defs/focal_defect_in_nephrogram.fm.json",
+      "review_id": "pilot_review:focal_defect_in_nephrogram",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "focal_leptomeningeal_enhancement",
+      "path": "defs/focal_leptomeningeal_enhancement.fm.json",
+      "review_id": "pilot_review:focal_leptomeningeal_enhancement",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "focal_shadowing_pancreatic_lesion",
+      "path": "defs/focal_shadowing_pancreatic_lesion.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:focal_shadowing_pancreatic_lesion",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "fracture",
+      "path": "defs/fracture.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:fracture",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "frontal_lobe_region_volumes",
+      "path": "defs/frontal_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "gastrostomy_tube",
+      "path": "defs/gastrostomy_tube.fm.json",
+      "review_id": "pilot_review:gastrostomy_tube",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "global_brain_volumes",
+      "path": "defs/global_brain_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "gyriform_cortical_subcortical_t1_hyperintensity",
+      "path": "defs/gyriform_cortical_subcortical_t1_hyperintensity.fm.json",
+      "review_id": "pilot_review:gyriform_cortical_subcortical_t1_hyperintensity",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "hair_on_end_skull",
+      "path": "defs/hair_on_end_skull.fm.json",
+      "review_id": "pilot_review:hair_on_end_skull",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "heart_failure_in_the_first_week_of_life",
+      "path": "defs/heart_failure_in_the_first_week_of_life.fm.json",
+      "review_id": "pilot_review:heart_failure_in_the_first_week_of_life",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "hemivertebra",
+      "path": "defs/hemivertebra.fm.json",
+      "review_id": "pilot_review:hemivertebra",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "hemorrhagic_liver_metastasis",
+      "path": "defs/hemorrhagic_liver_metastasis.fm.json",
+      "review_id": "pilot_review:hemorrhagic_liver_metastasis",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "hippocampal_asymmetry_metrics",
+      "path": "defs/hippocampal_asymmetry_metrics.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "hypervascular_liver_metastasis",
+      "path": "defs/hypervascular_liver_metastasis.fm.json",
+      "review_id": "pilot_review:hypervascular_liver_metastasis",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "hypodense_supratentorial_lesion",
+      "path": "defs/hypodense_supratentorial_lesion.fm.json",
+      "review_id": "pilot_review:hypodense_supratentorial_lesion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "hypoechoic_liver_lesion",
+      "path": "defs/hypoechoic_liver_lesion.fm.json",
+      "review_id": "pilot_review:hypoechoic_liver_lesion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "hypoplastic_fibula",
+      "path": "defs/hypoplastic_fibula.fm.json",
+      "review_id": "pilot_review:hypoplastic_fibula",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "implantable_cardioverter_defibrillator_leads",
+      "path": "defs/implantable_cardioverter_defibrillator_leads.fm.json",
+      "review_id": "pilot_review:implantable_cardioverter_defibrillator_leads",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "incidental_pulmonary_nodules",
+      "path": "defs/incidental_pulmonary_nodules.fm.json",
+      "review_id": "pilot_review:incidental_pulmonary_nodules",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "increased_prevertebral_space_in_an_adult",
+      "path": "defs/increased_prevertebral_space_in_an_adult.fm.json",
+      "review_id": "pilot_review:increased_prevertebral_space_in_an_adult",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "increased_resistance_index_of_renal_transplant",
+      "path": "defs/increased_resistance_index_of_renal_transplant.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:increased_resistance_index_of_renal_transplant",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "infrapatellar_mass_in_hoffa_fat_pad",
+      "path": "defs/infrapatellar_mass_in_hoffa_fat_pad.fm.json",
+      "review_id": "pilot_review:infrapatellar_mass_in_hoffa_fat_pad",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "infratentorial_intracranial_tumor_in_a_child",
+      "path": "defs/infratentorial_intracranial_tumor_in_a_child.fm.json",
+      "review_id": "pilot_review:infratentorial_intracranial_tumor_in_a_child",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "intrauterine_growth_retardation",
+      "path": "defs/intrauterine_growth_retardation.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:intrauterine_growth_retardation",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "intravascular_line",
+      "path": "defs/intravascular_line.fm.json",
+      "review_id": "pilot_review:intravascular_line",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "large_orbit",
+      "path": "defs/large_orbit.fm.json",
+      "review_id": "pilot_review:large_orbit",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "large_vascular_grooves_of_skull",
+      "path": "defs/large_vascular_grooves_of_skull.fm.json",
+      "review_id": "pilot_review:large_vascular_grooves_of_skull",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "leadless_pacemaker",
+      "path": "defs/leadless_pacemaker.fm.json",
+      "review_id": "pilot_review:leadless_pacemaker",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "localized_sunburst_pattern_in_skull",
+      "path": "defs/localized_sunburst_pattern_in_skull.fm.json",
+      "review_id": "pilot_review:localized_sunburst_pattern_in_skull",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "long_linear_lung_shadow",
+      "path": "defs/long_linear_lung_shadow.fm.json",
+      "review_id": "pilot_review:long_linear_lung_shadow",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "lower_lung_disease",
+      "path": "defs/lower_lung_disease.fm.json",
+      "review_id": "pilot_review:lower_lung_disease",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "lung_sutures",
+      "path": "defs/lung_sutures.fm.json",
+      "review_id": "pilot_review:lung_sutures",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "malignant_primary_bone_neoplasm",
+      "path": "defs/malignant_primary_bone_neoplasm.fm.json",
+      "review_id": "pilot_review:malignant_primary_bone_neoplasm",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "mastectomy_breast_implant",
+      "path": "defs/mastectomy_breast_implant.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:mastectomy_breast_implant",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "path": "defs/mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_.fm.json",
+      "review_id": "pilot_review:mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "mucocele_of_gallbladder",
+      "path": "defs/mucocele_of_gallbladder.fm.json",
+      "review_id": "pilot_review:mucocele_of_gallbladder",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "multiple_duodenal_filling_defects",
+      "path": "defs/multiple_duodenal_filling_defects.fm.json",
+      "review_id": "pilot_review:multiple_duodenal_filling_defects",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "multiple_intracranial_enhancing_lesions",
+      "path": "defs/multiple_intracranial_enhancing_lesions.fm.json",
+      "review_id": "pilot_review:multiple_intracranial_enhancing_lesions",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "multiple_sclerotic_foci_in_an_infant_or_child",
+      "path": "defs/multiple_sclerotic_foci_in_an_infant_or_child.fm.json",
+      "review_id": "pilot_review:multiple_sclerotic_foci_in_an_infant_or_child",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "multiple_splenic_hypointensities",
+      "path": "defs/multiple_splenic_hypointensities.fm.json",
+      "review_id": "pilot_review:multiple_splenic_hypointensities",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "occipital_lobe_region_volumes",
+      "path": "defs/occipital_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "omega_sella",
+      "path": "defs/omega_sella.fm.json",
+      "review_id": "pilot_review:omega_sella",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "osseous_lucent_lesion",
+      "path": "defs/osseous_lucent_lesion.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:osseous_lucent_lesion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "pancreatic_lesion_characterized_by_blood",
+      "path": "defs/pancreatic_lesion_characterized_by_blood.fm.json",
+      "review_id": "pilot_review:pancreatic_lesion_characterized_by_blood",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "parapelvic_renal_cyst",
+      "path": "defs/parapelvic_renal_cyst.fm.json",
+      "review_id": "pilot_review:parapelvic_renal_cyst",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "parietal_lobe_region_volumes",
+      "path": "defs/parietal_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "pediatric_chest_wall_lesion",
+      "path": "defs/pediatric_chest_wall_lesion.fm.json",
+      "review_id": "pilot_review:pediatric_chest_wall_lesion",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "peribronchovascular_interstitial_thickening",
+      "path": "defs/peribronchovascular_interstitial_thickening.fm.json",
+      "review_id": "pilot_review:peribronchovascular_interstitial_thickening",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "pericardial_effusion",
+      "path": "defs/pericardial_effusion.fm.json",
+      "review_id": "pilot_review:pericardial_effusion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "pericoronal_mixed_radiopacity_jaw_lesion",
+      "path": "defs/pericoronal_mixed_radiopacity_jaw_lesion.fm.json",
+      "review_id": "pilot_review:pericoronal_mixed_radiopacity_jaw_lesion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "periosteal_new_bone_formation_in_a_child",
+      "path": "defs/periosteal_new_bone_formation_in_a_child.fm.json",
+      "review_id": "pilot_review:periosteal_new_bone_formation_in_a_child",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "peripheral_rim_enhancement_of_kidney",
+      "path": "defs/peripheral_rim_enhancement_of_kidney.fm.json",
+      "review_id": "pilot_review:peripheral_rim_enhancement_of_kidney",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "pfirrmann_spine_disc_degeneration_classification",
+      "path": "defs/pfirrmann_spine_disc_degeneration_classification.fm.json",
+      "review_id": "pilot_review:pfirrmann_spine_disc_degeneration_classification",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "pleural_abnormality",
+      "path": "defs/pleural_abnormality.fm.json",
+      "review_id": "pilot_review:pleural_abnormality",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "pleural_calcification",
+      "path": "defs/pleural_calcification.fm.json",
+      "review_id": "pilot_review:pleural_calcification",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "pleural_effusion_with_disease_in_abdomen",
+      "path": "defs/pleural_effusion_with_disease_in_abdomen.fm.json",
+      "review_id": "pilot_review:pleural_effusion_with_disease_in_abdomen",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "pneumonia",
+      "path": "defs/pneumonia.fm.json",
+      "review_id": "pilot_review:pneumonia",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "polyostotic_bone_lesions_in_children",
+      "path": "defs/polyostotic_bone_lesions_in_children.fm.json",
+      "review_id": "pilot_review:polyostotic_bone_lesions_in_children",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "posterior_fossa_cystic_lesion",
+      "path": "defs/posterior_fossa_cystic_lesion.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:posterior_fossa_cystic_lesion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "primary_brain_tumor",
+      "path": "defs/primary_brain_tumor.fm.json",
+      "review_id": "pilot_review:primary_brain_tumor",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "prolonged_cerebral_vascular_transit_time",
+      "path": "defs/prolonged_cerebral_vascular_transit_time.fm.json",
+      "review_id": "pilot_review:prolonged_cerebral_vascular_transit_time",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "pulmonary_artery_catheterization",
+      "path": "defs/pulmonary_artery_catheterization.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:pulmonary_artery_catheterization",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "pulmonary_contusion",
+      "path": "defs/pulmonary_contusion.fm.json",
+      "review_id": "pilot_review:pulmonary_contusion",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "pulmonary_vascular_engorgement",
+      "path": "defs/pulmonary_vascular_engorgement.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:pulmonary_vascular_engorgement",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "radiolucent_urinary_calculus",
+      "path": "defs/radiolucent_urinary_calculus.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:radiolucent_urinary_calculus",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "renal_ischemia",
+      "path": "defs/renal_ischemia.fm.json",
+      "review_id": "pilot_review:renal_ischemia",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "renal_parenchymal_gas",
+      "path": "defs/renal_parenchymal_gas.fm.json",
+      "review_id": "pilot_review:renal_parenchymal_gas",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "renal_pseudotumor",
+      "path": "defs/renal_pseudotumor.fm.json",
+      "review_id": "pilot_review:renal_pseudotumor",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "rib_fracture",
+      "path": "defs/rib_fracture.fm.json",
+      "review_id": "pilot_review:rib_fracture",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "sacroiliac_joint_disease",
+      "path": "defs/sacroiliac_joint_disease.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:sacroiliac_joint_disease",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "short_thin_distal_phalanx_of_thumb",
+      "path": "defs/short_thin_distal_phalanx_of_thumb.fm.json",
+      "review_id": "pilot_review:short_thin_distal_phalanx_of_thumb",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "short_thumb",
+      "path": "defs/short_thumb.fm.json",
+      "review_id": "pilot_review:short_thumb",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "single_maxillary_central_incisor",
+      "path": "defs/single_maxillary_central_incisor.fm.json",
+      "review_id": "pilot_review:single_maxillary_central_incisor",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "sinus_keros_classification_on_ct",
+      "path": "defs/sinus_keros_classification_on_ct.fm.json",
+      "review_id": "pilot_review:sinus_keros_classification_on_ct",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "small_anterior_fontanelle",
+      "path": "defs/small_anterior_fontanelle.fm.json",
+      "review_id": "pilot_review:small_anterior_fontanelle",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "small_gallbladder",
+      "path": "defs/small_gallbladder.fm.json",
+      "review_id": "pilot_review:small_gallbladder",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "soft_tissue_abnormality",
+      "path": "defs/soft_tissue_abnormality.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:soft_tissue_abnormality",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "soft_tissue_tumor_with_prominent_vascularity",
+      "path": "defs/soft_tissue_tumor_with_prominent_vascularity.fm.json",
+      "review_id": "pilot_review:soft_tissue_tumor_with_prominent_vascularity",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "spine_instability_neuroplastic_score__sins_",
+      "path": "defs/spine_instability_neuroplastic_score__sins_.fm.json",
+      "review_id": "pilot_review:spine_instability_neuroplastic_score__sins_",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "sternal_fixation",
+      "path": "defs/sternal_fixation.fm.json",
+      "review_id": "pilot_review:sternal_fixation",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "striated_nephrogram",
+      "path": "defs/striated_nephrogram.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:striated_nephrogram",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "subsegmental_liver_perfusion_abnormality",
+      "path": "defs/subsegmental_liver_perfusion_abnormality.fm.json",
+      "review_id": "pilot_review:subsegmental_liver_perfusion_abnormality",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "supraglottic_mass",
+      "path": "defs/supraglottic_mass.fm.json",
+      "review_id": "pilot_review:supraglottic_mass",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "t1_hyperintense_adnexal_mass",
+      "path": "defs/t1_hyperintense_adnexal_mass.fm.json",
+      "review_id": "pilot_review:t1_hyperintense_adnexal_mass",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "t2_hyperintense_renal_mass",
+      "path": "defs/t2_hyperintense_renal_mass.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:t2_hyperintense_renal_mass",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "t2_intermediate_endometrial_uterine_mass",
+      "path": "defs/t2_intermediate_endometrial_uterine_mass.fm.json",
+      "review_id": "pilot_review:t2_intermediate_endometrial_uterine_mass",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "t2_isointense_intracranial_lesion",
+      "path": "defs/t2_isointense_intracranial_lesion.fm.json",
+      "review_id": "pilot_review:t2_isointense_intracranial_lesion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "temporal_lobe_region_volumes",
+      "path": "defs/temporal_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "thin_walled_lung_cavity",
+      "path": "defs/thin_walled_lung_cavity.fm.json",
+      "review_id": "pilot_review:thin_walled_lung_cavity",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "path": "defs/thoracolumbar_spine_ao_injury_classification_on_ct__tlics_.fm.json",
+      "review_id": "pilot_review:thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "thrombocytosis",
+      "path": "defs/thrombocytosis.fm.json",
+      "review_id": "pilot_review:thrombocytosis",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "thymic_enlargement",
+      "path": "defs/thymic_enlargement.fm.json",
+      "review_id": "pilot_review:thymic_enlargement",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "thyroid_bed_clips",
+      "path": "defs/thyroid_bed_clips.fm.json",
+      "review_id": "pilot_review:thyroid_bed_clips",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "tibiotalar_tilt",
+      "path": "defs/tibiotalar_tilt.fm.json",
+      "review_id": "pilot_review:tibiotalar_tilt",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "tracheostomy_tube",
+      "path": "defs/tracheostomy_tube.fm.json",
+      "review_id": "pilot_review:tracheostomy_tube",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "transudative_pleural_effusion",
+      "path": "defs/transudative_pleural_effusion.fm.json",
+      "review_id": "pilot_review:transudative_pleural_effusion",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "traumatic_brain_injury",
+      "path": "defs/traumatic_brain_injury.fm.json",
+      "review_id": "pilot_review:traumatic_brain_injury",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "traumatic_pneumatocele",
+      "path": "defs/traumatic_pneumatocele.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:traumatic_pneumatocele",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "tricuspid_annuloplasty_ring",
+      "path": "defs/tricuspid_annuloplasty_ring.fm.json",
+      "review_id": "pilot_review:tricuspid_annuloplasty_ring",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "tunneled_catheter",
+      "path": "defs/tunneled_catheter.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:tunneled_catheter",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "unilateral_hilar_enlargement",
+      "path": "defs/unilateral_hilar_enlargement.fm.json",
+      "review_id": "pilot_review:unilateral_hilar_enlargement",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "unilateral_sacroiliac_joint_disease",
+      "path": "defs/unilateral_sacroiliac_joint_disease.fm.json",
+      "review_id": "pilot_review:unilateral_sacroiliac_joint_disease",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "upper_abdominal_mass_in_a_neonate_or_child",
+      "path": "defs/upper_abdominal_mass_in_a_neonate_or_child.fm.json",
+      "review_id": "pilot_review:upper_abdominal_mass_in_a_neonate_or_child",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "upper_cervical_spine_ao_injury_classification_in_ct",
+      "path": "defs/upper_cervical_spine_ao_injury_classification_in_ct.fm.json",
+      "review_id": "pilot_review:upper_cervical_spine_ao_injury_classification_in_ct",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "vapor_induced_lung_disease",
+      "path": "defs/vapor_induced_lung_disease.fm.json",
+      "review_id": "pilot_review:vapor_induced_lung_disease",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "ventricular_system_volumes",
+      "path": "defs/ventricular_system_volumes.fm.json",
+      "review_id": null,
+      "review_status": "not_in_register"
+    },
+    {
+      "item_id": "vertebral_compression_fracture",
+      "path": "defs/vertebral_compression_fracture.fm.json",
+      "review_id": "pilot_review:vertebral_compression_fracture",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "vertebral_coronal_cleft",
+      "path": "defs/vertebral_coronal_cleft.fm.json",
+      "review_id": "phase5_targeted_hardened_v3:vertebral_coronal_cleft",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "vertical_trabeculation_of_vertebral_body",
+      "path": "defs/vertical_trabeculation_of_vertebral_body.fm.json",
+      "review_id": "pilot_review:vertical_trabeculation_of_vertebral_body",
+      "review_status": "feedback"
+    },
+    {
+      "item_id": "volumetric_breast_density",
+      "path": "defs/volumetric_breast_density.fm.json",
+      "review_id": "pilot_review:volumetric_breast_density",
+      "review_status": "approved"
+    },
+    {
+      "item_id": "wedging_of_vertebral_body",
+      "path": "defs/wedging_of_vertebral_body.fm.json",
+      "review_id": "pilot_review:wedging_of_vertebral_body",
+      "review_status": "feedback"
+    }
+  ],
+  "register": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/fixtures/metadata_review_evidence_register.json",
+  "version": 1
+}

@@ -1,0 +1,245 @@
+{
+  "artifacts": [
+    {
+      "authoritative_human_review": true,
+      "exists": true,
+      "kind": "human_review_export",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "role": "Authoritative 150-record pilot human review export.",
+      "sha256": "13a3c7149cb29e29fb8b9874ed31ecd56c615b6f4c0aaeaa73062b0995332974",
+      "summary": {
+        "responses": 150,
+        "summary": {
+          "approved": 46,
+          "complete": true,
+          "done": 150,
+          "drafts": 0,
+          "feedback": 104,
+          "remaining": 0,
+          "total": 150
+        }
+      }
+    },
+    {
+      "authoritative_human_review": true,
+      "exists": true,
+      "kind": "human_review_export",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3/talkasab-metadata-enrichment-review-responses.json",
+      "role": "Authoritative 30-record targeted follow-up human review export.",
+      "sha256": "81974c6cb72f6cb53b69e04a604ac304e5c3abc615bea087915e545f1b40ef56",
+      "summary": {
+        "responses": 30,
+        "summary": {
+          "approved": 21,
+          "complete": true,
+          "done": 30,
+          "drafts": 0,
+          "feedback": 9,
+          "remaining": 0,
+          "total": 30
+        }
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "human_review_package_input",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "role": "Generated metadata payload provenance for the 30-record targeted follow-up human review.",
+      "sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "summary": {
+        "items": 30
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "human_review_payload_snapshots",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "role": "Generated metadata payload provenance for the 150-record pilot human review.",
+      "sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "summary": {
+        "after_snapshots": 150,
+        "before_snapshots": 150,
+        "files": 300
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "human_review_ingest_summary",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-review-ingest.json",
+      "role": "Derived ingest summary for the pilot human review export.",
+      "sha256": "e0243de6b0d55cb5318fad1a24ce271c72c8e69c82d6b116b04e174e53a86dde",
+      "summary": {
+        "actionable_feedback": 105,
+        "status_counts": {
+          "normalized": {
+            "accepted": 46,
+            "feedback": 104
+          },
+          "raw": {
+            "approved": 46,
+            "feedback": 104
+          }
+        }
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "human_review_ingest_summary",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-v3-review-ingest.json",
+      "role": "Derived ingest summary for the targeted follow-up human review export.",
+      "sha256": "de692cdca8b87b29021cae3e15da39b9e60d8f131fac947cc880e6cdadf343e2",
+      "summary": {
+        "actionable_feedback": 9,
+        "status_counts": {
+          "normalized": {
+            "accepted": 21,
+            "feedback": 9
+          },
+          "raw": {
+            "approved": 21,
+            "feedback": 9
+          }
+        }
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "subagent_triage",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase6-nongmts-gmts-review-v1/review-decisions.json",
+      "role": "Supporting phase-6 subagent triage, not human gold.",
+      "sha256": "e9dc5c33d1bf76e06ddb9fa0af0141d94a30b2aab3510671c35a372e131a2f23",
+      "summary": {
+        "counts": {
+          "needs_attention": 100,
+          "proposed_accept": 252,
+          "proposed_skip": 38,
+          "suspected_tool_problem": 10
+        },
+        "records": 400
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "review_package_input",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase6-nongmts-gmts-review-v1/review-data/review-data.json",
+      "role": "Review package input for phase-6 triage.",
+      "sha256": "99f546274362770a60c300a392e2d4ae2ee9ef4f704f5aa0f920318907f4635c",
+      "summary": {
+        "items": 400
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "regression_floor",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/evals/regression_floor/regression-floor-v1.json",
+      "role": "Data-repo regression floor to port or explicitly replace in later eval work.",
+      "sha256": "ff06514f5b35c3f2ef4b2432c55415e9e0360d34346c6a51f53f11843d442e73",
+      "summary": {
+        "records": 10
+      }
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "regression_floor_manifest",
+      "path": "/Users/talkasab/repos/findingmodels-metadata/evals/regression_floor/manifest.json",
+      "role": "Manifest for the data-repo regression floor.",
+      "sha256": "ddba24e0c1f75b91f9523d7f40bbb1b1d6651b5cfa0ba6deef96ec68856053b0",
+      "summary": {}
+    },
+    {
+      "authoritative_human_review": false,
+      "exists": true,
+      "kind": "reviewed_eval_fixture",
+      "path": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/fixtures/etiology_tempo_reviewed_cases.json",
+      "role": "Mixed etiology/time-course eval fixture; contains reviewed cases and comparison-derived overrides.",
+      "sha256": "83586e651fa0c79ff55963cebcd77aae77ae75e2c7d8266ce0fe1831312576ef",
+      "summary": {
+        "cases": 106,
+        "counts": {
+          "gold_entries": 35,
+          "review_records_seen": 73,
+          "review_records_skipped_due_to_gold_duplicate": 2,
+          "review_records_with_expected_overrides_from_comparison": 40,
+          "total_entries": 106
+        }
+      }
+    },
+    {
+      "authoritative_human_review": true,
+      "count": 35,
+      "exists": true,
+      "files": [
+        "abdominal_aortic_aneurysm.fm.json",
+        "acl_tear.fm.json",
+        "acute_appendicitis.fm.json",
+        "aortic_dissection.fm.json",
+        "benign_prostatic_hyperplasia.fm.json",
+        "birads_assessment.fm.json",
+        "breast_density.fm.json",
+        "cardiomegaly.fm.json",
+        "cerebral_infarction.fm.json",
+        "cervical_lymphadenopathy.fm.json",
+        "coronary_artery_calcification.fm.json",
+        "distal_radius_fracture.fm.json",
+        "fdg_avid_pulmonary_nodule.fm.json",
+        "hepatocellular_carcinoma.fm.json",
+        "hip_osteoarthritis.fm.json",
+        "intracranial_hemorrhage.fm.json",
+        "kidney_stone.fm.json",
+        "liver_hemangioma.fm.json",
+        "lumbar_disc_herniation.fm.json",
+        "meningioma.fm.json",
+        "motion_artifact.fm.json",
+        "ovarian_cyst.fm.json",
+        "pericardial_effusion.fm.json",
+        "pleural_effusion.fm.json",
+        "pneumothorax.fm.json",
+        "primary_lung_malignancy.fm.json",
+        "pulmonary_embolism.fm.json",
+        "pyloric_stenosis.fm.json",
+        "rib_fracture.fm.json",
+        "rotator_cuff_tear.fm.json",
+        "spinal_stenosis.fm.json",
+        "subdural_hematoma.fm.json",
+        "thyroid_nodule.fm.json",
+        "uterine_leiomyoma.fm.json",
+        "vertebral_compression_fracture.fm.json"
+      ],
+      "kind": "tool_repo_gold_fixtures",
+      "path": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/gold",
+      "role": "Existing manually curated gold fixtures."
+    }
+  ],
+  "counts": {
+    "artifacts": 12,
+    "authoritative_artifacts": 3,
+    "missing_artifacts": 0
+  },
+  "cross_checks": [
+    {
+      "after_payload_count": 150,
+      "extra_after_payloads": [],
+      "missing_after_payloads": [],
+      "name": "pilot_after_payloads_match_review_responses",
+      "passes": true,
+      "payload_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "response_artifact": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/review-exports/talkasab-mgh-harvard-edu-metadata-enrichment-review-responses.json",
+      "response_count": 150
+    }
+  ],
+  "missing_artifacts": [],
+  "policy": {
+    "authority": "Only human-reviewed artifacts are authoritative.",
+    "supporting_evidence": "Ingest summaries, review-package inputs, subagent triage, and regression-floor runs are preserved as provenance or later eval material, not as gold."
+  },
+  "unresolved_expected_artifacts": [],
+  "version": 1
+}

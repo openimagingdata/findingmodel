@@ -1,0 +1,3836 @@
+{
+  "cases": [
+    {
+      "adjudication_notes": [],
+      "description": "An abdominal aortic aneurysm (AAA) is a localized dilation of the abdominal aorta, typically defined as a diameter greater than 3 cm, which can lead to rupture and significant morbidity or mortality.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "vascular:aneurysmal",
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:abdominal_aortic_aneurysm",
+      "index_codes": [
+        {
+          "code": "233985008",
+          "display": "Abdominal aortic aneurysm",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "abdominal aortic aneurysm",
+      "slug": "abdominal_aortic_aneurysm",
+      "source": "gold",
+      "synonyms": [
+        "AAA"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "An anterior cruciate ligament (ACL) tear is a partial or complete disruption of the ACL of the knee, typically resulting from a pivoting or hyperextension injury, and is a common cause of knee instability.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "traumatic:acute",
+          "traumatic:sequela"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:acl_tear",
+      "index_codes": [
+        {
+          "code": "239725005",
+          "display": "Rupture of anterior cruciate ligament",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID34594",
+          "display": "anterior cruciate ligament tear",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "anterior cruciate ligament tear",
+      "slug": "acl_tear",
+      "source": "gold",
+      "synonyms": [
+        "ACL tear",
+        "ACL rupture",
+        "torn ACL"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Acute appendicitis is inflammation of the vermiform appendix, typically presenting with right lower quadrant pain, and diagnosed on imaging by an enlarged, thick-walled, hyperenhancing appendix with surrounding inflammatory changes.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "inflammatory"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:acute_appendicitis",
+      "index_codes": [
+        {
+          "code": "85189001",
+          "display": "Acute appendicitis",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "acute appendicitis",
+      "slug": "acute_appendicitis",
+      "source": "gold",
+      "synonyms": [
+        "appendicitis",
+        "inflamed appendix"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Aortic dissection is a critical condition characterized by the separation of the aortic wall layers due to an intimal tear, resulting in an intramural hematoma and potential rupture; it often presents with severe, acute chest or back pain and may lead to life-threatening complications.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "vascular"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:aortic_dissection",
+      "index_codes": [
+        {
+          "code": "308546005",
+          "display": "Dissection of aorta",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID3320",
+          "display": "aortic dissection",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "aortic dissection",
+      "slug": "aortic_dissection",
+      "source": "gold",
+      "synonyms": [
+        "dissecting aneurysm"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Benign prostatic hyperplasia (BPH) is the non-neoplastic enlargement of the prostate gland due to stromal and glandular hyperplasia, commonly seen in older men, resulting in lower urinary tract symptoms and visible as an enlarged prostate on imaging.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:benign_prostatic_hyperplasia",
+      "index_codes": [
+        {
+          "code": "266569009",
+          "display": "Benign prostatic hyperplasia",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LA27844-2",
+          "display": "Benign prostatic hyperplasia",
+          "system": "LOINC"
+        },
+        {
+          "code": "RID3784",
+          "display": "benign prostatic hyperplasia",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "benign prostatic hyperplasia",
+      "slug": "benign_prostatic_hyperplasia",
+      "source": "gold",
+      "synonyms": [
+        "BPH",
+        "prostate enlargement",
+        "enlarged prostate"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "The Breast Imaging Reporting and Data System (BI-RADS) assessment is a standardized classification system for mammographic, ultrasound, and MRI breast findings, assigning a category from 0 to 6 to guide clinical management.",
+      "entity_type": "assessment",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "gold:birads_assessment",
+      "index_codes": [
+        {
+          "code": "1348266008",
+          "display": "Breast Imaging and Reporting and Data System",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "BI-RADS assessment",
+      "slug": "birads_assessment",
+      "source": "gold",
+      "synonyms": [
+        "BIRADS",
+        "breast imaging assessment",
+        "ACR BI-RADS"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Breast density refers to the proportion of fatty tissue to fibroglandular tissue in the breast as seen on a mammogram.",
+      "entity_type": "measurement",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:breast_density",
+      "index_codes": [
+        {
+          "code": "129793001",
+          "display": "Mammographic breast density",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "Breast density",
+      "slug": "breast_density",
+      "source": "gold",
+      "synonyms": [
+        "Mammographic density",
+        "Breast tissue density"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Cardiomegaly is the enlargement of the cardiac silhouette on imaging, typically defined as a cardiothoracic ratio greater than 0.5 on a PA chest radiograph, and may reflect chamber enlargement, pericardial effusion, or myocardial disease.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "cardiac"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:cardiomegaly",
+      "index_codes": [
+        {
+          "code": "8186001",
+          "display": "Cardiomegaly",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "cardiomegaly",
+      "slug": "cardiomegaly",
+      "source": "gold",
+      "synonyms": [
+        "enlarged heart",
+        "cardiac enlargement"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Cerebral infarction is the irreversible death of brain tissue due to ischemia, typically from arterial occlusion, visible on imaging as a region of restricted diffusion acutely and encephalomalacia chronically.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "vascular:ischemic"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:cerebral_infarction",
+      "index_codes": [
+        {
+          "code": "432504007",
+          "display": "Cerebral infarction",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "cerebral infarction",
+      "slug": "cerebral_infarction",
+      "source": "gold",
+      "synonyms": [
+        "ischemic stroke",
+        "brain infarct",
+        "CVA"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Cervical lymphadenopathy is the enlargement of lymph nodes in the neck region, which may be reactive, infectious, or neoplastic in origin, and is evaluated by size, morphology, and enhancement pattern on imaging.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory:infectious",
+          "neoplastic:malignant",
+          "neoplastic:metastatic"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:cervical_lymphadenopathy",
+      "index_codes": [
+        {
+          "code": "127086001",
+          "display": "Cervical lymphadenopathy",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "cervical lymphadenopathy",
+      "slug": "cervical_lymphadenopathy",
+      "source": "gold",
+      "synonyms": [
+        "enlarged cervical lymph nodes",
+        "neck lymphadenopathy"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Coronary artery calcification is the deposition of calcium within the walls of the coronary arteries, a marker of atherosclerotic disease, commonly quantified by Agatston score on non-contrast CT.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:coronary_artery_calcification",
+      "index_codes": [
+        {
+          "code": "445512009",
+          "display": "Calcification of coronary artery",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID50146",
+          "display": "coronary artery calcification",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "coronary artery calcification",
+      "slug": "coronary_artery_calcification",
+      "source": "gold",
+      "synonyms": [
+        "coronary calcification",
+        "CAC",
+        "coronary artery calcium"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A distal radius fracture is a break in the distal end of the radius bone near the wrist joint, one of the most common fractures in clinical practice, typically resulting from a fall on an outstretched hand.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "resolving"
+          ]
+        }
+      },
+      "id": "gold:distal_radius_fracture",
+      "index_codes": [
+        {
+          "code": "263199001",
+          "display": "Fracture of distal end of radius",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "distal radius fracture",
+      "slug": "distal_radius_fracture",
+      "source": "gold",
+      "synonyms": [
+        "wrist fracture",
+        "broken wrist"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "An FDG-avid pulmonary nodule is a lung nodule demonstrating elevated fluorodeoxyglucose uptake on PET imaging, raising concern for malignancy and requiring further characterization or tissue sampling.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:fdg_avid_pulmonary_nodule",
+      "index_codes": [
+        {
+          "code": "786838002",
+          "display": "Nodule of lung",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID50149",
+          "display": "pulmonary nodule",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "FDG-avid pulmonary nodule",
+      "slug": "fdg_avid_pulmonary_nodule",
+      "source": "gold",
+      "synonyms": [
+        "hypermetabolic lung nodule",
+        "PET-positive lung nodule",
+        "FDG-avid lung lesion"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Hepatocellular carcinoma (HCC) is the most common primary malignant tumor of the liver, typically arising in the setting of chronic liver disease and cirrhosis, characterized on imaging by arterial hyperenhancement with washout in the portal venous or delayed phases.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:hepatocellular_carcinoma",
+      "index_codes": [
+        {
+          "code": "25370001",
+          "display": "Hepatocellular carcinoma",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "hepatocellular carcinoma",
+      "slug": "hepatocellular_carcinoma",
+      "source": "gold",
+      "synonyms": [
+        "HCC",
+        "liver cancer",
+        "hepatoma"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Hip osteoarthritis is a degenerative joint disease characterized by progressive cartilage loss, osteophyte formation, subchondral sclerosis, and joint space narrowing of the hip joint.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:hip_osteoarthritis",
+      "index_codes": [
+        {
+          "code": "239872002",
+          "display": "Osteoarthritis of hip",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "hip osteoarthritis",
+      "slug": "hip_osteoarthritis",
+      "source": "gold",
+      "synonyms": [
+        "hip OA",
+        "degenerative joint disease of hip",
+        "hip arthritis"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Intracranial hemorrhage is the presence of blood within the cranial vault, which may occur in the epidural, subdural, subarachnoid, intraparenchymal, or intraventricular compartments.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "vascular:hemorrhagic",
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:intracranial_hemorrhage",
+      "index_codes": [
+        {
+          "code": "1386000",
+          "display": "Intracranial hemorrhage",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "intracranial hemorrhage",
+      "slug": "intracranial_hemorrhage",
+      "source": "gold",
+      "synonyms": [
+        "ICH",
+        "intracranial bleed",
+        "brain hemorrhage"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A kidney stone (renal calculus) is a solid concretion formed from crystallized minerals and salts within the renal collecting system, visible on CT as a hyperdense focus within the kidney or ureter.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "metabolic"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "gold:kidney_stone",
+      "index_codes": [
+        {
+          "code": "95570007",
+          "display": "Kidney stone",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LP232215-6",
+          "display": "Renal calculus",
+          "system": "LOINC"
+        },
+        {
+          "code": "RID38586",
+          "display": "renal calculus",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "kidney stone",
+      "slug": "kidney_stone",
+      "source": "gold",
+      "synonyms": [
+        "renal calculus",
+        "nephrolithiasis",
+        "renal stone",
+        "urolithiasis"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Hepatic hemangioma is the most common benign tumor of the liver, composed of vascular channels lined by endothelium, characteristically demonstrating peripheral nodular enhancement with progressive centripetal fill-in on contrast-enhanced imaging.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "gold:liver_hemangioma",
+      "index_codes": [
+        {
+          "code": "93469006",
+          "display": "Hemangioma of liver",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "hepatic hemangioma",
+      "slug": "liver_hemangioma",
+      "source": "gold",
+      "synonyms": [
+        "liver hemangioma",
+        "cavernous hemangioma of liver"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Lumbar disc herniation is the displacement of disc material beyond the intervertebral disc space in the lumbar spine, which may result in compression of adjacent neural structures and associated radiculopathy.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "degenerative",
+          "mechanical"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:lumbar_disc_herniation",
+      "index_codes": [
+        {
+          "code": "448591000124106",
+          "display": "Herniation of nucleus pulposus of lumbar intervertebral disc",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "lumbar disc herniation",
+      "slug": "lumbar_disc_herniation",
+      "source": "gold",
+      "synonyms": [
+        "herniated lumbar disc",
+        "lumbar disc protrusion",
+        "lumbar HNP",
+        "slipped disc"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A meningioma is a typically benign, slow-growing tumor arising from the meningeal coverings of the brain or spinal cord, commonly appearing as an extra-axial, homogeneously enhancing, dural-based mass on imaging.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:meningioma",
+      "index_codes": [
+        {
+          "code": "302820008",
+          "display": "Intracranial meningioma",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID4088",
+          "display": "meningioma",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "meningioma",
+      "slug": "meningioma",
+      "source": "gold",
+      "synonyms": [
+        "meningeal tumor",
+        "intracranial meningioma"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Motion artifact is image degradation caused by patient movement during acquisition, resulting in blurring, ghosting, or misregistration that may limit diagnostic interpretation.",
+      "entity_type": "technique_issue",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "gold:motion_artifact",
+      "index_codes": [
+        {
+          "code": "RID11423",
+          "display": "motion related artifact",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "motion artifact",
+      "slug": "motion_artifact",
+      "source": "gold",
+      "synonyms": [
+        "motion blur",
+        "patient motion",
+        "movement artifact"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "An ovarian cyst is a fluid-filled sac within or on the surface of an ovary, which may be physiologic (follicular or corpus luteum) or pathologic, commonly detected incidentally on pelvic imaging in women of reproductive age.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "recurrent"
+          ]
+        }
+      },
+      "id": "gold:ovarian_cyst",
+      "index_codes": [
+        {
+          "code": "79883001",
+          "display": "Cyst of ovary",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID34656",
+          "display": "ovarian cyst",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "ovarian cyst",
+      "slug": "ovarian_cyst",
+      "source": "gold",
+      "synonyms": [
+        "ovarian follicular cyst",
+        "adnexal cyst"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Pericardial effusion is the accumulation of fluid within the pericardial sac surrounding the heart, which may be serous, hemorrhagic, or exudative, and can range from a small physiologic amount to a large hemodynamically significant collection.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "gold:pericardial_effusion",
+      "index_codes": [
+        {
+          "code": "373945007",
+          "display": "Pericardial effusion",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "93664-1",
+          "display": "Pericardial effusion",
+          "system": "LOINC"
+        },
+        {
+          "code": "RID38588",
+          "display": "pericardial effusion",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "pericardial effusion",
+      "slug": "pericardial_effusion",
+      "source": "gold",
+      "synonyms": [
+        "fluid around heart",
+        "pericardial fluid collection"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Pleural effusion is the accumulation of fluid in the pleural space, visible on imaging as dependent opacity with a meniscus sign on upright radiography or as layering fluid on cross-sectional imaging.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "gold:pleural_effusion",
+      "index_codes": [
+        {
+          "code": "60046008",
+          "display": "Pleural effusion",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID34539",
+          "display": "pleural effusion",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "pleural effusion",
+      "slug": "pleural_effusion",
+      "source": "gold",
+      "synonyms": [
+        "fluid in pleural space",
+        "hydrothorax"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Pneumothorax is the presence of air in the pleural space, which may be spontaneous, traumatic, or iatrogenic, and is identified on imaging as a visceral pleural line with absent lung markings peripherally.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "traumatic:acute",
+          "iatrogenic:post-operative"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "resolving"
+          ]
+        }
+      },
+      "id": "gold:pneumothorax",
+      "index_codes": [
+        {
+          "code": "36118008",
+          "display": "Pneumothorax",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LA7466-1",
+          "display": "Pneumothorax",
+          "system": "LOINC"
+        },
+        {
+          "code": "RID5352",
+          "display": "pneumothorax",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "pneumothorax",
+      "slug": "pneumothorax",
+      "source": "gold",
+      "synonyms": [
+        "collapsed lung",
+        "PTX"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Primary lung malignancy is a malignant neoplasm arising from the lung parenchyma or bronchial tree, most commonly non-small cell carcinoma, presenting as a mass, nodule, or infiltrate on imaging.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:primary_lung_malignancy",
+      "index_codes": [
+        {
+          "code": "93880001",
+          "display": "Primary malignant neoplasm of lung",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "primary lung malignancy",
+      "slug": "primary_lung_malignancy",
+      "source": "gold",
+      "synonyms": [
+        "lung cancer",
+        "bronchogenic carcinoma",
+        "primary lung cancer"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Pulmonary embolism is the occlusion of a pulmonary artery or one of its branches, typically caused by thrombi that originate from the deep veins of the legs or other parts of the body, leading to impaired gas exchange and potential hemodynamic instability.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "vascular:thrombotic"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "resolving"
+          ]
+        }
+      },
+      "id": "gold:pulmonary_embolism",
+      "index_codes": [
+        {
+          "code": "59282003",
+          "display": "Pulmonary embolism",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LA7468-7",
+          "display": "Pulmonary embolism",
+          "system": "LOINC"
+        },
+        {
+          "code": "RID4834",
+          "display": "pulmonary embolism",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "pulmonary embolism",
+      "slug": "pulmonary_embolism",
+      "source": "gold",
+      "synonyms": [
+        "PE"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Hypertrophic pyloric stenosis is a condition of infancy characterized by hypertrophy of the pyloric muscle, resulting in gastric outlet obstruction and projectile nonbilious vomiting, diagnosed by ultrasound demonstrating increased pyloric muscle thickness and channel length.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": []
+        }
+      },
+      "id": "gold:pyloric_stenosis",
+      "index_codes": [
+        {
+          "code": "48644003",
+          "display": "Congenital hypertrophic pyloric stenosis",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "hypertrophic pyloric stenosis",
+      "slug": "pyloric_stenosis",
+      "source": "gold",
+      "synonyms": [
+        "pyloric stenosis",
+        "infantile hypertrophic pyloric stenosis",
+        "IHPS"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A rib fracture is a break in the continuity of one or more ribs, typically resulting from trauma, visible on imaging as a cortical disruption or lucent line through the rib.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "resolving"
+          ]
+        }
+      },
+      "id": "gold:rib_fracture",
+      "index_codes": [
+        {
+          "code": "33737001",
+          "display": "Fracture of rib",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "rib fracture",
+      "slug": "rib_fracture",
+      "source": "gold",
+      "synonyms": [
+        "broken rib",
+        "fractured rib"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A rotator cuff tear is a partial or complete disruption of one or more tendons of the rotator cuff muscles, most commonly the supraspinatus, resulting in shoulder pain and weakness, diagnosed by MRI or ultrasound.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "degenerative",
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:rotator_cuff_tear",
+      "index_codes": [
+        {
+          "code": "926335004",
+          "display": "Rupture of rotator cuff of shoulder",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "rotator cuff tear",
+      "slug": "rotator_cuff_tear",
+      "source": "gold",
+      "synonyms": [
+        "torn rotator cuff",
+        "rotator cuff rupture"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Spinal stenosis is the narrowing of the spinal canal, lateral recesses, or neural foramina, typically from degenerative changes including disc bulging, facet hypertrophy, and ligamentum flavum thickening, resulting in compression of neural structures.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:spinal_stenosis",
+      "index_codes": [
+        {
+          "code": "76107001",
+          "display": "Spinal stenosis",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID5028",
+          "display": "spinal stenosis",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "spinal stenosis",
+      "slug": "spinal_stenosis",
+      "source": "gold",
+      "synonyms": [
+        "central canal stenosis",
+        "spinal canal narrowing"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A subdural hematoma is a collection of blood in the subdural space between the dura mater and arachnoid membrane, typically resulting from tearing of bridging veins due to trauma or in the setting of coagulopathy.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "traumatic:acute",
+          "vascular:hemorrhagic"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "gold:subdural_hematoma",
+      "index_codes": [
+        {
+          "code": "95453001",
+          "display": "Subdural intracranial hematoma",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "subdural hematoma",
+      "slug": "subdural_hematoma",
+      "source": "gold",
+      "synonyms": [
+        "SDH",
+        "subdural hemorrhage"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A thyroid nodule is a discrete lesion within the thyroid gland that is radiologically distinct from the surrounding thyroid parenchyma, commonly detected incidentally on imaging and evaluated by ultrasound for malignancy risk.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign",
+          "neoplastic:potential"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "gold:thyroid_nodule",
+      "index_codes": [
+        {
+          "code": "237495005",
+          "display": "Thyroid nodule",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LA14304-2",
+          "display": "Thyroid nodule",
+          "system": "LOINC"
+        },
+        {
+          "code": "RID50509",
+          "display": "thyroid nodule",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "thyroid nodule",
+      "slug": "thyroid_nodule",
+      "source": "gold",
+      "synonyms": [
+        "thyroid mass",
+        "thyroid lesion"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Uterine leiomyoma (fibroid) is a benign smooth muscle tumor of the uterus, the most common pelvic tumor in women, appearing as a well-circumscribed mass with variable signal intensity on MRI depending on cellularity and degeneration.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "gold:uterine_leiomyoma",
+      "index_codes": [
+        {
+          "code": "95315005",
+          "display": "Uterine leiomyoma",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "uterine leiomyoma",
+      "slug": "uterine_leiomyoma",
+      "source": "gold",
+      "synonyms": [
+        "uterine fibroid",
+        "fibroid",
+        "myoma"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A vertebral compression fracture is a collapse of a vertebral body, most commonly in the thoracic or lumbar spine, typically resulting from osteoporosis or trauma, visible as loss of vertebral height on imaging.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "traumatic:acute",
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "gold:vertebral_compression_fracture",
+      "index_codes": [
+        {
+          "code": "42942008",
+          "display": "Compression fracture of vertebral column",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID4658",
+          "display": "compression fracture",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "vertebral compression fracture",
+      "slug": "vertebral_compression_fracture",
+      "source": "gold",
+      "synonyms": [
+        "VCF",
+        "compression fracture",
+        "vertebral fracture"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Loss of continuity in the posterior part of the vertebra, due to trauma or surgery.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "traumatic:sequela",
+          "iatrogenic:post-operative"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:acquired_posterior_neural_arch_defect",
+      "index_codes": [
+        {
+          "code": "10039",
+          "display": "acquired posterior neural arch defect",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "acquired posterior neural arch defect",
+      "slug": "acquired_posterior_neural_arch_defect",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "posterior arch defect",
+        "laminae defect"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Congenital absence of one or more limbs.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": []
+        }
+      },
+      "id": "reviewed_clean_input:amelia",
+      "index_codes": [
+        {
+          "code": "62588002",
+          "display": "Congenital complete absence of limb",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "amelia",
+      "slug": "amelia",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "limb absence"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "medium",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "age profile is all, more common in elderly. Time course is permanent progressive.",
+          "themes": [
+            "time course",
+            "age"
+          ]
+        }
+      ],
+      "description": "Joint inflammation with finger deformity characterized by hyperextension of the PIP joint.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "inflammatory",
+          "autoimmune"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:arthritis_with_swan_neck_deformity",
+      "index_codes": [
+        {
+          "code": "12845",
+          "display": "arthritis with swan-neck deformity",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "arthritis with swan-neck deformity",
+      "slug": "arthritis_with_swan_neck_deformity",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Automated Insall-Salvatti Index (ISI)",
+      "entity_type": "measurement",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:automated_insall_salvatti_index",
+      "index_codes": [
+        {
+          "code": "RDES88",
+          "display": "automated insall-salvatti index",
+          "system": "radelement"
+        }
+      ],
+      "name": "Automated Insall-Salvatti Index",
+      "slug": "automated_insall_salvatti_index",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "At least GU imaging. Sex specificity is neutral Age profile is any age. Time course is years progressive, usually.",
+          "themes": [
+            "time course",
+            "subspecialty",
+            "age",
+            "sex"
+          ]
+        }
+      ],
+      "description": "Enlarged adrenal glands on both sides, can indicate hyperplasia or neoplasm.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:bilateral_adrenal_enlargement",
+      "index_codes": [
+        {
+          "code": "17424",
+          "display": "bilateral adrenal enlargement",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "bilateral adrenal enlargement",
+      "slug": "bilateral_adrenal_enlargement",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "time couirse is months/years, progressive",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Breast Focal Asymmetry",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:breast_focal_asymmetry",
+      "index_codes": [
+        {
+          "code": "RID34264",
+          "display": "focal asymmetry",
+          "system": "RADLEX"
+        },
+        {
+          "code": "RDES284",
+          "display": "breast focal asymmetry",
+          "system": "radelement"
+        }
+      ],
+      "name": "Breast Focal Asymmetry",
+      "slug": "breast_focal_asymmetry",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Calcification within axillary lymph nodes, visible as dense foci in the axillary region on chest radiograph.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:calcified_axillary_lymph_nodes",
+      "index_codes": [],
+      "name": "calcified axillary lymph nodes",
+      "slug": "calcified_axillary_lymph_nodes",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "axillary lymph node calcification",
+        "calcified axillary nodes"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Missing bones or digits in hand or foot from birth.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:congenital_absence_of_phalanx__digit__hand__or_foot",
+      "index_codes": [
+        {
+          "code": "11893",
+          "display": "congenital absence of phalanx, digit, hand, or foot",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "congenital absence of phalanx, digit, hand, or foot",
+      "slug": "congenital_absence_of_phalanx__digit__hand__or_foot",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Two or more vertebrae fused together from birth.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:congenital_fused_vertebrae",
+      "index_codes": [
+        {
+          "code": "21145",
+          "display": "congenital fused vertebrae",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "congenital fused vertebrae",
+      "slug": "congenital_fused_vertebrae",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "block vertebra",
+        "block vertebrae"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Fluid-filled mass located in the abdomen of a fetus or newborn.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "index_codes": [
+        {
+          "code": "4688",
+          "display": "cystic abdominal mass in a fetus or newborn",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "cystic abdominal mass in a fetus or newborn",
+      "slug": "cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Discontinuity at the growth plate area of bones.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "evolving",
+            "resolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:disrupted_epiphyseal_metaphyseal_junction",
+      "index_codes": [
+        {
+          "code": "10600",
+          "display": "disrupted epiphyseal-metaphyseal junction",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "disrupted epiphyseal-metaphyseal junction",
+      "slug": "disrupted_epiphyseal_metaphyseal_junction",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "growth plate injury"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Balloon tamponade device placed in the esophagus for control of variceal hemorrhage.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "resolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:double_balloon_esophageal_catheter",
+      "index_codes": [
+        {
+          "code": "463332004",
+          "display": "Esophageal balloon catheter",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "double balloon esophageal catheter",
+      "slug": "double_balloon_esophageal_catheter",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "esophageal balloon catheter"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Reduced diameter or blockage of the duodenal passage.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:duodenal_narrowing_or_obstruction",
+      "index_codes": [
+        {
+          "code": "594",
+          "display": "duodenal narrowing or obstruction",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "duodenal narrowing or obstruction",
+      "slug": "duodenal_narrowing_or_obstruction",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Presence of an extra great toe typically due to a congenital anomaly.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:duplication_of_great_toe",
+      "index_codes": [
+        {
+          "code": "11828",
+          "display": "duplication of great toe",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "duplication of great toe",
+      "slug": "duplication_of_great_toe",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "hallucal polydactyly",
+        "duplication of hallux",
+        "duplicated great toe",
+        "duplicated hallux"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "medium",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "Sex neutral, all ages, months/years + progressive.",
+          "themes": [
+            "time course",
+            "age",
+            "sex"
+          ]
+        }
+      ],
+      "description": "A mediastinal mass that shows contrast enhancement, suggestive of neoplastic or vascular process.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "neoplastic:malignant",
+          "vascular"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:enhancing_mediastinal_mass",
+      "index_codes": [
+        {
+          "code": "15562",
+          "display": "enhancing mediastinal mass",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "enhancing mediastinal mass",
+      "slug": "enhancing_mediastinal_mass",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "vascular mediastinal mass",
+        "contrast-enhancing mediastinal lesion"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course is months/years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Thickening or enlargement of nerve roots.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:enlarged_nerve_roots",
+      "index_codes": [
+        {
+          "code": "18496",
+          "display": "enlarged nerve roots",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "enlarged nerve roots",
+      "slug": "enlarged_nerve_roots",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "Time course is months",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "White or gray patches that may appear on the mucosa of the esophagus, often associated with esophagitis.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory",
+          "inflammatory:infectious"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "stable",
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:esophageal_plaques",
+      "index_codes": [
+        {
+          "code": "243",
+          "display": "esophageal plaques",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "esophageal plaques",
+      "slug": "esophageal_plaques",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "esophageal patches"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "sex-neutral. time course is months",
+          "themes": [
+            "time course",
+            "sex"
+          ]
+        }
+      ],
+      "description": "Localized area of enhancement involving the leptomeninges",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory",
+          "inflammatory:infectious",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:focal_leptomeningeal_enhancement",
+      "index_codes": [
+        {
+          "code": "18346",
+          "display": "focal leptomeningeal enhancement",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "focal leptomeningeal enhancement",
+      "slug": "focal_leptomeningeal_enhancement",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Describes the hair-on-end appearance of the skull on radiographs.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:hair_on_end_skull",
+      "index_codes": [
+        {
+          "code": "RID35253",
+          "display": "hair-on-end sign",
+          "system": "RADLEX"
+        },
+        {
+          "code": "25589",
+          "display": "hair-on-end skull",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "hair-on-end skull",
+      "slug": "hair_on_end_skull",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "hair-on-end pattern in skull",
+        "hair-on-end sign"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Inability of a newborn's heart to pump blood effectively.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "cardiac"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:heart_failure_in_the_first_week_of_life",
+      "index_codes": [
+        {
+          "code": "13338",
+          "display": "heart failure in the first week of life",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "heart failure in the first week of life",
+      "slug": "heart_failure_in_the_first_week_of_life",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "neonatal heart failure"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Congenital vertebral anomaly in which only one half of the vertebral body develops, causing focal scoliosis.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:hemivertebra",
+      "index_codes": [
+        {
+          "code": "LA19649-5",
+          "display": "Hemivertebra",
+          "system": "LOINC"
+        },
+        {
+          "code": "68359008",
+          "display": "Congenital hemivertebra",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "hemivertebra",
+      "slug": "hemivertebra",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "half vertebra"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "medium",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "time course is years, progresive",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Spread of cancerous lesions in the liver with associated bleeding.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:metastatic"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:hemorrhagic_liver_metastasis",
+      "index_codes": [
+        {
+          "code": "4820",
+          "display": "hemorrhagic liver metastasis",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "hemorrhagic liver metastasis",
+      "slug": "hemorrhagic_liver_metastasis",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "time course is months/years progressive.",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "An area of low density above the tentorium in the brain.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:hypodense_supratentorial_lesion",
+      "index_codes": [
+        {
+          "code": "7035",
+          "display": "hypodense supratentorial lesion",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "hypodense supratentorial lesion",
+      "slug": "hypodense_supratentorial_lesion",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "low-density supratentorial lesion"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "sex-neutral. time course is years, progressive",
+          "themes": [
+            "time course",
+            "sex"
+          ]
+        }
+      ],
+      "description": "A lesion in the liver appearing darker on ultrasound",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:hypoechoic_liver_lesion",
+      "index_codes": [
+        {
+          "code": "4838",
+          "display": "hypoechoic liver lesion",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "hypoechoic liver lesion",
+      "slug": "hypoechoic_liver_lesion",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "dark liver lesion"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Transvenous leads from an implantable cardioverter defibrillator extending to the cardiac chambers.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:implantable_cardioverter_defibrillator_leads",
+      "index_codes": [
+        {
+          "code": "118380004",
+          "display": "Implantable defibrillator leads",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "implantable cardioverter defibrillator leads",
+      "slug": "implantable_cardioverter_defibrillator_leads",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "ICD leads",
+        "defibrillator leads"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "age profile is all ages. time course is years progressive.",
+          "themes": [
+            "time course",
+            "age"
+          ]
+        }
+      ],
+      "description": "Incidental pulmonary nodules on CT",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:incidental_pulmonary_nodules",
+      "index_codes": [
+        {
+          "code": "RID50149",
+          "display": "pulmonary nodule",
+          "system": "RADLEX"
+        },
+        {
+          "code": "RDES99",
+          "display": "incidental pulmonary nodules",
+          "system": "radelement"
+        }
+      ],
+      "name": "Incidental Pulmonary Nodules",
+      "slug": "incidental_pulmonary_nodules",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A mass located in the Hoffa fat pad region beneath the patella.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:infrapatellar_mass_in_hoffa_fat_pad",
+      "index_codes": [
+        {
+          "code": "18714",
+          "display": "infrapatellar mass in Hoffa fat pad",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "infrapatellar mass in hoffa fat pad",
+      "slug": "infrapatellar_mass_in_hoffa_fat_pad",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "Patellar fat pad mass",
+        "Hoffa's disease"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "medium",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "age profile is adolescent though adult. Time course is monhts. anatomic location is uterus.",
+          "themes": [
+            "time course",
+            "anatomy",
+            "age"
+          ]
+        }
+      ],
+      "description": "Condition where a fetus grows slower than expected for the gestational age.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:intrauterine_growth_retardation",
+      "index_codes": [
+        {
+          "code": "22033007",
+          "display": "Fetal growth restriction",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "18998",
+          "display": "intrauterine growth retardation",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "intrauterine growth retardation",
+      "slug": "intrauterine_growth_retardation",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "fetal growth restriction",
+        "IUGR"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "all ages. months/years, progressive",
+          "themes": [
+            "time course",
+            "age"
+          ]
+        }
+      ],
+      "description": "Radiating pattern seen on skull indicating vascular or tumorous processes.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "neoplastic:malignant",
+          "vascular"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:localized_sunburst_pattern_in_skull",
+      "index_codes": [
+        {
+          "code": "6775",
+          "display": "localized sunburst pattern in skull",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "localized sunburst pattern in skull",
+      "slug": "localized_sunburst_pattern_in_skull",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "sunburst skull",
+        "sunburst pattern"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "A cancerous tumor originating in the bone.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:malignant_primary_bone_neoplasm",
+      "index_codes": [
+        {
+          "code": "93725000",
+          "display": "Primary malignant neoplasm of bone",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "11326",
+          "display": "malignant primary bone neoplasm",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "malignant primary bone neoplasm",
+      "slug": "malignant_primary_bone_neoplasm",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "primary bone cancer"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "MTA-scale for Medial Temporal Lobe Atrophy (Scheltens Classification)",
+      "entity_type": "assessment",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "index_codes": [
+        {
+          "code": "RDES151",
+          "display": "mta-scale for medial temporal lobe atrophy",
+          "system": "radelement"
+        }
+      ],
+      "name": "MTA-Scale for Medial Temporal Lobe Atrophy (Scheltens Classification)",
+      "slug": "mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "duration is months/years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "An enlargement of the gallbladder due to mucus accumulation.",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:mucocele_of_gallbladder",
+      "index_codes": [
+        {
+          "code": "78793006",
+          "display": "Mucocele of gallbladder",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "3237",
+          "display": "mucocele of gallbladder",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "mucocele of gallbladder",
+      "slug": "mucocele_of_gallbladder",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "gallbladder mucocele"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Numerous radiopaque structures obstructing the lumen of the duodenum, potentially indicative of polyps or neoplastic growths.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:multiple_duodenal_filling_defects",
+      "index_codes": [
+        {
+          "code": "5081",
+          "display": "multiple duodenal filling defects",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "multiple duodenal filling defects",
+      "slug": "multiple_duodenal_filling_defects",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "Duodenal filling defects"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "time course is months years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Several intracranial lesions that show contrast enhancement.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:multiple_intracranial_enhancing_lesions",
+      "index_codes": [
+        {
+          "code": "7090",
+          "display": "multiple intracranial enhancing lesions",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "multiple intracranial enhancing lesions",
+      "slug": "multiple_intracranial_enhancing_lesions",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Presence of numerous dense, white spots within bones.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "congenital",
+          "metabolic"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:multiple_sclerotic_foci_in_an_infant_or_child",
+      "index_codes": [
+        {
+          "code": "10968",
+          "display": "multiple sclerotic foci in an infant or child",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "multiple sclerotic foci in an infant or child",
+      "slug": "multiple_sclerotic_foci_in_an_infant_or_child",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course is years/permanent. SNOMED code is too specific, specifying X-ray. MRi is not appropriatre for this--we don't call lucency on MR.",
+          "themes": [
+            "time course",
+            "ontology/index code",
+            "modality"
+          ]
+        }
+      ],
+      "description": "An area of decreased density within bone on radiograph, which may represent a lytic lesion, cyst, or area of bone destruction.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:osseous_lucent_lesion",
+      "index_codes": [
+        {
+          "code": "1293040003",
+          "display": "Lytic lesion of bone on plain X-ray",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "osseous lucent lesion",
+      "slug": "osseous_lucent_lesion",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "lytic lesion",
+        "bone lucency",
+        "osteolytic lesion",
+        "radiolucent bone lesion",
+        "osseous lucency"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "all ages months/years progressive",
+          "themes": [
+            "time course",
+            "age"
+          ]
+        }
+      ],
+      "description": "Pancreatic lesion containing or associated with blood.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:pancreatic_lesion_characterized_by_blood",
+      "index_codes": [
+        {
+          "code": "5368",
+          "display": "pancreatic lesion characterized by blood",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "pancreatic lesion characterized by blood",
+      "slug": "pancreatic_lesion_characterized_by_blood",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "pancreatic lesion characterized by hemorrhage"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Parapelvic renal cyst is a fluid-filled, non-enhancing cyst of the renal sinus adjacent to the renal pelvis. On imaging, it appears as a well-defined, simple cyst that does not communicate with the collecting system and may be incidentally encountered; large lesions may cause calyceal compression or hydronephrosis.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:parapelvic_renal_cyst",
+      "index_codes": [
+        {
+          "code": "431481000124104",
+          "display": "Parapelvic renal cyst",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID3929",
+          "display": "parapelvic cyst",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "parapelvic renal cyst",
+      "slug": "parapelvic_renal_cyst",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "parapelvic cyst",
+        "renal parapelvic cyst",
+        "parapelvic renal sinus cyst"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "etiologies",
+          "grade": "missing-core-etiology",
+          "reviewer_concern": "etiology could be degenerative. Time course could be years. Anatomic location is lung.",
+          "themes": [
+            "time course",
+            "anatomy",
+            "etiology"
+          ]
+        },
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "etiology could be degenerative. Time course could be years. Anatomic location is lung.",
+          "themes": [
+            "time course",
+            "anatomy",
+            "etiology"
+          ]
+        }
+      ],
+      "description": "Thickening of the connective tissues around the bronchi and vessels, often associated with interstitial lung diseases.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory",
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:peribronchovascular_interstitial_thickening",
+      "index_codes": [
+        {
+          "code": "14559",
+          "display": "peribronchovascular interstitial thickening",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "peribronchovascular interstitial thickening",
+      "slug": "peribronchovascular_interstitial_thickening",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "peribronchovascular thickening",
+        "peribronchial thickening"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "time course is years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Lesion around a tooth crown with mixed radiographic densities.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:pericoronal_mixed_radiopacity_jaw_lesion",
+      "index_codes": [
+        {
+          "code": "9041",
+          "display": "pericoronal mixed-radiopacity jaw lesion",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "pericoronal mixed-radiopacity jaw lesion",
+      "slug": "pericoronal_mixed_radiopacity_jaw_lesion",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "pericoronal mixed lesion"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Formation of new bone tissue along the periosteum in children, often reactive to insult",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory:infectious",
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "evolving",
+            "resolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:periosteal_new_bone_formation_in_a_child",
+      "index_codes": [
+        {
+          "code": "30397001",
+          "display": "Periosteal bone formation",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID45750",
+          "display": "periosteal reaction",
+          "system": "RADLEX"
+        },
+        {
+          "code": "RID5082",
+          "display": "periosteal reaction",
+          "system": "RADLEX"
+        },
+        {
+          "code": "11491",
+          "display": "periosteal new bone formation in a child",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "periosteal new bone formation in a child",
+      "slug": "periosteal_new_bone_formation_in_a_child",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course is months",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Outer enhancement around the kidney on contrast imaging, possibly indicating infection or infarction.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory",
+          "vascular:ischemic"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:peripheral_rim_enhancement_of_kidney",
+      "index_codes": [
+        {
+          "code": "RID34392",
+          "display": "rim sign of kidney",
+          "system": "RADLEX"
+        },
+        {
+          "code": "16874",
+          "display": "peripheral rim enhancement of kidney",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "peripheral rim enhancement of kidney",
+      "slug": "peripheral_rim_enhancement_of_kidney",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "rim enhancement around kidney"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "etiologies",
+          "grade": "wrong-mechanism",
+          "reviewer_concern": "Hey, where are my etiologies? Could be post-infectious, post-exposure, post-treatment.",
+          "themes": [
+            "etiology"
+          ]
+        }
+      ],
+      "description": "Deposition of calcium in the pleura, often a sign of previous inflammation or asbestos exposure.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory:infectious",
+          "toxic",
+          "iatrogenic:post-radiation"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:pleural_calcification",
+      "index_codes": [
+        {
+          "code": "16017",
+          "display": "pleural calcification",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "pleural calcification",
+      "slug": "pleural_calcification",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "calcified pleura"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course is months",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Pleural fluid accumulation associated with abdominal pathology such as pancreatitis or cirrhosis.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:pleural_effusion_with_disease_in_abdomen",
+      "index_codes": [
+        {
+          "code": "60046008",
+          "display": "Pleural effusion",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID34539",
+          "display": "pleural effusion",
+          "system": "RADLEX"
+        },
+        {
+          "code": "15922",
+          "display": "pleural effusion with disease in abdomen",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "pleural effusion with disease in abdomen",
+      "slug": "pleural_effusion_with_disease_in_abdomen",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "secondary pleural effusion due to abdominal disease"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course is years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Multiple lesions affecting several bones",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:polyostotic_bone_lesions_in_children",
+      "index_codes": [
+        {
+          "code": "11631",
+          "display": "polyostotic bone lesions in children",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "polyostotic bone lesions in children",
+      "slug": "polyostotic_bone_lesions_in_children",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Cystic abnormality located in the posterior fossa.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:posterior_fossa_cystic_lesion",
+      "index_codes": [
+        {
+          "code": "7421",
+          "display": "posterior fossa cystic lesion",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "posterior fossa cystic lesion",
+      "slug": "posterior_fossa_cystic_lesion",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "time course is years progressive",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Tumor originating within the brain",
+      "entity_type": "diagnosis",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:primary_brain_tumor",
+      "index_codes": [
+        {
+          "code": "6882",
+          "display": "primary brain tumor",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "primary brain tumor",
+      "slug": "primary_brain_tumor",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "intracranial neoplasm"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "etiologies",
+          "grade": "missing-core-etiology",
+          "reviewer_concern": "I think etiology is just vascular. sex-neutral. age profile is any age. This is also a CT (CTA) finding--I don't think US applies.",
+          "themes": [
+            "modality",
+            "age",
+            "sex",
+            "etiology"
+          ]
+        }
+      ],
+      "description": "Delayed passage of blood through cerebral vessels.",
+      "entity_type": "measurement",
+      "expected": {
+        "etiologies": [
+          "vascular"
+        ],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:prolonged_cerebral_vascular_transit_time",
+      "index_codes": [
+        {
+          "code": "7692",
+          "display": "prolonged cerebral vascular transit time",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "prolonged cerebral vascular transit time",
+      "slug": "prolonged_cerebral_vascular_transit_time",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Enlargement and increased prominence of pulmonary vessels on chest radiograph, indicating increased pulmonary blood volume as seen in fluid overload or left heart failure.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "cardiac"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "evolving",
+            "resolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:pulmonary_vascular_engorgement",
+      "index_codes": [
+        {
+          "code": "304523003",
+          "display": "Pulmonary venous congestion",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "name": "pulmonary vascular engorgement",
+      "slug": "pulmonary_vascular_engorgement",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "pulmonary vascular congestion",
+        "pulmonary venous congestion",
+        "engorgement of pulmonary vasculature",
+        "pulmonary venous hypertension"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Benign enlargement or mass in the kidney resembling a tumor.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "normal-variant"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:renal_pseudotumor",
+      "index_codes": [
+        {
+          "code": "16698",
+          "display": "renal pseudotumor",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "renal pseudotumor",
+      "slug": "renal_pseudotumor",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Thumb that is shorter in length than expected",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "congenital",
+          "developmental",
+          "normal-variant"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:short_thumb",
+      "index_codes": [
+        {
+          "code": "253936008",
+          "display": "Hypoplasia of thumb",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "21839",
+          "display": "short thumb",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "short thumb",
+      "slug": "short_thumb",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Sinus Keros Classification on CT",
+      "entity_type": "assessment",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:sinus_keros_classification_on_ct",
+      "index_codes": [
+        {
+          "code": "RDES273",
+          "display": "sinus keros classification on ct",
+          "system": "radelement"
+        }
+      ],
+      "name": "Sinus Keros Classification on CT",
+      "slug": "sinus_keros_classification_on_ct",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "anatomic location is at least skull duration is years",
+          "themes": [
+            "time course",
+            "anatomy"
+          ]
+        }
+      ],
+      "description": "Decreased size of the anterior fontanelle, possibly indicating craniosynostosis.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:small_anterior_fontanelle",
+      "index_codes": [
+        {
+          "code": "6707",
+          "display": "small anterior fontanelle",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "small anterior fontanelle",
+      "slug": "small_anterior_fontanelle",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "closed fontanelle"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Nonspecific abnormality of the soft tissues visible on chest radiograph.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:soft_tissue_abnormality",
+      "index_codes": [],
+      "name": "soft tissue abnormality",
+      "slug": "soft_tissue_abnormality",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "time course is years.",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "A soft-tissue mass with increased blood supply, often detected by enhanced imaging.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:soft_tissue_tumor_with_prominent_vascularity",
+      "index_codes": [
+        {
+          "code": "13154",
+          "display": "soft-tissue tumor with prominent vascularity",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "soft-tissue tumor with prominent vascularity",
+      "slug": "soft_tissue_tumor_with_prominent_vascularity",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "etiologies",
+          "grade": "missing-core-etiology",
+          "reviewer_concern": "Time course is weeks, resolving. Etiologies is inflammatory/infectious.",
+          "themes": [
+            "time course",
+            "etiology"
+          ]
+        },
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course is weeks, resolving. Etiologies is inflammatory/infectious.",
+          "themes": [
+            "time course",
+            "etiology"
+          ]
+        }
+      ],
+      "description": "Alternating bands of high and low nephrogram densities.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory:infectious"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "resolving"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:striated_nephrogram",
+      "index_codes": [
+        {
+          "code": "16443",
+          "display": "striated nephrogram",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "striated nephrogram",
+      "slug": "striated_nephrogram",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "striated kidney"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Duration is months It's just vascular, not ischemic",
+          "themes": [
+            "time course",
+            "etiology"
+          ]
+        }
+      ],
+      "description": "Altered blood flow in smaller liver subunits identifiable on imaging.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "vascular"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving",
+            "resolving",
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:subsegmental_liver_perfusion_abnormality",
+      "index_codes": [
+        {
+          "code": "174489006",
+          "display": "Localized perfusion of liver",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "5708",
+          "display": "subsegmental liver perfusion abnormality",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "subsegmental liver perfusion abnormality",
+      "slug": "subsegmental_liver_perfusion_abnormality",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "medium",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "Expected time course is months/years Anatomic location s is larynx at worst, at least neck.",
+          "themes": [
+            "time course",
+            "anatomy"
+          ]
+        }
+      ],
+      "description": "Mass located in the region above the vocal cords.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:supraglottic_mass",
+      "index_codes": [
+        {
+          "code": "301215002",
+          "display": "Supraglottic lesion",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "9399",
+          "display": "supraglottic mass",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "supraglottic mass",
+      "slug": "supraglottic_mass",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "epiglottic mass"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course ins months to years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Adnexal mass that appears hyperintense on T1-weighted MRI.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:t1_hyperintense_adnexal_mass",
+      "index_codes": [
+        {
+          "code": "18938",
+          "display": "T1-hyperintense adnexal mass",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "t1-hyperintense adnexal mass",
+      "slug": "t1_hyperintense_adnexal_mass",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "high T1 adnexal mass",
+        "T1-bright adnexal mass"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "Time course is months/years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Endometrial mass with intermediate signal intensity on T2-weighted MRI",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "neoplastic:benign",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:t2_intermediate_endometrial_uterine_mass",
+      "index_codes": [
+        {
+          "code": "18883",
+          "display": "T2-intermediate endometrial uterine mass",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "t2-intermediate endometrial uterine mass",
+      "slug": "t2_intermediate_endometrial_uterine_mass",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "time course is months/years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Intracranial lesion that appears isointense compared to normal brain on T2-weighted MR imaging.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:t2_isointense_intracranial_lesion",
+      "index_codes": [
+        {
+          "code": "33454",
+          "display": "T2-isointense intracranial lesion",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "t2-isointense intracranial lesion",
+      "slug": "t2_isointense_intracranial_lesion",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "etiologies",
+          "grade": "extra-speculative-etiology",
+          "reviewer_concern": "Not neoplastic:benign",
+          "themes": [
+            "etiology"
+          ]
+        }
+      ],
+      "description": "A lung cavity with thin walls, may suggest benign etiology or certain infections.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "inflammatory:infectious"
+        ],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:thin_walled_lung_cavity",
+      "index_codes": [
+        {
+          "code": "14723",
+          "display": "thin-walled lung cavity",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "thin-walled lung cavity",
+      "slug": "thin_walled_lung_cavity",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "thin-walled cavity"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Thoracolumbar Spine AO Injury Classification on CT (TLICS)",
+      "entity_type": "assessment",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "index_codes": [
+        {
+          "code": "RDES271",
+          "display": "thoracolumbar spine ao injury classification on ct",
+          "system": "radelement"
+        }
+      ],
+      "name": "Thoracolumbar Spine AO Injury Classification on CT (TLICS)",
+      "slug": "thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "Expected time course is months/years",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "Enlargement of the thymus gland, often seen in various conditions.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "normal-variant",
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:thymic_enlargement",
+      "index_codes": [
+        {
+          "code": "15619",
+          "display": "thymic enlargement",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "thymic enlargement",
+      "slug": "thymic_enlargement",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "thymic hypertrophy",
+        "large thymus"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course is weeks/months Location is ankle joint",
+          "themes": [
+            "time course",
+            "anatomy"
+          ]
+        }
+      ],
+      "description": "Angle change between talus and tibia, usually indicating instability or injury.",
+      "entity_type": "measurement",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving",
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:tibiotalar_tilt",
+      "index_codes": [
+        {
+          "code": "67672003",
+          "display": "Talar tilt",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "12333",
+          "display": "tibiotalar tilt",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "tibiotalar tilt",
+      "slug": "tibiotalar_tilt",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "medium",
+          "field": "expected_time_course",
+          "grade": "adjacent-shorter",
+          "reviewer_concern": "subspecialty is also chest duration is months/years Anatomic locations is neck",
+          "themes": [
+            "time course",
+            "anatomy",
+            "subspecialty"
+          ]
+        }
+      ],
+      "description": "A tube inserted into the trachea through a surgical incision in the neck, used to provide an airway for patients who cannot breathe on their own.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "stable",
+            "intermittent"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:tracheostomy_tube",
+      "index_codes": [
+        {
+          "code": "129121000",
+          "display": "Tracheostomy tube",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID5560",
+          "display": "tracheostomy tube",
+          "system": "RADLEX"
+        }
+      ],
+      "name": "Tracheostomy Tube",
+      "slug": "tracheostomy_tube",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "medium",
+          "field": "etiologies",
+          "grade": "wrong-mechanism",
+          "reviewer_concern": "WHy no etiologies? Inflammation is the usual, but also vascular. time course is weeks",
+          "themes": [
+            "time course",
+            "etiology"
+          ]
+        },
+        {
+          "confidence": "low",
+          "field": "expected_time_course",
+          "grade": "modifier-difference",
+          "reviewer_concern": "WHy no etiologies? Inflammation is the usual, but also vascular. time course is weeks",
+          "themes": [
+            "time course",
+            "etiology"
+          ]
+        }
+      ],
+      "description": "Accumulation of non-inflammatory fluid in the pleural space, usually due to systemic factors like heart failure or hypoalbuminemia.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": null
+      },
+      "id": "reviewed_clean_input:transudative_pleural_effusion",
+      "index_codes": [
+        {
+          "code": "15941",
+          "display": "transudative pleural effusion",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "transudative pleural effusion",
+      "slug": "transudative_pleural_effusion",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "transudative effusion"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": "high",
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Time course in months/years.",
+          "themes": [
+            "time course"
+          ]
+        }
+      ],
+      "description": "A significant mass located in the upper abdomen of pediatric patients that may represent a variety of pathologies.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:upper_abdominal_mass_in_a_neonate_or_child",
+      "index_codes": [
+        {
+          "code": "4842",
+          "display": "upper abdominal mass in a neonate or child",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "upper abdominal mass in a neonate or child",
+      "slug": "upper_abdominal_mass_in_a_neonate_or_child",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [
+        {
+          "confidence": null,
+          "field": "expected_time_course",
+          "grade": "missing-expected",
+          "reviewer_concern": "Anatomic location is just cervical vertebral column. sex-neutral any age weeks to months for time course",
+          "themes": [
+            "time course",
+            "anatomy",
+            "age",
+            "sex"
+          ]
+        }
+      ],
+      "description": "The AO Spine Upper Cervical Classification System is derived from the other AO Spine classifications, which divide injuries according to the affected region(s) (injury sites): I, injuries involving the occipital condyles and the craniocervical junction; II, injuries involving the atlas and the atlantoaxial joint; and III, injuries involving the axis and the C2-3 joint.",
+      "entity_type": "grouping",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving",
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:upper_cervical_spine_ao_injury_classification_in_ct",
+      "index_codes": [
+        {
+          "code": "RDES298",
+          "display": "upper cervical spine ao injury classification in ct",
+          "system": "radelement"
+        }
+      ],
+      "name": "Upper Cervical Spine AO Injury Classification in CT",
+      "slug": "upper_cervical_spine_ao_injury_classification_in_ct",
+      "source": "reviewed_clean_input",
+      "synonyms": [],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Vertical striations seen within the vertebral body, which can be a normal variant or related to pathology.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [
+          "normal-variant"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:vertical_trabeculation_of_vertebral_body",
+      "index_codes": [
+        {
+          "code": "9942",
+          "display": "vertical trabeculation of vertebral body",
+          "system": "GAMUTS"
+        }
+      ],
+      "name": "vertical trabeculation of vertebral body",
+      "slug": "vertical_trabeculation_of_vertebral_body",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "pin-stripe vertebral body",
+        "corduroy vertebral body"
+      ],
+      "tags": []
+    },
+    {
+      "adjudication_notes": [],
+      "description": "Asymmetric loss of vertebral body height producing a triangular or wedge shape on lateral radiograph.",
+      "entity_type": "finding",
+      "expected": {
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        }
+      },
+      "id": "reviewed_clean_input:wedging_of_vertebral_body",
+      "index_codes": [],
+      "name": "wedging of vertebral body",
+      "slug": "wedging_of_vertebral_body",
+      "source": "reviewed_clean_input",
+      "synonyms": [
+        "vertebral wedging",
+        "wedge deformity"
+      ],
+      "tags": []
+    }
+  ],
+  "counts": {
+    "gold_entries": 35,
+    "review_records_seen": 73,
+    "review_records_skipped_due_to_gold_duplicate": 2,
+    "review_records_with_expected_overrides_from_comparison": 40,
+    "total_entries": 106
+  },
+  "generated_from": {
+    "comparison": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-clean-input-rerun-v2/comparison/metadata-clean-rerun-graded-comparison.json",
+    "gold_dir": "packages/findingmodel-ai/evals/gold",
+    "review_data": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-clean-input-review-v2-data/review-data.json"
+  },
+  "version": 2
+}

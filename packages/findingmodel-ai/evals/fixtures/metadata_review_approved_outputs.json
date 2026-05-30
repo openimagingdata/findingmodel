@@ -1,0 +1,4452 @@
+{
+  "counts": {
+    "approved_outputs": 67,
+    "snapshot_sources": {
+      "current_data_repo_def": 0,
+      "pilot_after_payload": 46,
+      "review_package_payload": 21
+    }
+  },
+  "metadata_fields": [
+    "entity_type",
+    "body_regions",
+    "subspecialties",
+    "etiologies",
+    "applicable_modalities",
+    "expected_time_course",
+    "age_profile",
+    "sex_specificity",
+    "index_codes",
+    "anatomic_locations",
+    "tags"
+  ],
+  "records": [
+    {
+      "description": "Surgical clips identified in the abdomen on radiograph, indicating prior abdominal surgery.",
+      "item_id": "abdominal_clips",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID32954",
+            "display": "abdominal cavity",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:post-operative"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": null,
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GI"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "device",
+          "finding"
+        ]
+      },
+      "name": "abdominal clips",
+      "path": "defs/abdominal_clips.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:abdominal_clips",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "419da54b5cf959ecc7f14d51f60b06fbec4d885d88026ef6745afd4880d3026b",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "8f3de703d254037790fc64ee559d9df1eedcfed74e712f922e7790dbdb901494",
+      "synonyms": [
+        "abdominal surgical clips"
+      ]
+    },
+    {
+      "description": "Any deviation from the normal anatomy or pathology of the proximal femur.",
+      "item_id": "abnormal_proximal_femur",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID2662",
+            "display": "femur",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "lower_extremity"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "12448",
+            "display": "abnormal proximal femur",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK"
+        ],
+        "tags": [
+          "musculoskeletal",
+          "CT",
+          "XR",
+          "MR",
+          "femur",
+          "hip",
+          "finding"
+        ]
+      },
+      "name": "abnormal proximal femur",
+      "path": "defs/abnormal_proximal_femur.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:abnormal_proximal_femur",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "83aa720a3f1d7a8c724eaa0d21a0bbd95601236a0df19d2fc3047c2678039da8",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "bedc8748ad25dba5f15d3a3f9cdd09ce6819ab2e249b1932ec60f79e058a478b",
+      "synonyms": []
+    },
+    {
+      "description": "Widening of the right paratracheal stripe beyond 4 mm on chest radiograph, which may indicate lymphadenopathy, tracheal pathology, or mediastinal mass.",
+      "item_id": "abnormal_right_paratracheal_stripe",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1384",
+            "display": "mediastinum",
+            "label": "mediastinum",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "inflammatory:infectious",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "RID1449",
+            "display": "right paratracheal stripe",
+            "label": "right paratracheal stripe",
+            "system": "RADLEX"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": null
+      },
+      "name": "abnormal right paratracheal stripe",
+      "path": "defs/abnormal_right_paratracheal_stripe.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:abnormal_right_paratracheal_stripe",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "300d1795cace6718a549fe2a2ad4478da86a13abe314465e8dd70e500cd1ebf8",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "c64307d96f7ea042871ed9b8e88f6277f7d14a03adc6ed22bf18177f61f6bcdd",
+      "synonyms": [
+        "right paratracheal stripe abnormality",
+        "widened right paratracheal stripe"
+      ]
+    },
+    {
+      "description": "An anomaly or irregularity at the junction between the sternum body and manubrium.",
+      "item_id": "abnormal_sternomanubrial_synchondrosis",
+      "metadata": {
+        "age_profile": null,
+        "anatomic_locations": [
+          {
+            "code": "RID2473",
+            "display": "sternum",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID2476",
+            "display": "manubrium",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "31046",
+            "display": "abnormal sternomanubrial synchondrosis",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": null,
+        "subspecialties": [
+          "MK",
+          "CH"
+        ],
+        "tags": [
+          "musculoskeletal",
+          "CT",
+          "XR",
+          "MR",
+          "sternum",
+          "joint",
+          "finding"
+        ]
+      },
+      "name": "abnormal sternomanubrial synchondrosis",
+      "path": "defs/abnormal_sternomanubrial_synchondrosis.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:abnormal_sternomanubrial_synchondrosis",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "a916bf5bbe823827877439d00f6be59ddcea9d49749100d1ca6389282e90be08",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "437e7e7df2f3dca2de7729a3aef76083a15b659e185b4f1870710f77d23606de",
+      "synonyms": []
+    },
+    {
+      "description": "Acute Clavicle Fracture Detection",
+      "item_id": "acute_clavicle_fracture",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1854",
+            "display": "clavicle",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "upper_extremity"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving",
+            "resolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "58150001",
+            "display": "Fracture of clavicle",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RDES231",
+            "display": "acute clavicle fracture",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "Acute Clavicle Fracture",
+      "path": "defs/acute_clavicle_fracture.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:acute_clavicle_fracture",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "f0dbc4540860fb90cb6d0e5d29600398e6f1945a7ec339227c30775667a6e421",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "4a7c24d863fa321a44430e10ce726a1045d10d37b4687d0d68dadd155000341e",
+      "synonyms": []
+    },
+    {
+      "description": "Injury to the lungs in children leading to acute respiratory distress.",
+      "item_id": "acute_lung_injury_and_ards_in_children",
+      "metadata": {
+        "age_profile": {
+          "applicability": [
+            "newborn",
+            "infant",
+            "preschool_child",
+            "child",
+            "adolescent"
+          ],
+          "more_common_in": [
+            "preschool_child",
+            "child"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "label": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "inflammatory",
+          "inflammatory:infectious",
+          "toxic"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "progressive",
+            "evolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "LA20566-8",
+            "display": "Acute lung injury/Acute respiratory distress syndrome",
+            "label": "Acute lung injury/Acute respiratory distress syndrome",
+            "system": "LOINC"
+          },
+          {
+            "code": "67782005",
+            "display": "Acute respiratory distress syndrome",
+            "label": "Acute respiratory distress syndrome",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "LA28203-0",
+            "display": "Acute respiratory distress syndrome",
+            "label": "Acute respiratory distress syndrome",
+            "system": "LOINC"
+          },
+          {
+            "code": "14342",
+            "display": "acute lung injury and ARDS in children",
+            "label": "acute lung injury and ARDS in children",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH",
+          "PD",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "acute lung injury and ards in children",
+      "path": "defs/acute_lung_injury_and_ards_in_children.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:acute_lung_injury_and_ards_in_children",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "f987cf56e622f13c8739b6c5d7db5bda140f780d3fc012be1aac731e7eb7ce20",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "11c86d8b488d6fa2672c609020394decb56a8a6b5a171ca1a2b830c6e6f2f7ab",
+      "synonyms": [
+        "pediatric ARDS",
+        "pediatric acute lung injury"
+      ]
+    },
+    {
+      "description": "Presence of air within the esophagus",
+      "item_id": "air_in_esophagus",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID95",
+            "display": "esophagus",
+            "label": "esophagus",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "normal-variant"
+        ],
+        "expected_time_course": {
+          "duration": "hours",
+          "modifiers": [
+            "intermittent"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "056",
+            "display": "air in esophagus",
+            "label": "air in esophagus",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GI"
+        ],
+        "tags": null
+      },
+      "name": "air in esophagus",
+      "path": "defs/air_in_esophagus.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:air_in_esophagus",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "53a7064aa7a82665a2cda3a002b6b75819db8e2916ae2b52214a7e7a61de9992",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "90afe9b7372395b940be8b2a1c91aa7ae00e4591d096f4a009b82fda85f746c1",
+      "synonyms": [
+        "esophageal air"
+      ]
+    },
+    {
+      "description": "Cervical Spine Subaxial AO Injury Classification on CT",
+      "item_id": "ao_spine_subaxial_cervical_spine_injury_classification",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID34571",
+            "display": "cervical vertebral column",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT"
+        ],
+        "body_regions": [
+          "spine"
+        ],
+        "entity_type": "grouping",
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "RDES279",
+            "display": "ao spine subaxial cervical spine injury classification",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "NR",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "AO Spine Subaxial Cervical Spine injury Classification",
+      "path": "defs/ao_spine_subaxial_cervical_spine_injury_classification.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:ao_spine_subaxial_cervical_spine_injury_classification",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "85cc14b8953aace109ca1cb5997a8054e65eda0dac51171d5bf7560d44d0e048",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "c075fa8f461c5e070607ee5f9285292dd742dbec84effcc02fa90860b7a29f61",
+      "synonyms": []
+    },
+    {
+      "description": "Aortic Measurements",
+      "item_id": "aortic_measurements",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID480",
+            "display": "aorta",
+            "label": "aorta",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID879",
+            "display": "thoracic aorta",
+            "label": "thoracic aorta",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID905",
+            "display": "abdominal aorta",
+            "label": "abdominal aorta",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID580",
+            "display": "ascending aorta",
+            "label": "ascending aorta",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR",
+          "US"
+        ],
+        "body_regions": [
+          "chest",
+          "abdomen"
+        ],
+        "entity_type": "measurement",
+        "etiologies": [],
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "302287000",
+            "display": "Aortic diameter",
+            "label": "Aortic diameter",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RDES264",
+            "display": "aortic measurements",
+            "label": "aortic measurements",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CA",
+          "CH",
+          "VA"
+        ],
+        "tags": null
+      },
+      "name": "Aortic Measurements",
+      "path": "defs/aortic_measurements.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:aortic_measurements",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "794050ba8e2cac3bc8cbc6412005d5c5308740b74438609c4eb4e44ced5d9895",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "a97232dd3c795c85c1d3dd53c6fb6ff40ec727812377909c357ba0da210457da",
+      "synonyms": []
+    },
+    {
+      "description": "Endovascular stent graft within the aorta, visible as metallic mesh on radiograph.",
+      "item_id": "aortic_stent",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID879",
+            "display": "thoracic aorta",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "705641004",
+            "display": "Aortic stent",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "LP34000-7",
+            "display": "Aortic stent",
+            "system": "LOINC"
+          },
+          {
+            "code": "MTHU017062",
+            "display": "Aortic stent",
+            "system": "LOINC"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH",
+          "VA"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "device",
+          "finding"
+        ]
+      },
+      "name": "aortic stent",
+      "path": "defs/aortic_stent.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:aortic_stent",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "faeca357f2c2b5998d373ab0a26aa388fdffa8da0ab7bc69393d82c7ab326845",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "1d3c4f8e963084256479131a26be2d11196fb020939fe4b4a87decca044af724",
+      "synonyms": [
+        "endovascular aortic repair",
+        "aortic stent graft"
+      ]
+    },
+    {
+      "description": "A tear through the full thickness of the wall of an artery.",
+      "item_id": "arterial_rupture",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID13183",
+            "display": "arterial system",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR",
+          "US"
+        ],
+        "body_regions": [
+          "whole_body"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "traumatic:acute",
+          "vascular:aneurysmal"
+        ],
+        "expected_time_course": {
+          "duration": "hours",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "22516",
+            "display": "arterial rupture",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "VA",
+          "ER"
+        ],
+        "tags": [
+          "ultrasound",
+          "CT",
+          "MR",
+          "vascular",
+          "emergency",
+          "diagnosis"
+        ]
+      },
+      "name": "arterial rupture",
+      "path": "defs/arterial_rupture.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:arterial_rupture",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "9f0de670e3ee6bbcd407d025214c2c2f4122cb6fd20e0dda2480108079ef8321",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "5bd61a455baa4eca95ee064882c5780ac3e1c5483a0ce9111d2fdd6411a97dab",
+      "synonyms": [
+        "artery rupture"
+      ]
+    },
+    {
+      "description": "Marked twisting or winding of an artery.",
+      "item_id": "arterial_tortuosity",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID13183",
+            "display": "arterial system",
+            "label": "arterial system",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "whole_body"
+        ],
+        "entity_type": "finding",
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "460885001",
+            "display": "Tortuosity of systemic artery",
+            "label": "Tortuosity of systemic artery",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "22518",
+            "display": "arterial tortuosity",
+            "label": "arterial tortuosity",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "VA"
+        ],
+        "tags": null
+      },
+      "name": "arterial tortuosity",
+      "path": "defs/arterial_tortuosity.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:arterial_tortuosity",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "b7a8b8b26eee46444eecef62167785b6d442a8325b947eeb36041abb6edffda0",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "0137f17585084489fb69a3fa8252e30e1167d6e9dcd03504d973b078b9e3153f",
+      "synonyms": [
+        "elongated arteries",
+        "artery twisting",
+        "tortuous arteries"
+      ]
+    },
+    {
+      "description": "Loss, narrowing, or obliteration of the cerebrospinal fluid\u2013filled basal (perimesencephalic) cisterns on CT or MRI due to mass effect from edema, hemorrhage, or a space-occupying lesion. This finding commonly reflects elevated intracranial pressure and may indicate increased risk of transtentorial herniation; the original phrasing 'basal cistern effacement' is an example of this imaging appearance.",
+      "item_id": "basal_cistern_effacement",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID6383_RID9080",
+            "display": "intracranial head",
+            "label": "intracranial head",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "finding",
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "hours",
+          "modifiers": [
+            "progressive",
+            "evolving"
+          ]
+        },
+        "index_codes": [],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "basal cistern effacement",
+      "path": "defs/basal_cistern_effacement.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:basal_cistern_effacement",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "e83544ddb8a04897bc07be5ef505584a5a3c9c328eb8686abef4bbb46b7d4ff1",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "a2a7cb3b7dcdd75686acfe6820379c9efec6baec4f8849c9d7ce3dc77ccb33c8",
+      "synonyms": [
+        "effacement of basal cisterns",
+        "basilar cistern effacement",
+        "cisternal effacement",
+        "perimesencephalic cistern effacement",
+        "basal cistern obliteration",
+        "basal cistern effacement"
+      ]
+    },
+    {
+      "description": "Disease process involving both lower lobes of the lungs.",
+      "item_id": "bilateral_basilar_lung_disease",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "14957",
+            "display": "bilateral basilar lung disease",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "CT",
+          "lung",
+          "finding"
+        ]
+      },
+      "name": "bilateral basilar lung disease",
+      "path": "defs/bilateral_basilar_lung_disease.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:bilateral_basilar_lung_disease",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "42c82af37eab4235c553de88f9d7b390f3f6d1330e4260dcaee8a0dd1b5cdee2",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "7b050ba9a7a08605a4b63df1943a4c143cb9b19c7c5f2a31acb43b52b1e44497",
+      "synonyms": [
+        "basilar lung opacities",
+        "bilateral lower lobe disease"
+      ]
+    },
+    {
+      "description": "Reduced blood flow to the brain due to an external lesion.",
+      "item_id": "brain_ischemia_secondary_to_extracranial_lesion",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID6434",
+            "display": "brain",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "vascular:ischemic"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "evolving",
+            "resolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "7748",
+            "display": "brain ischemia secondary to extracranial lesion",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR",
+          "VA"
+        ],
+        "tags": [
+          "vascular",
+          "CT",
+          "MR",
+          "vascular",
+          "neurologic",
+          "finding"
+        ]
+      },
+      "name": "brain ischemia secondary to extracranial lesion",
+      "path": "defs/brain_ischemia_secondary_to_extracranial_lesion.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:brain_ischemia_secondary_to_extracranial_lesion",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "b4fd0fa5087686f81749c19d54e475d1c2ab655c8d8e01fc6822eda7e2ec8a40",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "fe8c177bee2e1519438c3dc792a6041c3a531f964dd07085acf88ca3410499ed",
+      "synonyms": []
+    },
+    {
+      "description": "Breast calcification clusters are typically a sign of benign changes in breast tissue but can sometimes indicate malignancy.",
+      "item_id": "breast_calcification_cluster",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID29895",
+            "display": "female breast",
+            "label": "female breast",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MG"
+        ],
+        "body_regions": [
+          "breast"
+        ],
+        "entity_type": "finding",
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "129769006",
+            "display": "Calcification cluster",
+            "label": "Calcification cluster",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "697944008",
+            "display": "Mammographic calcification of breast",
+            "label": "Mammographic calcification of breast",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "BR"
+        ],
+        "tags": null
+      },
+      "name": "breast calcification cluster",
+      "path": "defs/breast_calcification_cluster.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:breast_calcification_cluster",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "1150b141d911f6f7191d07e370d1f4a51b366711d7adb54943632ab5141ade98",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "4175329e12239127a2eec4cd71efac2496c66e742b3993676dcb12e337f786e8",
+      "synonyms": [
+        "breast calcifications"
+      ]
+    },
+    {
+      "description": "Estimates of the likelihood of malignancy based on mammography features.",
+      "item_id": "breast_malignancy_risk",
+      "metadata": {
+        "age_profile": {
+          "applicability": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ],
+          "more_common_in": [
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID29895",
+            "display": "female breast",
+            "label": "female breast",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MG"
+        ],
+        "body_regions": [
+          "breast"
+        ],
+        "entity_type": "assessment",
+        "etiologies": [],
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "RID36027",
+            "display": "BI-RADS assessment",
+            "label": "BI-RADS assessment",
+            "system": "RADLEX"
+          }
+        ],
+        "sex_specificity": "female-specific",
+        "subspecialties": [
+          "BR"
+        ],
+        "tags": null
+      },
+      "name": "Mammographic malignancy assessment",
+      "path": "defs/breast_malignancy_risk.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:breast_malignancy_risk",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "a425a0afe97f7098e12ff68dabccb79fe1f5ee1a6374c94e34ce4972e78d630e",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "3740b7e1c4faab7bf3486b4d49ebcf5b39401e9b463db2ca692bafe6e3b88cb0",
+      "synonyms": [
+        "Risk of breast cancer",
+        "Case Score",
+        "Breast cancer risk assessment"
+      ]
+    },
+    {
+      "description": "A breast soft tissue lesion refers to any abnormal growth or mass within the soft tissue of the breast, which may include various entities such as cysts, fibromas, or malignant tumors, typically identified through imaging modalities like mammography or ultrasound.",
+      "item_id": "breast_soft_tissue_lesion",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID29895",
+            "display": "female breast",
+            "label": "female breast",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MG",
+          "US",
+          "MR"
+        ],
+        "body_regions": [
+          "breast"
+        ],
+        "entity_type": "finding",
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "290073004",
+            "display": "Lesion of breast",
+            "label": "Lesion of breast",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RID39055",
+            "display": "breast mass",
+            "label": "breast mass",
+            "system": "RADLEX"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "BR"
+        ],
+        "tags": null
+      },
+      "name": "breast soft tissue lesion",
+      "path": "defs/breast_soft_tissue_lesion.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:breast_soft_tissue_lesion",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "a40ac1c2d93e8149faf0ba1cc91b342db33a97fde5add098271dc4e1e3ccca13",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "1bc2b4c217a9a6c5d1fd288f882497fe24657bf1ebd2e70514d86f27ee75a8c2",
+      "synonyms": [
+        "Breast Mass",
+        "Mammary Soft Tissue Lesion"
+      ]
+    },
+    {
+      "description": "Thickening of the cardiac valves, often associated with stenosis or valvular disease.",
+      "item_id": "cardiac_valve_thickening",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1394",
+            "display": "aortic valve",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID1395",
+            "display": "mitral valve",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID1397",
+            "display": "tricuspid valve",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID1396",
+            "display": "pulmonic valve",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "degenerative",
+          "inflammatory"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "22535",
+            "display": "cardiac valve thickening",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CA"
+        ],
+        "tags": [
+          "ultrasound",
+          "CT",
+          "MR",
+          "US",
+          "heart",
+          "valve",
+          "finding"
+        ]
+      },
+      "name": "cardiac valve thickening",
+      "path": "defs/cardiac_valve_thickening.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:cardiac_valve_thickening",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "f8d2a57d9aae6dd92740d33c8ff125f3ca6bf8c953d06a72c934fc144e39ee42",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "09fb07189834732aa066cb5919838cbfa1c56c114de4d271f4718d3970122644",
+      "synonyms": [
+        "valvular thickening"
+      ]
+    },
+    {
+      "description": "Premature fusion of one or more cranial sutures, affecting skull shape.",
+      "item_id": "congenital_premature_craniosynostosis",
+      "metadata": {
+        "age_profile": {
+          "applicability": [
+            "newborn",
+            "infant",
+            "preschool_child",
+            "child"
+          ],
+          "more_common_in": [
+            "newborn",
+            "infant"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID9196",
+            "display": "skull",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "congenital",
+          "developmental"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "6081",
+            "display": "congenital premature craniosynostosis",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR",
+          "PD"
+        ],
+        "tags": [
+          "pediatric",
+          "XR",
+          "CT",
+          "MR",
+          "neurological",
+          "cranial",
+          "congenital anomaly",
+          "diagnosis"
+        ]
+      },
+      "name": "congenital premature craniosynostosis",
+      "path": "defs/congenital_premature_craniosynostosis.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:congenital_premature_craniosynostosis",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "b3beea9688a6bc1678506442b0a2c21bbc288169a5e6e46f49be20f8970e31c3",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "c32b170a82b122779d0a4d2814cdae60c4913274f04312113b3cfb2b5ffdf106",
+      "synonyms": []
+    },
+    {
+      "description": "Reduction in the brightness of kidney cortex on ultrasound, potentially indicating kidney pathology.",
+      "item_id": "decreased_renal_cortical_echogenicity",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID211",
+            "display": "cortex of kidney",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "17002",
+            "display": "decreased renal cortical echogenicity",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GU"
+        ],
+        "tags": [
+          "ultrasound",
+          "US",
+          "kidney",
+          "finding"
+        ]
+      },
+      "name": "decreased renal cortical echogenicity",
+      "path": "defs/decreased_renal_cortical_echogenicity.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:decreased_renal_cortical_echogenicity",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "6acfe66c01fd59fef9a80f98d49e2de0817fefb03b80c60cd87641d61ef3360a",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "c17ac1621d17ee701578b9c239b0f2f7a963e7f2ce2e3fe7a803ad50676f2498",
+      "synonyms": [
+        "hypoechoic renal cortex"
+      ]
+    },
+    {
+      "description": "Increased radiodensity around the apex of a tooth",
+      "item_id": "dental_periapical_opacity",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID9106",
+            "display": "mandibular dental arcade",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID9279",
+            "display": "maxillary dental arcade",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "9078",
+            "display": "dental periapical opacity",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "HN"
+        ],
+        "tags": [
+          "head_neck",
+          "XR",
+          "CT",
+          "teeth",
+          "radiopaque",
+          "finding"
+        ]
+      },
+      "name": "dental periapical opacity",
+      "path": "defs/dental_periapical_opacity.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:dental_periapical_opacity",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "5ac2761c9c6e0d9b94a9ba8cce2c0ac44a614d10342a2dbf3bfd76daebe2b53a",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "fc7ef41140a69302c6d95d412858101b3b8fdd52184d48d772f95aaceda18caa",
+      "synonyms": [
+        "Periapical radiopacity"
+      ]
+    },
+    {
+      "description": "Initial stages of a pregnancy inside the uterus",
+      "item_id": "early_intrauterine_pregnancy",
+      "metadata": {
+        "age_profile": {
+          "applicability": [
+            "young_adult",
+            "adult"
+          ],
+          "more_common_in": [
+            "young_adult",
+            "adult"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID302",
+            "display": "uterus",
+            "label": "uterus",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US"
+        ],
+        "body_regions": [
+          "pelvis"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "normal-variant"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive",
+            "evolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "19190",
+            "display": "early intrauterine pregnancy",
+            "label": "early intrauterine pregnancy",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "female-specific",
+        "subspecialties": [
+          "OB"
+        ],
+        "tags": null
+      },
+      "name": "early intrauterine pregnancy",
+      "path": "defs/early_intrauterine_pregnancy.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:early_intrauterine_pregnancy",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "59fdec715151da94512059bb91040a4655cb7cf5f11bcef5ec76624c72be9f44",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "6af638aa648e653b74b2993d0f24f93e178c1b75dcf9fec379ecfebaf3028b17",
+      "synonyms": [
+        "early pregnancy"
+      ]
+    },
+    {
+      "description": "An abnormal growth located in the fetal thoracic region.",
+      "item_id": "fetal_chest_mass",
+      "metadata": {
+        "age_profile": null,
+        "anatomic_locations": [
+          {
+            "code": "RID1243",
+            "display": "thorax",
+            "label": "thorax",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US",
+          "MR"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "congenital",
+          "developmental",
+          "neoplastic:benign",
+          "neoplastic:malignant"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "19061",
+            "display": "fetal chest mass",
+            "label": "fetal chest mass",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "OB",
+          "CH",
+          "PD"
+        ],
+        "tags": null
+      },
+      "name": "fetal chest mass",
+      "path": "defs/fetal_chest_mass.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:fetal_chest_mass",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "b8a52bc91e19592071b6f9637b728ace0f0c14aaae35b1428e1d2a9276328fb2",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "28442ee3474c576f67a50001cbbecc427b0422b726469933d90e4cef98b4ede3",
+      "synonyms": []
+    },
+    {
+      "description": "Local area of shadowing in the pancreas, suggestive of a mass.",
+      "item_id": "focal_shadowing_pancreatic_lesion",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID170",
+            "display": "pancreas",
+            "label": "pancreas",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "neoplastic:potential"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "stable",
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "4878",
+            "display": "focal shadowing pancreatic lesion",
+            "label": "focal shadowing pancreatic lesion",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GI"
+        ],
+        "tags": null
+      },
+      "name": "focal shadowing pancreatic lesion",
+      "path": "defs/focal_shadowing_pancreatic_lesion.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:focal_shadowing_pancreatic_lesion",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "e2d3db5daf9c7771ff5e0af5ff583edd7323f06aec2e3040748572c743ee6480",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "7ae85a2463968200c56b676c503019398e835afc6c24d397ad7bfd20fd1adb82",
+      "synonyms": []
+    },
+    {
+      "description": "Disruption of cortical bone continuity identified on radiograph.",
+      "item_id": "fracture",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID13209",
+            "display": "musculoskeletal system",
+            "label": "musculoskeletal system",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "whole_body"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "traumatic:acute",
+          "traumatic:sequela"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "evolving",
+            "resolving",
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "125605004",
+            "display": "Fracture of bone",
+            "label": "Fracture of bone",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "fracture",
+      "path": "defs/fracture.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:fracture",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "8e73dc27d07539a5e9c4343fe061d72621adba438e0220311af3ea7ab0cb0f8d",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "1ea896d0c00a32fa8a1f9a11766d4ae55187101f2b802cffef771cda618d4587",
+      "synonyms": [
+        "bone fracture"
+      ]
+    },
+    {
+      "description": "Feeding tube placed directly through the abdominal wall into the stomach.",
+      "item_id": "gastrostomy_tube",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID114",
+            "display": "stomach",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "470571004",
+            "display": "Gastrostomy tube",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "LP7260-5",
+            "display": "Gastrostomy tube",
+            "system": "LOINC"
+          },
+          {
+            "code": "MTHU001078",
+            "display": "Gastrostomy tube",
+            "system": "LOINC"
+          },
+          {
+            "code": "LP263817-1",
+            "display": "Gastrostomy tube",
+            "system": "LOINC"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GI"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "device",
+          "finding"
+        ]
+      },
+      "name": "gastrostomy tube",
+      "path": "defs/gastrostomy_tube.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:gastrostomy_tube",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "32fb6358a7fd4e06b5b8f6f81f12977adc2cfc6cb071a88a558493f9d9e699a2",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "7afb5f5817da2db7336b23bd69be2a71b027e6fef0366c47a0b15c4a1c456d06",
+      "synonyms": [
+        "G-tube",
+        "PEG tube",
+        "percutaneous gastrostomy"
+      ]
+    },
+    {
+      "description": "MRI finding of gyriform hyperintensity on T1-weighted images in brain",
+      "item_id": "gyriform_cortical_subcortical_t1_hyperintensity",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID6434",
+            "display": "brain",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "7175",
+            "display": "gyriform cortical/subcortical T1 hyperintensity",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR"
+        ],
+        "tags": [
+          "neuro",
+          "MR",
+          "brain",
+          "inflammatory",
+          "edema",
+          "finding"
+        ]
+      },
+      "name": "gyriform cortical/subcortical t1 hyperintensity",
+      "path": "defs/gyriform_cortical_subcortical_t1_hyperintensity.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:gyriform_cortical_subcortical_t1_hyperintensity",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "defe927024e45e178168e54eeda6c4d2460471fd1fc9391a6ec593e0eb450a64",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "9c8936c2646bb1dc2e65d8348a98e94e8965e006497547d5b51b63f79e4bb6db",
+      "synonyms": []
+    },
+    {
+      "description": "Metastatic liver lesion with increased blood supply.",
+      "item_id": "hypervascular_liver_metastasis",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID58",
+            "display": "liver",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "neoplastic:malignant",
+          "neoplastic:metastatic"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "4819",
+            "display": "hypervascular liver metastasis",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GI",
+          "OI"
+        ],
+        "tags": [
+          "abdomen",
+          "CT",
+          "MR",
+          "hepatobiliary",
+          "metastasis",
+          "vascular",
+          "diagnosis"
+        ]
+      },
+      "name": "hypervascular liver metastasis",
+      "path": "defs/hypervascular_liver_metastasis.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:hypervascular_liver_metastasis",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "439b300072802eb25371320b179eec94fbc2b9d2718cf65d9b7cb033182fe667",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "0dcba1c8a600b48cc416aba1a5853c33eccdee7d9f9901e6782a7bfffb67e850",
+      "synonyms": [
+        "vascular metastatic liver lesion"
+      ]
+    },
+    {
+      "description": "Underdevelopment or incomplete formation of the fibula bone.",
+      "item_id": "hypoplastic_fibula",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "newborn",
+            "infant",
+            "child",
+            "adolescent"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID2871",
+            "display": "fibula",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "lower_extremity"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "congenital",
+          "developmental"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "93256009",
+            "display": "Congenital hypoplasia of fibula",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "31823",
+            "display": "hypoplastic fibula",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "PD"
+        ],
+        "tags": [
+          "musculoskeletal",
+          "XR",
+          "CT",
+          "fibula",
+          "lower extremity",
+          "congenital anomaly",
+          "skeletal",
+          "diagnosis"
+        ]
+      },
+      "name": "hypoplastic fibula",
+      "path": "defs/hypoplastic_fibula.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:hypoplastic_fibula",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "cd32aa8219119d77b5e41f0a0980c8aff99832007404c21b258c29da76a61ca9",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "ed0b2c3ccfcc50a01f5c674057b942e917fae6f06894c3817d0dd9c6f5ff2f3c",
+      "synonyms": [
+        "fibular hypoplasia"
+      ]
+    },
+    {
+      "description": "Widening of the space in front of the vertebrae in adults.",
+      "item_id": "increased_prevertebral_space_in_an_adult",
+      "metadata": {
+        "age_profile": {
+          "applicability": [
+            "adult"
+          ],
+          "more_common_in": [
+            "adult"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID7535",
+            "display": "deep layer of cervical fascia",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "neck"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "9320",
+            "display": "increased prevertebral space in an adult",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "HN"
+        ],
+        "tags": [
+          "head_neck",
+          "XR",
+          "CT",
+          "spine",
+          "anatomical variation",
+          "finding"
+        ]
+      },
+      "name": "increased prevertebral space in an adult",
+      "path": "defs/increased_prevertebral_space_in_an_adult.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:increased_prevertebral_space_in_an_adult",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "ffeda566378d223b7b34a3b66e8f919ae9c8882740603f96455d8f7439e44812",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "d06b2e6d7d5385b3d645976a42aa1628e5e2ea153c09f928987697720a3047ef",
+      "synonyms": [
+        "increased retropharyngeal space in an adult",
+        "adult prevertebral widening"
+      ]
+    },
+    {
+      "description": "Elevation of the resistance index in a transplanted kidney, suggesting possible complications.",
+      "item_id": "increased_resistance_index_of_renal_transplant",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID205",
+            "display": "kidney",
+            "label": "kidney",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "measurement",
+        "etiologies": [
+          "vascular:thrombotic",
+          "vascular:ischemic",
+          "iatrogenic:post-operative"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "progressive",
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "17041",
+            "display": "increased resistance index of renal transplant",
+            "label": "increased resistance index of renal transplant",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GU"
+        ],
+        "tags": null
+      },
+      "name": "increased resistance index of renal transplant",
+      "path": "defs/increased_resistance_index_of_renal_transplant.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:increased_resistance_index_of_renal_transplant",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "1984c9ae6b152311ecfc4eec30e9bbdcaf6e86d70b2dae135d1b0551077501ca",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "bbbba426fb669716a06d57d820442875d25d7b912ff36a92ac70872a43eda367",
+      "synonyms": [
+        "elevated renal transplant RI"
+      ]
+    },
+    {
+      "description": "Tumor located below the tentorium cerebelli, common in pediatric brain tumors.",
+      "item_id": "infratentorial_intracranial_tumor_in_a_child",
+      "metadata": {
+        "age_profile": {
+          "applicability": [
+            "child"
+          ],
+          "more_common_in": [
+            "child"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID6381_RID6434",
+            "display": "infratentorial brain",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "neoplastic:malignant",
+          "neoplastic:benign",
+          "neoplastic:potential"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "6940",
+            "display": "infratentorial intracranial tumor in a child",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR",
+          "PD",
+          "OI"
+        ],
+        "tags": [
+          "pediatric",
+          "MR",
+          "CT",
+          "neoplastic",
+          "pediatric",
+          "brain",
+          "diagnosis"
+        ]
+      },
+      "name": "infratentorial intracranial tumor in a child",
+      "path": "defs/infratentorial_intracranial_tumor_in_a_child.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:infratentorial_intracranial_tumor_in_a_child",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "cb85dfd0159691018916e30f8f07bffa377718ab591da76d3ee98f0d435a26dc",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "b805fb38bbe4ebf9849d2ed3c5af27a135253d0d3690ee9732b21db43416c00a",
+      "synonyms": [
+        "posterior fossa tumor"
+      ]
+    },
+    {
+      "description": "An orbit that is larger than normal.",
+      "item_id": "large_orbit",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "child",
+            "adolescent"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID9573",
+            "display": "orbit",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "80096003",
+            "display": "Enlargement of orbit",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "25555",
+            "display": "large orbit",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "HN"
+        ],
+        "tags": [
+          "neuro",
+          "CT",
+          "MR",
+          "XR",
+          "orbital",
+          "congenital",
+          "structural",
+          "finding"
+        ]
+      },
+      "name": "large orbit",
+      "path": "defs/large_orbit.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:large_orbit",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "7e33c1563c4f7302d6f1cdadae2a016bbbc734f78024fca014654cf8cb06cc54",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "86fa4e16c23ef52f2cdeef29a41ee6414822284763dff0cc4864439aaa8b11c2",
+      "synonyms": [
+        "Orbital enlargement"
+      ]
+    },
+    {
+      "description": "Prominent grooves on the inner table of the skull, indicate expanded venous channels.",
+      "item_id": "large_vascular_grooves_of_skull",
+      "metadata": {
+        "age_profile": {
+          "applicability": [
+            "newborn",
+            "infant",
+            "preschool_child",
+            "child",
+            "adolescent"
+          ],
+          "more_common_in": [
+            "child",
+            "adolescent"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID9196",
+            "display": "skull",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "XR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "normal-variant",
+          "developmental"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "6763",
+            "display": "large vascular grooves of skull",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR",
+          "PD"
+        ],
+        "tags": [
+          "pediatric",
+          "CT",
+          "XR",
+          "vascular",
+          "cranial",
+          "finding"
+        ]
+      },
+      "name": "large vascular grooves of skull",
+      "path": "defs/large_vascular_grooves_of_skull.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:large_vascular_grooves_of_skull",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "a13f033540b5f6f7559826ac0f584bf15bccdb0efd0b321e3c45446b4d5c4baa",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "dabb74752f62abddcd8a29de222f9edd52d493e524f3acd80ded432b524515d3",
+      "synonyms": []
+    },
+    {
+      "description": "Self-contained pacemaker implanted directly in the cardiac chamber without transvenous leads, visible as a small capsule.",
+      "item_id": "leadless_pacemaker",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1385",
+            "display": "heart",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "1204291003",
+            "display": "Leadless implantable cardiac pacemaker",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CA",
+          "CH"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "device",
+          "finding"
+        ]
+      },
+      "name": "leadless pacemaker",
+      "path": "defs/leadless_pacemaker.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:leadless_pacemaker",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "9e00c8f76565fc62c7528d5170755576b2adde7b0b1451d92c6a97a6579daf89",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "db080642d3ee4fb3fd10b9e8890348eeef0c10439ec3e5b6a961219609af3aa1",
+      "synonyms": [
+        "leadless cardiac pacemaker",
+        "Micra device",
+        "Micra pacemaker"
+      ]
+    },
+    {
+      "description": "A straight or slightly curved linear opacity seen within the lung on imaging.",
+      "item_id": "long_linear_lung_shadow",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "15001",
+            "display": "long linear lung shadow",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "CT",
+          "lung",
+          "finding"
+        ]
+      },
+      "name": "long linear lung shadow",
+      "path": "defs/long_linear_lung_shadow.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:long_linear_lung_shadow",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "ecf367fae0f20ac467e2e9c10d657ac2d37695797a653f334a6cd61fb071e2e9",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "883ed267c5bc0f116c52300b7da796c19d83e55a968b833203ba2a3097029427",
+      "synonyms": [
+        "linear opacity",
+        "linear lung density"
+      ]
+    },
+    {
+      "description": "Disease predominantly affecting the lower lobes or zones of the lungs.",
+      "item_id": "lower_lung_disease",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "14573",
+            "display": "lower lung disease",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "CT",
+          "lung",
+          "finding"
+        ]
+      },
+      "name": "lower lung disease",
+      "path": "defs/lower_lung_disease.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:lower_lung_disease",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "2290db7ca17134699835fa008c329ce7b4caedfa37108b11a1521c5a876b7422",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "540ea8f17e3148e7deac7f3b1531e536e4d13fa5a2bba9ab6d241636a96827e3",
+      "synonyms": [
+        "basal lung disease",
+        "lower lobe lung disease"
+      ]
+    },
+    {
+      "description": "Surgical suture material within the lung parenchyma, typically from prior pulmonary resection.",
+      "item_id": "lung_sutures",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "82651004",
+            "display": "Suture of lung",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "device",
+          "finding"
+        ]
+      },
+      "name": "lung sutures",
+      "path": "defs/lung_sutures.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:lung_sutures",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "23f8500a6b8060bead63b8fcb87273cb634b5985c28a15e52cd0f6bed4cbcf37",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "1b8e95a56ab82fca79cffc371571949bd024ccd4161f1c57f91868b5c7afab64",
+      "synonyms": [
+        "pulmonary sutures"
+      ]
+    },
+    {
+      "description": "Finding related to mastectomy and breast implant",
+      "item_id": "mastectomy_breast_implant",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID29895",
+            "display": "female breast",
+            "label": "female breast",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MG",
+          "MR",
+          "US"
+        ],
+        "body_regions": [
+          "breast"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:post-operative"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "2282003",
+            "display": "Breast implant",
+            "label": "Breast implant",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RID34710",
+            "display": "breast implant",
+            "label": "breast implant",
+            "system": "RADLEX"
+          }
+        ],
+        "sex_specificity": "female-specific",
+        "subspecialties": [
+          "BR"
+        ],
+        "tags": null
+      },
+      "name": "Mastectomy Breast Implant",
+      "path": "defs/mastectomy_breast_implant.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:mastectomy_breast_implant",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "16703f5268355a0c4e250585af8ec912518075c6c4bd6f50a7ba0bd9d7747865",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "673427b62c97d8bd29928980678408185429d8684726df37610efbf00f99feaf",
+      "synonyms": []
+    },
+    {
+      "description": "MTA-scale for Medial Temporal Lobe Atrophy (Scheltens Classification)",
+      "item_id": "mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID6476",
+            "display": "temporal lobe",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "measurement",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "RDES151",
+            "display": "mta-scale for medial temporal lobe atrophy",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": null,
+        "subspecialties": [
+          "NR"
+        ],
+        "tags": null
+      },
+      "name": "MTA-Scale for Medial Temporal Lobe Atrophy (Scheltens Classification)",
+      "path": "defs/mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "e794cc626014bedcaffa90462687ba507a6d692f2daea1866188b3324fab199b",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "a1b6e165ebaa534ce59e2328fc5703cbee4eba1e697c90aeb578faa788eec368",
+      "synonyms": []
+    },
+    {
+      "description": "Multiple dark lesions within the spleen on MR imaging.",
+      "item_id": "multiple_splenic_hypointensities",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID86",
+            "display": "spleen",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MR"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "inflammatory:infectious",
+          "neoplastic:malignant",
+          "neoplastic:metastatic"
+        ],
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "5290",
+            "display": "multiple splenic hypointensities",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GI",
+          "OI"
+        ],
+        "tags": [
+          "abdomen",
+          "MR",
+          "spleen",
+          "neoplastic",
+          "finding"
+        ]
+      },
+      "name": "multiple splenic hypointensities",
+      "path": "defs/multiple_splenic_hypointensities.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:multiple_splenic_hypointensities",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "f9235208692932d6b29bba02b72deb4b273af684e1a91657fc8777134d4f2c01",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "97b6789146e30d79c22e0af5538bfa9ef43a5ad5c18af003fed72881d5845f86",
+      "synonyms": [
+        "Dark splenic lesions"
+      ]
+    },
+    {
+      "description": "An omega-shaped enlarged sella turcica.",
+      "item_id": "omega_sella",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID9286",
+            "display": "sella turcica",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "normal-variant"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "6558",
+            "display": "omega sella",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR"
+        ],
+        "tags": [
+          "neuro",
+          "MR",
+          "CT",
+          "skull",
+          "sella turcica",
+          "finding"
+        ]
+      },
+      "name": "omega sella",
+      "path": "defs/omega_sella.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:omega_sella",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "8102cef3714829ce3552d91bd7ff97508ed4d66eaba6404a4ad30ac8cab23bff",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "775efd8989fd66abb0c9f64bb0f4722748fd7ee54874f3016f3f61eb0b3d9188",
+      "synonyms": [
+        "scooped sella"
+      ]
+    },
+    {
+      "description": "Abnormal growth or lesion in the chest wall of a child.",
+      "item_id": "pediatric_chest_wall_lesion",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "child"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID2468",
+            "display": "chest wall",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR",
+          "US"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "16074",
+            "display": "pediatric chest wall lesion",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH",
+          "PD"
+        ],
+        "tags": [
+          "ultrasound",
+          "CT",
+          "XR",
+          "MR",
+          "chest",
+          "pediatric",
+          "mass",
+          "finding"
+        ]
+      },
+      "name": "pediatric chest wall lesion",
+      "path": "defs/pediatric_chest_wall_lesion.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pediatric_chest_wall_lesion",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "3522285acff9c3d64dcc37d07095ce875fa2ae7608ca100a6d7ae68c0955fa3c",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "d3240298749e711ae96414f9f5f48cc029349ea7efa615e1afe113ea86ce10a4",
+      "synonyms": []
+    },
+    {
+      "description": "Pfirrmann Spine Disc Degeneration Classification on MR",
+      "item_id": "pfirrmann_spine_disc_degeneration_classification",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID7741",
+            "display": "spine",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MR"
+        ],
+        "body_regions": [
+          "spine"
+        ],
+        "entity_type": "assessment",
+        "etiologies": [
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "RDES281",
+            "display": "pfirrmann spine disc degeneration classification",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "NR"
+        ],
+        "tags": null
+      },
+      "name": "Pfirrmann Spine Disc Degeneration Classification",
+      "path": "defs/pfirrmann_spine_disc_degeneration_classification.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pfirrmann_spine_disc_degeneration_classification",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "4f4fb0e86c682fbe27f3470505aa703e34a4be3e643357cc4a37f81aba4bf32c",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "874cd15cbd7656933f95cefdf31a6df3ecccffe9f9e1473f7f9b480d49bade08",
+      "synonyms": []
+    },
+    {
+      "description": "A pleural abnormality refers to any pathological change affecting the pleura, the tissue layers enveloping the lungs. These abnormalities may include pleural effusion, thickening, plaques, or pneumothorax, and can be indicative of various underlying conditions such as infection, malignancy, or autoimmune disease.",
+      "item_id": "pleural_abnormality",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1362",
+            "display": "pleura",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "US"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": null,
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": null
+      },
+      "name": "pleural abnormality",
+      "path": "defs/pleural_abnormality.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pleural_abnormality",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "9c0ac6167b6984510da6f561385b61634b964c384029db6031c513d0429dc3f9",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "c02f2872616fd5d5c76a5cfd1bf1303d08ec12aed0f62e5c7859bbd54298256c",
+      "synonyms": [
+        "pleural disease",
+        "pleural condition"
+      ]
+    },
+    {
+      "description": "This module describes the Common Data elements and Macros for Pneumonia",
+      "item_id": "pneumonia",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "inflammatory:infectious",
+          "inflammatory"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "evolving",
+            "resolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "233604007",
+            "display": "Pneumonia",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RID5350",
+            "display": "pneumonia",
+            "system": "RADLEX"
+          },
+          {
+            "code": "LP75396-9",
+            "display": "Pneumonia",
+            "system": "LOINC"
+          },
+          {
+            "code": "RDES76",
+            "display": "pneumonia",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": null
+      },
+      "name": "Pneumonia",
+      "path": "defs/pneumonia.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pneumonia",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "1963ec2ac852c8d450f1cdcef8deb0aeca04c8c9d26796f5154e0357faf7dcac",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "611b1cc63ae21d344a94120a30bd8fdb4139007975cf116897eaff72f6b2c0a6",
+      "synonyms": [
+        "pneumonitis"
+      ]
+    },
+    {
+      "description": "Insertion of a catheter into the pulmonary artery for diagnostic purposes.",
+      "item_id": "pulmonary_artery_catheterization",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID974",
+            "display": "pulmonary artery",
+            "label": "pulmonary artery",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "65677008",
+            "display": "Pulmonary catheterization with Swan-Ganz catheter",
+            "label": "Pulmonary catheterization with Swan-Ganz catheter",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RID49768",
+            "display": "Swan-Ganz catheter placement",
+            "label": "Swan-Ganz catheter placement",
+            "system": "RADLEX"
+          },
+          {
+            "code": "30927",
+            "display": "pulmonary artery catheterization",
+            "label": "pulmonary artery catheterization",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": null
+      },
+      "name": "pulmonary artery catheterization",
+      "path": "defs/pulmonary_artery_catheterization.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:pulmonary_artery_catheterization",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "0edbdecb9b91153a6f2654a63815cc14ea9ccdc417ca720c16da78855db1fbd9",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "59c114aebadacb09bc6c7b1c3905954290dd16c35869d0346b6131163d2fd4b1",
+      "synonyms": []
+    },
+    {
+      "description": "Hemorrhage and edema within the lung parenchyma resulting from blunt thoracic trauma, appearing as non-segmental airspace opacity.",
+      "item_id": "pulmonary_contusion",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "resolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "262784001",
+            "display": "Contusion of lung",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH",
+          "ER"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "finding",
+          "lung"
+        ]
+      },
+      "name": "pulmonary contusion",
+      "path": "defs/pulmonary_contusion.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pulmonary_contusion",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "b387e0b8033b5c176948c37e68d733ea510ea7b75456f23b85937a19d1397acf",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "e5c2190a6af28c29a78c4160418424fa5aa0d05b5ab32d8a0c43a2f9354a411f",
+      "synonyms": [
+        "lung contusion"
+      ]
+    },
+    {
+      "description": "A kidney stone that does not appear on standard radiography but may be seen on ultrasound or CT.",
+      "item_id": "radiolucent_urinary_calculus",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID205",
+            "display": "kidney",
+            "label": "kidney",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID228",
+            "display": "renal pelvis",
+            "label": "renal pelvis",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID229",
+            "display": "ureter",
+            "label": "ureter",
+            "system": "ANATOMICLOCATIONS"
+          },
+          {
+            "code": "RID225",
+            "display": "calyx of renal collecting system",
+            "label": "calyx of renal collecting system",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "US"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "metabolic"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "intermittent"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "304543009",
+            "display": "Radiolucent calculus of urinary tract",
+            "label": "Radiolucent calculus of urinary tract",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "20557",
+            "display": "radiolucent urinary calculus",
+            "label": "radiolucent urinary calculus",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GU",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "radiolucent urinary calculus",
+      "path": "defs/radiolucent_urinary_calculus.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:radiolucent_urinary_calculus",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "9d5dadea0a406ed68088bf5f1821e0ca891c4bf56b70f8a1ee7e9f904bfc65d2",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "fb0858c1693098eca0fe73f0079a5ac7c443ba280f5541082d771811d5d2fdd8",
+      "synonyms": [
+        "radiolucent kidney stone"
+      ]
+    },
+    {
+      "description": "Decreased blood flow to the kidney causing functional impairment.",
+      "item_id": "renal_ischemia",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID205",
+            "display": "kidney",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "vascular:ischemic"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "evolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "16879",
+            "display": "renal ischemia",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GU"
+        ],
+        "tags": [
+          "abdomen",
+          "CT",
+          "MR",
+          "renal",
+          "ischemic",
+          "finding"
+        ]
+      },
+      "name": "renal ischemia",
+      "path": "defs/renal_ischemia.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:renal_ischemia",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "9f29a9ef42ad5ad1d7bca6a5c6f46dca581565dfec25537daf3fa109b19517c6",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "6bb4b61f6733c67c0e97f302d7c6676d07d526c646ea626d834ebc0ad1680edb",
+      "synonyms": [
+        "kidney ischemia"
+      ]
+    },
+    {
+      "description": "Presence of gas within the renal parenchyma usually indicating infection.",
+      "item_id": "renal_parenchymal_gas",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID205",
+            "display": "kidney",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "US"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "inflammatory:infectious"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "evolving",
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "16821",
+            "display": "renal parenchymal gas",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GU",
+          "ER"
+        ],
+        "tags": [
+          "abdomen",
+          "CT",
+          "US",
+          "renal",
+          "gas",
+          "infectious",
+          "finding"
+        ]
+      },
+      "name": "renal parenchymal gas",
+      "path": "defs/renal_parenchymal_gas.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:renal_parenchymal_gas",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "050d6922abb41ec1f1368f060277b947075d257c85ac4db9f94ddabf5cf66e85",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "b966643d971754083a9ad1409ef8cc293c756393b06667e0d89f14b38e855777",
+      "synonyms": [
+        "kidney gas",
+        "emphysematous pyelonephritis"
+      ]
+    },
+    {
+      "description": "Distal phalanx of the thumb that is both short and thin",
+      "item_id": "short_thin_distal_phalanx_of_thumb",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID2406_RID2392",
+            "display": "distal phalanx of first finger",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "upper_extremity"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "congenital",
+          "developmental",
+          "normal-variant"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "897340006",
+            "display": "Abnormally short distal phalanx of thumb",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "11806",
+            "display": "short thin distal phalanx of thumb",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK"
+        ],
+        "tags": [
+          "musculoskeletal",
+          "XR",
+          "CT",
+          "hand",
+          "thumb",
+          "skeletal",
+          "anatomical variation",
+          "finding"
+        ]
+      },
+      "name": "short thin distal phalanx of thumb",
+      "path": "defs/short_thin_distal_phalanx_of_thumb.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:short_thin_distal_phalanx_of_thumb",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "df2852c5b554e08b93313e4ca918f727a72c56ca46400ce08906e8977e11bb98",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "5b14e2e3b96d158be59c0c8b2bb94491757aace8db87edb9b39c727bd172fc91",
+      "synonyms": []
+    },
+    {
+      "description": "Presence of one central incisor in the maxillary dental arch instead of two.",
+      "item_id": "single_maxillary_central_incisor",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "newborn",
+            "infant",
+            "preschool_child",
+            "child",
+            "adolescent"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID9279",
+            "display": "maxillary dental arcade",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "congenital",
+          "developmental"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "25598",
+            "display": "single maxillary central incisor",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "HN",
+          "PD"
+        ],
+        "tags": [
+          "musculoskeletal",
+          "XR",
+          "CT",
+          "dental",
+          "congenital anomaly",
+          "finding"
+        ]
+      },
+      "name": "single maxillary central incisor",
+      "path": "defs/single_maxillary_central_incisor.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:single_maxillary_central_incisor",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "8dcce71d64f93322cac4cd88e3e7e04812a5cab49b335d79377a8115441c307b",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "71f2845115b41f62b1bdea12b0c92bae617643ab9db93e29e912c06542ff738e",
+      "synonyms": [
+        "solitary maxillary incisor",
+        "single central tooth"
+      ]
+    },
+    {
+      "description": "Decreased gallbladder size that may indicate pathology such as a contracted state.",
+      "item_id": "small_gallbladder",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID187",
+            "display": "gallbladder",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "US",
+          "CT"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "normal-variant",
+          "mechanical"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "intermittent"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "300345006",
+            "display": "Small gallbladder",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "482008",
+            "display": "Gallbladder contraction",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "5285",
+            "display": "small gallbladder",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GI"
+        ],
+        "tags": [
+          "ultrasound",
+          "US",
+          "CT",
+          "hepatobiliary",
+          "finding"
+        ]
+      },
+      "name": "small gallbladder",
+      "path": "defs/small_gallbladder.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:small_gallbladder",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "7d5ddfb3c95d6b52ed0616f6bf0c20d18b66a74ad7f27f8b6e8a8d2768d239ae",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "028606cb5c1e4d2094006541e828d5c7109ea66d4727de270c3e49a2b64f9835",
+      "synonyms": [
+        "contracted gallbladder"
+      ]
+    },
+    {
+      "description": "This module describes the Common Data elements and Macros for Spine Instability Neoplastic Score (SINS)",
+      "item_id": "spine_instability_neuroplastic_score__sins_",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID7741",
+            "display": "spine",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "spine"
+        ],
+        "entity_type": "assessment",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "RDES21",
+            "display": "spine instability neuroplastic score",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "NR",
+          "OI"
+        ],
+        "tags": null
+      },
+      "name": "Spine Instability Neuroplastic Score (SINS)",
+      "path": "defs/spine_instability_neuroplastic_score__sins_.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:spine_instability_neuroplastic_score__sins_",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "06ac193613a0fd808994d74f04b2a623428340e5a24848e13788712e6bae7996",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "a228f4dcc1e11559ea74263aa8d9328851e14ad0a07ccbbaf7094d7d8add9809",
+      "synonyms": []
+    },
+    {
+      "description": "Orthopedic hardware securing a sternal fracture or osteotomy.",
+      "item_id": "sternal_fixation",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID2473",
+            "display": "sternum",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "464674007",
+            "display": "Sternal fixation system",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH",
+          "MK"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "device",
+          "finding"
+        ]
+      },
+      "name": "sternal fixation",
+      "path": "defs/sternal_fixation.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:sternal_fixation",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "a76eb6ff885754da92b8540fd068c8d1df08b64694e9f2cdf093a98569548911",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "59c2dd018f09e5c17bd4fb38c246f95b344e8625154610f5dab734379eff15be",
+      "synonyms": [
+        "sternal plates",
+        "sternal plating"
+      ]
+    },
+    {
+      "description": "Renal mass with high T2 signal on MRI.",
+      "item_id": "t2_hyperintense_renal_mass",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID205",
+            "display": "kidney",
+            "label": "kidney",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MR"
+        ],
+        "body_regions": [
+          "abdomen"
+        ],
+        "entity_type": "finding",
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "18863",
+            "display": "T2-hyperintense renal mass",
+            "label": "T2-hyperintense renal mass",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "GU"
+        ],
+        "tags": null
+      },
+      "name": "t2-hyperintense renal mass",
+      "path": "defs/t2_hyperintense_renal_mass.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:t2_hyperintense_renal_mass",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "0792af026c68aa0a5bad0dba7bacdbe5a9684ba1d4e6ce7c6171663967792ead",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "caf02f787a3d7b1101c277606a3bfdd16296d5e446ecf8d25b68c64b42aa5a1a",
+      "synonyms": [
+        "high T2 renal mass",
+        "T2-bright renal mass"
+      ]
+    },
+    {
+      "description": "A subset of data elements from the National Institute for Neurological Disorders and Stroke (NINDS). The data elements are related to the reporting template for imaging of traumatic brain injury.",
+      "item_id": "traumatic_brain_injury",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID6434",
+            "display": "brain",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "CT",
+          "MR",
+          "XR"
+        ],
+        "body_regions": [
+          "head"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "days",
+          "modifiers": [
+            "evolving",
+            "resolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "LA27864-0",
+            "display": "Traumatic brain injury",
+            "system": "LOINC"
+          },
+          {
+            "code": "127295002",
+            "display": "Traumatic brain injury",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "MTHU020811",
+            "display": "Traumatic brain injury",
+            "system": "LOINC"
+          },
+          {
+            "code": "LP75785-3",
+            "display": "Traumatic brain injury",
+            "system": "LOINC"
+          },
+          {
+            "code": "LA17401-3",
+            "display": "Traumatic brain injury",
+            "system": "LOINC"
+          },
+          {
+            "code": "RDES272",
+            "display": "traumatic brain injury",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "NR",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "Traumatic Brain Injury",
+      "path": "defs/traumatic_brain_injury.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:traumatic_brain_injury",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "9dc8a2c22d5df242eba2ebdf908eaae112e966cc08ee997606db821e59a21379",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "23af7064a878f49daaf3e0d2c49e83be3c66d8090769e8de4bb5fbb1c5156bb8",
+      "synonyms": []
+    },
+    {
+      "description": "A thin-walled, air-filled cystic space within the lung parenchyma resulting from traumatic disruption, typically seen adjacent to or within areas of pulmonary contusion.",
+      "item_id": "traumatic_pneumatocele",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "label": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "traumatic:acute"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "resolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "RID28522",
+            "display": "pneumatocele",
+            "label": "pneumatocele",
+            "system": "RADLEX"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH",
+          "ER"
+        ],
+        "tags": null
+      },
+      "name": "traumatic pneumatocele",
+      "path": "defs/traumatic_pneumatocele.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:traumatic_pneumatocele",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "70c981699dc3ffeaefc54403ffc0c927320360bdf6f1ea710339c3afdf07608b",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "a42ae5cfc1b9fb11f26486ebd0658725f9843d34e8f3cd0bd711c48ec9d4b6c5",
+      "synonyms": [
+        "traumatic lung cyst",
+        "post-traumatic pneumatocele"
+      ]
+    },
+    {
+      "description": "Prosthetic ring implanted around the tricuspid valve annulus for valve repair.",
+      "item_id": "tricuspid_annuloplasty_ring",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1397",
+            "display": "tricuspid valve",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "iatrogenic:device"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "1259843002",
+            "display": "Tricuspid annuloplasty ring",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CA",
+          "CH"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "device",
+          "finding"
+        ]
+      },
+      "name": "tricuspid annuloplasty ring",
+      "path": "defs/tricuspid_annuloplasty_ring.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:tricuspid_annuloplasty_ring",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "1d39f2bb4cea6af273018ac3e2f77831725f4e617b4fd49645ab5074eba9c760",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "653875f3e5ce3bd72039ff799ca8f646b8c5a8c787f9931434bda260265446c3",
+      "synonyms": [
+        "tricuspid ring"
+      ]
+    },
+    {
+      "description": "Central venous catheter with a subcutaneous tunnel, visible as a radiopaque line with cuff.",
+      "item_id": "tunneled_catheter",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1243",
+            "display": "thorax",
+            "label": "thorax",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": [],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "RID50337",
+            "display": "tunneled catheter",
+            "label": "tunneled catheter",
+            "system": "RADLEX"
+          },
+          {
+            "code": "LP263838-7",
+            "display": "Tunneled catheter",
+            "label": "Tunneled catheter",
+            "system": "LOINC"
+          },
+          {
+            "code": "RID50533",
+            "display": "tunneled central venous catheter",
+            "label": "tunneled central venous catheter",
+            "system": "RADLEX"
+          },
+          {
+            "code": "445085009",
+            "display": "Tunneled central venous catheter",
+            "label": "Tunneled central venous catheter",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "LP267466-3",
+            "display": "Tunneled central venous catheter",
+            "label": "Tunneled central venous catheter",
+            "system": "LOINC"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": null
+      },
+      "name": "tunneled catheter",
+      "path": "defs/tunneled_catheter.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:tunneled_catheter",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "ab8f324ef80e43de298c0ddac894dec0d637120c5d5921b5900e53fd62deb3e0",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "c6b7e773bdf826d8013ee88129bd230220344bdd21172c14205f788a4c107d15",
+      "synonyms": [
+        "tunneled central catheter",
+        "tunneled line",
+        "Hickman catheter"
+      ]
+    },
+    {
+      "description": "Increased size of the hilar structures on one side, often due to adenopathy or vascular abnormality.",
+      "item_id": "unilateral_hilar_enlargement",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID34566",
+            "display": "pulmonary hilum",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "finding",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "15764",
+            "display": "unilateral hilar enlargement",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "CT",
+          "hilar region",
+          "lung",
+          "finding"
+        ]
+      },
+      "name": "unilateral hilar enlargement",
+      "path": "defs/unilateral_hilar_enlargement.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:unilateral_hilar_enlargement",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "c505a5a23e56d3d83e4be53a65e2ca41ee5c6dc915c6d0da07dc64384daafca5",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "229eb5bd3df36affd7de0aab685172adb486aeda56b527440431c0a350afa21e",
+      "synonyms": [
+        "unilateral hilar mass",
+        "prominent hilum"
+      ]
+    },
+    {
+      "description": "Lung injury or abnormality secondary to inhalation of vaporized substances.",
+      "item_id": "vapor_induced_lung_disease",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID1301",
+            "display": "lung",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT"
+        ],
+        "body_regions": [
+          "chest"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "inflammatory"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [
+            "resolving"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "846630009",
+            "display": "Pneumonitis caused by vapor",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "15125",
+            "display": "vapor-induced lung disease",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "CH",
+          "ER"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "CT",
+          "lung",
+          "inflammatory process",
+          "diagnosis"
+        ]
+      },
+      "name": "vapor-induced lung disease",
+      "path": "defs/vapor_induced_lung_disease.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:vapor_induced_lung_disease",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "6247462b6d15def7b273840a9a5c7cbe7314a4a9d7f70734bb17b8ba2678ef71",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "f20442bb8505ef36932daf1d9692d7e49346f4fb576af3470b149d3896f5fb47",
+      "synonyms": [
+        "inhalational lung injury"
+      ]
+    },
+    {
+      "description": "Loss of vertebral body height due to axial loading, appearing as wedging or endplate depression on radiograph.",
+      "item_id": "vertebral_compression_fracture",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "aged"
+          ]
+        },
+        "anatomic_locations": null,
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "spine"
+        ],
+        "entity_type": "diagnosis",
+        "etiologies": [
+          "traumatic:acute",
+          "traumatic:sequela"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "stable",
+            "progressive"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "42942008",
+            "display": "Compression fracture of vertebral column",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RDES230",
+            "display": "vertebral compression fracture",
+            "system": "radelement"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "NR"
+        ],
+        "tags": [
+          "chest",
+          "XR",
+          "osseous",
+          "finding"
+        ]
+      },
+      "name": "vertebral compression fracture",
+      "path": "defs/vertebral_compression_fracture.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:vertebral_compression_fracture",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "c1f7084b1f85b981adfa9a68d839ac439bae47da938b60b358bbcf09fa33d112",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "9709ca39a1974fe59d514529975e94130537dfbd63aa14863e81bca01e096890",
+      "synonyms": [
+        "compression fracture",
+        "vertebral compression deformity"
+      ]
+    },
+    {
+      "description": "Presence of a cleft or split in the coronal plane of a vertebra.",
+      "item_id": "vertebral_coronal_cleft",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "newborn",
+            "infant",
+            "child"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID29154",
+            "display": "vertebra",
+            "label": "vertebra",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "XR",
+          "CT",
+          "MR"
+        ],
+        "body_regions": [
+          "spine"
+        ],
+        "entity_type": "finding",
+        "etiologies": [
+          "congenital"
+        ],
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "stable"
+          ]
+        },
+        "index_codes": [
+          {
+            "code": "840483000",
+            "display": "Congenital coronal cleft of vertebra",
+            "label": "Congenital coronal cleft of vertebra",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "25712",
+            "display": "vertebral coronal cleft",
+            "label": "vertebral coronal cleft",
+            "system": "GAMUTS"
+          }
+        ],
+        "sex_specificity": "sex-neutral",
+        "subspecialties": [
+          "MK",
+          "NR",
+          "PD"
+        ],
+        "tags": null
+      },
+      "name": "vertebral coronal cleft",
+      "path": "defs/vertebral_coronal_cleft.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:vertebral_coronal_cleft",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+      "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+      "reviewed_payload_sha256": "1ffb3113ddb5e926bf849f0cb82c59b93fef6e729112be1c7dd6194bad5581ab",
+      "snapshot_source": "review_package_payload",
+      "source_sha256": "823c7fcc910f3d2118f38e1a35844dde8ced2d1413bb2f9b5c6ec47283e3ad64",
+      "synonyms": []
+    },
+    {
+      "description": "A quantitative measurement of fibroglandular tissue volume relative to total breast volume on mammography, used to assess breast cancer risk and imaging sensitivity.",
+      "item_id": "volumetric_breast_density",
+      "metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        },
+        "anatomic_locations": [
+          {
+            "code": "RID29895",
+            "display": "female breast",
+            "system": "ANATOMICLOCATIONS"
+          }
+        ],
+        "applicable_modalities": [
+          "MG"
+        ],
+        "body_regions": [
+          "breast"
+        ],
+        "entity_type": "measurement",
+        "etiologies": null,
+        "expected_time_course": null,
+        "index_codes": [
+          {
+            "code": "129793001",
+            "display": "Mammographic breast density",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "sex_specificity": "female-specific",
+        "subspecialties": [
+          "BR"
+        ],
+        "tags": null
+      },
+      "name": "Volumetric Breast Density",
+      "path": "defs/volumetric_breast_density.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:volumetric_breast_density",
+      "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+      "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+      "reviewed_payload_sha256": "671813103873224ecd4bf82324f4ce72b1b65a9bf44c2241f6ee5d8c1c558167",
+      "snapshot_source": "pilot_after_payload",
+      "source_sha256": "2bd30210dbde28efa67ad3bfc3be3f135fd088717eb01da55ac99c84bdc831af",
+      "synonyms": [
+        "Volumetric Density",
+        "VBD"
+      ]
+    }
+  ],
+  "source_data_repo": "/Users/talkasab/repos/findingmodels-metadata",
+  "source_overlap": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/fixtures/metadata_review_source_overlap.json",
+  "source_register": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/fixtures/metadata_review_evidence_register.json",
+  "usage": {
+    "authority": "latest_human_approved_only",
+    "not_gold_policy": "This is a preservation snapshot of generated source metadata for latest-approved records. It is not a gold fixture and is not an approved source-application command."
+  },
+  "version": 1
+}

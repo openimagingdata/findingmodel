@@ -7,7 +7,7 @@
   "subspecialties": ["CA", "CH"],
   "entity_type": "finding",
   "applicable_modalities": ["XR", "CT"],
-  "etiologies": null,
+  "etiologies": ["cardiac"],
   "sex_specificity": "sex-neutral",
   "age_profile": {
     "applicability": "all_ages",

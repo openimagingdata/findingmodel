@@ -1,0 +1,1736 @@
+{
+  "counts": {
+    "affected_fields": {
+      "age_profile": 15,
+      "anatomic_locations": 28,
+      "applicable_modalities": 7,
+      "body_regions": 1,
+      "entity_type": 2,
+      "etiologies": 9,
+      "expected_time_course": 46,
+      "index_codes": 9,
+      "sex_specificity": 11,
+      "subspecialties": 4
+    },
+    "dispositions": {
+      "code/anatomy-review": 11,
+      "expected-code-or-location-extraction": 9,
+      "expected-metadata-extraction": 61,
+      "source-model-issue": 2
+    },
+    "labels": {
+      "age_or_sex_applicability": 19,
+      "anatomic_location": 28,
+      "code_mapping_issue": 9,
+      "domain_or_region": 5,
+      "entity_type": 2,
+      "etiology": 9,
+      "incorrect_assignment": 4,
+      "index_code": 9,
+      "missing_assignment": 7,
+      "modality": 7,
+      "over_specific_or_bad_code": 5,
+      "source_model_issue": 2,
+      "time_course": 46
+    },
+    "latest_feedback": 83
+  },
+  "records": [
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "comment": "Why no sex-neutral, all-ages, and why no timecourse?",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:acquired_posterior_neural_arch_defect",
+      "labels": [
+        "age_or_sex_applicability",
+        "missing_assignment",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/acquired_posterior_neural_arch_defect.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "acquired_posterior_neural_arch_defect",
+      "title": "acquired posterior neural arch defect",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "comment": "Anatomic location code is wrong--can't localize to the arm, should be upper extremity, lower extremity.",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:amelia",
+      "labels": [
+        "anatomic_location",
+        "code_mapping_issue",
+        "incorrect_assignment",
+        "index_code",
+        "over_specific_or_bad_code"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/amelia.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "amelia",
+      "title": "amelia",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "comment": "age profile is all, more common in elderly.\nTime course is permanent progressive.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:arthritis_with_swan_neck_deformity",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/arthritis_with_swan_neck_deformity.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "arthritis_with_swan_neck_deformity",
+      "title": "arthritis with swan-neck deformity",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "comment": "anatomic location here is just \"knee joint\", which encompasses the other codes given.",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:automated_insall_salvatti_index",
+      "labels": [
+        "anatomic_location",
+        "code_mapping_issue",
+        "index_code"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/automated_insall_salvatti_index.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "automated_insall_salvatti_index",
+      "title": "Automated Insall-Salvatti Index",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Mass is months/years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "phase5_targeted_hardened_v3:axillary_mass",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/axillary_mass.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "axillary_mass",
+      "title": "axillary mass",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "comment": "Why don't we have the RadElement codes here? I'm sure they were in the original--did they get dropped?",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:axillary_nodal_dissection",
+      "labels": [
+        "code_mapping_issue",
+        "index_code",
+        "missing_assignment"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/axillary_nodal_dissection.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "axillary_nodal_dissection",
+      "title": "Axillary Nodal Dissection",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity",
+        "subspecialties"
+      ],
+      "comment": "At least GU imaging. Sex specificity is neutral Age profile is any age.\nTime course is years progressive, usually.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:bilateral_adrenal_enlargement",
+      "labels": [
+        "age_or_sex_applicability",
+        "domain_or_region",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/bilateral_adrenal_enlargement.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "bilateral_adrenal_enlargement",
+      "title": "bilateral adrenal enlargement",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time couirse is months/years, progressive",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:breast_focal_asymmetry",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/breast_focal_asymmetry.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "breast_focal_asymmetry",
+      "title": "Breast Focal Asymmetry",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "comment": "This almost certainly came with a RadElement index code--what happened to it?",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:breast_skin_thickening",
+      "labels": [
+        "code_mapping_issue",
+        "index_code"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/breast_skin_thickening.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "breast_skin_thickening",
+      "title": "Breast Skin Thickening",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "comment": "Time course is permanent. Anatomic location should be axilla. ",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:calcified_axillary_lymph_nodes",
+      "labels": [
+        "anatomic_location",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/calcified_axillary_lymph_nodes.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "calcified_axillary_lymph_nodes",
+      "title": "calcified axillary lymph nodes",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "body_regions"
+      ],
+      "comment": "Should be upper extremity too for body region, and the locations should include the upper extremity joints a well.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:chondromatosis",
+      "labels": [
+        "anatomic_location",
+        "domain_or_region"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/chondromatosis.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "chondromatosis",
+      "title": "chondromatosis",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "comment": "Why don't we have the actual names for these index codes? And why do we not have the hippocampus for the anatomic location?",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:composite_metrics_hippocampal_occupancy_score",
+      "labels": [
+        "anatomic_location",
+        "code_mapping_issue",
+        "index_code",
+        "missing_assignment"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/composite_metrics_hippocampal_occupancy_score.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "composite_metrics_hippocampal_occupancy_score",
+      "title": "composite metrics (hippocampal occupancy score)",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "applicable_modalities"
+      ],
+      "comment": "Could also be CT or MR. Anatomic locations needs to be the hand as well.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:congenital_absence_of_phalanx__digit__hand__or_foot",
+      "labels": [
+        "anatomic_location",
+        "modality"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/congenital_absence_of_phalanx__digit__hand__or_foot.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "congenital_absence_of_phalanx__digit__hand__or_foot",
+      "title": "congenital absence of phalanx, digit, hand, or foot",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "Location can be at least spine, or cervical, thoracic, and lumbar spines.",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:congenital_fused_vertebrae",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/congenital_fused_vertebrae.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "congenital_fused_vertebrae",
+      "title": "congenital fused vertebrae",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities"
+      ],
+      "comment": "Modality is also CT",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "labels": [
+        "modality"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/cystic_abdominal_mass_in_a_fetus_or_newborn.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "cystic_abdominal_mass_in_a_fetus_or_newborn",
+      "title": "cystic abdominal mass in a fetus or newborn",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [],
+      "comment": "Totally inappropriate to localize this to the fibula.",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "phase5_targeted_hardened_v3:disrupted_epiphyseal_metaphyseal_junction",
+      "labels": [
+        "incorrect_assignment",
+        "over_specific_or_bad_code"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/disrupted_epiphyseal_metaphyseal_junction.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "disrupted_epiphyseal_metaphyseal_junction",
+      "title": "disrupted epiphyseal-metaphyseal junction",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "anatomic location should be esophagus",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:double_balloon_esophageal_catheter",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/double_balloon_esophageal_catheter.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "double_balloon_esophageal_catheter",
+      "title": "double balloon esophageal catheter",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities"
+      ],
+      "comment": "Can also be ultrasound in a newborn for modality",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:duodenal_narrowing_or_obstruction",
+      "labels": [
+        "modality"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/duodenal_narrowing_or_obstruction.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "duodenal_narrowing_or_obstruction",
+      "title": "duodenal narrowing or obstruction",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "age_profile"
+      ],
+      "comment": "Modality also CT, MR. Not \"more common\" in any age.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:duplication_of_great_toe",
+      "labels": [
+        "age_or_sex_applicability",
+        "modality"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/duplication_of_great_toe.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "duplication_of_great_toe",
+      "title": "duplication of great toe",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "comment": "Sex neutral, all ages, months/years + progressive.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:enhancing_mediastinal_mass",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/enhancing_mediastinal_mass.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "enhancing_mediastinal_mass",
+      "title": "enhancing mediastinal mass",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is months/years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:enlarged_nerve_roots",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/enlarged_nerve_roots.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "enlarged_nerve_roots",
+      "title": "enlarged nerve roots",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is months",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:esophageal_plaques",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/esophageal_plaques.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "esophageal_plaques",
+      "title": "esophageal plaques",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "Anatomic location is cortex of kidney. ",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:focal_defect_in_nephrogram",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/focal_defect_in_nephrogram.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "focal_defect_in_nephrogram",
+      "title": "focal defect in nephrogram",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "comment": "sex-neutral.\ntime course is months",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:focal_leptomeningeal_enhancement",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/focal_leptomeningeal_enhancement.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "focal_leptomeningeal_enhancement",
+      "title": "focal leptomeningeal enhancement",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "sex_specificity"
+      ],
+      "comment": "sex-neutral",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:hair_on_end_skull",
+      "labels": [
+        "age_or_sex_applicability"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/hair_on_end_skull.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "hair_on_end_skull",
+      "title": "hair-on-end skull",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "comment": "the SNOMED heart-failure is too general for this.",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:heart_failure_in_the_first_week_of_life",
+      "labels": [
+        "code_mapping_issue",
+        "index_code",
+        "over_specific_or_bad_code"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/heart_failure_in_the_first_week_of_life.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "heart_failure_in_the_first_week_of_life",
+      "title": "heart failure in the first week of life",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "anatomic location is spine",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:hemivertebra",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/hemivertebra.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "hemivertebra",
+      "title": "hemivertebra",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is years, progresive",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:hemorrhagic_liver_metastasis",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/hemorrhagic_liver_metastasis.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "hemorrhagic_liver_metastasis",
+      "title": "hemorrhagic liver metastasis",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is months/years progressive.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:hypodense_supratentorial_lesion",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/hypodense_supratentorial_lesion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "hypodense_supratentorial_lesion",
+      "title": "hypodense supratentorial lesion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "comment": "sex-neutral. time course is years, progressive",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:hypoechoic_liver_lesion",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/hypoechoic_liver_lesion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "hypoechoic_liver_lesion",
+      "title": "hypoechoic liver lesion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "Anatomic locations is chest, not right atrium.",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:implantable_cardioverter_defibrillator_leads",
+      "labels": [
+        "anatomic_location",
+        "over_specific_or_bad_code"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/implantable_cardioverter_defibrillator_leads.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "implantable_cardioverter_defibrillator_leads",
+      "title": "implantable cardioverter defibrillator leads",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "comment": "age profile is all ages.\ntime course is years progressive.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:incidental_pulmonary_nodules",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/incidental_pulmonary_nodules.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "incidental_pulmonary_nodules",
+      "title": "Incidental Pulmonary Nodules",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "comment": "time course is months, progressive. Anatomic locations is knee joint.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:infrapatellar_mass_in_hoffa_fat_pad",
+      "labels": [
+        "anatomic_location",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/infrapatellar_mass_in_hoffa_fat_pad.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "infrapatellar_mass_in_hoffa_fat_pad",
+      "title": "infrapatellar mass in hoffa fat pad",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "comment": "Adolescent, adult, middle-aged only",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "phase5_targeted_hardened_v3:intrauterine_growth_retardation",
+      "labels": [
+        "age_or_sex_applicability"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/intrauterine_growth_retardation.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "intrauterine_growth_retardation",
+      "title": "intrauterine growth retardation",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "index_codes",
+        "subspecialties"
+      ],
+      "comment": "Is \"SQ\" subspeciality really indicated? Duration is months. Are you sure there's no SNOMED code for this?",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:intravascular_line",
+      "labels": [
+        "code_mapping_issue",
+        "domain_or_region",
+        "index_code",
+        "time_course"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/intravascular_line.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "intravascular_line",
+      "title": "intravascular line",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "comment": "all ages.\nmonths/years, progressive",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:localized_sunburst_pattern_in_skull",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/localized_sunburst_pattern_in_skull.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "localized_sunburst_pattern_in_skull",
+      "title": "localized sunburst pattern in skull",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "anatomic location musculoskeletal system, surely?",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:malignant_primary_bone_neoplasm",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/malignant_primary_bone_neoplasm.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "malignant_primary_bone_neoplasm",
+      "title": "malignant primary bone neoplasm",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "duration is months/years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:mucocele_of_gallbladder",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/mucocele_of_gallbladder.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "mucocele_of_gallbladder",
+      "title": "mucocele of gallbladder",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "comment": "all ages\n",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:multiple_duodenal_filling_defects",
+      "labels": [
+        "age_or_sex_applicability"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/multiple_duodenal_filling_defects.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "multiple_duodenal_filling_defects",
+      "title": "multiple duodenal filling defects",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is months years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:multiple_intracranial_enhancing_lesions",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/multiple_intracranial_enhancing_lesions.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "multiple_intracranial_enhancing_lesions",
+      "title": "multiple intracranial enhancing lesions",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is permanent",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:multiple_sclerotic_foci_in_an_infant_or_child",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/multiple_sclerotic_foci_in_an_infant_or_child.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "multiple_sclerotic_foci_in_an_infant_or_child",
+      "title": "multiple sclerotic foci in an infant or child",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is months/years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "phase5_targeted_hardened_v3:osseous_lucent_lesion",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/osseous_lucent_lesion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "osseous_lucent_lesion",
+      "title": "osseous lucent lesion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "comment": "all ages\nmonths/years progressive",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:pancreatic_lesion_characterized_by_blood",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/pancreatic_lesion_characterized_by_blood.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "pancreatic_lesion_characterized_by_blood",
+      "title": "pancreatic lesion characterized by blood",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "anatomic location should be kidney at worst, maybe renal collecting system if we have that.",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:parapelvic_renal_cyst",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/parapelvic_renal_cyst.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "parapelvic_renal_cyst",
+      "title": "parapelvic renal cyst",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "etiologies",
+        "expected_time_course"
+      ],
+      "comment": "etiology could be degenerative. Time course could be years. Anatomic location is lung.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:peribronchovascular_interstitial_thickening",
+      "labels": [
+        "anatomic_location",
+        "etiology",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/peribronchovascular_interstitial_thickening.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "peribronchovascular_interstitial_thickening",
+      "title": "peribronchovascular interstitial thickening",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is months years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:pericardial_effusion",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/pericardial_effusion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "pericardial_effusion",
+      "title": "pericardial effusion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:pericoronal_mixed_radiopacity_jaw_lesion",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/pericoronal_mixed_radiopacity_jaw_lesion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "pericoronal_mixed_radiopacity_jaw_lesion",
+      "title": "pericoronal mixed-radiopacity jaw lesion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "index_codes"
+      ],
+      "comment": "\"tibia\" is way off--musculoskeletal system. \"Periosteal reaction\" is NOT the same for the Radlex index code.",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:periosteal_new_bone_formation_in_a_child",
+      "labels": [
+        "code_mapping_issue",
+        "incorrect_assignment",
+        "index_code",
+        "over_specific_or_bad_code"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/periosteal_new_bone_formation_in_a_child.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "periosteal_new_bone_formation_in_a_child",
+      "title": "periosteal new bone formation in a child",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is months",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:peripheral_rim_enhancement_of_kidney",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/peripheral_rim_enhancement_of_kidney.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "peripheral_rim_enhancement_of_kidney",
+      "title": "peripheral rim enhancement of kidney",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "etiologies"
+      ],
+      "comment": "Hey, where are my etiologies? Could be post-infectious, post-exposure, post-treatment.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:pleural_calcification",
+      "labels": [
+        "etiology",
+        "missing_assignment",
+        "modality"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/pleural_calcification.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "pleural_calcification",
+      "title": "pleural calcification",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is months",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:pleural_effusion_with_disease_in_abdomen",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/pleural_effusion_with_disease_in_abdomen.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "pleural_effusion_with_disease_in_abdomen",
+      "title": "pleural effusion with disease in abdomen",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:polyostotic_bone_lesions_in_children",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/polyostotic_bone_lesions_in_children.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "polyostotic_bone_lesions_in_children",
+      "title": "polyostotic bone lesions in children",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "comment": "Etiologies should NOT be congenital.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "phase5_targeted_hardened_v3:posterior_fossa_cystic_lesion",
+      "labels": [
+        "etiology",
+        "incorrect_assignment"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/posterior_fossa_cystic_lesion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "posterior_fossa_cystic_lesion",
+      "title": "posterior fossa cystic lesion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is years progressive",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:primary_brain_tumor",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/primary_brain_tumor.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "primary_brain_tumor",
+      "title": "primary brain tumor",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "age_profile",
+        "entity_type",
+        "etiologies",
+        "sex_specificity"
+      ],
+      "comment": "I think etiology is just vascular.\nsex-neutral. age profile is any age.\nThis is also a CT (CTA) finding--I don't think US applies.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:prolonged_cerebral_vascular_transit_time",
+      "labels": [
+        "age_or_sex_applicability",
+        "entity_type",
+        "etiology",
+        "modality"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/prolonged_cerebral_vascular_transit_time.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "prolonged_cerebral_vascular_transit_time",
+      "title": "prolonged cerebral vascular transit time",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "comment": "Most likely cause is cardiovascular, heart failure, not inflammatory--that should be part of etiologies.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "phase5_targeted_hardened_v3:pulmonary_vascular_engorgement",
+      "labels": [
+        "etiology"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/pulmonary_vascular_engorgement.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "pulmonary_vascular_engorgement",
+      "title": "pulmonary vascular engorgement",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "comment": "sex neutral, all ages, permanent",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:renal_pseudotumor",
+      "labels": [
+        "age_or_sex_applicability",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/renal_pseudotumor.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "renal_pseudotumor",
+      "title": "renal pseudotumor",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "comment": "Doesn't really resolve. Not really more common in adult/aged.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:rib_fracture",
+      "labels": [
+        "age_or_sex_applicability"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/rib_fracture.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "rib_fracture",
+      "title": "Rib Fracture",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "phase5_targeted_hardened_v3:sacroiliac_joint_disease",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/sacroiliac_joint_disease.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "sacroiliac_joint_disease",
+      "title": "sacroiliac joint disease",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "Don't we have first digit? Hand is OK.",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:short_thumb",
+      "labels": [
+        "anatomic_location",
+        "missing_assignment"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/short_thumb.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "short_thumb",
+      "title": "short thumb",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "sex_specificity"
+      ],
+      "comment": "sex-neutral, all agents,",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:sinus_keros_classification_on_ct",
+      "labels": [
+        "age_or_sex_applicability"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/sinus_keros_classification_on_ct.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "sinus_keros_classification_on_ct",
+      "title": "Sinus Keros Classification on CT",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "comment": "anatomic location is at least skull\nduration is years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:small_anterior_fontanelle",
+      "labels": [
+        "anatomic_location",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/small_anterior_fontanelle.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "small_anterior_fontanelle",
+      "title": "small anterior fontanelle",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "applicable_modalities",
+        "etiologies",
+        "subspecialties"
+      ],
+      "comment": "This is OK because the description says \"chest radiograph\", but this should be fixed so the description is updated to be more general. Modalities are XR, CT, MR, US. Subspecialties are MK mostly. Region is whole body. No anatomic location.",
+      "disposition_queue": "source-model-issue",
+      "eval_candidate": false,
+      "id": "phase5_targeted_hardened_v3:soft_tissue_abnormality",
+      "labels": [
+        "anatomic_location",
+        "domain_or_region",
+        "etiology",
+        "modality",
+        "source_model_issue"
+      ],
+      "next_action": "Open a source-model cleanup item; do not convert this feedback into prompt tuning.",
+      "owner_or_queue": "source-model-issue",
+      "path": "defs/soft_tissue_abnormality.fm.json",
+      "source_model_issue": true,
+      "source_record_id": "soft_tissue_abnormality",
+      "title": "soft tissue abnormality",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is years. ",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:soft_tissue_tumor_with_prominent_vascularity",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/soft_tissue_tumor_with_prominent_vascularity.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "soft_tissue_tumor_with_prominent_vascularity",
+      "title": "soft-tissue tumor with prominent vascularity",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is weeks.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "phase5_targeted_hardened_v3:striated_nephrogram",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/striated_nephrogram.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "striated_nephrogram",
+      "title": "striated nephrogram",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "etiologies",
+        "expected_time_course"
+      ],
+      "comment": "Duration is months\nIt's just vascular, not ischemic",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:subsegmental_liver_perfusion_abnormality",
+      "labels": [
+        "etiology",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/subsegmental_liver_perfusion_abnormality.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "subsegmental_liver_perfusion_abnormality",
+      "title": "subsegmental liver perfusion abnormality",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "comment": "Expected time course is months/years\nAnatomic location s is larynx at worst, at least neck.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:supraglottic_mass",
+      "labels": [
+        "anatomic_location",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/supraglottic_mass.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "supraglottic_mass",
+      "title": "supraglottic mass",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course ins months to years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:t1_hyperintense_adnexal_mass",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/t1_hyperintense_adnexal_mass.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "t1_hyperintense_adnexal_mass",
+      "title": "t1-hyperintense adnexal mass",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course is months/years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:t2_intermediate_endometrial_uterine_mass",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/t2_intermediate_endometrial_uterine_mass.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "t2_intermediate_endometrial_uterine_mass",
+      "title": "t2-intermediate endometrial uterine mass",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "time course is months/years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:t2_isointense_intracranial_lesion",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/t2_isointense_intracranial_lesion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "t2_isointense_intracranial_lesion",
+      "title": "t2-isointense intracranial lesion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "comment": "Not neoplastic:benign",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:thin_walled_lung_cavity",
+      "labels": [
+        "etiology"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/thin_walled_lung_cavity.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "thin_walled_lung_cavity",
+      "title": "thin-walled lung cavity",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "Location thoracicx and lumbar spines",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/thoracolumbar_spine_ao_injury_classification_on_ct__tlics_.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "thoracolumbar_spine_ao_injury_classification_on_ct__tlics_",
+      "title": "Thoracolumbar Spine AO Injury Classification on CT (TLICS)",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "entity_type"
+      ],
+      "comment": "anatomic location is whole body\nWe should actually skip this one--not even an imaging finding.",
+      "disposition_queue": "source-model-issue",
+      "eval_candidate": false,
+      "id": "pilot_review:thrombocytosis",
+      "labels": [
+        "anatomic_location",
+        "entity_type",
+        "source_model_issue"
+      ],
+      "next_action": "Open a source-model cleanup item; do not convert this feedback into prompt tuning.",
+      "owner_or_queue": "source-model-issue",
+      "path": "defs/thrombocytosis.fm.json",
+      "source_model_issue": true,
+      "source_record_id": "thrombocytosis",
+      "title": "thrombocytosis",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Expected time course is months/years",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:thymic_enlargement",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/thymic_enlargement.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "thymic_enlargement",
+      "title": "thymic enlargement",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "index_codes"
+      ],
+      "comment": "Aren't there index codes for thyroid surgery? And the anatomic location is neck at least.",
+      "disposition_queue": "code/anatomy-review",
+      "eval_candidate": false,
+      "id": "pilot_review:thyroid_bed_clips",
+      "labels": [
+        "anatomic_location",
+        "code_mapping_issue",
+        "index_code",
+        "missing_assignment"
+      ],
+      "next_action": "Review code or anatomic-location expectation before adding eval coverage.",
+      "owner_or_queue": "code/anatomy-review",
+      "path": "defs/thyroid_bed_clips.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "thyroid_bed_clips",
+      "title": "thyroid bed clips",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "comment": "Time course is weeks/months\nLocation is ankle joint",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:tibiotalar_tilt",
+      "labels": [
+        "anatomic_location",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/tibiotalar_tilt.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "tibiotalar_tilt",
+      "title": "tibiotalar tilt",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course",
+        "subspecialties"
+      ],
+      "comment": "subspecialty is also chest\nduration is months/years\nAnatomic locations is neck",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:tracheostomy_tube",
+      "labels": [
+        "anatomic_location",
+        "domain_or_region",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/tracheostomy_tube.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "tracheostomy_tube",
+      "title": "Tracheostomy Tube",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "etiologies",
+        "expected_time_course"
+      ],
+      "comment": "WHy no etiologies? Inflammation is the usual, but also vascular.\ntime course is weeks",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:transudative_pleural_effusion",
+      "labels": [
+        "etiology",
+        "missing_assignment",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/transudative_pleural_effusion.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "transudative_pleural_effusion",
+      "title": "transudative pleural effusion",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "sex_specificity"
+      ],
+      "comment": "Anatomic location is SI joints.\nSex-neutral",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:unilateral_sacroiliac_joint_disease",
+      "labels": [
+        "age_or_sex_applicability",
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/unilateral_sacroiliac_joint_disease.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "unilateral_sacroiliac_joint_disease",
+      "title": "unilateral sacroiliac joint disease",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "comment": "Time course in months/years.",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:upper_abdominal_mass_in_a_neonate_or_child",
+      "labels": [
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/upper_abdominal_mass_in_a_neonate_or_child.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "upper_abdominal_mass_in_a_neonate_or_child",
+      "title": "upper abdominal mass in a neonate or child",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "comment": "Anatomic location is just cervical vertebral column.\nsex-neutral\nany age\nweeks to months for time course",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:upper_cervical_spine_ao_injury_classification_in_ct",
+      "labels": [
+        "age_or_sex_applicability",
+        "anatomic_location",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/upper_cervical_spine_ao_injury_classification_in_ct.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "upper_cervical_spine_ao_injury_classification_in_ct",
+      "title": "Upper Cervical Spine AO Injury Classification in CT",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations"
+      ],
+      "comment": "Anatomic location spine",
+      "disposition_queue": "expected-code-or-location-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:vertical_trabeculation_of_vertebral_body",
+      "labels": [
+        "anatomic_location"
+      ],
+      "next_action": "Extract expected code/location candidates and require human promotion.",
+      "owner_or_queue": "expected-code-or-location-extraction",
+      "path": "defs/vertical_trabeculation_of_vertebral_body.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "vertical_trabeculation_of_vertebral_body",
+      "title": "vertical trabeculation of vertebral body",
+      "triage_status": "unresolved"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "comment": "time course in permanent\nanatomic locaiton should be spine\n",
+      "disposition_queue": "expected-metadata-extraction",
+      "eval_candidate": true,
+      "id": "pilot_review:wedging_of_vertebral_body",
+      "labels": [
+        "anatomic_location",
+        "time_course"
+      ],
+      "next_action": "Extract expected metadata candidates and require human promotion.",
+      "owner_or_queue": "expected-metadata-extraction",
+      "path": "defs/wedging_of_vertebral_body.fm.json",
+      "source_model_issue": false,
+      "source_record_id": "wedging_of_vertebral_body",
+      "title": "wedging of vertebral body",
+      "triage_status": "unresolved"
+    }
+  ],
+  "source_register": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/fixtures/metadata_review_evidence_register.json",
+  "version": 1
+}

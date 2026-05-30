@@ -1,0 +1,1227 @@
+{
+  "counts": {
+    "candidate_records": 57,
+    "extracted_fields": {
+      "age_profile": 14,
+      "etiology_hints": 6,
+      "expected_time_course": 45,
+      "forbidden_etiology_hints": 4,
+      "sex_specificity": 11
+    }
+  },
+  "records": [
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/acquired_posterior_neural_arch_defect.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Why no sex-neutral, all-ages, and why no timecourse?",
+      "source_record_id": "acquired_posterior_neural_arch_defect",
+      "title": "acquired posterior neural arch defect"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages",
+          "more_common_in": [
+            "aged"
+          ]
+        },
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [
+            "progressive"
+          ],
+          "source_span": "permanent"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/arthritis_with_swan_neck_deformity.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "age profile is all, more common in elderly.\nTime course is permanent progressive.",
+      "source_record_id": "arthritis_with_swan_neck_deformity",
+      "title": "arthritis with swan-neck deformity"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/axillary_mass.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Mass is months/years",
+      "source_record_id": "axillary_mass",
+      "title": "axillary mass"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity",
+        "subspecialties"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ],
+          "source_span": "years"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/bilateral_adrenal_enlargement.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "At least GU imaging. Sex specificity is neutral Age profile is any age.\nTime course is years progressive, usually.",
+      "source_record_id": "bilateral_adrenal_enlargement",
+      "title": "bilateral adrenal enlargement"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/breast_focal_asymmetry.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time couirse is months/years, progressive",
+      "source_record_id": "breast_focal_asymmetry",
+      "title": "Breast Focal Asymmetry"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [],
+          "source_span": "permanent"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/calcified_axillary_lymph_nodes.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is permanent. Anatomic location should be axilla. ",
+      "source_record_id": "calcified_axillary_lymph_nodes",
+      "title": "calcified axillary lymph nodes"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "age_profile"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/duplication_of_great_toe.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Modality also CT, MR. Not \"more common\" in any age.",
+      "source_record_id": "duplication_of_great_toe",
+      "title": "duplication of great toe"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/enhancing_mediastinal_mass.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Sex neutral, all ages, months/years + progressive.",
+      "source_record_id": "enhancing_mediastinal_mass",
+      "title": "enhancing mediastinal mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/enlarged_nerve_roots.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is months/years",
+      "source_record_id": "enlarged_nerve_roots",
+      "title": "enlarged nerve roots"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [],
+          "source_span": "months"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/esophageal_plaques.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is months",
+      "source_record_id": "esophageal_plaques",
+      "title": "esophageal plaques"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [],
+          "source_span": "months"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/focal_leptomeningeal_enhancement.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "sex-neutral.\ntime course is months",
+      "source_record_id": "focal_leptomeningeal_enhancement",
+      "title": "focal leptomeningeal enhancement"
+    },
+    {
+      "affected_fields": [
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/hair_on_end_skull.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "sex-neutral",
+      "source_record_id": "hair_on_end_skull",
+      "title": "hair-on-end skull"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/hemorrhagic_liver_metastasis.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is years, progresive",
+      "source_record_id": "hemorrhagic_liver_metastasis",
+      "title": "hemorrhagic liver metastasis"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/hypodense_supratentorial_lesion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is months/years progressive.",
+      "source_record_id": "hypodense_supratentorial_lesion",
+      "title": "hypodense supratentorial lesion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ],
+          "source_span": "years"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/hypoechoic_liver_lesion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "sex-neutral. time course is years, progressive",
+      "source_record_id": "hypoechoic_liver_lesion",
+      "title": "hypoechoic liver lesion"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/incidental_pulmonary_nodules.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "age profile is all ages.\ntime course is years progressive.",
+      "source_record_id": "incidental_pulmonary_nodules",
+      "title": "Incidental Pulmonary Nodules"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [
+            "progressive"
+          ],
+          "source_span": "months"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/infrapatellar_mass_in_hoffa_fat_pad.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is months, progressive. Anatomic locations is knee joint.",
+      "source_record_id": "infrapatellar_mass_in_hoffa_fat_pad",
+      "title": "infrapatellar mass in hoffa fat pad"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": [
+            "adolescent",
+            "adult",
+            "middle_aged",
+            "aged"
+          ]
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/intrauterine_growth_retardation.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Adolescent, adult, middle-aged only",
+      "source_record_id": "intrauterine_growth_retardation",
+      "title": "intrauterine growth retardation"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course",
+        "index_codes",
+        "subspecialties"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [],
+          "source_span": "months"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/intravascular_line.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Is \"SQ\" subspeciality really indicated? Duration is months. Are you sure there's no SNOMED code for this?",
+      "source_record_id": "intravascular_line",
+      "title": "intravascular line"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/localized_sunburst_pattern_in_skull.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "all ages.\nmonths/years, progressive",
+      "source_record_id": "localized_sunburst_pattern_in_skull",
+      "title": "localized sunburst pattern in skull"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/mucocele_of_gallbladder.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "duration is months/years",
+      "source_record_id": "mucocele_of_gallbladder",
+      "title": "mucocele of gallbladder"
+    },
+    {
+      "affected_fields": [
+        "age_profile"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/multiple_duodenal_filling_defects.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "all ages\n",
+      "source_record_id": "multiple_duodenal_filling_defects",
+      "title": "multiple duodenal filling defects"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/multiple_intracranial_enhancing_lesions.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is months years",
+      "source_record_id": "multiple_intracranial_enhancing_lesions",
+      "title": "multiple intracranial enhancing lesions"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [],
+          "source_span": "permanent"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/multiple_sclerotic_foci_in_an_infant_or_child.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is permanent",
+      "source_record_id": "multiple_sclerotic_foci_in_an_infant_or_child",
+      "title": "multiple sclerotic foci in an infant or child"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/osseous_lucent_lesion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is months/years",
+      "source_record_id": "osseous_lucent_lesion",
+      "title": "osseous lucent lesion"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/pancreatic_lesion_characterized_by_blood.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "all ages\nmonths/years progressive",
+      "source_record_id": "pancreatic_lesion_characterized_by_blood",
+      "title": "pancreatic lesion characterized by blood"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "etiologies",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "etiology_hints": [
+          "degenerative"
+        ],
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/peribronchovascular_interstitial_thickening.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "etiology could be degenerative. Time course could be years. Anatomic location is lung.",
+      "source_record_id": "peribronchovascular_interstitial_thickening",
+      "title": "peribronchovascular interstitial thickening"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/pericardial_effusion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is months years",
+      "source_record_id": "pericardial_effusion",
+      "title": "pericardial effusion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/pericoronal_mixed_radiopacity_jaw_lesion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is years",
+      "source_record_id": "pericoronal_mixed_radiopacity_jaw_lesion",
+      "title": "pericoronal mixed-radiopacity jaw lesion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [],
+          "source_span": "months"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/peripheral_rim_enhancement_of_kidney.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is months",
+      "source_record_id": "peripheral_rim_enhancement_of_kidney",
+      "title": "peripheral rim enhancement of kidney"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "etiologies"
+      ],
+      "extracted_expected_metadata": {
+        "etiology_hints": [
+          "post-infectious",
+          "post-exposure",
+          "post-treatment"
+        ]
+      },
+      "extraction_confidence": "low",
+      "path": "defs/pleural_calcification.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Hey, where are my etiologies? Could be post-infectious, post-exposure, post-treatment.",
+      "source_record_id": "pleural_calcification",
+      "title": "pleural calcification"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [],
+          "source_span": "months"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/pleural_effusion_with_disease_in_abdomen.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is months",
+      "source_record_id": "pleural_effusion_with_disease_in_abdomen",
+      "title": "pleural effusion with disease in abdomen"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/polyostotic_bone_lesions_in_children.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is years",
+      "source_record_id": "polyostotic_bone_lesions_in_children",
+      "title": "polyostotic bone lesions in children"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "extracted_expected_metadata": {
+        "forbidden_etiology_hints": [
+          "congenital"
+        ]
+      },
+      "extraction_confidence": "low",
+      "path": "defs/posterior_fossa_cystic_lesion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Etiologies should NOT be congenital.",
+      "source_record_id": "posterior_fossa_cystic_lesion",
+      "title": "posterior fossa cystic lesion"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [
+            "progressive"
+          ],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/primary_brain_tumor.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is years progressive",
+      "source_record_id": "primary_brain_tumor",
+      "title": "primary brain tumor"
+    },
+    {
+      "affected_fields": [
+        "applicable_modalities",
+        "age_profile",
+        "entity_type",
+        "etiologies",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "etiology_hints": [
+          "vascular"
+        ],
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/prolonged_cerebral_vascular_transit_time.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "I think etiology is just vascular.\nsex-neutral. age profile is any age.\nThis is also a CT (CTA) finding--I don't think US applies.",
+      "source_record_id": "prolonged_cerebral_vascular_transit_time",
+      "title": "prolonged cerebral vascular transit time"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "extracted_expected_metadata": {
+        "etiology_hints": [
+          "vascular",
+          "heart failure",
+          "cardiovascular"
+        ],
+        "forbidden_etiology_hints": [
+          "inflammatory"
+        ]
+      },
+      "extraction_confidence": "low",
+      "path": "defs/pulmonary_vascular_engorgement.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Most likely cause is cardiovascular, heart failure, not inflammatory--that should be part of etiologies.",
+      "source_record_id": "pulmonary_vascular_engorgement",
+      "title": "pulmonary vascular engorgement"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [],
+          "source_span": "permanent"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/renal_pseudotumor.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "sex neutral, all ages, permanent",
+      "source_record_id": "renal_pseudotumor",
+      "title": "renal pseudotumor"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/sacroiliac_joint_disease.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is years",
+      "source_record_id": "sacroiliac_joint_disease",
+      "title": "sacroiliac joint disease"
+    },
+    {
+      "affected_fields": [
+        "age_profile",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/sinus_keros_classification_on_ct.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "sex-neutral, all agents,",
+      "source_record_id": "sinus_keros_classification_on_ct",
+      "title": "Sinus Keros Classification on CT"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/small_anterior_fontanelle.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "anatomic location is at least skull\nduration is years",
+      "source_record_id": "small_anterior_fontanelle",
+      "title": "small anterior fontanelle"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "years",
+          "modifiers": [],
+          "source_span": "years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/soft_tissue_tumor_with_prominent_vascularity.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is years. ",
+      "source_record_id": "soft_tissue_tumor_with_prominent_vascularity",
+      "title": "soft-tissue tumor with prominent vascularity"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [],
+          "source_span": "weeks"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/striated_nephrogram.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is weeks.",
+      "source_record_id": "striated_nephrogram",
+      "title": "striated nephrogram"
+    },
+    {
+      "affected_fields": [
+        "etiologies",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "etiology_hints": [
+          "vascular"
+        ],
+        "expected_time_course": {
+          "duration": "months",
+          "modifiers": [],
+          "source_span": "months"
+        },
+        "forbidden_etiology_hints": [
+          "ischemic"
+        ]
+      },
+      "extraction_confidence": "low",
+      "path": "defs/subsegmental_liver_perfusion_abnormality.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Duration is months\nIt's just vascular, not ischemic",
+      "source_record_id": "subsegmental_liver_perfusion_abnormality",
+      "title": "subsegmental liver perfusion abnormality"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/supraglottic_mass.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Expected time course is months/years\nAnatomic location s is larynx at worst, at least neck.",
+      "source_record_id": "supraglottic_mass",
+      "title": "supraglottic mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months to years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/t1_hyperintense_adnexal_mass.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course ins months to years",
+      "source_record_id": "t1_hyperintense_adnexal_mass",
+      "title": "t1-hyperintense adnexal mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/t2_intermediate_endometrial_uterine_mass.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is months/years",
+      "source_record_id": "t2_intermediate_endometrial_uterine_mass",
+      "title": "t2-intermediate endometrial uterine mass"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/t2_isointense_intracranial_lesion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course is months/years",
+      "source_record_id": "t2_isointense_intracranial_lesion",
+      "title": "t2-isointense intracranial lesion"
+    },
+    {
+      "affected_fields": [
+        "etiologies"
+      ],
+      "extracted_expected_metadata": {
+        "forbidden_etiology_hints": [
+          "neoplastic:benign"
+        ]
+      },
+      "extraction_confidence": "low",
+      "path": "defs/thin_walled_lung_cavity.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Not neoplastic:benign",
+      "source_record_id": "thin_walled_lung_cavity",
+      "title": "thin-walled lung cavity"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/thymic_enlargement.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Expected time course is months/years",
+      "source_record_id": "thymic_enlargement",
+      "title": "thymic enlargement"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "weeks",
+            "months"
+          ],
+          "source_span": "weeks/months"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/tibiotalar_tilt.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course is weeks/months\nLocation is ankle joint",
+      "source_record_id": "tibiotalar_tilt",
+      "title": "tibiotalar tilt"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course",
+        "subspecialties"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/tracheostomy_tube.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "subspecialty is also chest\nduration is months/years\nAnatomic locations is neck",
+      "source_record_id": "tracheostomy_tube",
+      "title": "Tracheostomy Tube"
+    },
+    {
+      "affected_fields": [
+        "etiologies",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "etiology_hints": [
+          "vascular",
+          "inflammatory"
+        ],
+        "expected_time_course": {
+          "duration": "weeks",
+          "modifiers": [],
+          "source_span": "weeks"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/transudative_pleural_effusion.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "WHy no etiologies? Inflammation is the usual, but also vascular.\ntime course is weeks",
+      "source_record_id": "transudative_pleural_effusion",
+      "title": "transudative pleural effusion"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/unilateral_sacroiliac_joint_disease.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Anatomic location is SI joints.\nSex-neutral",
+      "source_record_id": "unilateral_sacroiliac_joint_disease",
+      "title": "unilateral sacroiliac joint disease"
+    },
+    {
+      "affected_fields": [
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration_candidates": [
+            "months",
+            "years"
+          ],
+          "source_span": "months/years"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/upper_abdominal_mass_in_a_neonate_or_child.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Time course in months/years.",
+      "source_record_id": "upper_abdominal_mass_in_a_neonate_or_child",
+      "title": "upper abdominal mass in a neonate or child"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "age_profile",
+        "expected_time_course",
+        "sex_specificity"
+      ],
+      "extracted_expected_metadata": {
+        "age_profile": {
+          "applicability": "all_ages"
+        },
+        "expected_time_course": {
+          "duration_candidates": [
+            "weeks",
+            "months"
+          ],
+          "source_span": "weeks to months"
+        },
+        "sex_specificity": "sex-neutral"
+      },
+      "extraction_confidence": "low",
+      "path": "defs/upper_cervical_spine_ao_injury_classification_in_ct.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "Anatomic location is just cervical vertebral column.\nsex-neutral\nany age\nweeks to months for time course",
+      "source_record_id": "upper_cervical_spine_ao_injury_classification_in_ct",
+      "title": "Upper Cervical Spine AO Injury Classification in CT"
+    },
+    {
+      "affected_fields": [
+        "anatomic_locations",
+        "expected_time_course"
+      ],
+      "extracted_expected_metadata": {
+        "expected_time_course": {
+          "duration": "permanent",
+          "modifiers": [],
+          "source_span": "permanent"
+        }
+      },
+      "extraction_confidence": "low",
+      "path": "defs/wedging_of_vertebral_body.fm.json",
+      "promotion_status": "candidate",
+      "requires_human_promotion": true,
+      "source_comment": "time course in permanent\nanatomic locaiton should be spine\n",
+      "source_record_id": "wedging_of_vertebral_body",
+      "title": "wedging of vertebral body"
+    }
+  ],
+  "source_summary": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/fixtures/metadata_review_feedback_summary.json",
+  "version": 1
+}

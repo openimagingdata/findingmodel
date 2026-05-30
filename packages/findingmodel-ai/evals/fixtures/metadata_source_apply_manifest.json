@@ -1,0 +1,1659 @@
+{
+  "counts": {
+    "human_approved_metadata": 67,
+    "index_code_display_backfill": 11,
+    "total_records": 78
+  },
+  "reconciliation": {
+    "applied_human_approved_metadata": 67,
+    "applied_index_code_display_backfills": 11,
+    "note": "The 160-record overlap was an audit of generated source diffs. Only latest human-approved metadata is applied as enrichment; index-code display backfills are separately authorized and field-limited.",
+    "source_overlap_approved": 67,
+    "source_overlap_feedback_not_applied": 83,
+    "source_overlap_not_in_register_not_applied_as_enrichment": 10,
+    "source_overlap_total_modified_defs": 160
+  },
+  "records": [
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "419da54b5cf959ecc7f14d51f60b06fbec4d885d88026ef6745afd4880d3026b",
+        "source_sha256": "8f3de703d254037790fc64ee559d9df1eedcfed74e712f922e7790dbdb901494"
+      },
+      "item_id": "abdominal_clips",
+      "path": "defs/abdominal_clips.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:abdominal_clips",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/abdominal_clips.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "83aa720a3f1d7a8c724eaa0d21a0bbd95601236a0df19d2fc3047c2678039da8",
+        "source_sha256": "bedc8748ad25dba5f15d3a3f9cdd09ce6819ab2e249b1932ec60f79e058a478b"
+      },
+      "item_id": "abnormal_proximal_femur",
+      "path": "defs/abnormal_proximal_femur.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:abnormal_proximal_femur",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/abnormal_proximal_femur.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "300d1795cace6718a549fe2a2ad4478da86a13abe314465e8dd70e500cd1ebf8",
+        "source_sha256": "c64307d96f7ea042871ed9b8e88f6277f7d14a03adc6ed22bf18177f61f6bcdd"
+      },
+      "item_id": "abnormal_right_paratracheal_stripe",
+      "path": "defs/abnormal_right_paratracheal_stripe.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:abnormal_right_paratracheal_stripe",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/abnormal_right_paratracheal_stripe.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "a916bf5bbe823827877439d00f6be59ddcea9d49749100d1ca6389282e90be08",
+        "source_sha256": "437e7e7df2f3dca2de7729a3aef76083a15b659e185b4f1870710f77d23606de"
+      },
+      "item_id": "abnormal_sternomanubrial_synchondrosis",
+      "path": "defs/abnormal_sternomanubrial_synchondrosis.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:abnormal_sternomanubrial_synchondrosis",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/abnormal_sternomanubrial_synchondrosis.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "f0dbc4540860fb90cb6d0e5d29600398e6f1945a7ec339227c30775667a6e421",
+        "source_sha256": "4a7c24d863fa321a44430e10ce726a1045d10d37b4687d0d68dadd155000341e"
+      },
+      "item_id": "acute_clavicle_fracture",
+      "path": "defs/acute_clavicle_fracture.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:acute_clavicle_fracture",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/acute_clavicle_fracture.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "f987cf56e622f13c8739b6c5d7db5bda140f780d3fc012be1aac731e7eb7ce20",
+        "source_sha256": "11c86d8b488d6fa2672c609020394decb56a8a6b5a171ca1a2b830c6e6f2f7ab"
+      },
+      "item_id": "acute_lung_injury_and_ards_in_children",
+      "path": "defs/acute_lung_injury_and_ards_in_children.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:acute_lung_injury_and_ards_in_children",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/acute_lung_injury_and_ards_in_children.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "53a7064aa7a82665a2cda3a002b6b75819db8e2916ae2b52214a7e7a61de9992",
+        "source_sha256": "90afe9b7372395b940be8b2a1c91aa7ae00e4591d096f4a009b82fda85f746c1"
+      },
+      "item_id": "air_in_esophagus",
+      "path": "defs/air_in_esophagus.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:air_in_esophagus",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/air_in_esophagus.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "85cc14b8953aace109ca1cb5997a8054e65eda0dac51171d5bf7560d44d0e048",
+        "source_sha256": "c075fa8f461c5e070607ee5f9285292dd742dbec84effcc02fa90860b7a29f61"
+      },
+      "item_id": "ao_spine_subaxial_cervical_spine_injury_classification",
+      "path": "defs/ao_spine_subaxial_cervical_spine_injury_classification.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:ao_spine_subaxial_cervical_spine_injury_classification",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/ao_spine_subaxial_cervical_spine_injury_classification.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "794050ba8e2cac3bc8cbc6412005d5c5308740b74438609c4eb4e44ced5d9895",
+        "source_sha256": "a97232dd3c795c85c1d3dd53c6fb6ff40ec727812377909c357ba0da210457da"
+      },
+      "item_id": "aortic_measurements",
+      "path": "defs/aortic_measurements.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:aortic_measurements",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/aortic_measurements.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "faeca357f2c2b5998d373ab0a26aa388fdffa8da0ab7bc69393d82c7ab326845",
+        "source_sha256": "1d3c4f8e963084256479131a26be2d11196fb020939fe4b4a87decca044af724"
+      },
+      "item_id": "aortic_stent",
+      "path": "defs/aortic_stent.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:aortic_stent",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/aortic_stent.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "9f0de670e3ee6bbcd407d025214c2c2f4122cb6fd20e0dda2480108079ef8321",
+        "source_sha256": "5bd61a455baa4eca95ee064882c5780ac3e1c5483a0ce9111d2fdd6411a97dab"
+      },
+      "item_id": "arterial_rupture",
+      "path": "defs/arterial_rupture.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:arterial_rupture",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/arterial_rupture.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "b7a8b8b26eee46444eecef62167785b6d442a8325b947eeb36041abb6edffda0",
+        "source_sha256": "0137f17585084489fb69a3fa8252e30e1167d6e9dcd03504d973b078b9e3153f"
+      },
+      "item_id": "arterial_tortuosity",
+      "path": "defs/arterial_tortuosity.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:arterial_tortuosity",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/arterial_tortuosity.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "e83544ddb8a04897bc07be5ef505584a5a3c9c328eb8686abef4bbb46b7d4ff1",
+        "source_sha256": "a2a7cb3b7dcdd75686acfe6820379c9efec6baec4f8849c9d7ce3dc77ccb33c8"
+      },
+      "item_id": "basal_cistern_effacement",
+      "path": "defs/basal_cistern_effacement.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:basal_cistern_effacement",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/basal_cistern_effacement.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "42c82af37eab4235c553de88f9d7b390f3f6d1330e4260dcaee8a0dd1b5cdee2",
+        "source_sha256": "7b050ba9a7a08605a4b63df1943a4c143cb9b19c7c5f2a31acb43b52b1e44497"
+      },
+      "item_id": "bilateral_basilar_lung_disease",
+      "path": "defs/bilateral_basilar_lung_disease.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:bilateral_basilar_lung_disease",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/bilateral_basilar_lung_disease.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "b4fd0fa5087686f81749c19d54e475d1c2ab655c8d8e01fc6822eda7e2ec8a40",
+        "source_sha256": "fe8c177bee2e1519438c3dc792a6041c3a531f964dd07085acf88ca3410499ed"
+      },
+      "item_id": "brain_ischemia_secondary_to_extracranial_lesion",
+      "path": "defs/brain_ischemia_secondary_to_extracranial_lesion.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:brain_ischemia_secondary_to_extracranial_lesion",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/brain_ischemia_secondary_to_extracranial_lesion.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "1150b141d911f6f7191d07e370d1f4a51b366711d7adb54943632ab5141ade98",
+        "source_sha256": "4175329e12239127a2eec4cd71efac2496c66e742b3993676dcb12e337f786e8"
+      },
+      "item_id": "breast_calcification_cluster",
+      "path": "defs/breast_calcification_cluster.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:breast_calcification_cluster",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/breast_calcification_cluster.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "a425a0afe97f7098e12ff68dabccb79fe1f5ee1a6374c94e34ce4972e78d630e",
+        "source_sha256": "3740b7e1c4faab7bf3486b4d49ebcf5b39401e9b463db2ca692bafe6e3b88cb0"
+      },
+      "item_id": "breast_malignancy_risk",
+      "path": "defs/breast_malignancy_risk.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:breast_malignancy_risk",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/breast_malignancy_risk.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "a40ac1c2d93e8149faf0ba1cc91b342db33a97fde5add098271dc4e1e3ccca13",
+        "source_sha256": "1bc2b4c217a9a6c5d1fd288f882497fe24657bf1ebd2e70514d86f27ee75a8c2"
+      },
+      "item_id": "breast_soft_tissue_lesion",
+      "path": "defs/breast_soft_tissue_lesion.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:breast_soft_tissue_lesion",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/breast_soft_tissue_lesion.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "f8d2a57d9aae6dd92740d33c8ff125f3ca6bf8c953d06a72c934fc144e39ee42",
+        "source_sha256": "09fb07189834732aa066cb5919838cbfa1c56c114de4d271f4718d3970122644"
+      },
+      "item_id": "cardiac_valve_thickening",
+      "path": "defs/cardiac_valve_thickening.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:cardiac_valve_thickening",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/cardiac_valve_thickening.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "b3beea9688a6bc1678506442b0a2c21bbc288169a5e6e46f49be20f8970e31c3",
+        "source_sha256": "c32b170a82b122779d0a4d2814cdae60c4913274f04312113b3cfb2b5ffdf106"
+      },
+      "item_id": "congenital_premature_craniosynostosis",
+      "path": "defs/congenital_premature_craniosynostosis.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:congenital_premature_craniosynostosis",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/congenital_premature_craniosynostosis.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "6acfe66c01fd59fef9a80f98d49e2de0817fefb03b80c60cd87641d61ef3360a",
+        "source_sha256": "c17ac1621d17ee701578b9c239b0f2f7a963e7f2ce2e3fe7a803ad50676f2498"
+      },
+      "item_id": "decreased_renal_cortical_echogenicity",
+      "path": "defs/decreased_renal_cortical_echogenicity.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:decreased_renal_cortical_echogenicity",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/decreased_renal_cortical_echogenicity.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "5ac2761c9c6e0d9b94a9ba8cce2c0ac44a614d10342a2dbf3bfd76daebe2b53a",
+        "source_sha256": "fc7ef41140a69302c6d95d412858101b3b8fdd52184d48d772f95aaceda18caa"
+      },
+      "item_id": "dental_periapical_opacity",
+      "path": "defs/dental_periapical_opacity.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:dental_periapical_opacity",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/dental_periapical_opacity.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "59fdec715151da94512059bb91040a4655cb7cf5f11bcef5ec76624c72be9f44",
+        "source_sha256": "6af638aa648e653b74b2993d0f24f93e178c1b75dcf9fec379ecfebaf3028b17"
+      },
+      "item_id": "early_intrauterine_pregnancy",
+      "path": "defs/early_intrauterine_pregnancy.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:early_intrauterine_pregnancy",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/early_intrauterine_pregnancy.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "b8a52bc91e19592071b6f9637b728ace0f0c14aaae35b1428e1d2a9276328fb2",
+        "source_sha256": "28442ee3474c576f67a50001cbbecc427b0422b726469933d90e4cef98b4ede3"
+      },
+      "item_id": "fetal_chest_mass",
+      "path": "defs/fetal_chest_mass.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:fetal_chest_mass",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/fetal_chest_mass.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "e2d3db5daf9c7771ff5e0af5ff583edd7323f06aec2e3040748572c743ee6480",
+        "source_sha256": "7ae85a2463968200c56b676c503019398e835afc6c24d397ad7bfd20fd1adb82"
+      },
+      "item_id": "focal_shadowing_pancreatic_lesion",
+      "path": "defs/focal_shadowing_pancreatic_lesion.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:focal_shadowing_pancreatic_lesion",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/focal_shadowing_pancreatic_lesion.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "8e73dc27d07539a5e9c4343fe061d72621adba438e0220311af3ea7ab0cb0f8d",
+        "source_sha256": "1ea896d0c00a32fa8a1f9a11766d4ae55187101f2b802cffef771cda618d4587"
+      },
+      "item_id": "fracture",
+      "path": "defs/fracture.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:fracture",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/fracture.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "32fb6358a7fd4e06b5b8f6f81f12977adc2cfc6cb071a88a558493f9d9e699a2",
+        "source_sha256": "7afb5f5817da2db7336b23bd69be2a71b027e6fef0366c47a0b15c4a1c456d06"
+      },
+      "item_id": "gastrostomy_tube",
+      "path": "defs/gastrostomy_tube.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:gastrostomy_tube",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/gastrostomy_tube.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "defe927024e45e178168e54eeda6c4d2460471fd1fc9391a6ec593e0eb450a64",
+        "source_sha256": "9c8936c2646bb1dc2e65d8348a98e94e8965e006497547d5b51b63f79e4bb6db"
+      },
+      "item_id": "gyriform_cortical_subcortical_t1_hyperintensity",
+      "path": "defs/gyriform_cortical_subcortical_t1_hyperintensity.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:gyriform_cortical_subcortical_t1_hyperintensity",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/gyriform_cortical_subcortical_t1_hyperintensity.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "439b300072802eb25371320b179eec94fbc2b9d2718cf65d9b7cb033182fe667",
+        "source_sha256": "0dcba1c8a600b48cc416aba1a5853c33eccdee7d9f9901e6782a7bfffb67e850"
+      },
+      "item_id": "hypervascular_liver_metastasis",
+      "path": "defs/hypervascular_liver_metastasis.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:hypervascular_liver_metastasis",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/hypervascular_liver_metastasis.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "cd32aa8219119d77b5e41f0a0980c8aff99832007404c21b258c29da76a61ca9",
+        "source_sha256": "ed0b2c3ccfcc50a01f5c674057b942e917fae6f06894c3817d0dd9c6f5ff2f3c"
+      },
+      "item_id": "hypoplastic_fibula",
+      "path": "defs/hypoplastic_fibula.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:hypoplastic_fibula",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/hypoplastic_fibula.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "ffeda566378d223b7b34a3b66e8f919ae9c8882740603f96455d8f7439e44812",
+        "source_sha256": "d06b2e6d7d5385b3d645976a42aa1628e5e2ea153c09f928987697720a3047ef"
+      },
+      "item_id": "increased_prevertebral_space_in_an_adult",
+      "path": "defs/increased_prevertebral_space_in_an_adult.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:increased_prevertebral_space_in_an_adult",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/increased_prevertebral_space_in_an_adult.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "1984c9ae6b152311ecfc4eec30e9bbdcaf6e86d70b2dae135d1b0551077501ca",
+        "source_sha256": "bbbba426fb669716a06d57d820442875d25d7b912ff36a92ac70872a43eda367"
+      },
+      "item_id": "increased_resistance_index_of_renal_transplant",
+      "path": "defs/increased_resistance_index_of_renal_transplant.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:increased_resistance_index_of_renal_transplant",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/increased_resistance_index_of_renal_transplant.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "cb85dfd0159691018916e30f8f07bffa377718ab591da76d3ee98f0d435a26dc",
+        "source_sha256": "b805fb38bbe4ebf9849d2ed3c5af27a135253d0d3690ee9732b21db43416c00a"
+      },
+      "item_id": "infratentorial_intracranial_tumor_in_a_child",
+      "path": "defs/infratentorial_intracranial_tumor_in_a_child.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:infratentorial_intracranial_tumor_in_a_child",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/infratentorial_intracranial_tumor_in_a_child.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "7e33c1563c4f7302d6f1cdadae2a016bbbc734f78024fca014654cf8cb06cc54",
+        "source_sha256": "86fa4e16c23ef52f2cdeef29a41ee6414822284763dff0cc4864439aaa8b11c2"
+      },
+      "item_id": "large_orbit",
+      "path": "defs/large_orbit.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:large_orbit",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/large_orbit.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "a13f033540b5f6f7559826ac0f584bf15bccdb0efd0b321e3c45446b4d5c4baa",
+        "source_sha256": "dabb74752f62abddcd8a29de222f9edd52d493e524f3acd80ded432b524515d3"
+      },
+      "item_id": "large_vascular_grooves_of_skull",
+      "path": "defs/large_vascular_grooves_of_skull.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:large_vascular_grooves_of_skull",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/large_vascular_grooves_of_skull.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "9e00c8f76565fc62c7528d5170755576b2adde7b0b1451d92c6a97a6579daf89",
+        "source_sha256": "db080642d3ee4fb3fd10b9e8890348eeef0c10439ec3e5b6a961219609af3aa1"
+      },
+      "item_id": "leadless_pacemaker",
+      "path": "defs/leadless_pacemaker.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:leadless_pacemaker",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/leadless_pacemaker.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "ecf367fae0f20ac467e2e9c10d657ac2d37695797a653f334a6cd61fb071e2e9",
+        "source_sha256": "883ed267c5bc0f116c52300b7da796c19d83e55a968b833203ba2a3097029427"
+      },
+      "item_id": "long_linear_lung_shadow",
+      "path": "defs/long_linear_lung_shadow.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:long_linear_lung_shadow",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/long_linear_lung_shadow.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "2290db7ca17134699835fa008c329ce7b4caedfa37108b11a1521c5a876b7422",
+        "source_sha256": "540ea8f17e3148e7deac7f3b1531e536e4d13fa5a2bba9ab6d241636a96827e3"
+      },
+      "item_id": "lower_lung_disease",
+      "path": "defs/lower_lung_disease.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:lower_lung_disease",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/lower_lung_disease.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "23f8500a6b8060bead63b8fcb87273cb634b5985c28a15e52cd0f6bed4cbcf37",
+        "source_sha256": "1b8e95a56ab82fca79cffc371571949bd024ccd4161f1c57f91868b5c7afab64"
+      },
+      "item_id": "lung_sutures",
+      "path": "defs/lung_sutures.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:lung_sutures",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/lung_sutures.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "16703f5268355a0c4e250585af8ec912518075c6c4bd6f50a7ba0bd9d7747865",
+        "source_sha256": "673427b62c97d8bd29928980678408185429d8684726df37610efbf00f99feaf"
+      },
+      "item_id": "mastectomy_breast_implant",
+      "path": "defs/mastectomy_breast_implant.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:mastectomy_breast_implant",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/mastectomy_breast_implant.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "e794cc626014bedcaffa90462687ba507a6d692f2daea1866188b3324fab199b",
+        "source_sha256": "a1b6e165ebaa534ce59e2328fc5703cbee4eba1e697c90aeb578faa788eec368"
+      },
+      "item_id": "mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "path": "defs/mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "f9235208692932d6b29bba02b72deb4b273af684e1a91657fc8777134d4f2c01",
+        "source_sha256": "97b6789146e30d79c22e0af5538bfa9ef43a5ad5c18af003fed72881d5845f86"
+      },
+      "item_id": "multiple_splenic_hypointensities",
+      "path": "defs/multiple_splenic_hypointensities.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:multiple_splenic_hypointensities",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/multiple_splenic_hypointensities.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "8102cef3714829ce3552d91bd7ff97508ed4d66eaba6404a4ad30ac8cab23bff",
+        "source_sha256": "775efd8989fd66abb0c9f64bb0f4722748fd7ee54874f3016f3f61eb0b3d9188"
+      },
+      "item_id": "omega_sella",
+      "path": "defs/omega_sella.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:omega_sella",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/omega_sella.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "3522285acff9c3d64dcc37d07095ce875fa2ae7608ca100a6d7ae68c0955fa3c",
+        "source_sha256": "d3240298749e711ae96414f9f5f48cc029349ea7efa615e1afe113ea86ce10a4"
+      },
+      "item_id": "pediatric_chest_wall_lesion",
+      "path": "defs/pediatric_chest_wall_lesion.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pediatric_chest_wall_lesion",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/pediatric_chest_wall_lesion.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "4f4fb0e86c682fbe27f3470505aa703e34a4be3e643357cc4a37f81aba4bf32c",
+        "source_sha256": "874cd15cbd7656933f95cefdf31a6df3ecccffe9f9e1473f7f9b480d49bade08"
+      },
+      "item_id": "pfirrmann_spine_disc_degeneration_classification",
+      "path": "defs/pfirrmann_spine_disc_degeneration_classification.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pfirrmann_spine_disc_degeneration_classification",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/pfirrmann_spine_disc_degeneration_classification.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "9c0ac6167b6984510da6f561385b61634b964c384029db6031c513d0429dc3f9",
+        "source_sha256": "c02f2872616fd5d5c76a5cfd1bf1303d08ec12aed0f62e5c7859bbd54298256c"
+      },
+      "item_id": "pleural_abnormality",
+      "path": "defs/pleural_abnormality.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pleural_abnormality",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/pleural_abnormality.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "1963ec2ac852c8d450f1cdcef8deb0aeca04c8c9d26796f5154e0357faf7dcac",
+        "source_sha256": "611b1cc63ae21d344a94120a30bd8fdb4139007975cf116897eaff72f6b2c0a6"
+      },
+      "item_id": "pneumonia",
+      "path": "defs/pneumonia.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pneumonia",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/pneumonia.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "0edbdecb9b91153a6f2654a63815cc14ea9ccdc417ca720c16da78855db1fbd9",
+        "source_sha256": "59c114aebadacb09bc6c7b1c3905954290dd16c35869d0346b6131163d2fd4b1"
+      },
+      "item_id": "pulmonary_artery_catheterization",
+      "path": "defs/pulmonary_artery_catheterization.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:pulmonary_artery_catheterization",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/pulmonary_artery_catheterization.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "b387e0b8033b5c176948c37e68d733ea510ea7b75456f23b85937a19d1397acf",
+        "source_sha256": "e5c2190a6af28c29a78c4160418424fa5aa0d05b5ab32d8a0c43a2f9354a411f"
+      },
+      "item_id": "pulmonary_contusion",
+      "path": "defs/pulmonary_contusion.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:pulmonary_contusion",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/pulmonary_contusion.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "9d5dadea0a406ed68088bf5f1821e0ca891c4bf56b70f8a1ee7e9f904bfc65d2",
+        "source_sha256": "fb0858c1693098eca0fe73f0079a5ac7c443ba280f5541082d771811d5d2fdd8"
+      },
+      "item_id": "radiolucent_urinary_calculus",
+      "path": "defs/radiolucent_urinary_calculus.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:radiolucent_urinary_calculus",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/radiolucent_urinary_calculus.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "9f29a9ef42ad5ad1d7bca6a5c6f46dca581565dfec25537daf3fa109b19517c6",
+        "source_sha256": "6bb4b61f6733c67c0e97f302d7c6676d07d526c646ea626d834ebc0ad1680edb"
+      },
+      "item_id": "renal_ischemia",
+      "path": "defs/renal_ischemia.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:renal_ischemia",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/renal_ischemia.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "050d6922abb41ec1f1368f060277b947075d257c85ac4db9f94ddabf5cf66e85",
+        "source_sha256": "b966643d971754083a9ad1409ef8cc293c756393b06667e0d89f14b38e855777"
+      },
+      "item_id": "renal_parenchymal_gas",
+      "path": "defs/renal_parenchymal_gas.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:renal_parenchymal_gas",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/renal_parenchymal_gas.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "df2852c5b554e08b93313e4ca918f727a72c56ca46400ce08906e8977e11bb98",
+        "source_sha256": "5b14e2e3b96d158be59c0c8b2bb94491757aace8db87edb9b39c727bd172fc91"
+      },
+      "item_id": "short_thin_distal_phalanx_of_thumb",
+      "path": "defs/short_thin_distal_phalanx_of_thumb.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:short_thin_distal_phalanx_of_thumb",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/short_thin_distal_phalanx_of_thumb.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "8dcce71d64f93322cac4cd88e3e7e04812a5cab49b335d79377a8115441c307b",
+        "source_sha256": "71f2845115b41f62b1bdea12b0c92bae617643ab9db93e29e912c06542ff738e"
+      },
+      "item_id": "single_maxillary_central_incisor",
+      "path": "defs/single_maxillary_central_incisor.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:single_maxillary_central_incisor",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/single_maxillary_central_incisor.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "7d5ddfb3c95d6b52ed0616f6bf0c20d18b66a74ad7f27f8b6e8a8d2768d239ae",
+        "source_sha256": "028606cb5c1e4d2094006541e828d5c7109ea66d4727de270c3e49a2b64f9835"
+      },
+      "item_id": "small_gallbladder",
+      "path": "defs/small_gallbladder.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:small_gallbladder",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/small_gallbladder.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "06ac193613a0fd808994d74f04b2a623428340e5a24848e13788712e6bae7996",
+        "source_sha256": "a228f4dcc1e11559ea74263aa8d9328851e14ad0a07ccbbaf7094d7d8add9809"
+      },
+      "item_id": "spine_instability_neuroplastic_score__sins_",
+      "path": "defs/spine_instability_neuroplastic_score__sins_.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:spine_instability_neuroplastic_score__sins_",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/spine_instability_neuroplastic_score__sins_.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "a76eb6ff885754da92b8540fd068c8d1df08b64694e9f2cdf093a98569548911",
+        "source_sha256": "59c2dd018f09e5c17bd4fb38c246f95b344e8625154610f5dab734379eff15be"
+      },
+      "item_id": "sternal_fixation",
+      "path": "defs/sternal_fixation.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:sternal_fixation",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/sternal_fixation.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "0792af026c68aa0a5bad0dba7bacdbe5a9684ba1d4e6ce7c6171663967792ead",
+        "source_sha256": "caf02f787a3d7b1101c277606a3bfdd16296d5e446ecf8d25b68c64b42aa5a1a"
+      },
+      "item_id": "t2_hyperintense_renal_mass",
+      "path": "defs/t2_hyperintense_renal_mass.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:t2_hyperintense_renal_mass",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/t2_hyperintense_renal_mass.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "9dc8a2c22d5df242eba2ebdf908eaae112e966cc08ee997606db821e59a21379",
+        "source_sha256": "23af7064a878f49daaf3e0d2c49e83be3c66d8090769e8de4bb5fbb1c5156bb8"
+      },
+      "item_id": "traumatic_brain_injury",
+      "path": "defs/traumatic_brain_injury.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:traumatic_brain_injury",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/traumatic_brain_injury.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "70c981699dc3ffeaefc54403ffc0c927320360bdf6f1ea710339c3afdf07608b",
+        "source_sha256": "a42ae5cfc1b9fb11f26486ebd0658725f9843d34e8f3cd0bd711c48ec9d4b6c5"
+      },
+      "item_id": "traumatic_pneumatocele",
+      "path": "defs/traumatic_pneumatocele.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:traumatic_pneumatocele",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/traumatic_pneumatocele.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "1d39f2bb4cea6af273018ac3e2f77831725f4e617b4fd49645ab5074eba9c760",
+        "source_sha256": "653875f3e5ce3bd72039ff799ca8f646b8c5a8c787f9931434bda260265446c3"
+      },
+      "item_id": "tricuspid_annuloplasty_ring",
+      "path": "defs/tricuspid_annuloplasty_ring.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:tricuspid_annuloplasty_ring",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/tricuspid_annuloplasty_ring.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "ab8f324ef80e43de298c0ddac894dec0d637120c5d5921b5900e53fd62deb3e0",
+        "source_sha256": "c6b7e773bdf826d8013ee88129bd230220344bdd21172c14205f788a4c107d15"
+      },
+      "item_id": "tunneled_catheter",
+      "path": "defs/tunneled_catheter.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:tunneled_catheter",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/tunneled_catheter.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "c505a5a23e56d3d83e4be53a65e2ca41ee5c6dc915c6d0da07dc64384daafca5",
+        "source_sha256": "229eb5bd3df36affd7de0aab685172adb486aeda56b527440431c0a350afa21e"
+      },
+      "item_id": "unilateral_hilar_enlargement",
+      "path": "defs/unilateral_hilar_enlargement.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:unilateral_hilar_enlargement",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/unilateral_hilar_enlargement.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "6247462b6d15def7b273840a9a5c7cbe7314a4a9d7f70734bb17b8ba2678ef71",
+        "source_sha256": "f20442bb8505ef36932daf1d9692d7e49346f4fb576af3470b149d3896f5fb47"
+      },
+      "item_id": "vapor_induced_lung_disease",
+      "path": "defs/vapor_induced_lung_disease.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:vapor_induced_lung_disease",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/vapor_induced_lung_disease.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "c1f7084b1f85b981adfa9a68d839ac439bae47da938b60b358bbcf09fa33d112",
+        "source_sha256": "9709ca39a1974fe59d514529975e94130537dfbd63aa14863e81bca01e096890"
+      },
+      "item_id": "vertebral_compression_fracture",
+      "path": "defs/vertebral_compression_fracture.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:vertebral_compression_fracture",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/vertebral_compression_fracture.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/phase5-targeted-review-hardened-v3-data/review-data.json",
+        "review_package_sha256": "6296d5642df5b09266fb52386925242c53484b118c97c36df62600d16cb4779c",
+        "reviewed_payload_sha256": "1ffb3113ddb5e926bf849f0cb82c59b93fef6e729112be1c7dd6194bad5581ab",
+        "source_sha256": "823c7fcc910f3d2118f38e1a35844dde8ced2d1413bb2f9b5c6ec47283e3ad64"
+      },
+      "item_id": "vertebral_coronal_cleft",
+      "path": "defs/vertebral_coronal_cleft.fm.json",
+      "review_dataset_id": "96bd0ace1aed",
+      "review_id": "phase5_targeted_hardened_v3:vertebral_coronal_cleft",
+      "snapshot_source": "review_package_payload",
+      "text_path": "text/vertebral_coronal_cleft.md"
+    },
+    {
+      "allowed_change": "Apply latest human-approved metadata fields from reviewed payload snapshot.",
+      "classification": "human_approved_metadata",
+      "evidence": {
+        "approved_outputs": "packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+        "review_package_path": "/Users/talkasab/repos/findingmodels-metadata/.metadata-runs/pilot-enrichment/before-after",
+        "review_package_sha256": "8a5642f42bae314213a8619b9becc37422b8fb18d0787f4874488b1169ea6188",
+        "reviewed_payload_sha256": "671813103873224ecd4bf82324f4ce72b1b65a9bf44c2241f6ee5d8c1c558167",
+        "source_sha256": "2bd30210dbde28efa67ad3bfc3be3f135fd088717eb01da55ac99c84bdc831af"
+      },
+      "item_id": "volumetric_breast_density",
+      "path": "defs/volumetric_breast_density.fm.json",
+      "review_dataset_id": "69ede7dd9df4",
+      "review_id": "pilot_review:volumetric_breast_density",
+      "snapshot_source": "pilot_after_payload",
+      "text_path": "text/volumetric_breast_density.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6815",
+            "display": "cerebellum",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "113305005",
+            "display": "Cerebellar structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RID6677",
+            "display": "brainstem",
+            "index": 2,
+            "system": "RADLEX"
+          },
+          {
+            "code": "15926001",
+            "display": "Brainstem structure",
+            "index": 3,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "0ad196b9482e2901fcab1792e288685596305d2ece47a19294a65edf176cf307",
+        "before_sha256": "9fea3dd42c75fa78b5b60a29ff67a520fe0a684ab6b76371f9febcb3f25ab34c",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6815",
+            "display": "cerebellum",
+            "system": "RADLEX"
+          },
+          {
+            "code": "113305005",
+            "display": "Cerebellar structure",
+            "system": "SNOMEDCT"
+          },
+          {
+            "code": "RID6677",
+            "display": "brainstem",
+            "system": "RADLEX"
+          },
+          {
+            "code": "15926001",
+            "display": "Brainstem structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "cerebellum_and_brainstem_volumes",
+      "path": "defs/cerebellum_and_brainstem_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/cerebellum_and_brainstem_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6510",
+            "display": "cingulate gyrus",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "25221002",
+            "display": "Structure of cingulate gyrus",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "6bc67efedfd8df931358ed1cf5d4d5d74a9d4bca499f6d5da62a7fc134abda8e",
+        "before_sha256": "34b02ef60b1014c6bfa953ab9539d9fe3f7eda7ce1a22ed3f643e520c839bd84",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6510",
+            "display": "cingulate gyrus",
+            "system": "RADLEX"
+          },
+          {
+            "code": "25221002",
+            "display": "Structure of cingulate gyrus",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "cingulate_cortex_volumes",
+      "path": "defs/cingulate_cortex_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/cingulate_cortex_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6529",
+            "display": "hippocampus",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "5366008",
+            "display": "Hippocampal structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "c04f29529ae2dd3cde369c1d34ab70bd7a59f921fdf1252d783909a9b3750540",
+        "before_sha256": "82b4b0b92bdaccd21f95d21f7466a26f9d95edead8408668b46e45c898d6ae2f",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6529",
+            "display": "hippocampus",
+            "system": "RADLEX"
+          },
+          {
+            "code": "5366008",
+            "display": "Hippocampal structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "composite_metrics_hippocampal_occupancy_score",
+      "path": "defs/composite_metrics_hippocampal_occupancy_score.fm.json",
+      "review_id": "pilot_review:composite_metrics_hippocampal_occupancy_score",
+      "source_overlap_status": "feedback",
+      "text_path": "text/composite_metrics_hippocampal_occupancy_score.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6537",
+            "display": "set of basal ganglia",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "32610002",
+            "display": "Structure of basal nucleus",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "3a7293f99617d3e3f210587c1ed6cf779f1e729a66f0adb3aa1dcc06c50ab513",
+        "before_sha256": "2728d69fbf7d471e44b94d3717bbf4d5c6dbf13550893ea357342cdca7184bd9",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6537",
+            "display": "set of basal ganglia",
+            "system": "RADLEX"
+          },
+          {
+            "code": "32610002",
+            "display": "Structure of basal nucleus",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "deep_gray_nuclei_volumes",
+      "path": "defs/deep_gray_nuclei_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/deep_gray_nuclei_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6440",
+            "display": "frontal lobe",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "83251001",
+            "display": "Frontal lobe structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "808474ba3d4e2e84e683653a6dd06feac11dea65fede027596dd2cfea3b4e990",
+        "before_sha256": "6b0c160cd2ca176bb547aebdad9b1d50acd493cf0d638d63a6c7d8acdd5f58e2",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6440",
+            "display": "frontal lobe",
+            "system": "RADLEX"
+          },
+          {
+            "code": "83251001",
+            "display": "Frontal lobe structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "frontal_lobe_region_volumes",
+      "path": "defs/frontal_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/frontal_lobe_region_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6434",
+            "display": "brain",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "12738006",
+            "display": "Brain structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "ff25c63968681b42286b60187cc9e8d824019f676fbe2fc852134b89f752247b",
+        "before_sha256": "0024aa43cc361416d7d08f3cf61978f9bf7f753a86ea6c68b1dbebc92ee96113",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6434",
+            "display": "brain",
+            "system": "RADLEX"
+          },
+          {
+            "code": "12738006",
+            "display": "Brain structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "global_brain_volumes",
+      "path": "defs/global_brain_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/global_brain_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6529",
+            "display": "hippocampus",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "5366008",
+            "display": "Hippocampal structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "43f7364348d3e24f66c2cf876959d96d5a347bc26045bf8b66b5b094abb6c651",
+        "before_sha256": "dac4bdc7d11053787907ed4c0a44e25519c16ce3302bbe204248e3444e47f433",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6529",
+            "display": "hippocampus",
+            "system": "RADLEX"
+          },
+          {
+            "code": "5366008",
+            "display": "Hippocampal structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "hippocampal_asymmetry_metrics",
+      "path": "defs/hippocampal_asymmetry_metrics.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/hippocampal_asymmetry_metrics.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6502",
+            "display": "occipital lobe",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "31065004",
+            "display": "Occipital lobe structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "17e5f63ea6a2a94d54a881b489865a49f9b93ed17ac6c5f14340675ee499f25c",
+        "before_sha256": "beb1731ba2532bb3a73d155c0e10dd64ac87c59d126ba143fbe0520714e0d6f6",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6502",
+            "display": "occipital lobe",
+            "system": "RADLEX"
+          },
+          {
+            "code": "31065004",
+            "display": "Occipital lobe structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "occipital_lobe_region_volumes",
+      "path": "defs/occipital_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/occipital_lobe_region_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6493",
+            "display": "parietal lobe",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "16630005",
+            "display": "Parietal lobe structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "72cfe2326d897d063a9c5b121100bca2f0594f972ede2172f95052ee552143d0",
+        "before_sha256": "f01fb2f80b7efc24d14f992b45f3066025f05b2eb65fdcfa06310fc26eb8020e",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6493",
+            "display": "parietal lobe",
+            "system": "RADLEX"
+          },
+          {
+            "code": "16630005",
+            "display": "Parietal lobe structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "parietal_lobe_region_volumes",
+      "path": "defs/parietal_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/parietal_lobe_region_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID6476",
+            "display": "temporal lobe",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "78277001",
+            "display": "Temporal lobe structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "c60d95a82699dd3955030211b13797d26fcfaadcb62e569ca5c9f4d42f0f7b82",
+        "before_sha256": "cfa17203f9afa3fbbc685c6a6f6b1bf7fa62f57cce0320dbeb10c72854fef684",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID6476",
+            "display": "temporal lobe",
+            "system": "RADLEX"
+          },
+          {
+            "code": "78277001",
+            "display": "Temporal lobe structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "temporal_lobe_region_volumes",
+      "path": "defs/temporal_lobe_region_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/temporal_lobe_region_volumes.md"
+    },
+    {
+      "allowed_change": "Add display strings to existing index_codes only; do not change systems, codes, or enrichment metadata.",
+      "classification": "index_code_display_backfill",
+      "diff_evidence": {
+        "added_index_code_displays": [
+          {
+            "code": "RID7123",
+            "display": "cerebral ventricle",
+            "index": 0,
+            "system": "RADLEX"
+          },
+          {
+            "code": "35764002",
+            "display": "Brain ventricle structure",
+            "index": 1,
+            "system": "SNOMEDCT"
+          }
+        ],
+        "after_sha256": "1cc91fc8d4a76bd1b1f7e65ad1179820b465a9d82b6ae11a4c1fdc4631d6da61",
+        "before_sha256": "4e2482a3b2331c0b58ee5135ffbdaf6c3986c6dd2f12ca08d3cb859215c35cec",
+        "unchanged_except_index_code_display_additions": true
+      },
+      "evidence": {
+        "csv_rows": [
+          {
+            "code": "RID7123",
+            "display": "cerebral ventricle",
+            "system": "RADLEX"
+          },
+          {
+            "code": "35764002",
+            "display": "Brain ventricle structure",
+            "system": "SNOMEDCT"
+          }
+        ],
+        "display_backfill_csv": "notebooks/data/brain_volumetry_anatomic_code_display_backfill_2026-05-10.csv"
+      },
+      "item_id": "ventricular_system_volumes",
+      "path": "defs/ventricular_system_volumes.fm.json",
+      "review_id": null,
+      "source_overlap_status": "not_in_register",
+      "text_path": "text/ventricular_system_volumes.md"
+    }
+  ],
+  "source_data_repo": "/Users/talkasab/repos/findingmodels-metadata",
+  "usage": {
+    "authority": "human_review_plus_index_code_display_backfill",
+    "backfill_policy": "index_code_display_backfill records may only add display strings to existing index_codes entries.",
+    "pathspec_policy": "Data-source commits must derive defs/text pathspecs from records in this manifest, not from git diff."
+  },
+  "version": 1
+}
