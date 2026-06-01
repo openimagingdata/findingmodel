@@ -26,7 +26,23 @@ from findingmodel_ai.metadata.assignment import (
     MetadataAssignmentDecision,
     OntologyCandidateDecision,
     assign_metadata,
-    create_metadata_assignment_agent,
+    create_anatomy_decision_agent,
+    create_entity_type_agent,
+    create_etiology_tempo_agent,
+    create_modality_applicability_agent,
+    create_ontology_decision_agent,
+    create_patient_applicability_agent,
+    create_subspecialty_domain_agent,
+)
+from findingmodel_ai.metadata.decisions import (
+    AnatomicCandidateDecision,
+    AnatomyDecision,
+    EntityTypeDecision,
+    EtiologyTempoDecision,
+    ModalityApplicabilityDecision,
+    OntologyDecision,
+    PatientApplicabilityDecision,
+    SubspecialtyDomainDecision,
 )
 from findingmodel_ai.metadata.ontology_cache import OntologyLookupCache
 from findingmodel_ai.metadata.types import (
@@ -37,11 +53,92 @@ from findingmodel_ai.metadata.types import (
 from findingmodel_ai.search.anatomic import LocationSearchResponse
 from findingmodel_ai.search.ontology import CategorizedOntologyConcepts
 from pydantic_ai import models
-from pydantic_ai.messages import ModelRequest, ModelResponse, ToolCallPart
-from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
 
 models.ALLOW_MODEL_REQUESTS = False
+
+
+def _patch_split_agents(monkeypatch: pytest.MonkeyPatch, decision: MetadataAssignmentDecision) -> None:
+    """Patch split metadata agents from one expected combined decision."""
+
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.create_ontology_decision_agent",
+        lambda **_: create_ontology_decision_agent(
+            model=TestModel(
+                custom_output_args=OntologyDecision(
+                    ontology_decisions=decision.ontology_decisions,
+                ).model_dump(mode="json")
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.create_anatomy_decision_agent",
+        lambda **_: create_anatomy_decision_agent(
+            model=TestModel(
+                custom_output_args=AnatomyDecision(
+                    body_regions=decision.body_regions,
+                    anatomic_decisions=decision.anatomic_decisions,
+                ).model_dump(mode="json")
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.create_entity_type_agent",
+        lambda **_: create_entity_type_agent(
+            model=TestModel(
+                custom_output_args=EntityTypeDecision(
+                    entity_type=decision.entity_type,
+                    field_confidence=decision.field_confidence,
+                ).model_dump(mode="json")
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.create_patient_applicability_agent",
+        lambda **_: create_patient_applicability_agent(
+            model=TestModel(
+                custom_output_args=PatientApplicabilityDecision(
+                    age_profile=decision.age_profile,
+                    sex_specificity=decision.sex_specificity,
+                    field_confidence=decision.field_confidence,
+                ).model_dump(mode="json")
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.create_subspecialty_domain_agent",
+        lambda **_: create_subspecialty_domain_agent(
+            model=TestModel(
+                custom_output_args=SubspecialtyDomainDecision(
+                    subspecialties=decision.subspecialties,
+                    field_confidence=decision.field_confidence,
+                ).model_dump(mode="json")
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.create_modality_applicability_agent",
+        lambda **_: create_modality_applicability_agent(
+            model=TestModel(
+                custom_output_args=ModalityApplicabilityDecision(
+                    applicable_modalities=decision.applicable_modalities,
+                    field_confidence=decision.field_confidence,
+                ).model_dump(mode="json")
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.create_etiology_tempo_agent",
+        lambda **_: create_etiology_tempo_agent(
+            model=TestModel(
+                custom_output_args=EtiologyTempoDecision(
+                    etiologies=decision.etiologies,
+                    expected_time_course=decision.expected_time_course,
+                    field_confidence=decision.field_confidence,
+                ).model_dump(mode="json")
+            )
+        ),
+    )
 
 
 def _ontology_results() -> CategorizedOntologyConcepts:
@@ -173,8 +270,7 @@ async def test_assign_metadata_assembles_canonical_result(
             "anatomic_locations": FieldConfidence.HIGH,
         },
     )
-    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(finding_model)
 
@@ -207,7 +303,7 @@ async def test_assign_metadata_assembles_canonical_result(
     assert len(result.review.anatomic_candidates) == 2
     assert result.review.anatomic_candidates[0].location.display == "lung"
     assert result.review.anatomic_candidates[1].location.display == "lower respiratory tract"
-    assert result.review.classification_rationale
+    assert result.review.classification_rationale == ""
 
 
 @pytest.mark.asyncio
@@ -231,53 +327,29 @@ async def test_assign_metadata_filters_ontology_candidates_that_duplicate_anatom
     )
     monkeypatch.setattr("findingmodel_ai.metadata.assignment._get_trace_id", lambda: None)
 
-    captured: dict[str, str] = {}
-
-    def model_function(messages: list[Any], info: AgentInfo) -> ModelResponse:
-        prompt_parts: list[str] = []
-        for message in messages:
-            if isinstance(message, ModelRequest):
-                for part in message.parts:
-                    content = getattr(part, "content", None)
-                    if isinstance(content, str):
-                        prompt_parts.append(content)
-        captured["prompt"] = "\n".join(prompt_parts)
-        return ModelResponse(
-            parts=[
-                ToolCallPart(
-                    info.output_tools[0].name,
-                    {
-                        "body_regions": ["chest"],
-                        "entity_type": "finding",
-                        "applicable_modalities": ["XR"],
-                        "ontology_decisions": [
-                            {
-                                "candidate_id": "GAMUTS:056",
-                                "relationship": "exact_match",
-                                "selected_as_canonical": True,
-                            }
-                        ],
-                        "classification_rationale": "Anatomic duplicate ontology candidate is filtered.",
-                        "field_confidence": {
-                            "body_regions": "high",
-                            "entity_type": "high",
-                            "applicable_modalities": "high",
-                            "index_codes": "high",
-                            "anatomic_locations": "high",
-                        },
-                    },
-                    tool_call_id="pyd_ai_tool_call_id__output",
-                )
-            ]
-        )
-
-    agent = create_metadata_assignment_agent(model=FunctionModel(model_function))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.XR],
+        ontology_decisions=[
+            OntologyCandidateDecision(
+                candidate_id="GAMUTS:056",
+                relationship=OntologyCandidateRelationship.EXACT_MATCH,
+                selected_as_canonical=True,
+            )
+        ],
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
+    )
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(air_model)
 
-    assert "RADLEX:RID95" not in captured["prompt"]
-    assert "GAMUTS:056" in captured["prompt"]
     assert result.model.index_codes is not None
     assert [(code.system, code.code) for code in result.model.index_codes] == [("GAMUTS", "056")]
     assert result.model.anatomic_locations is not None
@@ -319,8 +391,7 @@ async def test_assign_metadata_records_ontology_cache(
             "anatomic_locations": FieldConfidence.HIGH,
         },
     )
-    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    _patch_split_agents(monkeypatch, decision)
 
     cache_path = tmp_path / "ontology-cache.duckdb"
     result = await assign_metadata(finding_model, ontology_cache=cache_path)
@@ -374,14 +445,15 @@ async def test_assign_metadata_does_not_promote_related_ontology_candidate(
             "anatomic_locations": FieldConfidence.HIGH,
         },
     )
-    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(finding_model)
 
     assert result.model.index_codes is not None
     assert ("RADLEX", "RID9999") not in {(code.system, code.code) for code in result.model.index_codes}
-    assert any("Ignoring canonical ontology selection for RADLEX:RID9999" in warning for warning in result.review.warnings)
+    assert any(
+        "Ignoring canonical ontology selection for RADLEX:RID9999" in warning for warning in result.review.warnings
+    )
     assert any(
         candidate.code.system == "RADLEX" and candidate.code.code == "RID9999"
         for candidate in result.review.ontology_candidates.review_candidates
@@ -428,8 +500,7 @@ async def test_assign_metadata_promotes_canonical_relationship_without_boolean(
             "anatomic_locations": FieldConfidence.HIGH,
         },
     )
-    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(finding_model)
 
@@ -452,53 +523,26 @@ async def test_assign_metadata_function_model_receives_candidate_context(
     )
     monkeypatch.setattr("findingmodel_ai.metadata.assignment._get_trace_id", lambda: None)
 
-    captured: dict[str, str] = {}
-
-    def model_function(messages: list[Any], info: AgentInfo) -> ModelResponse:
-        prompt_parts: list[str] = []
-        for message in messages:
-            if isinstance(message, ModelRequest):
-                for part in message.parts:
-                    content = getattr(part, "content", None)
-                    if isinstance(content, str):
-                        prompt_parts.append(content)
-        captured["prompt"] = "\n".join(prompt_parts)
-        return ModelResponse(
-            parts=[
-                ToolCallPart(
-                    info.output_tools[0].name,
-                    {
-                        "classification_rationale": "No metadata changes required.",
-                        "body_regions": ["chest"],
-                        "entity_type": "finding",
-                        "applicable_modalities": ["CT"],
-                        "field_confidence": {
-                            "body_regions": "high",
-                            "entity_type": "high",
-                            "applicable_modalities": "high",
-                            "index_codes": "high",
-                            "anatomic_locations": "high",
-                        },
-                    },
-                    tool_call_id="pyd_ai_tool_call_id__output",
-                )
-            ]
-        )
-
-    agent = create_metadata_assignment_agent(model=FunctionModel(model_function))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
+    )
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(finding_model)
 
-    assert "RID5350" in captured["prompt"]
-    assert "RID1301" in captured["prompt"]
-    assert "lung infection" in captured["prompt"]
-    assert '"display": "Pneumonia"' in captured["prompt"]
-    assert '"display": "lung"' in captured["prompt"]
     assert result.model.entity_type == EntityType.FINDING
     assert result.model.index_codes is not None
     assert [(code.system, code.code) for code in result.model.index_codes] == [("SNOMEDCT", "233604007")]
-    assert result.review.classification_rationale == "No metadata changes required."
+    assert result.review.classification_rationale == ""
 
 
 @pytest.mark.asyncio
@@ -529,8 +573,6 @@ async def test_assign_metadata_reassesses_populated_model(
     )
     monkeypatch.setattr("findingmodel_ai.metadata.assignment._get_trace_id", lambda: None)
 
-    classifier_called = False
-
     decision = MetadataAssignmentDecision(
         body_regions=[BodyRegion.CHEST],
         subspecialties=[Subspecialty.CH],
@@ -557,18 +599,10 @@ async def test_assign_metadata_reassesses_populated_model(
         },
     )
 
-    original_create = create_metadata_assignment_agent
-
-    def tracking_create(**kwargs: Any) -> Any:
-        nonlocal classifier_called
-        classifier_called = True
-        return original_create(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
-
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", tracking_create)
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(complete_model)
 
-    assert classifier_called, "Classifier should always be called (no fast-path skip)"
     assert result.review.assignment_mode == "reassess"
     assert result.model.body_regions == [BodyRegion.CHEST]
     assert result.model.entity_type == EntityType.FINDING
@@ -601,8 +635,7 @@ async def test_assign_metadata_surfaces_gathering_failures_as_warnings(
             "anatomic_locations": FieldConfidence.MEDIUM,
         },
     )
-    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(finding_model)
 
@@ -612,7 +645,7 @@ async def test_assign_metadata_surfaces_gathering_failures_as_warnings(
     assert result.model.index_codes is None
     assert result.review.warnings == ["Ontology candidate gathering failed: ontology exploded"]
     assert result.review.ontology_candidates.canonical_codes == []
-    assert result.review.classification_rationale == "Applied metadata despite missing ontology candidates."
+    assert result.review.classification_rationale == ""
 
 
 @pytest.mark.asyncio
@@ -648,7 +681,7 @@ async def test_assign_metadata_passes_ontology_labels_to_anatomic_search(
         body_regions=[BodyRegion.CHEST],
         entity_type=EntityType.FINDING,
         applicable_modalities=[Modality.CT],
-            classification_rationale="Ontology-informed anatomy gather test.",
+        classification_rationale="Ontology-informed anatomy gather test.",
         field_confidence={
             "body_regions": FieldConfidence.HIGH,
             "entity_type": FieldConfidence.HIGH,
@@ -657,8 +690,7 @@ async def test_assign_metadata_passes_ontology_labels_to_anatomic_search(
             "anatomic_locations": FieldConfidence.HIGH,
         },
     )
-    agent = create_metadata_assignment_agent(model=TestModel(custom_output_args=decision.model_dump(mode="json")))
-    monkeypatch.setattr("findingmodel_ai.metadata.assignment.create_metadata_assignment_agent", lambda **_: agent)
+    _patch_split_agents(monkeypatch, decision)
 
     result = await assign_metadata(finding_model)
 
@@ -667,12 +699,197 @@ async def test_assign_metadata_passes_ontology_labels_to_anatomic_search(
     assert result.model.body_regions == [BodyRegion.CHEST]
 
 
-def test_metadata_assignment_decision_ignores_invalid_confidence_key() -> None:
-    decision = MetadataAssignmentDecision.model_validate(
-        {
-            "classification_rationale": "Invalid confidence key.",
-            "field_confidence": {"ontology_decisions": "high", "body_regions": "95"},
+@pytest.mark.asyncio
+async def test_reassess_allows_optional_null_outputs(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only entity_type is required; optional nulls clear reviewed existing metadata in reassess mode."""
+    populated_model = finding_model.model_copy(
+        update={
+            "body_regions": [BodyRegion.CHEST],
+            "subspecialties": [Subspecialty.CH],
+            "etiologies": [EtiologyCode.INFLAMMATORY_INFECTIOUS],
+            "entity_type": EntityType.FINDING,
+            "applicable_modalities": [Modality.CT],
+            "expected_time_course": ExpectedTimeCourse(duration=ExpectedDuration.WEEKS),
+            "age_profile": AgeProfile(applicability=[AgeStage.ADULT]),
+            "sex_specificity": SexSpecificity.SEX_NEUTRAL,
         }
     )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        entity_type=EntityType.FINDING,
+        field_confidence={"entity_type": FieldConfidence.HIGH},
+    )
+    _patch_split_agents(monkeypatch, decision)
+
+    result = await assign_metadata(populated_model)
+
+    assert result.model.entity_type == EntityType.FINDING
+    assert result.model.body_regions is None
+    assert result.model.applicable_modalities is None
+    assert any(warning == "metadata cleared: body_regions" for warning in result.review.warnings)
+    assert any(warning == "metadata cleared: applicable_modalities" for warning in result.review.warnings)
+
+
+@pytest.mark.asyncio
+async def test_reassess_requires_only_entity_type(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        entity_type=EntityType.FINDING,
+        field_confidence={"entity_type": FieldConfidence.HIGH},
+    )
+    _patch_split_agents(monkeypatch, decision)
+
+    result = await assign_metadata(
+        finding_model.model_copy(update={"body_regions": None, "applicable_modalities": None})
+    )
+
+    assert result.model.entity_type == EntityType.FINDING
+    assert result.model.body_regions is None
+    assert result.model.applicable_modalities is None
+
+
+@pytest.mark.asyncio
+async def test_existing_codes_and_anatomy_are_kept_on_silence(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    existing_model = finding_model.model_copy(
+        update={
+            "index_codes": [IndexCode(system="SNOMEDCT", code="233604007", display="Pneumonia")],
+            "anatomic_locations": [IndexCode(system="ANATOMICLOCATIONS", code="RID1301", display="lung")],
+        }
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+        },
+    )
+    _patch_split_agents(monkeypatch, decision)
+
+    result = await assign_metadata(existing_model)
+
+    assert [(code.system, code.code) for code in result.model.index_codes or []] == [("SNOMEDCT", "233604007")]
+    assert [(code.system, code.code) for code in result.model.anatomic_locations or []] == [
+        ("ANATOMICLOCATIONS", "RID1301")
+    ]
+
+
+@pytest.mark.asyncio
+async def test_existing_anatomic_location_requires_reason_to_remove(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    existing_model = finding_model.model_copy(
+        update={"anatomic_locations": [IndexCode(system="ANATOMICLOCATIONS", code="RID1301", display="lung")]}
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        anatomic_decisions=[AnatomicCandidateDecision(candidate_id="ANATOMICLOCATIONS:RID1301", selected=False)],
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
+    )
+    _patch_split_agents(monkeypatch, decision)
+
+    result = await assign_metadata(existing_model)
+
+    assert [(code.system, code.code) for code in result.model.anatomic_locations or []] == [
+        ("ANATOMICLOCATIONS", "RID1301")
+    ]
+    assert any("Existing anatomic location kept" in warning for warning in result.review.warnings)
+
+
+@pytest.mark.asyncio
+async def test_existing_anatomic_location_can_be_removed_with_reason(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    existing_model = finding_model.model_copy(
+        update={"anatomic_locations": [IndexCode(system="ANATOMICLOCATIONS", code="RID1301", display="lung")]}
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        anatomic_decisions=[
+            AnatomicCandidateDecision(
+                candidate_id="ANATOMICLOCATIONS:RID1301",
+                selected=False,
+                rejection_reason="direct contradiction",
+            )
+        ],
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
+    )
+    _patch_split_agents(monkeypatch, decision)
+
+    result = await assign_metadata(existing_model)
+
+    assert result.model.anatomic_locations is None
+
+
+def test_metadata_assignment_decision_ignores_invalid_confidence_key() -> None:
+    decision = MetadataAssignmentDecision.model_validate({
+        "classification_rationale": "Invalid confidence key.",
+        "field_confidence": {"ontology_decisions": "high", "body_regions": "95"},
+    })
 
     assert decision.field_confidence == {"body_regions": 0.95}

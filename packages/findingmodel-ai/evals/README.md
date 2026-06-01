@@ -15,7 +15,7 @@ FindingModel uses a three-tier testing structure:
    - Run with `task test-full`
 
 3. **Evals** (`evals/*.py`) - Assess behavioral quality comprehensively
-   - Dataset.evaluate() with focused evaluators
+   - Dataset.evaluate() with component-specific evaluators
    - Run with `task evals` or `task evals:model_editor`
    - Manual execution, not part of CI (initially)
 
@@ -50,6 +50,12 @@ To compare performance between providers on any eval suite:
 ```bash
 # Run with default model (OpenAI)
 task evals:finding_description
+task evals:metadata
+task evals:metadata:smoke
+task evals:metadata:full
+PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_assignment --fixture-sample 2 --seed 20260515 --details-output /tmp/metadata-assignment-bounded-details.csv
+PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_patient_applicability_decision
+PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_etiology_tempo_decision --case-set expanded --details-output /tmp/etiology-tempo-details.csv
 
 # Run with a specific model for the describe_finding agent
 AGENT_MODEL_OVERRIDES__describe_finding=anthropic:claude-sonnet-4-6 task evals:finding_description
@@ -59,6 +65,18 @@ AGENT_MODEL_OVERRIDES__describe_finding=anthropic:claude-sonnet-4-6 python -m ev
 ```
 
 Override specific agents via `AGENT_MODEL_OVERRIDES__<tag>=provider:model`. Compare overall scores and individual evaluator results to see which provider performs better for your use case.
+
+The metadata eval task includes the end-to-end assignment suite plus component suites for
+ontology, anatomy, entity type, patient applicability, subspecialty, modality, and etiology/tempo.
+Submaximal scores are expected when the model makes lower-cost clinical mistakes; execution and
+schema failures are reported as gates instead.
+
+The etiology/time-course component eval supports `--case-set pilot`, `gold`, `reviewed`,
+`expanded`, and `all`. Use `--details-output` to write per-case expected/actual values and miss
+labels for prompt-tuning review.
+
+The end-to-end metadata assignment eval also supports `--details-output`; bounded runs should write
+that CSV so gate failures and lower-scoring fields are reviewable case-by-case.
 
 ### From Python
 
@@ -79,7 +97,8 @@ Eval reports show:
 
 1. **Per-case results**: Each test case with evaluator scores
 2. **Per-evaluator metrics**: How each evaluator performed across all cases
-3. **Overall score**: Aggregate score (0.0-1.0) across all evaluators and cases
+3. **Overall score or gate status**: Report shape is suite-specific; metadata evals separate
+   pass/fail gates from quality scores.
 
 Example output:
 
@@ -108,6 +127,17 @@ OVERALL SCORE: 0.95
 - **1.00**: Perfect (all criteria met)
 - **0.67**: Partial credit (e.g., 2/3 keywords found)
 - **0.00**: Failed (criteria not met)
+
+Metadata enrichment evals separate gates from quality. Gates are pass/fail checks for whether a
+case produced an interpretable result. The headline score is metadata quality only; ordinary
+submaximal metadata judgment scores are review signals, not proof that the prompt should memorize
+the case.
+
+For metadata assignment, `entity_type` is the only required metadata field. Optional blanks receive
+conservative partial credit when gold has a value, and existing index/anatomic code extras carried
+forward from the input are not penalized as new hallucinated additions. Use `--fixture`,
+`--fixture-sample`, `--seed`, `--scenario`, `--case`, and `--limit` on
+`python -m evals.metadata_assignment` for filtered runs.
 
 ## Observability with Logfire
 

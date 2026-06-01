@@ -19,7 +19,13 @@ from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
 
+from evals.metadata_scoring import print_weighted_summary, score_set_similarity
+
 EVAL_MAX_CONCURRENCY = 2
+EVALUATOR_WEIGHTS: dict[str, float] = {
+    "SelectedCandidateEvaluator": 0.60,
+    "BodyRegionEvaluator": 0.40,
+}
 
 
 class AnatomyDecisionInput(BaseModel):
@@ -210,7 +216,12 @@ CASES: list[Case[AnatomyDecisionInput, AnatomyDecisionExpectedOutput]] = [
             description="A kidney stone that does not appear on standard radiography but may be seen on ultrasound or CT.",
             attributes=[],
             candidates=[
-                _candidate("ANATOMICLOCATIONS:RID225", "calyx of renal collecting system", "current_metadata", default_selected=True),
+                _candidate(
+                    "ANATOMICLOCATIONS:RID225",
+                    "calyx of renal collecting system",
+                    "current_metadata",
+                    default_selected=True,
+                ),
                 _candidate("ANATOMICLOCATIONS:RID205", "kidney", "current_metadata", default_selected=True),
                 _candidate("ANATOMICLOCATIONS:RID228", "renal pelvis", "current_metadata", default_selected=True),
                 _candidate("ANATOMICLOCATIONS:RID229", "ureter", "current_metadata", default_selected=True),
@@ -256,7 +267,7 @@ CASES: list[Case[AnatomyDecisionInput, AnatomyDecisionExpectedOutput]] = [
                 ),
             ],
         ),
-        selected_candidate_ids=["ANATOMICLOCATIONS:RID29859"],
+        selected_candidate_ids=["ANATOMICLOCATIONS:RID2468"],
         body_regions=[BodyRegion.CHEST],
     ),
     _case(
@@ -291,24 +302,28 @@ CASES: list[Case[AnatomyDecisionInput, AnatomyDecisionExpectedOutput]] = [
 ]
 
 
-class SelectedCandidateEvaluator(Evaluator[AnatomyDecisionInput, AnatomyDecisionActualOutput]):
-    """Score exact selected-candidate agreement."""
+class SelectedCandidateEvaluator(
+    Evaluator[AnatomyDecisionInput, AnatomyDecisionActualOutput, AnatomyDecisionExpectedOutput]
+):
+    """Score selected-candidate agreement with partial credit."""
 
-    def evaluate(self, ctx: EvaluatorContext[AnatomyDecisionInput, AnatomyDecisionActualOutput]) -> float:
+    def evaluate(
+        self, ctx: EvaluatorContext[AnatomyDecisionInput, AnatomyDecisionActualOutput, AnatomyDecisionExpectedOutput]
+    ) -> float:
         if ctx.expected_output is None or ctx.output.error:
             return 0.0
-        return float(set(ctx.output.selected_candidate_ids) == set(ctx.expected_output.selected_candidate_ids))
+        return score_set_similarity(ctx.output.selected_candidate_ids, ctx.expected_output.selected_candidate_ids)
 
 
-class BodyRegionEvaluator(Evaluator[AnatomyDecisionInput, AnatomyDecisionActualOutput]):
-    """Score exact body-region agreement."""
+class BodyRegionEvaluator(Evaluator[AnatomyDecisionInput, AnatomyDecisionActualOutput, AnatomyDecisionExpectedOutput]):
+    """Score body-region agreement with partial credit."""
 
-    def evaluate(self, ctx: EvaluatorContext[AnatomyDecisionInput, AnatomyDecisionActualOutput]) -> float:
+    def evaluate(
+        self, ctx: EvaluatorContext[AnatomyDecisionInput, AnatomyDecisionActualOutput, AnatomyDecisionExpectedOutput]
+    ) -> float:
         if ctx.expected_output is None or ctx.output.error:
             return 0.0
-        actual = set(ctx.output.body_regions or [])
-        expected = set(ctx.expected_output.body_regions)
-        return float(actual == expected)
+        return score_set_similarity(ctx.output.body_regions or [], ctx.expected_output.body_regions)
 
 
 async def run_anatomy_decision_task(case_input: AnatomyDecisionInput) -> AnatomyDecisionActualOutput:
@@ -380,5 +395,6 @@ if __name__ == "__main__":
         print("FOCUSED ANATOMY DECISION RESULTS")
         print("=" * 80 + "\n")
         report.print(include_input=False, include_output=True, include_durations=True, width=120)
+        print_weighted_summary(report, EVALUATOR_WEIGHTS, title="Anatomy decision")
 
     asyncio.run(main())

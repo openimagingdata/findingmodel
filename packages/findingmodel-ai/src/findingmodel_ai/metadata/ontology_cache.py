@@ -1,4 +1,4 @@
-"""Durable ontology lookup evidence cache for metadata enrichment workflows."""
+"""Durable ontology lookup evidence cache for metadata enrichment."""
 
 from __future__ import annotations
 
@@ -199,7 +199,9 @@ class OntologyLookupCache:
             )
         )
 
-    def get(self, system: str, code: str, *, source_service: str = "metadata_assignment") -> OntologyLookupEvidence | None:
+    def get(
+        self, system: str, code: str, *, source_service: str = "metadata_assignment"
+    ) -> OntologyLookupEvidence | None:
         self.setup()
         conn = self._connect()
         row = conn.execute(

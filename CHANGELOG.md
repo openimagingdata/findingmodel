@@ -30,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `assign_metadata()` can record ontology lookup evidence to a DuckDB cache for review and later auditing.
 - Added enrichment audit models and an auditor entrypoint for checking enriched finding models, including ontology-code evidence checks.
 - `audit_enrichment()` can run deterministic checks without the LLM auditor pass.
-- **Metadata assignment eval suite** (`evals/metadata_assignment.py`): 7 cases across 4 fixture stems, 5 evaluators (execution success, required field coverage, gold metadata match, preservation semantics, candidate integrity), plus span assertions for pipeline stage execution.
 
 #### Changed
 
@@ -41,9 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fields that lack confidence.
 - Assignment now gives stronger guidance for time course, age/sex defaults, canonical ontology
   selection, and measurement/classification handling.
-- Metadata assignment now uses focused ontology, anatomy, identity, and usage decision agents behind
-  the existing `assign_metadata()` API, improving reviewed-case stability while keeping orchestration
-  limited to assembly and sanity validation.
+- Metadata assignment now uses focused decision agents behind the existing `assign_metadata()` API,
+  improving reviewed-case stability while keeping orchestration limited to assembly and validation.
 - Anatomic candidate search now uses finding synonyms and attribute labels, adds normalized exact
   anatomy terms, includes hierarchy parents, and can reuse a caller-supplied `AnatomicLocationIndex`.
 - Anatomic candidate search now retains explicit anatomic term hits in the candidate set, improving
@@ -53,14 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   choices.
 - Metadata assignment now validates system-level anatomy and body-region consistency, preventing
   generic vascular/system findings from expanding into lists of named component locations.
-- Focused metadata agents now tolerate malformed `field_confidence` values from model output by
-  dropping the malformed confidence map instead of failing the assignment.
-- The enrichment auditor now keeps deterministic checks limited to structured evidence consistency,
-  anatomy/sex mismatch checks, non-disease entity checks, and PET/molecular-imaging pairing.
+- The enrichment auditor now focuses deterministic checks on structured metadata consistency and
+  avoids noisy text-keyword checks.
 - `MetadataAssignmentReview` includes `assignment_mode` (`"reassess"` or `"fill_blanks_only"`).
-- `MetadataAssignmentDecision` supports `clear_fields` to explicitly null out metadata fields in reassess mode.
-- Ontology evidence cache writes no longer load DuckDB search/vector extensions and path-owned cache
-  connections are closed after assignment and audit calls.
+- Metadata reassessment now treats only `entity_type` as required and allows unsupported optional
+  fields to remain blank.
+- Etiology/time-course assignment is more conservative for descriptive findings, generic cysts and
+  effusions, and unsupported differential causes.
+- Ontology evidence cache writes are safer for assignment and audit calls.
 
 ### oidm-common
 

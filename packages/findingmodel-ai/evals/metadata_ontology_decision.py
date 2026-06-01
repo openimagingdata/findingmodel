@@ -14,7 +14,10 @@ from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 from pydantic_evals.reporting import EvaluationReport
 
+from evals.metadata_scoring import print_weighted_summary, score_set_similarity
+
 EVAL_MAX_CONCURRENCY = 2
+EVALUATOR_WEIGHTS: dict[str, float] = {"OntologyEvaluator": 1.0}
 
 
 class OntologyDecisionInput(BaseModel):
@@ -136,16 +139,121 @@ CASES: list[Case[OntologyDecisionInput, OntologyDecisionExpectedOutput]] = [
         ),
         selected_candidate_ids={"GAMUTS:6882"},
     ),
+    _case(
+        "exact_matches_across_systems_can_both_be_canonical",
+        payload=_payload(
+            name="pulmonary consolidation",
+            description="Air-space opacity representing consolidation in lung parenchyma.",
+            ontology_candidates=[
+                _ontology_candidate(
+                    "RADLEX:RID28473",
+                    "pulmonary consolidation",
+                    source_bucket="exact_matches",
+                    relationship=OntologyCandidateRelationship.EXACT_MATCH.value,
+                    selected=True,
+                ),
+                _ontology_candidate(
+                    "SNOMEDCT:95436008",
+                    "pulmonary consolidation",
+                    source_bucket="exact_matches",
+                    relationship=OntologyCandidateRelationship.EXACT_MATCH.value,
+                    selected=True,
+                ),
+                _ontology_candidate(
+                    "SNOMEDCT:233604007",
+                    "pneumonia",
+                    source_bucket="marginal",
+                    relationship=OntologyCandidateRelationship.RELATED.value,
+                    selected=False,
+                ),
+            ],
+        ),
+        selected_candidate_ids={"RADLEX:RID28473", "SNOMEDCT:95436008"},
+    ),
+    _case(
+        "dropped_qualifier_is_not_canonical",
+        payload=_payload(
+            name="subacute infarct",
+            description="Infarct with subacute imaging appearance.",
+            ontology_candidates=[
+                _ontology_candidate(
+                    "RADLEX:SUBACUTE_INFARCT",
+                    "subacute infarct",
+                    source_bucket="exact_matches",
+                    relationship=OntologyCandidateRelationship.EXACT_MATCH.value,
+                    selected=True,
+                ),
+                _ontology_candidate(
+                    "SNOMEDCT:INFARCT",
+                    "infarct",
+                    source_bucket="should_include",
+                    relationship=OntologyCandidateRelationship.CLINICALLY_SUBSTITUTABLE.value,
+                    selected=True,
+                ),
+            ],
+        ),
+        selected_candidate_ids={"RADLEX:SUBACUTE_INFARCT"},
+    ),
+    _case(
+        "anatomy_only_candidate_is_review_evidence",
+        payload=_payload(
+            name="gas in esophagus",
+            description="Gas visible within the esophageal lumen.",
+            ontology_candidates=[
+                _ontology_candidate(
+                    "RADLEX:GAS_IN_ESOPHAGUS",
+                    "gas in esophagus",
+                    source_bucket="exact_matches",
+                    relationship=OntologyCandidateRelationship.EXACT_MATCH.value,
+                    selected=True,
+                ),
+                _ontology_candidate(
+                    "RADLEX:ESOPHAGUS",
+                    "esophagus",
+                    source_bucket="should_include",
+                    relationship=OntologyCandidateRelationship.RELATED.value,
+                    selected=False,
+                ),
+            ],
+        ),
+        selected_candidate_ids={"RADLEX:GAS_IN_ESOPHAGUS"},
+    ),
+    _case(
+        "assessment_target_disease_is_not_canonical",
+        payload=_payload(
+            name="parenchymal volume score",
+            description="Structured score summarizing parenchymal volume loss severity.",
+            ontology_candidates=[
+                _ontology_candidate(
+                    "LOINC:VOLUME_SCORE",
+                    "parenchymal volume score",
+                    source_bucket="exact_matches",
+                    relationship=OntologyCandidateRelationship.EXACT_MATCH.value,
+                    selected=True,
+                ),
+                _ontology_candidate(
+                    "SNOMEDCT:ATROPHY",
+                    "parenchymal atrophy",
+                    source_bucket="should_include",
+                    relationship=OntologyCandidateRelationship.CLINICALLY_SUBSTITUTABLE.value,
+                    selected=True,
+                ),
+            ],
+        ),
+        selected_candidate_ids={"LOINC:VOLUME_SCORE"},
+    ),
 ]
 
 
-class OntologyEvaluator(Evaluator[OntologyDecisionInput, OntologyDecisionActualOutput]):
-    """Score exact canonical candidate agreement."""
+class OntologyEvaluator(Evaluator[OntologyDecisionInput, OntologyDecisionActualOutput, OntologyDecisionExpectedOutput]):
+    """Score canonical candidate agreement with partial credit."""
 
-    def evaluate(self, ctx: EvaluatorContext[OntologyDecisionInput, OntologyDecisionActualOutput]) -> float:
+    def evaluate(
+        self, ctx: EvaluatorContext[OntologyDecisionInput, OntologyDecisionActualOutput, OntologyDecisionExpectedOutput]
+    ) -> float:
         if ctx.output.error is not None:
             return 0.0
-        return float(ctx.output.selected_candidate_ids == ctx.expected_output.selected_candidate_ids)
+        return score_set_similarity(ctx.output.selected_candidate_ids, ctx.expected_output.selected_candidate_ids)
 
 
 async def run_ontology_decision_task(case_input: OntologyDecisionInput) -> OntologyDecisionActualOutput:
@@ -188,5 +296,6 @@ if __name__ == "__main__":
         print("=" * 80)
         report = asyncio.run(run_metadata_ontology_decision_evals())
         report.print(include_input=False, include_expected_output=False, include_durations=True)
+        print_weighted_summary(report, EVALUATOR_WEIGHTS, title="Ontology decision")
     except KeyboardInterrupt:
         raise SystemExit(130) from None

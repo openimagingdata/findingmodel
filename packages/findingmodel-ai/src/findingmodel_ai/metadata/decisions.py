@@ -24,7 +24,7 @@ from findingmodel_ai.metadata.types import (
 
 
 class OntologyCandidateDecision(BaseModel):
-    """Classifier decision for one ontology candidate."""
+    """Selection decision for one ontology candidate."""
 
     candidate_id: str
     relationship: OntologyCandidateRelationship
@@ -33,14 +33,16 @@ class OntologyCandidateDecision(BaseModel):
 
 
 class AnatomicCandidateDecision(BaseModel):
-    """Classifier decision for one anatomic candidate."""
+    """Selection decision for one anatomic candidate."""
 
     candidate_id: str
     selected: bool
+    rationale: str | None = None
+    rejection_reason: str | None = None
 
 
 class MetadataAssignmentDecision(BaseModel):
-    """Legacy aggregate output for metadata-assignment compatibility."""
+    """Combined focused-agent output used by metadata assignment assembly."""
 
     body_regions: list[BodyRegion] | None = Field(
         default=None,
@@ -52,7 +54,7 @@ class MetadataAssignmentDecision(BaseModel):
     subspecialties: list[Subspecialty] | None = Field(
         default=None,
         description=(
-            "Reading-workflow labels: BR breast, CA cardiac, CH chest, ER emergency, GI "
+            "Radiology domain labels: BR breast, CA cardiac, CH chest, ER emergency, GI "
             "gastrointestinal, GU genitourinary, HN head/neck, IR interventional, MI molecular/PET, "
             "MK musculoskeletal, NM nuclear medicine, NR neuroradiology, OB obstetric/gynecologic, "
             "OI oncologic imaging, PD pediatric, SQ quality/safety/technique, VA vascular."
@@ -81,14 +83,15 @@ class MetadataAssignmentDecision(BaseModel):
         default=None,
         description="Expected observable imaging duration and behavior for the modeled finding itself.",
     )
-    age_profile: AgeProfile | None = Field(default=None, description="Patient age applicability and optional commonness.")
+    age_profile: AgeProfile | None = Field(
+        default=None, description="Patient age applicability and optional commonness."
+    )
     sex_specificity: SexSpecificity | None = Field(
         default=None,
         description="Patient sex applicability: male-specific, female-specific, or sex-neutral.",
     )
     ontology_decisions: list[OntologyCandidateDecision] = Field(default_factory=list)
     anatomic_decisions: list[AnatomicCandidateDecision] = Field(default_factory=list)
-    clear_fields: list[str] = Field(default_factory=list)
     classification_rationale: str = ""
     field_confidence: dict[ConfidenceFieldKey, FieldConfidenceScore] = Field(default_factory=dict)
 
@@ -98,8 +101,8 @@ class MetadataAssignmentDecision(BaseModel):
         return coerce_field_confidence_map(value)
 
 
-class IdentityDecision(BaseModel):
-    """Focused identity and natural-history output."""
+class EntityTypeDecision(BaseModel):
+    """Focused entity-type output."""
 
     entity_type: EntityType | None = Field(
         default=None,
@@ -108,11 +111,6 @@ class IdentityDecision(BaseModel):
             "recommendation, or technique_issue."
         ),
     )
-    expected_time_course: ExpectedTimeCourse | None = Field(
-        default=None,
-        description="Expected observable imaging duration and behavior for the modeled finding itself.",
-    )
-    clear_fields: list[str] = Field(default_factory=list)
     field_confidence: dict[ConfidenceFieldKey, FieldConfidenceScore] = Field(default_factory=dict)
 
     @field_validator("field_confidence", mode="before")
@@ -120,36 +118,34 @@ class IdentityDecision(BaseModel):
     def _coerce_field_confidence(cls, value: object) -> object:
         return coerce_field_confidence_map(value)
 
-    @field_validator("clear_fields")
-    @classmethod
-    def _drop_internal_clear_fields(cls, value: list[str]) -> list[str]:
-        return [field for field in value if field not in {"etiologies", "field_confidence", "clear_fields"}]
 
-
-class EtiologyDecision(BaseModel):
-    """Focused broad-cause output."""
+class EtiologyTempoDecision(BaseModel):
+    """Pilot focused broad-cause and observable-persistence output."""
 
     etiologies: list[EtiologyCode] | None = Field(
         default=None,
         description=(
-            "Broad cause class only when intrinsic to the modeled finding. Allowed families include "
-            "inflammatory, neoplastic, traumatic, vascular, cardiac, degenerative, metabolic, "
-            "congenital, developmental, autoimmune, toxic, mechanical, iatrogenic, idiopathic, and "
-            "normal-variant, with the listed enum values providing specific subtypes."
+            "Why the finding exists: the common disease process, injury, treatment/device effect, "
+            "or normal variant that produces the finding or diagnosis. Null when no cause label is "
+            "supported."
         ),
     )
-    clear_fields: list[str] = Field(default_factory=list)
-    field_confidence: dict[ConfidenceFieldKey, FieldConfidenceScore] = Field(default_factory=dict)
+    expected_time_course: ExpectedTimeCourse | None = Field(
+        default=None,
+        description=(
+            "How long the finding commonly remains visible on imaging, using the long end of common "
+            "persistence rather than symptom duration or rare outliers."
+        ),
+    )
+    field_confidence: dict[ConfidenceFieldKey, FieldConfidenceScore] = Field(
+        default_factory=dict,
+        description="Optional confidence scores from 0 to 1 for metadata fields assigned by this agent.",
+    )
 
     @field_validator("field_confidence", mode="before")
     @classmethod
     def _coerce_field_confidence(cls, value: object) -> object:
         return coerce_field_confidence_map(value)
-
-    @field_validator("clear_fields")
-    @classmethod
-    def _drop_internal_clear_fields(cls, value: list[str]) -> list[str]:
-        return [field for field in value if field not in {"field_confidence", "clear_fields"}]
 
 
 class PatientApplicabilityDecision(BaseModel):
@@ -163,7 +159,6 @@ class PatientApplicabilityDecision(BaseModel):
         default=None,
         description="Patient sex applicability: male-specific, female-specific, or sex-neutral.",
     )
-    clear_fields: list[str] = Field(default_factory=list)
     field_confidence: dict[ConfidenceFieldKey, FieldConfidenceScore] = Field(default_factory=dict)
 
     @field_validator("field_confidence", mode="before")
@@ -171,29 +166,20 @@ class PatientApplicabilityDecision(BaseModel):
     def _coerce_field_confidence(cls, value: object) -> object:
         return coerce_field_confidence_map(value)
 
-    @field_validator("clear_fields")
-    @classmethod
-    def _drop_internal_clear_fields(cls, value: list[str]) -> list[str]:
-        return [field for field in value if field not in {"field_confidence", "clear_fields"}]
 
-
-class ImagingWorkflowDecision(BaseModel):
-    """Focused imaging modality and workflow output."""
+class SubspecialtyDomainDecision(BaseModel):
+    """Focused radiology subspecialty-domain output."""
 
     subspecialties: list[Subspecialty] | None = Field(
         default=None,
         description=(
-            "Reading-workflow labels: BR breast, CA cardiac, CH chest, ER emergency, GI "
-            "gastrointestinal, GU genitourinary, HN head/neck, IR interventional, MI molecular/PET, "
-            "MK musculoskeletal, NM nuclear medicine, NR neuroradiology, OB obstetric/gynecologic, "
-            "OI oncologic imaging, PD pediatric, SQ quality/safety/technique, VA vascular."
+            "Multi-label radiology domain tags: BR breast, CA cardiac, CH chest, ER emergency, "
+            "GI gastrointestinal/hepatobiliary, GU genitourinary, HN head/neck, IR interventional, "
+            "MI molecular/PET, MK musculoskeletal, NM nuclear medicine, NR neuroradiology, "
+            "OB obstetric/gynecologic, OI oncologic, PD pediatric, SQ quality/safety/technique, "
+            "VA vascular."
         ),
     )
-    applicable_modalities: list[Modality] | None = Field(
-        default=None,
-        description="Routine direct imaging modalities for the modeled finding: XR, CT, MR, US, PET, NM, MG, RF, or DSA.",
-    )
-    clear_fields: list[str] = Field(default_factory=list)
     field_confidence: dict[ConfidenceFieldKey, FieldConfidenceScore] = Field(default_factory=dict)
 
     @field_validator("field_confidence", mode="before")
@@ -201,10 +187,20 @@ class ImagingWorkflowDecision(BaseModel):
     def _coerce_field_confidence(cls, value: object) -> object:
         return coerce_field_confidence_map(value)
 
-    @field_validator("clear_fields")
+
+class ModalityApplicabilityDecision(BaseModel):
+    """Focused imaging-modality applicability output."""
+
+    applicable_modalities: list[Modality] | None = Field(
+        default=None,
+        description="Routine direct imaging modalities for the modeled finding: XR, CT, MR, US, PET, NM, MG, RF, or DSA.",
+    )
+    field_confidence: dict[ConfidenceFieldKey, FieldConfidenceScore] = Field(default_factory=dict)
+
+    @field_validator("field_confidence", mode="before")
     @classmethod
-    def _drop_internal_clear_fields(cls, value: list[str]) -> list[str]:
-        return [field for field in value if field not in {"field_confidence", "clear_fields"}]
+    def _coerce_field_confidence(cls, value: object) -> object:
+        return coerce_field_confidence_map(value)
 
 
 class OntologyDecision(BaseModel):

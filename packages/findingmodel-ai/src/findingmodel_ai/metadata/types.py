@@ -1,4 +1,4 @@
-"""Metadata-assignment result and review types for structured finding model workflows."""
+"""Metadata-assignment result and review types for structured finding models."""
 
 from datetime import datetime
 from enum import Enum
@@ -57,7 +57,7 @@ def coerce_field_confidence_map(value: object) -> dict[ConfidenceFieldKey, Field
         score = _coerce_confidence_score(raw_value)
         if score is None:
             continue
-        coerced[raw_key] = score  # type: ignore[literal-required]
+        coerced[raw_key] = score
 
     return coerced
 

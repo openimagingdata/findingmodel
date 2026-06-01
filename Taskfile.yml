@@ -150,6 +150,41 @@ tasks:
       - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_assignment
     silent: true
 
+  evals:metadata:
+    desc: "Run bounded metadata enrichment evaluation suites"
+    cmds:
+      - echo "Running bounded metadata enrichment evaluations..."
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_assignment --fixture-sample 2 --seed 20260515 --details-output /tmp/metadata-assignment-bounded-details.csv
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_ontology_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_anatomy_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_entity_type_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_patient_applicability_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_subspecialty_domain_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_modality_applicability_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_etiology_tempo_decision --details-output /tmp/metadata-etiology-tempo-bounded-details.csv
+    silent: true
+
+  evals:metadata:smoke:
+    desc: "Run a small metadata assignment smoke eval"
+    cmds:
+      - echo "Running metadata assignment smoke evaluation..."
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_assignment --limit 2
+    silent: true
+
+  evals:metadata:full:
+    desc: "Run full metadata enrichment evaluation suites"
+    cmds:
+      - echo "Running full metadata enrichment evaluations..."
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_assignment
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_ontology_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_anatomy_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_entity_type_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_patient_applicability_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_subspecialty_domain_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_modality_applicability_decision
+      - PYTHONPATH=packages/findingmodel-ai uv run python -m evals.metadata_etiology_tempo_decision
+    silent: true
+
   check:
     desc: "Check all packages (format, lint, type-check)"
     cmds:
