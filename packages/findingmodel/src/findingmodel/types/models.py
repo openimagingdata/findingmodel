@@ -155,7 +155,9 @@ class FindingModelFull(BaseModel):
                 if isinstance(code, IndexCode) and not (code.display or "").strip():
                     missing.append(f"{field_name}.{code.system}:{code.code}")
         if missing:
-            raise ValueError("Model-level index_codes and anatomic_locations require display values: " + ", ".join(missing))
+            raise ValueError(
+                "Model-level index_codes and anatomic_locations require display values: " + ", ".join(missing)
+            )
         return self
 
     def as_markdown(self, hide_ids: bool = False) -> str:

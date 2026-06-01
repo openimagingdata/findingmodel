@@ -631,10 +631,7 @@ async def find_anatomic_locations(
             reasoning=f"No anatomic locations found for '{finding_name}'.",
         )
 
-    logger.info(
-        f"Anatomic candidate gathering complete for '{finding_name}': "
-        f"candidates={len(candidates)}"
-    )
+    logger.info(f"Anatomic candidate gathering complete for '{finding_name}': candidates={len(candidates)}")
     return AnatomicCandidateSearchResponse(
         candidates=candidates,
         query_terms=query_info.terms,
@@ -662,6 +659,4 @@ def _retain_exact_term_locations(
     ]
     if not retained_exact:
         return response
-    return response.model_copy(
-        update={"alternate_locations": [*retained_exact, *response.alternate_locations][:8]}
-    )
+    return response.model_copy(update={"alternate_locations": [*retained_exact, *response.alternate_locations][:8]})

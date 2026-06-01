@@ -105,7 +105,9 @@ def _deterministic_flags(
     ]
 
 
-def _ontology_evidence_flags(finding_model: FindingModelFull, cache: OntologyLookupCache | None) -> list[EnrichmentAuditFlag]:
+def _ontology_evidence_flags(
+    finding_model: FindingModelFull, cache: OntologyLookupCache | None
+) -> list[EnrichmentAuditFlag]:
     flags: list[EnrichmentAuditFlag] = []
     for code in finding_model.index_codes or []:
         evidence = cache.get(code.system, code.code) if cache else None
@@ -170,12 +172,10 @@ def _audit_prompt(
     ontology_evidence = []
     for code in finding_model.index_codes or []:
         evidence = cache.get(code.system, code.code) if cache else None
-        ontology_evidence.append(
-            {
-                "code": code.model_dump(mode="json"),
-                "cache_evidence": evidence.model_dump(mode="json") if evidence else None,
-            }
-        )
+        ontology_evidence.append({
+            "code": code.model_dump(mode="json"),
+            "cache_evidence": evidence.model_dump(mode="json") if evidence else None,
+        })
 
     payload = {
         "finding_model": finding_model.model_dump(mode="json", exclude_none=True),

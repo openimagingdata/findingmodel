@@ -498,12 +498,14 @@ class TestFindingModelPublishCommand:
             patch("oidm_maintenance.findingmodel.publish.run_sanity_check", return_value=sanity_result),
             patch("oidm_maintenance.findingmodel.publish.compute_file_hash", return_value="sha256:abc"),
             patch("oidm_maintenance.findingmodel.publish.console.input", return_value="yes"),
-            patch("oidm_maintenance.findingmodel.publish.upload_file_to_s3", return_value="https://example/db.duckdb")
-            as mock_upload,
+            patch(
+                "oidm_maintenance.findingmodel.publish.upload_file_to_s3", return_value="https://example/db.duckdb"
+            ) as mock_upload,
             patch("oidm_maintenance.findingmodel.publish.load_manifest_from_s3", return_value={"databases": {}}),
             patch("oidm_maintenance.findingmodel.publish.backup_manifest", return_value="https://example/backup.json"),
-            patch("oidm_maintenance.findingmodel.publish.update_manifest_entry", return_value={"databases": {}})
-            as mock_update,
+            patch(
+                "oidm_maintenance.findingmodel.publish.update_manifest_entry", return_value={"databases": {}}
+            ) as mock_update,
             patch("oidm_maintenance.findingmodel.publish.save_manifest_to_s3"),
         ):
             success = publish_findingmodel_database(

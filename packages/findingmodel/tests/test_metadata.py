@@ -100,7 +100,10 @@ def test_subspecialty_meaning_property() -> None:
     assert Subspecialty.BR.meaning == "Breast (Imaging and Interventional)"
     assert Subspecialty.MI.meaning == "Molecular Imaging"
     assert Subspecialty.NM.meaning == "Nuclear Medicine"
-    assert Subspecialty.SQ.meaning == "Quality Assurance/Quality Improvement (including radiation and general safety issues)"
+    assert (
+        Subspecialty.SQ.meaning
+        == "Quality Assurance/Quality Improvement (including radiation and general safety issues)"
+    )
     assert Subspecialty.VA.meaning == "Vascular"
 
 

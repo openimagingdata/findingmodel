@@ -130,7 +130,9 @@ def findingmodel() -> None:
     help="Output DuckDB file path",
 )
 @click.option("--no-embeddings", is_flag=True, help="Skip embedding generation")
-@click.option("--schema-name", default="finding_models_metadata", show_default=True, help="Schema/artifact name to record.")
+@click.option(
+    "--schema-name", default="finding_models_metadata", show_default=True, help="Schema/artifact name to record."
+)
 @click.option("--schema-version", default="2.0.0", show_default=True, help="Schema version to record.")
 @click.option("--source-commit", default=None, help="Optional source-data repository commit to record.")
 def findingmodel_build(

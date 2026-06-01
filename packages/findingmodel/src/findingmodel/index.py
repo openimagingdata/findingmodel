@@ -1725,7 +1725,6 @@ class FindingModelIndex(ReadOnlyDuckDBIndex):
             )
 
 
-
 # Alias for backward compatibility
 Index = FindingModelIndex
 

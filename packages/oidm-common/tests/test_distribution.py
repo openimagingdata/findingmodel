@@ -204,5 +204,3 @@ class TestEnsureDbFileValidation:
             )
 
             assert result == target_path
-
-
