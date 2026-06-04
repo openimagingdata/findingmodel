@@ -1,0 +1,42 @@
+{
+  "_comment": "Reviewer-approved corrections to etiology gold, applied as a scoring-time overlay so the canonical approved-outputs fixture (and its payload hashes / writeback authority) stay intact. Each entry replaces the etiologies for that item_id. Canonical writeback is a separate, sign-off-gated step.",
+  "_reviewed": "2026-06-03 (radiologist)",
+  "corrections": {
+    "abnormal_right_paratracheal_stripe": {
+      "etiologies": [],
+      "reason": "descriptive finding; the curator pasted infectious+malignant differential. Agent right to omit."
+    },
+    "fetal_chest_mass": {
+      "etiologies": ["neoplastic:potential"],
+      "reason": "indeterminate mass -> neoplastic:potential, not benign+malignant+formation (avoid malignancy over-call)."
+    },
+    "infratentorial_intracranial_tumor_in_a_child": {
+      "etiologies": ["neoplastic:potential"],
+      "reason": "indeterminate tumor -> neoplastic:potential (reviewer ruling), consistent with the indeterminate-mass rule; not benign+malignant+potential and not the over-lenient bare parent."
+    },
+    "abnormal_sternomanubrial_synchondrosis": {
+      "etiologies": ["congenital", "developmental"],
+      "reason": "reviewer ruled the agent 'correct enough' (formation anomaly; developmental/congenital or blank acceptable). Encoded so the heavier over-reach penalty does not wrongly ding it."
+    },
+    "breast_soft_tissue_lesion": {
+      "etiologies": ["neoplastic:potential"],
+      "reason": "indeterminate lesion -> neoplastic:potential (was blank; agent's benign+malignant also wrong)."
+    },
+    "breast_calcification_cluster": {
+      "etiologies": ["neoplastic:potential"],
+      "reason": "cluster can flag malignancy -> neoplastic:potential (was blank)."
+    },
+    "pneumonia": {
+      "etiologies": ["inflammatory:infectious"],
+      "reason": "single most-specific label (pneumonia is infectious), not parent+child."
+    },
+    "pediatric_chest_wall_lesion": {
+      "etiologies": ["neoplastic:potential"],
+      "reason": "indeterminate mass/lesion -> neoplastic:potential (gold was blank); agent's call is correct under the indeterminate-mass rule."
+    },
+    "t2_hyperintense_renal_mass": {
+      "etiologies": ["neoplastic:potential"],
+      "reason": "indeterminate renal mass -> neoplastic:potential (gold was blank); agent's call is correct under the indeterminate-mass rule."
+    }
+  }
+}

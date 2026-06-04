@@ -82,6 +82,107 @@ def score_commission_sensitive_set_similarity(
     )
 
 
+# --- Etiology: family-aware + clinically-asymmetric scoring (reviewer-calibrated) ---------------
+#
+# Severity is by clinical risk, not set distance (per radiologist review):
+#   - over-calling malignancy is the cardinal sin (heavy);
+#   - under-calling (missing a label) is far more forgivable than over-calling (small);
+#   - parent/child within a family is free; most siblings are partial;
+#   - the formation trio (congenital/developmental/normal-variant) is interchangeable for
+#     developmental<->congenital, but swapping normal-variant for an anomaly label is a minor error;
+#   - iatrogenic device<->post-operative is near-identical.
+
+FORMATION_TRIO = frozenset({"congenital", "developmental", "normal-variant"})
+MALIGNANT_CODES = frozenset({"neoplastic:malignant", "neoplastic:metastatic"})
+
+# penalties (1 - quality) for the relevant relationships
+_PEN_PARENT_CHILD = 0.0
+_PEN_TRIO_SWAP = 0.0  # developmental <-> congenital
+_PEN_TRIO_VARIANT = 0.15  # normal-variant <-> developmental/congenital
+_PEN_IATROGENIC_NEAR = 0.05  # device <-> post-operative
+_PEN_SIBLING = 0.40  # generic same-family wrong sibling
+_PEN_MALIGNANCY_OVERCALL = 0.70  # assert malignant/metastatic when truth is not
+_PEN_UNDERCALL = 0.20  # missed a label with no relative present
+_PEN_REDUNDANT_ADD = 0.15  # extra label that is a family/trio relative of a gold label
+_PEN_CROSS_FAMILY_ADD = 0.60  # unjustified extra from an unrelated family — heavy enough that a
+# single one drops an otherwise-correct finding below the 0.75 floor (over-reach must cost).
+
+
+def _family(code: str) -> str:
+    return code.split(":", 1)[0]
+
+
+def _is_parent_child(a: str, b: str) -> bool:
+    return (":" not in a and b.startswith(a + ":")) or (":" not in b and a.startswith(b + ":"))
+
+
+def _relate_penalty(a: str, g: str) -> float | None:
+    """Penalty for using etiology `a` where gold has `g`; None if the two are unrelated."""
+    if a == g:
+        return 0.0
+    if _is_parent_child(a, g):
+        return _PEN_PARENT_CHILD
+    if a in FORMATION_TRIO and g in FORMATION_TRIO:
+        return _PEN_TRIO_VARIANT if "normal-variant" in (a, g) else _PEN_TRIO_SWAP
+    if _family(a) == _family(g):
+        if a in MALIGNANT_CODES and g not in MALIGNANT_CODES:
+            return _PEN_MALIGNANCY_OVERCALL
+        if _family(a) == "iatrogenic" and {a, g} <= {"iatrogenic:device", "iatrogenic:post-operative"}:
+            return _PEN_IATROGENIC_NEAR
+        return _PEN_SIBLING
+    return None
+
+
+def score_etiologies(actual: Iterable[str] | None, expected: Iterable[str] | None) -> tuple[float, int]:
+    """Score etiology sets with family-aware, clinically-asymmetric severity.
+
+    Returns (score 0-1, n_hard_overcalls) where a hard over-call is an unsupported addition that is
+    cross-family or asserts malignancy (the over-call rate's numerator).
+    """
+    a_set = {str(x) for x in (actual or [])}
+    g_set = {str(x) for x in (expected or [])}
+    if not a_set and not g_set:
+        return 1.0, 0
+    slots: list[float] = []
+    used: set[str] = set()
+    # match each gold label to its best available actual (exact > relative)
+    for g in sorted(g_set):
+        if g in a_set:
+            slots.append(1.0)
+            used.add(g)
+            continue
+        best: str | None = None
+        best_pen: float = 1.0
+        for a in sorted(a_set - used):
+            pen = _relate_penalty(a, g)
+            if pen is not None and (best is None or pen < best_pen):
+                best, best_pen = a, pen
+        if best is not None:
+            slots.append(1.0 - best_pen)
+            used.add(best)
+        else:
+            slots.append(1.0 - _PEN_UNDERCALL)  # under-call: forgivable
+    # leftover actual labels are additions
+    hard_overcalls = 0
+    for a in sorted(a_set - used):
+        if any(_relate_penalty(a, g) is not None for g in g_set):
+            slots.append(1.0 - _PEN_REDUNDANT_ADD)  # redundant family/trio relative
+        elif a in MALIGNANT_CODES:
+            slots.append(1.0 - _PEN_MALIGNANCY_OVERCALL)
+            hard_overcalls += 1
+        else:
+            slots.append(1.0 - _PEN_CROSS_FAMILY_ADD)
+            hard_overcalls += 1
+    return round(sum(slots) / len(slots), 4), hard_overcalls
+
+
+def count_malignancy_overcalls(actual: Iterable[str] | None, expected: Iterable[str] | None) -> int:
+    """Count asserted malignant/metastatic labels absent from gold — the cardinal-sin tripwire."""
+    a_set = {str(x) for x in (actual or [])}
+    g_set = {str(x) for x in (expected or [])}
+    return sum(1 for x in (a_set - g_set) if x in MALIGNANT_CODES)
+
+
 def score_optional_field_match(actual: Any, expected: Any, *, abstention_credit: float = 0.25) -> float:
     """Score optional metadata with conservative credit for justified blanks."""
 

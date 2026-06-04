@@ -1,0 +1,9 @@
+family,relationship,members,proposed_rubric_treatment,YOUR_CALL,NOTES
+vascular,parent/child,vascular -> vascular:ischemic/hemorrhagic/thrombotic/aneurysmal,"parent given when a child is present (or vice versa) = MATCH, no penalty",Agree,
+vascular,sibling,vascular:ischemic vs :hemorrhagic vs :thrombotic vs :aneurysmal,wrong sibling = PARTIAL (~0.5),Agree,
+neoplastic,sibling,neoplastic:benign vs :malignant vs :metastatic vs :potential,wrong sibling = PARTIAL; benign<->malignant a bigger miss than potential<->malignant?,Calling ANYTHING malignant that's benign or potential is bad,
+traumatic,sibling,traumatic:acute vs :sequela,wrong sibling = PARTIAL,Agree,
+inflammatory,parent/child,inflammatory -> inflammatory:infectious,parent/child = MATCH,Agree,
+iatrogenic,sibling,iatrogenic:device/post-operative/post-radiation/medication-related,device<->post-operative near-MATCH; others PARTIAL,Agree,
+formation trio,sibling cluster,congenital ~ developmental ~ normal-variant,PARTIAL — but is normal-variant (not-a-disease) far from congenital/developmental (anomaly)? YOUR CALL,Partial for these,
+cross-family,unrelated,e.g. inflammatory vs neoplastic vs vascular,"full error, no credit",Agree,
