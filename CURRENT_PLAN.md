@@ -1,0 +1,1 @@
+docs/plans/metadata-enrichment-current-plan.md

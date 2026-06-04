@@ -359,6 +359,8 @@ Current bounded quality results should be treated as diagnostic:
 
 ## Next Decision Points
 
+- **NEXT (immediate): the cold-gold certification rehearsal — see the section below.** Stop tuning
+  until it is run; it is the only non-circular evidence the agent is ready.
 - Finish and review the documentation refactor before asking permission for the docs commit.
 - Commit review evidence and the source-apply manifest only after Gate A tests pass.
 - Commit tool/eval refactor after targeted tests and bounded metadata evals pass.
@@ -366,3 +368,30 @@ Current bounded quality results should be treated as diagnostic:
 - After the two repos are git-clean, use the visible eval failure classes to decide the next prompt
   or gold-data tuning step.
 - Before any database publication, revalidate package pins and both database artifact paths.
+
+## Next Step: Cold-Gold Certification Rehearsal
+
+This is the immediate next action, and it is a deliberate guard against fooling ourselves.
+
+Why it is needed: the recent etiology and time-course gains were produced by tuning the prompt, the
+scoring rubric, and the answer key all on the same 54 development findings we have been studying —
+and several gold answers were corrected *toward* what the model produced. A score on those 54
+findings is therefore partly circular: it can rise because we scored more leniently or relabeled the
+answer key, not because the agent improved. It cannot stand as proof of readiness.
+
+The test:
+
+1. Freeze the prompt, the scorer, and the gold corrections — no more tuning.
+2. Select ~10-15 findings the agent has never seen (exclude the original 150 reviewed records and any
+   source-model-issue findings); record the seed and the selected ids.
+3. Set the correct answers for those findings COLD — before looking at the model's output (blinded) —
+   so the answer key cannot drift toward the model the way the development gold did.
+4. Run the frozen agent on them and score with the frozen rubric.
+
+Reading the result:
+
+- Scores near the development numbers → the gains generalize; proceed toward supervised scale.
+- Scores well below → we curve-fit to the 54 development findings, and we will know by how much and
+  on which fields.
+
+Only this cold-gold result — not the development scorecard — counts as evidence the agent is ready.
