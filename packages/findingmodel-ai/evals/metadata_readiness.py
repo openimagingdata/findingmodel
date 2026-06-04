@@ -42,11 +42,12 @@ FIELD_FLOORS: dict[str, float] = {
     "age_profile": 0.85,
     "sex_specificity": 0.95,
 }
-# Etiology is gated by its family-aware score + the malignancy tripwire below, NOT this blunt cap
-# (a raw additions-rate over-counts defensible siblings / gold-lag — see the etiology rubric review).
-COMMISSION_FIELDS = {"expected_time_course", "subspecialties", "applicable_modalities"}
-COMMISSION_CAP = 0.05  # unsupported additions as a share of proposed values
-MALIGNANCY_OVERCALL_CAP = 0  # the cardinal sin: asserting malignancy absent from gold must be ~0
+# The unjustified-addition rate is REPORTED for these fields (visibility) but is NOT a pass/fail
+# gate: each field's score already penalizes unsupported extras, and a flat additions-count
+# over-counts defensible cases (see the etiology rubric review). Etiology's only hard over-call
+# guard is the malignancy stop below.
+COMMISSION_REPORT_FIELDS = {"etiologies", "expected_time_course", "subspecialties", "applicable_modalities"}
+MALIGNANCY_OVERCALL_CAP = 0  # asserting malignancy absent from gold must be ~0 (the one hard over-call stop)
 FAILURE_CLASS_CAP = 0.10  # no single low-score note may recur in > this share of records
 FAIL_THRESHOLD = 0.5  # a per-field score below this is a "miss" for failure-class bucketing
 HARD_GATES = ("execution_success", "schema_valid", "candidate_integrity")
@@ -59,8 +60,7 @@ class ReadinessReport:
     hard_gate_failures: dict[str, int]
     field_scores: dict[str, float]
     field_floor_pass: dict[str, bool]
-    commission_rates: dict[str, float]
-    commission_pass: dict[str, bool]
+    commission_rates: dict[str, float]  # informational over-addition rate, not a gate
     failure_class_breaches: dict[str, float]
     malignancy_overcalls: int = 0
 
@@ -69,7 +69,6 @@ class ReadinessReport:
         return (
             self.hard_gate_pass
             and all(self.field_floor_pass.values())
-            and all(self.commission_pass.values())
             and not self.failure_class_breaches
             and self.malignancy_overcalls <= MALIGNANCY_OVERCALL_CAP
         )
@@ -84,7 +83,6 @@ class ReadinessReport:
                 "field_scores": self.field_scores,
                 "field_floor_pass": self.field_floor_pass,
                 "commission_rates": self.commission_rates,
-                "commission_pass": self.commission_pass,
                 "failure_class_breaches": self.failure_class_breaches,
             },
             indent=2,
@@ -96,11 +94,11 @@ class ReadinessReport:
         lines.append(f"- hard gates: {'pass' if self.hard_gate_pass else 'FAIL ' + str(self.hard_gate_failures)}")
         mal_ok = self.malignancy_overcalls <= MALIGNANCY_OVERCALL_CAP
         lines.append(f"- malignancy over-calls: {self.malignancy_overcalls} {'✓' if mal_ok else '✗ (cardinal sin)'}")
-        lines += ["", "| field | score | floor | commission | ok |", "| --- | --- | --- | --- | --- |"]
+        lines += ["", "| field | score | floor | extra-rate | ok |", "| --- | --- | --- | --- | --- |"]
         for fld in sorted(self.field_scores):
             comm = self.commission_rates.get(fld)
             comm_s = "-" if comm is None else f"{comm:.2f}"
-            ok = self.field_floor_pass.get(fld, True) and self.commission_pass.get(fld, True)
+            ok = self.field_floor_pass.get(fld, True)
             lines.append(
                 f"| {fld} | {self.field_scores[fld]:.2f} | {FIELD_FLOORS.get(fld, 0.0):.2f} | {comm_s} | "
                 f"{'✓' if ok else '✗'} |"
@@ -141,10 +139,9 @@ def build_report(records: list[dict[str, Any]]) -> ReadinessReport:
     field_floor_pass = {f: field_scores[f] >= FIELD_FLOORS.get(f, 0.0) for f in field_scores}
     commission_rates = {
         f: (commission_hits[f] / proposed_total[f] if proposed_total.get(f) else 0.0)
-        for f in COMMISSION_FIELDS
+        for f in COMMISSION_REPORT_FIELDS
         if f in score_count
     }
-    commission_pass = {f: rate <= COMMISSION_CAP for f, rate in commission_rates.items()}
     breaches = {note: len(items) / n for note, items in miss_notes.items() if n and len(items) / n > FAILURE_CLASS_CAP}
     malignancy_overcalls = sum(int(r.get("malignancy_overcalls", 0)) for r in records)
 
@@ -155,7 +152,6 @@ def build_report(records: list[dict[str, Any]]) -> ReadinessReport:
         field_scores=field_scores,
         field_floor_pass=field_floor_pass,
         commission_rates=commission_rates,
-        commission_pass=commission_pass,
         malignancy_overcalls=malignancy_overcalls,
         failure_class_breaches=breaches,
     )
@@ -186,19 +182,13 @@ def _selftest() -> None:
     gate[0]["gates"]["execution_success"] = False
     assert not build_report(gate).passed
 
-    # commission cap (still applies to subspecialties/modalities/time_course): unsupported additions trip it
+    # unsupported additions are no longer a pass/fail gate for any field — the score handles them, so
+    # a field that clears its score floor passes even with a high extra-label rate
     comm = [
         rec({"subspecialties": 0.9}, item_id=f"c{i}", commission={"subspecialties": 1}, proposed={"subspecialties": 2})
         for i in range(10)
     ]
-    assert not build_report(comm).passed
-
-    # etiology is NO LONGER gated by the blunt commission cap (only by score + malignancy tripwire)
-    eti_comm = [
-        rec({"etiologies": 0.9}, item_id=f"e{i}", commission={"etiologies": 1}, proposed={"etiologies": 2})
-        for i in range(10)
-    ]
-    assert build_report(eti_comm).passed
+    assert build_report(comm).passed
 
     # malignancy tripwire: a single asserted-malignant over-call fails the run (cardinal sin)
     mal = [rec({"etiologies": 0.95}, item_id="m", malignancy_overcalls=1)]
