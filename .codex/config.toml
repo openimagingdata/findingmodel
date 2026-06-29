@@ -13,3 +13,8 @@ args = [
   # Option A (recommended for global Codex config): choose project at runtime
   "--project-from-cwd"
 ]
+
+[mcp_servers.logfire]
+url = "https://logfire-us.pydantic.dev/mcp"
+bearer_token_env_var = "FINDINGMODEL_LOGFIRE_API_KEY"
+
