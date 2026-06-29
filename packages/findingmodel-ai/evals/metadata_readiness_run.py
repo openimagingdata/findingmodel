@@ -24,12 +24,19 @@ import os
 from pathlib import Path
 from typing import Any
 
+import logfire
+
 # The agent-tag key is case-sensitive and must stay lowercase to match the AgentTag.
 PINNED_MODEL = "openai:gpt-5.4-mini-2026-03-17"
 os.environ.setdefault("AGENT_MODEL_OVERRIDES__metadata_assign", PINNED_MODEL)
 
 from findingmodel import FindingModelFull
-from findingmodel_ai.metadata.assignment import STRUCTURED_METADATA_FIELDS, assign_metadata
+from findingmodel_ai.metadata.assignment import (
+    STRUCTURED_METADATA_FIELDS,
+    assign_metadata,
+    carry_forward_index_codes,
+)
+from findingmodel_ai.observability import ensure_logfire_configured
 
 from evals.metadata_readiness import build_report
 from evals.metadata_scoring import (
@@ -49,6 +56,24 @@ ENTITY_PARTIAL = {frozenset({"finding", "diagnosis"}): 0.65, frozenset({"measure
 # approved-outputs fixture stays untouched; writeback is a separate sign-off-gated step).
 _CORRECTIONS = json.loads((FIXTURES / "etiology_gold_corrections.json").read_text())["corrections"]
 ETIOLOGY_GOLD_OVERRIDES = {item_id: c["etiologies"] for item_id, c in _CORRECTIONS.items()}
+
+
+def _load_code_anatomy_target_overrides(path: Path) -> dict[str, dict[str, Any]]:
+    """Return reviewed code/anatomy targets keyed by item id."""
+
+    if not path.exists():
+        return {}
+    target_data = json.loads(path.read_text(encoding="utf-8"))
+    overrides = {}
+    for record in target_data["records"]:
+        overrides[record["item_id"]] = {
+            "index_codes": record["index_codes"],
+            "anatomic_locations": record["anatomic_locations"],
+        }
+    return overrides
+
+
+CODE_ANATOMY_GOLD_OVERRIDES = _load_code_anatomy_target_overrides(FIXTURES / "index_code_review_targets.json")
 
 _ANATOMY_IDX: Any = None
 
@@ -224,34 +249,50 @@ def score_field(field: str, proposed: Any, gold: Any) -> tuple[float, str, int]:
     return score_commission_sensitive_set_similarity(a, g), _set_note(a, g), len(a - g)
 
 
+def reviewed_gold_for_item(item: dict[str, Any]) -> dict[str, Any]:
+    """Apply reviewed scoring overlays to one approved-output metadata record."""
+
+    item_id = item["item_id"]
+    gold = dict(item["metadata"])
+    if item_id in ETIOLOGY_GOLD_OVERRIDES:  # reviewer-approved gold correction
+        gold["etiologies"] = ETIOLOGY_GOLD_OVERRIDES[item_id]
+    if item_id in CODE_ANATOMY_GOLD_OVERRIDES:
+        gold.update(CODE_ANATOMY_GOLD_OVERRIDES[item_id])
+    return gold
+
+
 def _blank(fm: FindingModelFull) -> FindingModelFull:
     data = fm.model_dump()
-    for f in (*STRUCTURED_METADATA_FIELDS, "index_codes", "anatomic_locations"):
+    for f in (*STRUCTURED_METADATA_FIELDS, "anatomic_locations"):
         data[f] = None
+    data["index_codes"] = carry_forward_index_codes(fm) or None
     return FindingModelFull.model_validate(data)
 
 
 async def run_one(item: dict[str, Any]) -> dict[str, Any] | None:
-    path = _resolve(item["path"])
-    if path is None:
-        return None
-    fm = FindingModelFull.model_validate_json(path.read_text(encoding="utf-8"))
-    gold = item["metadata"]
-    if item["item_id"] in ETIOLOGY_GOLD_OVERRIDES:  # reviewer-approved gold correction
-        gold = {**gold, "etiologies": ETIOLOGY_GOLD_OVERRIDES[item["item_id"]]}
-    try:
-        result = await assign_metadata(_blank(fm))
-    except Exception:
-        return {
-            "item_id": item["item_id"],
-            "name": item.get("name", item["item_id"]),
-            "gates": {"execution_success": False, "schema_valid": False, "candidate_integrity": True},
-            "scores": {},
-            "notes": {},
-            "commission": {},
-            "proposed": {},
-            "detail": {},
-        }
+    item_id = item["item_id"]
+    name = item.get("name", item_id)
+    with logfire.span("metadata_readiness.item {item_id}", item_id=item_id, finding_name=name):
+        path = _resolve(item["path"])
+        if path is None:
+            logfire.error("Metadata readiness source path missing {item_id} {path}", item_id=item_id, path=item["path"])
+            return None
+        fm = FindingModelFull.model_validate_json(path.read_text(encoding="utf-8"))
+        gold = reviewed_gold_for_item(item)
+        try:
+            result = await assign_metadata(_blank(fm))
+        except Exception:
+            logfire.exception("Metadata readiness assignment failed {item_id}", item_id=item_id)
+            return {
+                "item_id": item_id,
+                "name": name,
+                "gates": {"execution_success": False, "schema_valid": False, "candidate_integrity": True},
+                "scores": {},
+                "notes": {},
+                "commission": {},
+                "proposed": {},
+                "detail": {},
+            }
     out_json = result.model.model_dump(mode="json")
     scores: dict[str, float] = {}
     notes: dict[str, str] = {}
@@ -269,9 +310,15 @@ async def run_one(item: dict[str, Any]) -> dict[str, Any] | None:
         proposed_counts[f] = len(proposed) if isinstance(proposed, list) else (1 if proposed else 0)
         detail[f] = {"score": round(score, 2), "note": note, "proposed": proposed, "gold": gold.get(f)}
     malignancy_overcalls = count_malignancy_overcalls(out_json.get("etiologies"), gold.get("etiologies"))
+    logfire.info(
+        "Metadata readiness item scored {item_id} {score_count} {malignancy_overcalls}",
+        item_id=item_id,
+        score_count=len(scores),
+        malignancy_overcalls=malignancy_overcalls,
+    )
     return {
-        "item_id": item["item_id"],
-        "name": item.get("name", item["item_id"]),
+        "item_id": item_id,
+        "name": name,
         "description": item.get("description", ""),
         "gates": {"execution_success": True, "schema_valid": True, "candidate_integrity": True},
         "scores": scores,
@@ -283,14 +330,28 @@ async def run_one(item: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-async def main(limit: int) -> None:
-    split = json.loads((FIXTURES / "metadata_eval_split_manifest.json").read_text())
-    dev_ids = {r["item_id"] for r in split["records"] if r["split"] == "dev"}
+async def main(
+    limit: int,
+    split: str = "dev",
+    *,
+    logfire_console: bool = False,
+    send_to_logfire: bool | None = None,
+) -> None:
+    ensure_logfire_configured(console=logfire_console, send_to_logfire=send_to_logfire)
+    manifest = json.loads((FIXTURES / "metadata_eval_split_manifest.json").read_text())
+    ids = {r["item_id"] for r in manifest["records"] if r["split"] == split}
     approved = json.loads((FIXTURES / "metadata_review_approved_outputs.json").read_text())["records"]
-    dev = [r for r in approved if r["item_id"] in dev_ids][:limit]
-    print(f"running {len(dev)} dev findings on {PINNED_MODEL} ...")
+    items = [r for r in approved if r["item_id"] in ids][:limit]
+    print(f"running {len(items)} {split} findings on {PINNED_MODEL} ...")
 
-    results = [r for r in await asyncio.gather(*(run_one(item) for item in dev)) if r]
+    with logfire.span(
+        "metadata_readiness.run {split}",
+        split=split,
+        limit=limit,
+        item_count=len(items),
+        pinned_model=PINNED_MODEL,
+    ):
+        results = [r for r in await asyncio.gather(*(run_one(item) for item in items)) if r]
     report = build_report(results)
     (FIXTURES.parent / "metadata_readiness_run_report.json").write_text(report.to_json() + "\n")
     (FIXTURES.parent / "metadata_readiness_run_details.json").write_text(json.dumps(results, indent=2) + "\n")
@@ -316,5 +377,17 @@ async def main(limit: int) -> None:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--limit", type=int, default=8)
-    asyncio.run(main(ap.parse_args().limit))
+    ap.add_argument("--limit", type=int, default=100)
+    ap.add_argument("--split", default="dev", help="which split to run: dev or heldout_test")
+    ap.add_argument("--logfire-console", action="store_true")
+    ap.add_argument("--no-send-to-logfire", action="store_false", dest="send_to_logfire")
+    ap.set_defaults(send_to_logfire=None)
+    args = ap.parse_args()
+    asyncio.run(
+        main(
+            args.limit,
+            args.split,
+            logfire_console=args.logfire_console,
+            send_to_logfire=args.send_to_logfire,
+        )
+    )

@@ -108,6 +108,23 @@ referenced as non-authoritative in `evals/metadata_review_artifact_inventory.py`
 or replace" — it has not yet been adopted as a tool-repo gate. When adopted, every targeted rerun
 should include it and a regression in any floor case should block the change.
 
+**Reviewed code/anatomy target overlay.** `fixtures/index_code_review_targets.json` is generated from
+the human-pruned worksheet
+`evals/index_code_candidate_review_curated_2026-06-05.txt`. That worksheet, not the raw candidate
+dump that preceded it, is the human-readable source for the target fixture. The readiness runner
+applies the fixture as a scoring-time overlay for `index_codes` and `anatomic_locations` only; it
+does not mutate `metadata_review_approved_outputs.json`.
+
+Code evaluation deliberately separates source-code carry-forward from ontology matching.
+Source-provided non-searchable systems such as `GAMUTS`, `GMTS`, RadElement/RDES, and `CDES` should
+be preserved from the `.fm.json` files rather than rediscovered through BioOntology. Searchable
+SNOMED CT, RadLex, LOINC, and local anatomy codes remain the responsibility of retrieval and
+matching. Empty lists in the fixture are intentional reviewed targets.
+
+The fixture also records the current basal-cistern anatomy gap: `RADLEX:RID9865 | basal cistern` is
+not emitted as an `anatomic_locations` target because the local `anatomic_locations` index does not
+currently contain a basal/perimesencephalic/subarachnoid cistern location.
+
 ## Current Results To Preserve
 
 Recent bounded verification passed structural gates and produced these quality signals:
@@ -141,6 +158,10 @@ Current recurring failure classes include:
 - assigning time course to findings whose persistence depends on an unresolved underlying cause;
 - adding too many modalities to findings that are not truly modality-specific;
 - treating some age/anatomic-location expectations inconsistently in end-to-end assignment;
+- under-recalling searchable SNOMED/RadLex/LOINC `index_codes` after non-searchable GAMUTS/RDES
+  carry-forward succeeds;
+- choosing broad anatomic parent locations where the reviewed code/anatomy target expects a more
+  specific child location;
 - carrying old expected values whose policy may need human adjudication.
 
 The correct response is not to paste miss cases into prompts. The evals should identify a failure

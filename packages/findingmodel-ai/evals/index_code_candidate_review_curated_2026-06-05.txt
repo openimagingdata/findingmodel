@@ -1,0 +1,545 @@
+# Curated Index-Code Candidate Review
+
+Review instructions: this file is intentionally overinclusive. Delete candidate lines that should
+not be target codes. Keep lines that should be accepted as root index_codes or
+anatomic_locations for the finding.
+
+## abdominal clips
+Input: Surgical clips identified in the abdomen on radiograph, indicating prior abdominal surgery.
+Synonyms: abdominal surgical clips
+Index code candidates:
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID56 | abdomen
+
+## abnormal proximal femur
+Input: Any deviation from the normal anatomy or pathology of the proximal femur.
+Index code candidates:
+  - GAMUTS:12448 | abnormal proximal femur [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID2662 | femur [source]
+
+## abnormal right paratracheal stripe
+Input: Widening of the right paratracheal stripe beyond 4 mm on chest radiograph, which may indicate lymphadenopathy, tracheal pathology, or mediastinal mass.
+Synonyms: right paratracheal stripe abnormality; widened right paratracheal stripe
+Index code candidates:
+  - RADLEX:RID1449 | right paratracheal stripe [source]
+  - RADLEX:RID35486 | right paratracheal stripe sign
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1384 | mediastinum [source]
+
+## abnormal sternomanubrial synchondrosis
+Input: An anomaly or irregularity at the junction between the sternum body and manubrium.
+Index code candidates:
+  - GAMUTS:31046 | abnormal sternomanubrial synchondrosis [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID2473 | sternum [source]
+
+## Acute Clavicle Fracture
+Input: Acute Clavicle Fracture Detection
+Index code candidates:
+  - SNOMEDCT:58150001 | Fracture of clavicle [source]
+  - radelement:RDES231 | acute clavicle fracture [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1854 | clavicle [source]
+
+## acute lung injury and ards in children
+Input: Acute lung injury and acute respiratory distress syndrome in pediatric patients.
+Index code candidates:
+  - LOINC:LA20566-8 | Acute lung injury/Acute respiratory distress syndrome [source]
+  - SNOMEDCT:67782005 | Acute respiratory distress syndrome [source]
+  - LOINC:LA28203-0 | Acute respiratory distress syndrome [source]
+  - GAMUTS:14342 | acute lung injury and ARDS in children [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1301 | lung [source]
+
+## air in esophagus
+Input: Air visible in the esophagus.
+Index code candidates:
+  - GAMUTS:056 | air in esophagus [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID95 | esophagus [source]
+
+## AO Spine Subaxial Cervical Spine injury Classification
+Input: AO Spine classification for subaxial cervical spine injury.
+Index code candidates:
+  - radelement:RDES279 | ao spine subaxial cervical spine injury classification [source]
+  - SNOMEDCT:262522002 | Injury of cervical spine
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID34571 | cervical vertebral column [source]
+
+## Aortic Measurements
+Input: Aortic size measurements.
+Index code candidates:
+  - SNOMEDCT:302287000 | Aortic diameter [source]
+  - radelement:RDES264 | aortic measurements [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID480 | aorta [source]
+
+## aortic stent
+Input: Endovascular stent graft within the aorta, visible as metallic mesh on radiograph.
+Synonyms: endovascular aortic repair; aortic stent graft
+Index code candidates:
+  - SNOMEDCT:705641004 | Aortic stent [source]
+  - LOINC:LP34000-7 | Aortic stent [source]
+  - LOINC:MTHU017062 | Aortic stent [source]
+  - SNOMEDCT:1208815007 | Aortic endovascular stent graft
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID480 | aorta
+
+## arterial rupture
+Input: A tear through the full thickness of the wall of an artery.
+Synonyms: artery rupture
+Index code candidates:
+  - GAMUTS:22516 | arterial rupture [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID13183 | arterial system [source]
+
+## arterial tortuosity
+Input: Abnormal twisting or winding course of an artery.
+Index code candidates:
+  - SNOMEDCT:460885001 | Tortuosity of systemic artery [source]
+  - GAMUTS:22518 | arterial tortuosity [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID13183 | arterial system [source]
+
+## basal cistern effacement
+Input: Compression or obliteration of the basal cisterns.
+Index code candidates:
+Anatomic location candidates:
+  - RADLEX:RID9865 | basal cistern
+  - ANATOMICLOCATIONS:RID6383_RID9080 | intracranial head [source]
+
+## bilateral basilar lung disease
+Input: Abnormal opacity or disease involving both lung bases.
+Index code candidates:
+  - GAMUTS:14957 | bilateral basilar lung disease [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1312 | lower lobe of lung
+
+## brain ischemia secondary to extracranial lesion
+Input: Brain ischemia due to a lesion outside the cranial cavity.
+Index code candidates:
+  - GAMUTS:7748 | brain ischemia secondary to extracranial lesion [source]
+  - SNOMEDCT:422504002 | Cerebral ischemia
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID6434 | brain [source]
+
+## breast calcification cluster
+Input: Clustered calcifications in the breast on mammography.
+Index code candidates:
+  - SNOMEDCT:129769006 | Calcification cluster [source]
+  - SNOMEDCT:697944008 | Mammographic calcification of breast [source]
+  - SNOMEDCT:27931000119107 | Mammographic microcalcification of breast
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID29895 | female breast [source]
+
+## Mammographic malignancy assessment
+Input: BI-RADS mammographic malignancy assessment.
+Index code candidates:
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID29895 | female breast [source]
+
+## breast soft tissue lesion
+Input: Soft tissue lesion of the breast.
+Index code candidates:
+  - SNOMEDCT:290073004 | Lesion of breast [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID29895 | female breast [source]
+
+## cardiac valve thickening
+Input: Thickening of one or more cardiac valves.
+Index code candidates:
+  - GAMUTS:22535 | cardiac valve thickening [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1394 | aortic valve [source]
+  - ANATOMICLOCATIONS:RID1395 | mitral valve [source]
+  - ANATOMICLOCATIONS:RID1397 | tricuspid valve [source]
+  - ANATOMICLOCATIONS:RID1396 | pulmonic valve [source]
+
+## congenital premature craniosynostosis
+Input: Congenital premature fusion of cranial sutures.
+Index code candidates:
+  - GAMUTS:6081 | congenital premature craniosynostosis [source]
+  - SNOMEDCT:85160007 | Premature fusion of cranial sutures
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID9196 | skull [source]
+
+## decreased renal cortical echogenicity
+Input: Reduced echogenicity of the renal cortex on ultrasound.
+Index code candidates:
+  - GAMUTS:17002 | decreased renal cortical echogenicity [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID211 | cortex of kidney [source]
+
+## dental periapical opacity
+Input: Opacity adjacent to a tooth apex.
+Index code candidates:
+  - GAMUTS:9078 | dental periapical opacity [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID9106 | mandibular dental arcade [source]
+  - ANATOMICLOCATIONS:RID9279 | maxillary dental arcade [source]
+
+## early intrauterine pregnancy
+Input: Early pregnancy located within the uterus.
+Index code candidates:
+  - GAMUTS:19190 | early intrauterine pregnancy [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID302 | uterus [source]
+
+## fetal chest mass
+Input: An abnormal growth located in the fetal thoracic region.
+Index code candidates:
+  - GAMUTS:19061 | fetal chest mass [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1243 | thorax [source]
+
+## focal shadowing pancreatic lesion
+Input: Local area of shadowing in the pancreas, suggestive of a mass.
+Index code candidates:
+  - GAMUTS:4878 | focal shadowing pancreatic lesion [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID170 | pancreas [source]
+
+## fracture
+Input: Bone fracture.
+Index code candidates:
+  - SNOMEDCT:125605004 | Fracture of bone [source]
+  - RADLEX:RID4650 | fracture
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID13217 | bone
+
+## gastrostomy tube
+Input: Gastrostomy tube.
+Index code candidates:
+  - SNOMEDCT:470571004 | Gastrostomy tube [source]
+  - LOINC:LP7260-5 | Gastrostomy tube [source]
+  - LOINC:MTHU001078 | Gastrostomy tube [source]
+  - LOINC:LP263817-1 | Gastrostomy tube [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID114 | stomach [source]
+
+## gyriform cortical/subcortical t1 hyperintensity
+Input: Gyriform cortical/subcortical T1 hyperintensity.
+Index code candidates:
+  - GAMUTS:7175 | gyriform cortical/subcortical T1 hyperintensity [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID13857 | cerebral hemisphere
+
+## hypervascular liver metastasis
+Input: Metastatic liver lesion with increased blood supply.
+Synonyms: vascular metastatic liver lesion
+Index code candidates:
+  - GAMUTS:4819 | hypervascular liver metastasis [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID58 | liver [source]
+
+## hypoplastic fibula
+Input: Congenital underdevelopment of the fibula.
+Index code candidates:
+  - SNOMEDCT:93256009 | Congenital hypoplasia of fibula [source]
+  - GAMUTS:31823 | hypoplastic fibula [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID2871 | fibula [source]
+
+## increased prevertebral space in an adult
+Input: Increased prevertebral soft-tissue space in an adult.
+Index code candidates:
+  - GAMUTS:9320 | increased prevertebral space in an adult [source]
+  - RADLEX:RID7572 | perivertebral space
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID7565 | retropharyngeal space of head
+
+## increased resistance index of renal transplant
+Input: Elevated Doppler resistance index in a renal transplant.
+Index code candidates:
+  - GAMUTS:17041 | increased resistance index of renal transplant [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID936 | renal artery
+
+## infratentorial intracranial tumor in a child
+Input: Infratentorial intracranial tumor in a pediatric patient.
+Index code candidates:
+  - GAMUTS:6940 | infratentorial intracranial tumor in a child [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID6381_RID6434 | infratentorial brain [source]
+
+## large orbit
+Input: Enlargement of the orbit.
+Index code candidates:
+  - SNOMEDCT:80096003 | Enlargement of orbit [source]
+  - GAMUTS:25555 | large orbit [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID9573 | orbit [source]
+
+## large vascular grooves of skull
+Input: Enlarged vascular grooves of the skull.
+Index code candidates:
+  - GAMUTS:6763 | large vascular grooves of skull [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID9196 | skull [source]
+
+## leadless pacemaker
+Input: Leadless implantable cardiac pacemaker.
+Index code candidates:
+  - SNOMEDCT:1204291003 | Leadless implantable cardiac pacemaker [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID2468 | chest wall
+
+## long linear lung shadow
+Input: Long linear opacity in the lung.
+Index code candidates:
+  - GAMUTS:15001 | long linear lung shadow [source]
+  - RADLEX:RID39285 | linear opacity
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1301 | lung [source]
+
+## lower lung disease
+Input: Disease involving the lower lungs.
+Index code candidates:
+  - GAMUTS:14573 | lower lung disease [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1312 | lower lobe of lung
+
+## lung sutures
+Input: Sutures in the lung from prior surgery.
+Index code candidates:
+  - SNOMEDCT:82651004 | Suture of lung [source]
+  - RADLEX:RID5607 | surgical clip
+  - SNOMEDCT:386010000 | Surgical clip
+  - SNOMEDCT:173422009 | Suture
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1301 | lung [source]
+
+## Mastectomy Breast Implant
+Input: Breast implant after mastectomy.
+Index code candidates:
+  - SNOMEDCT:2282003 | Breast implant [source]
+  - RADLEX:RID34710 | breast implant [source]
+  - SNOMEDCT:442461002 | Breast prosthesis
+  - SNOMEDCT:12254501000119107 | History of mastectomy
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID29895 | female breast [source]
+
+## MTA-Scale for Medial Temporal Lobe Atrophy (Scheltens Classification)
+Input: Medial temporal lobe atrophy scale.
+Index code candidates:
+  - radelement:RDES151 | mta-scale for medial temporal lobe atrophy [source]
+  - SNOMEDCT:429609002 | Medial temporal lobe atrophy
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID6476 | temporal lobe [source]
+
+## multiple splenic hypointensities
+Input: Multiple hypointense lesions in the spleen.
+Index code candidates:
+  - GAMUTS:5290 | multiple splenic hypointensities [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID86 | spleen [source]
+
+## omega sella
+Input: Omega-shaped sella.
+Index code candidates:
+  - GAMUTS:6558 | omega sella [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID9286 | sella turcica [source]
+
+## pediatric chest wall lesion
+Input: Chest wall lesion in a pediatric patient.
+Index code candidates:
+  - GAMUTS:16074 | pediatric chest wall lesion [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID2468 | chest wall [source]
+
+## Pfirrmann Spine Disc Degeneration Classification
+Input: Pfirrmann classification for spine disc degeneration.
+Index code candidates:
+  - radelement:RDES281 | pfirrmann spine disc degeneration classification [source]
+  - SNOMEDCT:77547008 | Degeneration of intervertebral disc
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID7741 | spine [source]
+
+## pleural abnormality
+Input: Generic pleural abnormality.
+Index code candidates:
+  - RADLEX:RID1362 | pleura
+  - SNOMEDCT:30113006 | Disorder of pleura
+  - SNOMEDCT:196075003 | Pleural disease
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1362 | pleura [source]
+
+## Pneumonia
+Input: Pneumonia.
+Index code candidates:
+  - SNOMEDCT:233604007 | Pneumonia [source]
+  - RADLEX:RID5350 | pneumonia [source]
+  - LOINC:LP75396-9 | Pneumonia [source]
+  - radelement:RDES76 | pneumonia [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1301 | lung [source]
+
+## pulmonary artery catheterization
+Input: Pulmonary artery catheterization, including Swan-Ganz catheter placement.
+Index code candidates:
+  - SNOMEDCT:65677008 | Pulmonary catheterization with Swan-Ganz catheter [source]
+  - RADLEX:RID49768 | Swan-Ganz catheter placement [source]
+  - GAMUTS:30927 | pulmonary artery catheterization [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID974 | pulmonary artery [source]
+
+## pulmonary contusion
+Input: Pulmonary contusion.
+Index code candidates:
+  - SNOMEDCT:262784001 | Contusion of lung [source]
+  - RADLEX:RID5356 | pulmonary contusion
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1301 | lung [source]
+
+## radiolucent urinary calculus
+Input: Radiolucent calculus in the urinary tract.
+Index code candidates:
+  - SNOMEDCT:304543009 | Radiolucent calculus of urinary tract [source]
+  - GAMUTS:20557 | radiolucent urinary calculus [source]
+Anatomic location candidates:
+* Should be urinary tract
+
+## renal ischemia
+Input: Renal ischemia.
+Index code candidates:
+  - GAMUTS:16879 | renal ischemia [source]
+  - SNOMEDCT:36171008 | Renal ischemia
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID205 | kidney [source]
+
+## renal parenchymal gas
+Input: Gas in the renal parenchyma.
+Index code candidates:
+  - GAMUTS:16821 | renal parenchymal gas [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID205 | kidney [source]
+
+## short thin distal phalanx of thumb
+Input: Short, thin distal phalanx of the thumb.
+Index code candidates:
+  - SNOMEDCT:897340006 | Abnormally short distal phalanx of thumb [source]
+  - GAMUTS:11806 | short thin distal phalanx of thumb [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID2406_RID2392 | distal phalanx of first finger [source]
+
+## single maxillary central incisor
+Input: Single maxillary central incisor.
+Index code candidates:
+  - GAMUTS:25598 | single maxillary central incisor [source]
+  - SNOMEDCT:112721000119104 | Single maxillary central incisor
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID9279 | maxillary dental arcade [source]
+
+## small gallbladder
+Input: Small gallbladder.
+Index code candidates:
+  - SNOMEDCT:300345006 | Small gallbladder [source]
+  - GAMUTS:5285 | small gallbladder [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID187 | gallbladder [source]
+
+## Spine Instability Neuroplastic Score (SINS)
+Input: Spine Instability Neoplastic Score.
+Index code candidates:
+  - radelement:RDES21 | spine instability neuroplastic score [source]
+  - SNOMEDCT:240220009 | Spinal instability
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID7741 | spine [source]
+
+## sternal fixation
+Input: Sternal fixation hardware.
+Index code candidates:
+  - SNOMEDCT:464674007 | Sternal fixation system [source]
+  - SNOMEDCT:7211000179105 | Internal fixation of sternum
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID2473 | sternum [source]
+
+## t2-hyperintense renal mass
+Input: T2-hyperintense renal mass.
+Index code candidates:
+  - GAMUTS:18863 | T2-hyperintense renal mass [source]
+  - SNOMEDCT:309088003 | Renal mass
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID205 | kidney [source]
+
+## Traumatic Brain Injury
+Input: Traumatic brain injury.
+Index code candidates:
+  - LOINC:LA27864-0 | Traumatic brain injury [source]
+  - SNOMEDCT:127295002 | Traumatic brain injury [source]
+  - LOINC:MTHU020811 | Traumatic brain injury [source]
+  - LOINC:LP75785-3 | Traumatic brain injury [source]
+  - LOINC:LA17401-3 | Traumatic brain injury [source]
+  - radelement:RDES272 | traumatic brain injury [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID6434 | brain [source]
+
+## traumatic pneumatocele
+Input: Traumatic pneumatocele.
+Index code candidates:
+  - RADLEX:RID28522 | pneumatocele [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1301 | lung [source]
+
+## tricuspid annuloplasty ring
+Input: Tricuspid annuloplasty ring.
+Index code candidates:
+  - SNOMEDCT:1259843002 | Tricuspid annuloplasty ring [source]
+  - SNOMEDCT:232782007 | Tricuspid annuloplasty using ring
+  - SNOMEDCT:265480000 | Annuloplasty of tricuspid valve
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1397 | tricuspid valve [source]
+
+## tunneled catheter
+Input: Tunneled catheter.
+Index code candidates:
+  - RADLEX:RID50337 | tunneled catheter [source]
+  - LOINC:LP263838-7 | Tunneled catheter [source]
+  - RADLEX:RID50533 | tunneled central venous catheter [source]
+  - SNOMEDCT:445085009 | Tunneled central venous catheter [source]
+  - LOINC:LP267466-3 | Tunneled central venous catheter [source]
+Anatomic location candidates:
+
+## unilateral hilar enlargement
+Input: Unilateral hilar enlargement.
+Index code candidates:
+  - GAMUTS:15764 | unilateral hilar enlargement [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID34566 | pulmonary hilum [source]
+
+## vapor-induced lung disease
+Input: Vapor-induced lung disease.
+Index code candidates:
+  - SNOMEDCT:846630009 | Pneumonitis caused by vapor [source]
+  - GAMUTS:15125 | vapor-induced lung disease [source]
+  - SNOMEDCT:371043007 | Toxic inhalation injury
+  - SNOMEDCT:423234004 | Inhalation injury
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID1301 | lung [source]
+
+## vertebral compression fracture
+Input: Vertebral compression fracture.
+Index code candidates:
+  - SNOMEDCT:42942008 | Compression fracture of vertebral column [source]
+  - radelement:RDES230 | vertebral compression fracture [source]
+  - RADLEX:RID4658 | compression fracture
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID29154 | vertebra
+
+## vertebral coronal cleft
+Input: Coronal cleft of a vertebra.
+Index code candidates:
+  - SNOMEDCT:840483000 | Congenital coronal cleft of vertebra [source]
+  - GAMUTS:25712 | vertebral coronal cleft [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID29154 | vertebra [source]
+
+## Volumetric Breast Density
+Input: A quantitative measurement of fibroglandular tissue volume relative to total breast volume on mammography, used to assess breast cancer risk and imaging sensitivity.
+Synonyms: Volumetric Density; VBD
+Index code candidates:
+  - SNOMEDCT:129793001 | Mammographic breast density [source]
+Anatomic location candidates:
+  - ANATOMICLOCATIONS:RID29895 | female breast [source]

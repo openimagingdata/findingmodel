@@ -764,6 +764,22 @@ def _dedupe_index_codes(codes: list[IndexCode]) -> list[IndexCode]:
     return deduped
 
 
+_CARRY_FORWARD_INDEX_CODE_SYSTEMS = {"GAMUTS", "GMTS", "RADELEMENT", "CDES"}
+_CARRY_FORWARD_INDEX_CODE_PREFIXES = ("RDES",)
+
+
+def _is_carry_forward_index_code(code: IndexCode) -> bool:
+    system = code.system.strip().upper()
+    code_id = code.code.strip().upper()
+    return system in _CARRY_FORWARD_INDEX_CODE_SYSTEMS or code_id.startswith(_CARRY_FORWARD_INDEX_CODE_PREFIXES)
+
+
+def carry_forward_index_codes(finding_model: FindingModelFull) -> list[IndexCode]:
+    return _dedupe_index_codes([
+        code for code in finding_model.index_codes or [] if _is_carry_forward_index_code(code)
+    ])
+
+
 def _ontology_report(states: dict[str, _OntologyCandidateState]) -> OntologyCandidateReport:
     canonical_codes: list[OntologyCandidate] = []
     review_candidates: list[OntologyCandidate] = []
@@ -1545,6 +1561,7 @@ async def assign_metadata(
             selected_index_codes = _dedupe_index_codes([
                 candidate.code for candidate in ontology_report.canonical_codes
             ])
+            carried_forward_index_codes = carry_forward_index_codes(finding_model)
             selected_anatomic_locations = _selected_anatomic_locations(anatomic_states)
             ontology_reviewed = bool(decision.ontology_decisions)
             anatomy_reviewed = bool(decision.anatomic_decisions)
@@ -1552,6 +1569,10 @@ async def assign_metadata(
                 if selected_index_codes:
                     warnings.append("Low-confidence index_codes selection ignored")
                 selected_index_codes = []
+            selected_index_codes = _dedupe_index_codes([
+                *selected_index_codes,
+                *carried_forward_index_codes,
+            ])
             if _is_low_confidence(decision.field_confidence, "anatomic_locations"):
                 if selected_anatomic_locations:
                     warnings.append("Low-confidence anatomic_locations selection ignored")

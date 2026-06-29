@@ -1,0 +1,1583 @@
+{
+  "counts": {
+    "anatomic_location_targets": 69,
+    "empty_anatomic_location_records": 2,
+    "empty_index_code_records": 3,
+    "index_code_targets": 128,
+    "records": 67,
+    "skipped_non_anatomic_location_candidates": 1
+  },
+  "empty_targets": {
+    "anatomic_locations": [
+      "radiolucent_urinary_calculus",
+      "tunneled_catheter"
+    ],
+    "index_codes": [
+      "abdominal_clips",
+      "basal_cistern_effacement",
+      "breast_malignancy_risk"
+    ]
+  },
+  "known_gaps": [
+    {
+      "decision": "Exclude RADLEX:RID9865 from anatomic_locations for now; do not invent an ANATOMICLOCATIONS basal cistern code.",
+      "field": "anatomic_locations",
+      "gap": "missing_anatomic_location_cistern_concept",
+      "item_id": "basal_cistern_effacement"
+    }
+  ],
+  "records": [
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID56",
+          "display": "abdomen",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [],
+      "item_id": "abdominal_clips",
+      "name": "abdominal clips"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID2662",
+          "display": "femur",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "12448",
+          "display": "abnormal proximal femur",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "abnormal_proximal_femur",
+      "name": "abnormal proximal femur"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1384",
+          "display": "mediastinum",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "RID1449",
+          "display": "right paratracheal stripe",
+          "system": "RADLEX"
+        },
+        {
+          "code": "RID35486",
+          "display": "right paratracheal stripe sign",
+          "system": "RADLEX"
+        }
+      ],
+      "item_id": "abnormal_right_paratracheal_stripe",
+      "name": "abnormal right paratracheal stripe"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID2473",
+          "display": "sternum",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "31046",
+          "display": "abnormal sternomanubrial synchondrosis",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "abnormal_sternomanubrial_synchondrosis",
+      "name": "abnormal sternomanubrial synchondrosis"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1854",
+          "display": "clavicle",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "58150001",
+          "display": "Fracture of clavicle",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RDES231",
+          "display": "acute clavicle fracture",
+          "system": "radelement"
+        }
+      ],
+      "item_id": "acute_clavicle_fracture",
+      "name": "Acute Clavicle Fracture"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1301",
+          "display": "lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "LA20566-8",
+          "display": "Acute lung injury/Acute respiratory distress syndrome",
+          "system": "LOINC"
+        },
+        {
+          "code": "67782005",
+          "display": "Acute respiratory distress syndrome",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LA28203-0",
+          "display": "Acute respiratory distress syndrome",
+          "system": "LOINC"
+        },
+        {
+          "code": "14342",
+          "display": "acute lung injury and ARDS in children",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "acute_lung_injury_and_ards_in_children",
+      "name": "acute lung injury and ards in children"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID95",
+          "display": "esophagus",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "056",
+          "display": "air in esophagus",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "air_in_esophagus",
+      "name": "air in esophagus"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID34571",
+          "display": "cervical vertebral column",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "RDES279",
+          "display": "ao spine subaxial cervical spine injury classification",
+          "system": "radelement"
+        },
+        {
+          "code": "262522002",
+          "display": "Injury of cervical spine",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "ao_spine_subaxial_cervical_spine_injury_classification",
+      "name": "AO Spine Subaxial Cervical Spine injury Classification"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID480",
+          "display": "aorta",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "302287000",
+          "display": "Aortic diameter",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RDES264",
+          "display": "aortic measurements",
+          "system": "radelement"
+        }
+      ],
+      "item_id": "aortic_measurements",
+      "name": "Aortic Measurements"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID480",
+          "display": "aorta",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "705641004",
+          "display": "Aortic stent",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LP34000-7",
+          "display": "Aortic stent",
+          "system": "LOINC"
+        },
+        {
+          "code": "MTHU017062",
+          "display": "Aortic stent",
+          "system": "LOINC"
+        },
+        {
+          "code": "1208815007",
+          "display": "Aortic endovascular stent graft",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "aortic_stent",
+      "name": "aortic stent"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID13183",
+          "display": "arterial system",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "22516",
+          "display": "arterial rupture",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "arterial_rupture",
+      "name": "arterial rupture"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID13183",
+          "display": "arterial system",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "460885001",
+          "display": "Tortuosity of systemic artery",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "22518",
+          "display": "arterial tortuosity",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "arterial_tortuosity",
+      "name": "arterial tortuosity"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID6383_RID9080",
+          "display": "intracranial head",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [],
+      "item_id": "basal_cistern_effacement",
+      "name": "basal cistern effacement"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1312",
+          "display": "lower lobe of lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "14957",
+          "display": "bilateral basilar lung disease",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "bilateral_basilar_lung_disease",
+      "name": "bilateral basilar lung disease"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID6434",
+          "display": "brain",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "7748",
+          "display": "brain ischemia secondary to extracranial lesion",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "422504002",
+          "display": "Cerebral ischemia",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "brain_ischemia_secondary_to_extracranial_lesion",
+      "name": "brain ischemia secondary to extracranial lesion"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID29895",
+          "display": "female breast",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "129769006",
+          "display": "Calcification cluster",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "697944008",
+          "display": "Mammographic calcification of breast",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "27931000119107",
+          "display": "Mammographic microcalcification of breast",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "breast_calcification_cluster",
+      "name": "breast calcification cluster"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID29895",
+          "display": "female breast",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [],
+      "item_id": "breast_malignancy_risk",
+      "name": "Mammographic malignancy assessment"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID29895",
+          "display": "female breast",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "290073004",
+          "display": "Lesion of breast",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "breast_soft_tissue_lesion",
+      "name": "breast soft tissue lesion"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1394",
+          "display": "aortic valve",
+          "system": "ANATOMICLOCATIONS"
+        },
+        {
+          "code": "RID1395",
+          "display": "mitral valve",
+          "system": "ANATOMICLOCATIONS"
+        },
+        {
+          "code": "RID1397",
+          "display": "tricuspid valve",
+          "system": "ANATOMICLOCATIONS"
+        },
+        {
+          "code": "RID1396",
+          "display": "pulmonic valve",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "22535",
+          "display": "cardiac valve thickening",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "cardiac_valve_thickening",
+      "name": "cardiac valve thickening"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID9196",
+          "display": "skull",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "6081",
+          "display": "congenital premature craniosynostosis",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "85160007",
+          "display": "Premature fusion of cranial sutures",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "congenital_premature_craniosynostosis",
+      "name": "congenital premature craniosynostosis"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID211",
+          "display": "cortex of kidney",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "17002",
+          "display": "decreased renal cortical echogenicity",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "decreased_renal_cortical_echogenicity",
+      "name": "decreased renal cortical echogenicity"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID9106",
+          "display": "mandibular dental arcade",
+          "system": "ANATOMICLOCATIONS"
+        },
+        {
+          "code": "RID9279",
+          "display": "maxillary dental arcade",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "9078",
+          "display": "dental periapical opacity",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "dental_periapical_opacity",
+      "name": "dental periapical opacity"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID302",
+          "display": "uterus",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "19190",
+          "display": "early intrauterine pregnancy",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "early_intrauterine_pregnancy",
+      "name": "early intrauterine pregnancy"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1243",
+          "display": "thorax",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "19061",
+          "display": "fetal chest mass",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "fetal_chest_mass",
+      "name": "fetal chest mass"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID170",
+          "display": "pancreas",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "4878",
+          "display": "focal shadowing pancreatic lesion",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "focal_shadowing_pancreatic_lesion",
+      "name": "focal shadowing pancreatic lesion"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID13217",
+          "display": "bone",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "125605004",
+          "display": "Fracture of bone",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID4650",
+          "display": "fracture",
+          "system": "RADLEX"
+        }
+      ],
+      "item_id": "fracture",
+      "name": "fracture"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID114",
+          "display": "stomach",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "470571004",
+          "display": "Gastrostomy tube",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LP7260-5",
+          "display": "Gastrostomy tube",
+          "system": "LOINC"
+        },
+        {
+          "code": "MTHU001078",
+          "display": "Gastrostomy tube",
+          "system": "LOINC"
+        },
+        {
+          "code": "LP263817-1",
+          "display": "Gastrostomy tube",
+          "system": "LOINC"
+        }
+      ],
+      "item_id": "gastrostomy_tube",
+      "name": "gastrostomy tube"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID13857",
+          "display": "cerebral hemisphere",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "7175",
+          "display": "gyriform cortical/subcortical T1 hyperintensity",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "gyriform_cortical_subcortical_t1_hyperintensity",
+      "name": "gyriform cortical/subcortical t1 hyperintensity"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID58",
+          "display": "liver",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "4819",
+          "display": "hypervascular liver metastasis",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "hypervascular_liver_metastasis",
+      "name": "hypervascular liver metastasis"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID2871",
+          "display": "fibula",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "93256009",
+          "display": "Congenital hypoplasia of fibula",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "31823",
+          "display": "hypoplastic fibula",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "hypoplastic_fibula",
+      "name": "hypoplastic fibula"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID7565",
+          "display": "retropharyngeal space of head",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "9320",
+          "display": "increased prevertebral space in an adult",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "RID7572",
+          "display": "perivertebral space",
+          "system": "RADLEX"
+        }
+      ],
+      "item_id": "increased_prevertebral_space_in_an_adult",
+      "name": "increased prevertebral space in an adult"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID936",
+          "display": "renal artery",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "17041",
+          "display": "increased resistance index of renal transplant",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "increased_resistance_index_of_renal_transplant",
+      "name": "increased resistance index of renal transplant"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID6381_RID6434",
+          "display": "infratentorial brain",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "6940",
+          "display": "infratentorial intracranial tumor in a child",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "infratentorial_intracranial_tumor_in_a_child",
+      "name": "infratentorial intracranial tumor in a child"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID9573",
+          "display": "orbit",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "80096003",
+          "display": "Enlargement of orbit",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "25555",
+          "display": "large orbit",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "large_orbit",
+      "name": "large orbit"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID9196",
+          "display": "skull",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "6763",
+          "display": "large vascular grooves of skull",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "large_vascular_grooves_of_skull",
+      "name": "large vascular grooves of skull"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID2468",
+          "display": "chest wall",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "1204291003",
+          "display": "Leadless implantable cardiac pacemaker",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "leadless_pacemaker",
+      "name": "leadless pacemaker"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1301",
+          "display": "lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "15001",
+          "display": "long linear lung shadow",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "RID39285",
+          "display": "linear opacity",
+          "system": "RADLEX"
+        }
+      ],
+      "item_id": "long_linear_lung_shadow",
+      "name": "long linear lung shadow"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1312",
+          "display": "lower lobe of lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "14573",
+          "display": "lower lung disease",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "lower_lung_disease",
+      "name": "lower lung disease"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1301",
+          "display": "lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "82651004",
+          "display": "Suture of lung",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID5607",
+          "display": "surgical clip",
+          "system": "RADLEX"
+        },
+        {
+          "code": "386010000",
+          "display": "Surgical clip",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "173422009",
+          "display": "Suture",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "lung_sutures",
+      "name": "lung sutures"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID29895",
+          "display": "female breast",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "2282003",
+          "display": "Breast implant",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID34710",
+          "display": "breast implant",
+          "system": "RADLEX"
+        },
+        {
+          "code": "442461002",
+          "display": "Breast prosthesis",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "12254501000119107",
+          "display": "History of mastectomy",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "mastectomy_breast_implant",
+      "name": "Mastectomy Breast Implant"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID6476",
+          "display": "temporal lobe",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "RDES151",
+          "display": "mta-scale for medial temporal lobe atrophy",
+          "system": "radelement"
+        },
+        {
+          "code": "429609002",
+          "display": "Medial temporal lobe atrophy",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "mta_scale_for_medial_temporal_lobe_atrophy__scheltens_classification_",
+      "name": "MTA-Scale for Medial Temporal Lobe Atrophy (Scheltens Classification)"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID86",
+          "display": "spleen",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "5290",
+          "display": "multiple splenic hypointensities",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "multiple_splenic_hypointensities",
+      "name": "multiple splenic hypointensities"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID9286",
+          "display": "sella turcica",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "6558",
+          "display": "omega sella",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "omega_sella",
+      "name": "omega sella"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID2468",
+          "display": "chest wall",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "16074",
+          "display": "pediatric chest wall lesion",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "pediatric_chest_wall_lesion",
+      "name": "pediatric chest wall lesion"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID7741",
+          "display": "spine",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "RDES281",
+          "display": "pfirrmann spine disc degeneration classification",
+          "system": "radelement"
+        },
+        {
+          "code": "77547008",
+          "display": "Degeneration of intervertebral disc",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "pfirrmann_spine_disc_degeneration_classification",
+      "name": "Pfirrmann Spine Disc Degeneration Classification"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1362",
+          "display": "pleura",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "RID1362",
+          "display": "pleura",
+          "system": "RADLEX"
+        },
+        {
+          "code": "30113006",
+          "display": "Disorder of pleura",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "196075003",
+          "display": "Pleural disease",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "pleural_abnormality",
+      "name": "pleural abnormality"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1301",
+          "display": "lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "233604007",
+          "display": "Pneumonia",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID5350",
+          "display": "pneumonia",
+          "system": "RADLEX"
+        },
+        {
+          "code": "LP75396-9",
+          "display": "Pneumonia",
+          "system": "LOINC"
+        },
+        {
+          "code": "RDES76",
+          "display": "pneumonia",
+          "system": "radelement"
+        }
+      ],
+      "item_id": "pneumonia",
+      "name": "Pneumonia"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID974",
+          "display": "pulmonary artery",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "65677008",
+          "display": "Pulmonary catheterization with Swan-Ganz catheter",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID49768",
+          "display": "Swan-Ganz catheter placement",
+          "system": "RADLEX"
+        },
+        {
+          "code": "30927",
+          "display": "pulmonary artery catheterization",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "pulmonary_artery_catheterization",
+      "name": "pulmonary artery catheterization"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1301",
+          "display": "lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "262784001",
+          "display": "Contusion of lung",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RID5356",
+          "display": "pulmonary contusion",
+          "system": "RADLEX"
+        }
+      ],
+      "item_id": "pulmonary_contusion",
+      "name": "pulmonary contusion"
+    },
+    {
+      "anatomic_locations": [],
+      "index_codes": [
+        {
+          "code": "304543009",
+          "display": "Radiolucent calculus of urinary tract",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "20557",
+          "display": "radiolucent urinary calculus",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "radiolucent_urinary_calculus",
+      "name": "radiolucent urinary calculus"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID205",
+          "display": "kidney",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "16879",
+          "display": "renal ischemia",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "36171008",
+          "display": "Renal ischemia",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "renal_ischemia",
+      "name": "renal ischemia"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID205",
+          "display": "kidney",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "16821",
+          "display": "renal parenchymal gas",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "renal_parenchymal_gas",
+      "name": "renal parenchymal gas"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID2406_RID2392",
+          "display": "distal phalanx of first finger",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "897340006",
+          "display": "Abnormally short distal phalanx of thumb",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "11806",
+          "display": "short thin distal phalanx of thumb",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "short_thin_distal_phalanx_of_thumb",
+      "name": "short thin distal phalanx of thumb"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID9279",
+          "display": "maxillary dental arcade",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "25598",
+          "display": "single maxillary central incisor",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "112721000119104",
+          "display": "Single maxillary central incisor",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "single_maxillary_central_incisor",
+      "name": "single maxillary central incisor"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID187",
+          "display": "gallbladder",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "300345006",
+          "display": "Small gallbladder",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "5285",
+          "display": "small gallbladder",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "small_gallbladder",
+      "name": "small gallbladder"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID7741",
+          "display": "spine",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "RDES21",
+          "display": "spine instability neuroplastic score",
+          "system": "radelement"
+        },
+        {
+          "code": "240220009",
+          "display": "Spinal instability",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "spine_instability_neuroplastic_score__sins_",
+      "name": "Spine Instability Neuroplastic Score (SINS)"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID2473",
+          "display": "sternum",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "464674007",
+          "display": "Sternal fixation system",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "7211000179105",
+          "display": "Internal fixation of sternum",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "sternal_fixation",
+      "name": "sternal fixation"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID205",
+          "display": "kidney",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "18863",
+          "display": "T2-hyperintense renal mass",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "309088003",
+          "display": "Renal mass",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "t2_hyperintense_renal_mass",
+      "name": "t2-hyperintense renal mass"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID6434",
+          "display": "brain",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "LA27864-0",
+          "display": "Traumatic brain injury",
+          "system": "LOINC"
+        },
+        {
+          "code": "127295002",
+          "display": "Traumatic brain injury",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "MTHU020811",
+          "display": "Traumatic brain injury",
+          "system": "LOINC"
+        },
+        {
+          "code": "LP75785-3",
+          "display": "Traumatic brain injury",
+          "system": "LOINC"
+        },
+        {
+          "code": "LA17401-3",
+          "display": "Traumatic brain injury",
+          "system": "LOINC"
+        },
+        {
+          "code": "RDES272",
+          "display": "traumatic brain injury",
+          "system": "radelement"
+        }
+      ],
+      "item_id": "traumatic_brain_injury",
+      "name": "Traumatic Brain Injury"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1301",
+          "display": "lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "RID28522",
+          "display": "pneumatocele",
+          "system": "RADLEX"
+        }
+      ],
+      "item_id": "traumatic_pneumatocele",
+      "name": "traumatic pneumatocele"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1397",
+          "display": "tricuspid valve",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "1259843002",
+          "display": "Tricuspid annuloplasty ring",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "232782007",
+          "display": "Tricuspid annuloplasty using ring",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "265480000",
+          "display": "Annuloplasty of tricuspid valve",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "tricuspid_annuloplasty_ring",
+      "name": "tricuspid annuloplasty ring"
+    },
+    {
+      "anatomic_locations": [],
+      "index_codes": [
+        {
+          "code": "RID50337",
+          "display": "tunneled catheter",
+          "system": "RADLEX"
+        },
+        {
+          "code": "LP263838-7",
+          "display": "Tunneled catheter",
+          "system": "LOINC"
+        },
+        {
+          "code": "RID50533",
+          "display": "tunneled central venous catheter",
+          "system": "RADLEX"
+        },
+        {
+          "code": "445085009",
+          "display": "Tunneled central venous catheter",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "LP267466-3",
+          "display": "Tunneled central venous catheter",
+          "system": "LOINC"
+        }
+      ],
+      "item_id": "tunneled_catheter",
+      "name": "tunneled catheter"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID34566",
+          "display": "pulmonary hilum",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "15764",
+          "display": "unilateral hilar enlargement",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "unilateral_hilar_enlargement",
+      "name": "unilateral hilar enlargement"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID1301",
+          "display": "lung",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "846630009",
+          "display": "Pneumonitis caused by vapor",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "15125",
+          "display": "vapor-induced lung disease",
+          "system": "GAMUTS"
+        },
+        {
+          "code": "371043007",
+          "display": "Toxic inhalation injury",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "423234004",
+          "display": "Inhalation injury",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "vapor_induced_lung_disease",
+      "name": "vapor-induced lung disease"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID29154",
+          "display": "vertebra",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "42942008",
+          "display": "Compression fracture of vertebral column",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "RDES230",
+          "display": "vertebral compression fracture",
+          "system": "radelement"
+        },
+        {
+          "code": "RID4658",
+          "display": "compression fracture",
+          "system": "RADLEX"
+        }
+      ],
+      "item_id": "vertebral_compression_fracture",
+      "name": "vertebral compression fracture"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID29154",
+          "display": "vertebra",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "840483000",
+          "display": "Congenital coronal cleft of vertebra",
+          "system": "SNOMEDCT"
+        },
+        {
+          "code": "25712",
+          "display": "vertebral coronal cleft",
+          "system": "GAMUTS"
+        }
+      ],
+      "item_id": "vertebral_coronal_cleft",
+      "name": "vertebral coronal cleft"
+    },
+    {
+      "anatomic_locations": [
+        {
+          "code": "RID29895",
+          "display": "female breast",
+          "system": "ANATOMICLOCATIONS"
+        }
+      ],
+      "index_codes": [
+        {
+          "code": "129793001",
+          "display": "Mammographic breast density",
+          "system": "SNOMEDCT"
+        }
+      ],
+      "item_id": "volumetric_breast_density",
+      "name": "Volumetric Breast Density"
+    }
+  ],
+  "skipped_candidates": [
+    {
+      "candidate": {
+        "code": "RID9865",
+        "display": "basal cistern",
+        "system": "RADLEX"
+      },
+      "field": "anatomic_locations",
+      "item_id": "basal_cistern_effacement",
+      "name": "basal cistern effacement",
+      "reason": "Local anatomic_locations does not currently contain basal, basilar, perimesencephalic, subarachnoid, or generic cistern entries."
+    }
+  ],
+  "source_approved_outputs": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/fixtures/metadata_review_approved_outputs.json",
+  "source_worksheet": "/Users/talkasab/repos/findingmodel-metadata/packages/findingmodel-ai/evals/index_code_candidate_review_curated_2026-06-05.txt",
+  "system_counts": {
+    "anatomic_locations": {
+      "ANATOMICLOCATIONS": 69
+    },
+    "index_codes": {
+      "GAMUTS": 39,
+      "LOINC": 14,
+      "RADLEX": 15,
+      "SNOMEDCT": 51,
+      "radelement": 9
+    }
+  },
+  "target_fields": [
+    "index_codes",
+    "anatomic_locations"
+  ],
+  "usage": {
+    "authority": "human_pruned_code_anatomy_targets",
+    "overlay_policy": "Use as a scoring-time overlay for index_codes and anatomic_locations only; do not mutate metadata_review_approved_outputs.json from this fixture."
+  },
+  "version": 1
+}

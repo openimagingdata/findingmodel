@@ -808,6 +808,50 @@ async def test_existing_codes_and_anatomy_are_kept_on_silence(
 
 
 @pytest.mark.asyncio
+async def test_nonsearchable_source_index_codes_are_carried_forward(
+    finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    existing_model = finding_model.model_copy(
+        update={
+            "index_codes": [
+                IndexCode(system="GAMUTS", code="30927", display="pulmonary artery catheterization"),
+                IndexCode(system="radelement", code="RDES76", display="pneumonia"),
+            ],
+        }
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.match_ontology_concepts",
+        AsyncMock(return_value=_ontology_results()),
+    )
+    monkeypatch.setattr(
+        "findingmodel_ai.metadata.assignment.find_anatomic_locations",
+        AsyncMock(return_value=_anatomic_results()),
+    )
+
+    decision = MetadataAssignmentDecision(
+        body_regions=[BodyRegion.CHEST],
+        entity_type=EntityType.FINDING,
+        applicable_modalities=[Modality.CT],
+        field_confidence={
+            "body_regions": FieldConfidence.HIGH,
+            "entity_type": FieldConfidence.HIGH,
+            "applicable_modalities": FieldConfidence.HIGH,
+            "index_codes": FieldConfidence.LOW,
+            "anatomic_locations": FieldConfidence.HIGH,
+        },
+    )
+    _patch_split_agents(monkeypatch, decision)
+
+    result = await assign_metadata(existing_model)
+
+    assert [(code.system, code.code) for code in result.model.index_codes or []] == [
+        ("GAMUTS", "30927"),
+        ("radelement", "RDES76"),
+    ]
+    assert result.review.warnings == ["Low-confidence index_codes selection ignored"]
+
+
+@pytest.mark.asyncio
 async def test_existing_anatomic_location_requires_reason_to_remove(
     finding_model: FindingModelFull, monkeypatch: pytest.MonkeyPatch
 ) -> None:
